@@ -1,0 +1,17 @@
+Checks: "-*,readability-identifier-naming"
+CheckOptions:
+  - { key: readability-identifier-naming.StructCase, value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - {
+      key: readability-identifier-naming.FunctionIgnoredRegexp,
+      value: "^DEBUG_.*",
+    }
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  # - { key: readability-identifier-naming.GlobalVariablePrefix, value: glob_ }
+  - { key: readability-identifier-naming.GlobalVariableCase, value: UPPER_CASE }
+  - { key: readability-identifier-naming.MemberCase, value: lower_case }
+  - {
+      key: readability-identifier-naming.MemberIgnoredRegexp,
+      value: "^DEBUG_.*",
+    }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
