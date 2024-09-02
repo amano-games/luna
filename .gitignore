@@ -82,3 +82,4 @@ Temporary Items
 
 .cache
 *.sublime-workspace
+./bin
