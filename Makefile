@@ -1,37 +1,46 @@
-# Assets tools
-CC             := gcc
-TOOLS_DIR      := bin
-TOOLS_SRC_DIR  := tools
-TOOLS_FLAGS    := -std=gnu11
+# While it is usually safe to assume that sensible values have been set for CC and LDD, it does no harm to set them if and only if they are not already set in the environment, using the operator ?=.
+SRC_DIR   := ./tools/src
+DESTDIR   ?=
+PREFIX    ?= ./
+BINDIR    ?= ${PREFIX}bin
+BUILD_DIR := ${DESTDIR}${BINDIR}
 
-ASSETS_TARGET   := luna-assets
-ASSETS_MAIN     := $(TOOLS_SRC_DIR)/src/assets.c
-ASSETS_SRC      := $(ASSETS_MAIN)
-ASSETS_BIN      := $(TOOLS_DIR)/$(ASSETS_TARGET)
+RELEASE_CFLAGS := ${CFLAGS}
+RELEASE_CFLAGS += -std=gnu11 -O3
 
-TABLE_GEN_TARGET   := luna-table-gen
-TABLE_GEN_MAIN     := $(TOOLS_SRC_DIR)/src/table-gen.c
-TABLE_GEN_SRC      := $(TABLE_GEN_MAIN)
-TABLE_GEN_BIN      := $(TOOLS_DIR)/$(TABLE_GEN_TARGET)
+DEBUG_CFLAGS := -std=gnu11 -g3 -O0
+DEBUG_CFLAGS += -Werror -Wall -Wextra -pedantic-errors
+DEBUG_CFLAGS += -Wdouble-promotion
+DEBUG_CFLAGS += -Wno-unused-function
+DEBUG_CFLAGS += -Wno-unused-but-set-variable
+DEBUG_CFLAGS += -Wno-unused-variable
+DEBUG_CFLAGS += -Wno-unused-parameter
+DEBUG_CFLAGS += -fsanitize=undefined -fsanitize-trap
 
-.PHONY: assets_bin table_gen_bin tools_bin
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CFLAGS := $(DEBUG_CFLAGS)
+else
+	CFLAGS := $(RELEASE_CFLAGS)
+endif
+
+LDLIBS := -lm
+
+.PHONY: all clean
+
+all: $(BUILD_DIR) $(BUILD_DIR)/luna-table-gen $(BUILD_DIR)/luna-assets
 
 # Create tools bin dir
-$(TOOLS_DIR):
-	mkdir -p $(TOOLS_DIR)
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+$(BUILD_DIR)/luna-table-gen: $(SRC_DIR)/table-gen.c
+	$(CC) $(CFLAGS) $(SRC_DIR)/table-gen.c $(LDLIBS) -o $(BUILD_DIR)/luna-table-gen
+
+$(BUILD_DIR)/luna-assets: $(SRC_DIR)/assets.c
+	$(CC) $(CFLAGS) $(SRC_DIR)/table-gen.c $(LDLIBS) -o $(BUILD_DIR)/luna-assets
 
 # Clean tools bin
-tools_clean:
-	rm -rf $(TOOLS_DIR)
+clean:
+	rm -rf $(BUILD_DIR)
 
-# Compile assets bin
-$(ASSETS_BIN): $(ASSETS_SRC) | $(TOOLS_DIR)
-	$(CC) $(TOOLS_FLAGS) -g3 $(WARN) $(ASSETS_SRC) -o $(ASSETS_BIN) -lm
-
-# Compile table gen bin
-$(TABLE_GEN_BIN): $(TABLE_GEN_SRC) | $(TOOLS_DIR)
-	$(CC) $(TOOLS_FLAGS) -g3 $(WARN) $(TABLE_GEN_SRC) -o $(TABLE_GEN_BIN) -lm
-
-assets_bin: $(ASSETS_BIN)
-table_gen_bin: $(TABLE_GEN_BIN)
-tools_bin: tools_clean assets_bin table_gen_bin
