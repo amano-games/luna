@@ -1,64 +1,78 @@
-CC                := gcc
-LINUX_INC_DIRS    := $(shell find $(SRC_DIR) -type d)
-LINUX_INC_DIRS    += $(shell find $(LUNA_DIR) -type d)
-LINUX_INC_FLAGS   += $(addprefix -I,$(LINUX_INC_DIRS))
-LINUX_INC_FLAGS   += $(EXTERNAL_FLAGS)
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-LINUX_TARGET       := $(TARGET).bin
-LINUX_LIBS         := -ldl -lm -lrt
-LINUX_DEFS         := -std=gnu11 -DBACKEND_SOKOL=1 -DSOKOL_DEBUG=1 -DSOKOL_GLCORE33
-LINUX_BUILD_DIR    := $(BUILD_DIR)/linux
-LINUX_OBJS         := $(LINUX_BUILD_DIR)/$(LINUX_TARGET)
-LINUX_ASSETS_OUT   := $(LINUX_BUILD_DIR)/assets
-LINUX_RELEASE_OBJS := $(LINUX_BUILD_DIR)/$(LINUX_TARGET).zip
-LINUX_RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
+include $(ROOT_DIR)/common.mk
 
-ifeq ($(DETECTED_OS), Linux)
-	LINUX_LIBS += -lGL -lX11 -lasound -lXi -lXcursor -lpthread
+DESTDIR   ?=
+PREFIX    ?=
+BINDIR    ?= ${PREFIX}linux
+TARGET    := $(GAME_NAME).bin
+BUILD_DIR := ${DESTDIR}${BINDIR}
+
+LDLIBS := -lm -ldl -lrt -lGL -lX11 -lasound -lXi -lXcursor -lpthread
+LDFLAGS :=
+
+WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
+WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
+
+INC_DIRS    := $(shell find $(SRC_DIR) -type d)
+INC_DIRS    += $(shell find $(LUNA_DIR) -type d)
+INC_FLAGS   += $(addprefix -I,$(INC_DIRS))
+INC_FLAGS   += $(EXTERNAL_FLAGS)
+
+CDEFS        := -DBACKEND_SOKOL=1 -DSOKOL_DEBUG=1 -DSOKOL_GLCORE33
+
+RELEASE_CFLAGS := ${CFLAGS}
+RELEASE_CFLAGS += -std=gnu11
+
+DEBUG_CFLAGS := -std=gnu11 -g3 -O0
+DEBUG_CFLAGS += $(WARN_FLAGS)
+
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CFLAGS := $(DEBUG_CFLAGS)
+else
+	CFLAGS := $(RELEASE_CFLAGS)
 endif
-ifeq ($(DETECTED_OS), Darwin)
-	LINUX_LIBS += -fobjc-arc -framework Metal -framework Cocoa -framework MetalKit -framework Quartz
-endif
 
-.PHONY: linux linux_run linux_build linux_assets
+CFLAGS += $(CDEFS)
 
-$(LINUX_ASSETS_OUT): $(ASSETS_BIN) $(WATCH_ASSETS)
-	mkdir -p $(LINUX_ASSETS_OUT)
-	$(ASSETS_BIN) $(ASSETS_DIR) $(LINUX_ASSETS_OUT)
+ASSETS_OUT   := $(BUILD_DIR)/assets
+OBJS         := $(BUILD_DIR)/$(TARGET)
+PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
 
-$(LINUX_BUILD_DIR):
-	mkdir -p $(LINUX_BUILD_DIR)
-	./update_runtime.sh
-	./extract_runtime.sh steam-runtime-release_latest.tar.xz amd64 $(LINUX_BUILD_DIR)/steam-runtime
-	cp ./linux/* $(LINUX_BUILD_DIR)
+.PHONY: all clean build steam run
+.DEFAULT_GOAL := all
 
-$(LINUX_OBJS): sokol_shader $(LINUX_BUILD_DIR) $(LINUX_ASSETS_OUT) $(WATCH_SRC)
-	$(CC) \
-		$(LINUX_DEFS) \
-		$(LINUX_INC_FLAGS) \
-		-finstrument-functions \
-		$(CFLAGS) \
-		$(WARN) \
-		$(SRC_MAIN) \
-		$(LINUX_LIBS) \
-		-o $(LINUX_OBJS)
+all: clean build run
 
-$(LINUX_RELEASE_OBJS):
-	cd $(LINUX_BUILD_DIR) && zip -r ./$(LINUX_TARGET).zip ./*
+$(ASSETS_OUT): $(ASSETS_BIN)
+	mkdir -p $(ASSETS_OUT)
+	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
 
-linux_clean:
-	rm -rf $(LINUX_BUILD_DIR)
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+	cp -r ./linux/* $(BUILD_DIR)
 
-linux_run: linux_build
-	$(LINUX_BUILD_DIR)/$(TARGET).sh
+$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
+	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) -o $@
 
-linux_build: $(LINUX_OBJS)
-linux_zip: $(LINUX_RELEASE_OBJS)
-linux_assets: $(LINUX_ASSETS_OUT)
-linux_release: linux_clean linux_build linux_zip
+$(BUILD_DIR)/steam-runtime:
+	$(LUNA_DIR)/update_runtime.sh
+	$(LUNA_DIR)/extract_runtime.sh steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
 
-linux: linux_run
+$(PUBLISH_OBJS): $(OBJS) steam
+	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
-linux_publish: $(LINUX_RELEASE_OBJS)
-	butler push $(LINUX_RELEASE_OBJS) amanogames/devils-on-the-moon:linux
+steam: $(BUILD_DIR)/steam-runtime
 
+clean:
+	rm -rf $(BUILD_DIR)
+
+run: build
+	cd $(BUILD_DIR) && ./$(TARGET)
+
+build: $(OBJS)
+release: clean build steam
+publish: $(PUBLISH_OBJS)
+	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux
