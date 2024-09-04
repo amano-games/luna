@@ -4,7 +4,7 @@
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-SRC_DIR   := $(ROOT_DIR)/tools/src
+SRC_DIR   := $(ROOT_DIR)/tools
 DESTDIR   ?=
 PREFIX    ?=
 BINDIR    ?= ${PREFIX}bin
