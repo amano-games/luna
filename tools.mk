@@ -2,9 +2,11 @@
 .SUFFIXES:
 .PHONY: all clean
 
-SRC_DIR   := ./tools/src
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+SRC_DIR   := $(ROOT_DIR)/tools/src
 DESTDIR   ?=
-PREFIX    ?= ./
+PREFIX    ?=
 BINDIR    ?= ${PREFIX}bin
 BUILD_DIR := ${DESTDIR}${BINDIR}
 
