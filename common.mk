@@ -10,7 +10,6 @@ WARN_FLAGS += -Wno-unused-function
 WARN_FLAGS += -Wno-unused-but-set-variable
 WARN_FLAGS += -Wno-unused-variable
 WARN_FLAGS += -Wno-unused-parameter
-WARN_FLAGS += -fsanitize=undefined -fsanitize-trap
 
 
 ASSETS_DIR := $(SRC_DIR)/assets
