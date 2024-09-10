@@ -2,11 +2,12 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
-DESTDIR   ?=
-PREFIX    ?=
-BINDIR    ?= ${PREFIX}linux
-TARGET    := $(GAME_NAME).bin
-BUILD_DIR := ${DESTDIR}${BINDIR}
+DESTDIR      ?=
+PREFIX       ?=
+BINDIR       ?= ${PREFIX}linux
+TARGET       := $(GAME_NAME).bin
+BUILD_DIR    := ${DESTDIR}${BINDIR}
+PLATFORM_DIR := platforms/linux
 
 LDLIBS := -lm -ldl -lrt -lGL -lX11 -lasound -lXi -lXcursor -lpthread
 LDFLAGS :=
@@ -56,7 +57,7 @@ $(ASSETS_OUT): $(ASSETS_BIN)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-	cp -r ./linux/* $(BUILD_DIR)
+	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
 
 $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
 	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
