@@ -154,6 +154,8 @@ build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
 release: clean $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT) run
 
 clean:
+	$(info Build dir is "$(BUILD_DIR)")
+	echo $(BUILD_DIR)
 	rm -rf $(BUILD_DIR)
 
 ifeq ($(DETECTED_OS), Linux)
