@@ -110,9 +110,6 @@ SIM_CFLAGS     += $(SIM_DEFS)
 .DEFAULT_GOAL := all
 .PHONY: all clean build run
 
-clean:
-	rm -rf $(BUILD_DIR)
-
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p $(ASSETS_OUT)
 	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
@@ -148,7 +145,9 @@ $(SIM_OUT): $(SRC_DIR)/main.c $(WATCH_SRC) $(BUILD_DIR)
 		$(LDLIBS) \
 		$(LDFLAGS) -o $@
 	cp $(SIM_OUT) $(BUILD_DIR)/tmp
+	rm $(SIM_OUT)
 
+all: run
 build: $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
 build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
 
