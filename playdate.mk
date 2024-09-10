@@ -153,6 +153,9 @@ build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
 
 release: clean $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT) run
 
+clean:
+	rm -rf $(BUILD_DIR)
+
 ifeq ($(DETECTED_OS), Linux)
 run: build_sim
 	$(LUNA_DIR)/close-sim.sh
