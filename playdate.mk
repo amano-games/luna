@@ -161,5 +161,5 @@ endif
 
 ifeq ($(DETECTED_OS), Darwin)
 run: build_sim
-	open "$(abspath $(PDX))"
+	open "$(abspath $(OBJS))"
 endif
