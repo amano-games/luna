@@ -2,7 +2,8 @@
 .SUFFIXES:
 .PHONY: all clean
 
-ROOT_DIR := $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
+space := $(null) $(null)
+ROOT_DIR := $(subst $(space),\ ,$(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))"))
 
 SRC_DIR   := $(ROOT_DIR)/tools
 DESTDIR   ?=
