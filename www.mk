@@ -2,18 +2,19 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
-CC        := emcc
-DESTDIR   ?=
-PREFIX    ?=
-BINDIR    ?= ${PREFIX}www
-TARGET    := index.html
-BUILD_DIR := ${DESTDIR}${BINDIR}
+CC           := emcc
+DESTDIR      ?=
+PREFIX       ?=
+BINDIR       ?= ${PREFIX}www
+TARGET       := index.html
+BUILD_DIR    := ${DESTDIR}${BINDIR}
+PLATFORM_DIR := platforms/www
 
 LDLIBS := -lm
 LDFLAGS :=
 
-WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
-WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
+WATCH_SRC    := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
+WATCH_SRC    += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external $(LUNA_DIR)/external/sokol
 EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
@@ -43,7 +44,7 @@ endif
 CFLAGS += $(CDEFS)
 CFLAGS += -s ALLOW_MEMORY_GROWTH=1
 CFLAGS += -s USE_WEBGL2
-CFLAGS += --shell-file=./www/index.html
+CFLAGS += --shell-file=$(PLATFORM_DIR)/index.html
 CFLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
@@ -61,7 +62,7 @@ $(ASSETS_OUT): $(ASSETS_BIN)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-	cp -r ./www/* $(BUILD_DIR)
+	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
 
 $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
 	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
