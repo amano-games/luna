@@ -39,6 +39,16 @@ struct app_mem {
 	bool is_initialized;
 };
 
+struct app_metadata {
+	char name[50];
+	char author[50];
+	char description[100];
+	char bundle_id[100];
+	char version[100];
+	i32 build_number;
+	char image_path[100];
+};
+
 void app_init(struct app_mem mem);
 void app_tick(f32 dt);
 void app_draw(void);
