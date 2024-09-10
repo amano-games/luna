@@ -1,4 +1,5 @@
-ROOT_DIR := $(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))")
+space := $(null) $(null)
+ROOT_DIR := $(subst $(space),\ ,$(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))"))
 
 include $(ROOT_DIR)/common.mk
 
