@@ -111,7 +111,7 @@ SIM_CFLAGS     += $(SIM_DEFS)
 .PHONY: all clean build run
 
 $(ASSETS_OUT): $(ASSETS_BIN)
-	mkdir -p $(ASSETS_OUT)
+	mkdir -p "$(ASSETS_OUT)"
 	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
 
 $(BUILD_DIR):
@@ -119,21 +119,21 @@ $(BUILD_DIR):
 	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)/tmp
 
 $(OBJS): $(BUILD_DIR)
-	$(PDC) $(PDCFLAGS) $(BUILD_DIR)/tmp $@
+	$(PDC) $(PDCFLAGS) $(BUILD_DIR)/tmp "$@"
 
 $(ELF): $(SRC_DIR)/main.c $(WATCH_SRC) $(LDSCRIPT) $(BUILD_DIR)
 	$(PD_CC) \
 		$(PD_CFLAGS) \
 		$(CFLAGS) \
 		$(INC_FLAGS) \
-		$< $(SRC_SDK) \
+		"$<" $(SRC_SDK) \
 		$(LDLIBS) \
 		$(LDFLAGS) \
 		$(PD_LDFLAGS) \
-		-o $@
+		-o "$@"
 
 $(ELF_OUT):$(ELF) $(PD_BUILD_DIR)
-	cp $< $@
+	cp "$<" "$@"
 
 $(SIM_OUT): $(SRC_DIR)/main.c $(WATCH_SRC) $(BUILD_DIR)
 	$(CC) \
@@ -141,9 +141,9 @@ $(SIM_OUT): $(SRC_DIR)/main.c $(WATCH_SRC) $(BUILD_DIR)
 		$(SIM_CFLAGS) \
 		$(DYLIB_FLAGS) \
 		$(INC_FLAGS) \
-		$< $(SRC_SDK) \
+		"$<" $(SRC_SDK) \
 		$(LDLIBS) \
-		$(LDFLAGS) -o $@
+		$(LDFLAGS) -o "$@"
 	cp $(SIM_OUT) $(BUILD_DIR)/tmp
 	rm $(SIM_OUT)
 
@@ -154,8 +154,6 @@ build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
 release: clean $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT) run
 
 clean:
-	$(info Build dir is "$(BUILD_DIR)")
-	echo $(BUILD_DIR)
 	rm -rf $(BUILD_DIR)
 
 ifeq ($(DETECTED_OS), Linux)
