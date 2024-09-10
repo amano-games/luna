@@ -64,7 +64,7 @@ $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC
 
 $(BUILD_DIR)/steam-runtime:
 	$(LUNA_DIR)/update_runtime.sh
-	$(LUNA_DIR)/extract_runtime.sh steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
+	$(LUNA_DIR)/extract_runtime.sh $(ROOT_DIR)/steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
 
 $(PUBLISH_OBJS): $(OBJS) steam
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
@@ -78,6 +78,6 @@ run: build
 	cd $(BUILD_DIR) && ./$(TARGET)
 
 build: $(OBJS)
-release: clean build steam
+release: clean $(PUBLISH_OBJS)
 publish: $(PUBLISH_OBJS)
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux

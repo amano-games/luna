@@ -2,12 +2,13 @@
 set -eu
 
 PROJECT_NAME=pinball
-DOCKERFILE=Dockerfile
+DOCKERFILE=./luna/Dockerfile
 
 podman build . -t $PROJECT_NAME -f $DOCKERFILE
 id=$(podman create $PROJECT_NAME)
 rm -rf ./build
-podman run -d --name "$id" make CC='./usr/bin/gcc-9' DEBUG=0 linux_build
-podman cp "$id":/build ./build
+podman run -d --name "$id" -it $PROJECT_NAME:latest make linux_build DEBUG=0
+podman cp "$id":/app/build ./build
+podman stop "$id"
 podman rm -v "$id"
 make linux_publish
