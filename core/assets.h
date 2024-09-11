@@ -12,6 +12,7 @@ enum {
 	TEX_ID_DISPLAY,
 
 	// Debug
+	TEX_ID_LOADING,
 
 	NUM_TEX_ID,
 	NUM_TEX_ID_MAX = 512
