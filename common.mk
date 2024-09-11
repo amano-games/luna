@@ -23,9 +23,6 @@ ASSETS_BIN := bin/luna-assets
 SHADER_BIN   := bin/sokol-shdc
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h
 
-clean:
-	rm -rf $(DESTDIR)
-
 $(ASSETS_BIN):
 	make -f $(LUNA_DIR)/tools.mk CC=$(CC) PREFIX= DESTDIR=
 

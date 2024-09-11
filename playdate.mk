@@ -118,9 +118,9 @@ $(ASSETS_OUT): $(ASSETS_BIN)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)/tmp
-	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)/tmp
 
 $(OBJS): $(BUILD_DIR)
+	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)/tmp
 	$(PDC) $(PDCFLAGS) $(BUILD_DIR)/tmp "$@"
 
 $(ELF): $(SRC_DIR)/main.c $(WATCH_SRC) $(LDSCRIPT) $(BUILD_DIR)
