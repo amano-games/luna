@@ -7,6 +7,9 @@
 #include <inttypes.h>
 
 #define DISABLE_LOGGING 0
+#if !defined(SYS_LOG_LEVEL)
+#define SYS_LOG_LEVEL 3
+#endif
 
 void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
 

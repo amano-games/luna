@@ -72,9 +72,12 @@ str_cmp(const char *s1, const char *s2, register usize n)
 static void
 ascii_progress_bar(u8 percent)
 {
-	char pbstr[PBWIDTH];
-	memset(pbstr, PBCHAR, PBWIDTH);
-	sys_printf("[%-" S(PBWIDTH) ".*s] %u%%", percent * PBWIDTH / 100, pbstr, percent);
+	if(SYS_LOG_LEVEL > 2) {
+		char pbstr[PBWIDTH];
+		memset(pbstr, PBCHAR, PBWIDTH);
+		sys_printf("[%-" S(PBWIDTH) ".*s] %u%%", percent * PBWIDTH / 100, pbstr, percent);
+		sys_printf(" ");
+	}
 }
 
 f32
