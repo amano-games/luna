@@ -6,6 +6,7 @@
 #include "sys-font.h"
 #include "sys-log.h"
 #include "sys-assert.h"
+#include <string.h>
 
 #if !defined(SYS_SHOW_FPS)
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
@@ -29,26 +30,11 @@ static struct {
 } SYS;
 
 void
-app_parse_metadata(struct app_metadata *app_metadata, struct marena *scratch)
-{
-	{
-		void *f = sys_file_open("pdxinfo", SYS_FILE_R);
-		if(f != NULL) {
-			struct sys_file_stats stats = sys_fstats("pdxinfo");
-			char *data                  = marena_alloc(scratch, stats.size);
-			sys_file_read(f, (void *)data, stats.size);
-			sys_printf("%s", data);
-		}
-	}
-}
-
-void
 sys_init(void)
 {
-	usize max_mem                    = SYS_MAX_MEM;
-	struct sys_mem *sys_mem          = &SYS.mem;
-	struct app_mem app_mem           = {0};
-	struct app_metadata app_metadata = {0};
+	usize max_mem           = SYS_MAX_MEM;
+	struct sys_mem *sys_mem = &SYS.mem;
+	struct app_mem app_mem  = {0};
 
 	app_mem.permanent.size = MMEGABYTE(2.5);
 	app_mem.transient.size = MMEGABYTE(2.5);
@@ -67,16 +53,15 @@ sys_init(void)
 	app_mem.permanent.buffer = sys_mem->app_mem.buffer;
 	app_mem.transient.buffer = (u8 *)sys_mem->app_mem.buffer + app_mem.permanent.size;
 	app_mem.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + app_mem.permanent.size + app_mem.transient.size;
-	app_mem.is_initialized   = true;
+
+	// memset(app_mem.transient.buffer, 0, app_mem.transient.size);
+	// memset(app_mem.permanent.buffer, 0, app_mem.permanent.size);
+	// memset(app_mem.debug.buffer, 0, app_mem.debug.size);
+
+	app_mem.is_initialized = true;
+
 	log_info("Sys", "App memory %u kb", (uint)sys_mem->app_mem.size / 1024);
 
-	struct marena scratch = {0};
-	marena_init(&scratch, app_mem.permanent.buffer, MMEGABYTE(1));
-
-	app_parse_metadata(&app_metadata, &scratch);
-	marena_reset(&scratch);
-
-	memset(app_mem.permanent.buffer, 0, MMEGABYTE(1));
 	app_init(app_mem);
 }
 
