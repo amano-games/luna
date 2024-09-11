@@ -7,7 +7,6 @@
 #include "sys-input.h"
 
 #include "pd_api.h"
-#include <stdarg.h>
 
 PlaydateAPI *PD;
 
