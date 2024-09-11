@@ -7,7 +7,10 @@
 #include "sys-log.h"
 #include "sys-assert.h"
 
-#define SYS_SHOW_FPS    1      // enable fps/ups counter
+#if !defined(SYS_SHOW_FPS)
+#define SYS_SHOW_FPS 1 // enable fps/ups counter
+#endif
+
 #define SYS_FIXED_DT    .0200f // 1 /  50
 #define SYS_DT_MAX      .0600f // 3 /  50fps
 #define SYS_UPS_DT_TEST .0195f // 1 / ~51

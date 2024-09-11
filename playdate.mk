@@ -41,7 +41,8 @@ INC_DIRS       += $(LUNA_DIR) $(LUNA_DIR)/sys $(LUNA_DIR)/lib $(LUNA_DIR)/core
 INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
 INC_FLAGS      += $(EXTERNAL_FLAGS)
 
-CDEFS          := -DTARGET_EXTENSION=1
+override CDEFS := $(CDEFS) -DTARGET_EXTENSION=1
+
 PD_DEFS        := -DTARGET_PLAYDATE=1
 SIM_DEFS       := -DTARGET_SIMULATOR=1
 
