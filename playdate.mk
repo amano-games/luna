@@ -152,6 +152,7 @@ $(SIM_OUT): $(SRC_DIR)/main.c $(WATCH_SRC) $(BUILD_DIR)
 all: run
 build: $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
 build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
+build_pd: $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
 
 release: clean $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT) run
 
