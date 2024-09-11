@@ -13,7 +13,7 @@ ui_rec_to_rec_i32(struct ui_rec v)
 }
 
 struct ui_rec
-cut_left(struct ui_rec *rect, i32 a)
+ui_cut_left(struct ui_rec *rect, i32 a)
 {
 	i32 minx   = rect->minx;
 	rect->minx = min_i32(rect->maxx, rect->minx + a);
@@ -21,7 +21,7 @@ cut_left(struct ui_rec *rect, i32 a)
 }
 
 struct ui_rec
-cut_right(struct ui_rec *rect, i32 a)
+ui_cut_right(struct ui_rec *rect, i32 a)
 {
 	i32 maxx   = rect->maxx;
 	rect->maxx = max_i32(rect->minx, rect->maxx - a);
@@ -29,7 +29,7 @@ cut_right(struct ui_rec *rect, i32 a)
 }
 
 struct ui_rec
-cut_top(struct ui_rec *rect, i32 a)
+ui_cut_top(struct ui_rec *rect, i32 a)
 {
 	i32 miny   = rect->miny;
 	rect->miny = min_i32(rect->maxy, rect->miny + a);
@@ -37,7 +37,7 @@ cut_top(struct ui_rec *rect, i32 a)
 }
 
 struct ui_rec
-cut_bottom(struct ui_rec *rect, i32 a)
+ui_cut_bottom(struct ui_rec *rect, i32 a)
 {
 	i32 maxy   = rect->maxy;
 	rect->maxy = min_i32(rect->miny, rect->maxy - a);
