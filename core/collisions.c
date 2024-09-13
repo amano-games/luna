@@ -119,11 +119,11 @@ col_merge_circles(struct col_cir a, struct col_cir b)
 }
 
 int
-col_circle_to_circle(struct col_cir a, struct col_cir b)
+col_circle_to_circle(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br)
 {
 	TRACE_START(__func__);
-	c2Circle c2a = cir_to_c2cir(a);
-	c2Circle c2b = cir_to_c2cir(b);
+	c2Circle c2a = {.p = {ax, ay}, .r = ar};
+	c2Circle c2b = {.p = {bx, by}, .r = br};
 	int r        = c2CircletoCircle(c2a, c2b);
 	TRACE_END();
 	return r;
@@ -193,7 +193,14 @@ col_circle_to_capsule(struct col_cir a, struct col_capsule b)
 	f32 t                   = 0.0f;
 	v2 closest              = {0};
 	struct col_cir circle_b = col_capsule_get_circle_col(b, a.p, &t, &closest);
-	int r                   = col_circle_to_circle(a, circle_b);
+	int r                   = col_circle_to_circle(
+        a.p.x,
+        a.p.y,
+        a.r,
+        circle_b.p.x,
+        circle_b.p.y,
+        circle_b.r);
+
 	TRACE_END();
 	return r;
 }
@@ -283,11 +290,12 @@ col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 }
 
 void
-col_circle_to_circle_manifold(struct col_cir a, struct col_cir b, struct col_manifold *m)
+col_circle_to_circle_manifold(
+	f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br, struct col_manifold *m)
 {
 	TRACE_START(__func__);
-	c2Circle c2a   = cir_to_c2cir(a);
-	c2Circle c2b   = cir_to_c2cir(b);
+	c2Circle c2a   = {.p = {ax, ay}, .r = ar};
+	c2Circle c2b   = {.p = {bx, by}, .r = br};
 	c2Manifold res = {0};
 	c2CircletoCircleManifold(c2a, c2b, &res);
 	TRACE_END();
