@@ -101,10 +101,7 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	}
 
 	frame_index = mod_euc_i32(frame_index, track->frames.len);
-	if(debug) {
-		log_info("Animator", "timestamp: %f frame index: %d", (double)timestamp, (int)frame_index);
-	}
-	usize res = track->frames.items[(usize)frame_index];
+	usize res   = track->frames.items[(usize)frame_index];
 
 	return res;
 }
