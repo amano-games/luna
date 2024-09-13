@@ -254,27 +254,27 @@ acos_q16(i32 x)
 }
 
 static f32
-sin_f(f32 x)
+sin_f32(f32 x)
 {
 	f32 i = fmodf(x, PI2_FLOAT) / PI2_FLOAT;
 	return ((f32)sin_q16((i32)(i * (f32)Q16_ANGLE_TURN)) * .000015258789f);
 }
 
 static f32
-cos_f(f32 x)
+cos_f32(f32 x)
 {
 	f32 i = fmodf(x, PI2_FLOAT) / PI2_FLOAT;
 	return ((f32)cos_q16((i32)(i * (f32)Q16_ANGLE_TURN)) * .000015258789f);
 }
 
 static f32
-atan2_f(f32 y, f32 x)
+atan2_f32(f32 y, f32 x)
 {
 	return atan2f(y, x);
 }
 
 static f32
-acos_f(f32 x)
+acos_f32(f32 x)
 {
 	return acosf(x);
 }

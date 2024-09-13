@@ -87,10 +87,13 @@ struct gfx_pattern gfx_pattern_interpolate(i32 num, i32 den);
 struct gfx_pattern gfx_pattern_interpolatec(i32 num, i32 den, i32 (*ease)(i32 a, i32 b, i32 num, i32 den));
 
 void gfx_rec(struct gfx_ctx ctx, rec_i32 rec, int mode, int r);
-void gfx_rec_fill(struct gfx_ctx ctx, rec_i32 r, int mode);
+void gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, int mode);
+void gfx_cir(struct gfx_ctx ctx, int px, int py, int d, int mode);
 void gfx_cir_fill(struct gfx_ctx ctx, int px, int py, int d, int mode);
 void gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, int mode);
 void gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, int mode, int r);
+void gfx_arc(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, int mode);
+void gfx_arc_thick(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i32 thick, int mode);
 void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, int count, int mode, int r);
 
 struct gfx_ctx gfx_ctx_display(void);

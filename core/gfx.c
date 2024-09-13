@@ -378,6 +378,12 @@ prim_blit_span_y(struct span_blit info)
 }
 
 void
+gfx_px(struct gfx_ctx ctx, int x, int y, int mode)
+{
+	gfx_rec_fill(ctx, x, y, 1, 1, mode);
+}
+
+void
 gfx_rec(struct gfx_ctx ctx, rec_i32 rec, int mode, int r)
 {
 	v2_i32 verts[4] = {{rec.x, rec.y},
@@ -389,13 +395,13 @@ gfx_rec(struct gfx_ctx ctx, rec_i32 rec, int mode, int r)
 }
 
 void
-gfx_rec_fill(struct gfx_ctx ctx, rec_i32 rec, int mode)
+gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, int mode)
 {
-	int x1 = max_i32(rec.x, ctx.clip_x1);
-	int y1 = max_i32(rec.y, ctx.clip_y1);
+	int x1 = max_i32(x, ctx.clip_x1);
+	int y1 = max_i32(y, ctx.clip_y1);
 
-	int x2 = min_i32(rec.x + rec.w - 1, ctx.clip_x2);
-	int y2 = min_i32(rec.y + rec.h - 1, ctx.clip_y2);
+	int x2 = min_i32(x + w - 1, ctx.clip_x2);
+	int y2 = min_i32(y + h - 1, ctx.clip_y2);
 
 	if(x2 < x1) return;
 
@@ -416,6 +422,63 @@ gfx_rec_fill(struct gfx_ctx ctx, rec_i32 rec, int mode)
 }
 
 void
+gfx_cir(struct gfx_ctx ctx, int px, int py, int d, int mode)
+{
+	if(d <= 0) return;
+	if(d == 1) {
+		gfx_px(ctx, px, py, mode);
+		return;
+	}
+	if(d == 2) {
+		gfx_rec_fill(ctx, px - 1, py - 1, 2, 2, mode);
+		return;
+	}
+
+	// Jesko's Method, shameless copy
+	// https://schwarzers.com/algorithms/
+	i32 r = d >> 1;
+	i32 x = r;
+	i32 y = 0;
+	i32 t = r >> 4;
+
+	do {
+		i32 x1 = max_i32(px - x, ctx.clip_x1);
+		i32 x2 = min_i32(px + x, ctx.clip_x2);
+		i32 x3 = max_i32(px - y, ctx.clip_x1);
+		i32 x4 = min_i32(px + y, ctx.clip_x2);
+		i32 y4 = py - x; // ordered in y
+		i32 y2 = py - y;
+		i32 y1 = py + y;
+		i32 y3 = py + x;
+
+		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_px(ctx, x3, y4, mode);
+			gfx_px(ctx, x4, y4, mode);
+		}
+		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
+			gfx_px(ctx, x1, y2, mode);
+			gfx_px(ctx, x2, y2, mode);
+		}
+		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
+			gfx_px(ctx, x1, y1, mode);
+			gfx_px(ctx, x2, y1, mode);
+		}
+		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_px(ctx, x3, y3, mode);
+			gfx_px(ctx, x4, y3, mode);
+		}
+
+		y++;
+		t += y;
+		i32 k = t - x;
+		if(0 <= k) {
+			t = k;
+			x--;
+		}
+	} while(y <= x);
+}
+
+void
 gfx_cir_fill(struct gfx_ctx ctx, int px, int py, int d, int mode)
 {
 	if(d <= 0) return;
@@ -425,7 +488,7 @@ gfx_cir_fill(struct gfx_ctx ctx, int px, int py, int d, int mode)
 	switch(d) {
 	case 1:
 	case 2:
-		gfx_rec_fill(ctx, (rec_i32){px - r, py - r, d, d}, mode);
+		gfx_rec_fill(ctx, px - r, py - r, d, d, mode);
 		return;
 	default: break;
 	}
@@ -510,4 +573,175 @@ gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, int count, int mode, int r)
 
 		gfx_lin_thick(ctx, a.x, a.y, b.x, b.y, mode, r);
 	}
+}
+
+// Helper function to calculate the angle of a point (x, y) relative to the center (cx, cy)
+static inline f32
+calculate_angle(int cx, int cy, int x, int y)
+{
+	f32 angle = atan2_f32(y - cy, x - cx);
+	if(angle < 0) angle += PI2_FLOAT; // Normalize angle to [0, 2*PI]
+	return angle;
+}
+
+// Function to check if an angle is within the given range
+static inline int
+is_angle_in_range(f32 angle, f32 start_angle, f32 end_angle)
+{
+	if(start_angle < end_angle) {
+		return (angle >= start_angle && angle <= end_angle);
+	} else {
+		return (angle >= start_angle || angle <= end_angle);
+	}
+}
+
+static inline void
+gfx_arc_plot(
+	struct gfx_ctx ctx,
+	i32 px,
+	i32 py,
+	i32 x,
+	i32 y,
+	f32 sa,
+	f32 ea,
+	i32 thick,
+	int mode)
+{
+	f32 angle = calculate_angle(px, py, x, y);
+	if(is_angle_in_range(angle, sa, ea)) {
+		if(thick == 1) {
+			gfx_px(ctx, x, y, mode);
+		} else {
+			gfx_cir_fill(ctx, x, y, thick, mode);
+		}
+	}
+}
+
+void
+gfx_arc(
+	struct gfx_ctx ctx,
+	i32 px,
+	i32 py,
+	f32 sa,
+	f32 ea,
+	i32 d,
+	int mode)
+{
+	if(d <= 0) return;
+	if(d == 1) {
+		gfx_px(ctx, px, py, mode);
+		return;
+	}
+	if(d == 2) {
+		gfx_rec_fill(ctx, px - 1, py - 1, 2, 2, mode);
+		return;
+	}
+
+	// Jesko's Method, shameless copy
+	// https://schwarzers.com/algorithms/
+	i32 r = d >> 1;
+	i32 x = r;
+	i32 y = 0;
+	i32 t = r >> 4;
+
+	do {
+		i32 x1 = max_i32(px - x, ctx.clip_x1);
+		i32 x2 = min_i32(px + x, ctx.clip_x2);
+		i32 x3 = max_i32(px - y, ctx.clip_x1);
+		i32 x4 = min_i32(px + y, ctx.clip_x2);
+		i32 y4 = py - x; // ordered in y
+		i32 y2 = py - y;
+		i32 y1 = py + y;
+		i32 y3 = py + x;
+
+		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_arc_plot(ctx, px, py, x3, y4, sa, ea, 1, mode);
+			gfx_arc_plot(ctx, px, py, x4, y4, sa, ea, 1, mode);
+		}
+		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
+			gfx_arc_plot(ctx, px, py, x1, y2, sa, ea, 1, mode);
+			gfx_arc_plot(ctx, px, py, x2, y2, sa, ea, 1, mode);
+		}
+		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
+			gfx_arc_plot(ctx, px, py, x1, y1, sa, ea, 1, mode);
+			gfx_arc_plot(ctx, px, py, x2, y1, sa, ea, 1, mode);
+		}
+		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_arc_plot(ctx, px, py, x3, y3, sa, ea, 1, mode);
+			gfx_arc_plot(ctx, px, py, x4, y3, sa, ea, 1, mode);
+		}
+
+		y++;
+		t += y;
+		i32 k = t - x;
+		if(0 <= k) {
+			t = k;
+			x--;
+		}
+	} while(y <= x);
+}
+
+void
+gfx_arc_thick(
+	struct gfx_ctx ctx,
+	i32 px,
+	i32 py,
+	f32 sa,
+	f32 ea,
+	i32 d,
+	i32 thick,
+	int mode)
+{
+	if(d <= 0) return;
+	if(d == 1) {
+		gfx_cir_fill(ctx, px, py, thick, mode);
+		return;
+	}
+	if(d == 2) {
+		gfx_rec_fill(ctx, px - 1, py - 1, 2, 2, mode);
+		return;
+	}
+
+	// Jesko's Method, shameless copy
+	// https://schwarzers.com/algorithms/
+	i32 r = d >> 1;
+	i32 x = r;
+	i32 y = 0;
+	i32 t = r >> 4;
+
+	do {
+		i32 x1 = max_i32(px - x, ctx.clip_x1);
+		i32 x2 = min_i32(px + x, ctx.clip_x2);
+		i32 x3 = max_i32(px - y, ctx.clip_x1);
+		i32 x4 = min_i32(px + y, ctx.clip_x2);
+		i32 y4 = py - x; // ordered in y
+		i32 y2 = py - y;
+		i32 y1 = py + y;
+		i32 y3 = py + x;
+
+		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_arc_plot(ctx, px, py, x3, y4, sa, ea, thick, mode);
+			gfx_arc_plot(ctx, px, py, x4, y4, sa, ea, thick, mode);
+		}
+		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
+			gfx_arc_plot(ctx, px, py, x1, y2, sa, ea, thick, mode);
+			gfx_arc_plot(ctx, px, py, x2, y2, sa, ea, thick, mode);
+		}
+		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
+			gfx_arc_plot(ctx, px, py, x1, y1, sa, ea, thick, mode);
+			gfx_arc_plot(ctx, px, py, x2, y1, sa, ea, thick, mode);
+		}
+		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
+			gfx_arc_plot(ctx, px, py, x3, y3, sa, ea, thick, mode);
+			gfx_arc_plot(ctx, px, py, x4, y3, sa, ea, thick, mode);
+		}
+
+		y++;
+		t += y;
+		i32 k = t - x;
+		if(0 <= k) {
+			t = k;
+			x--;
+		}
+	} while(y <= x);
 }
