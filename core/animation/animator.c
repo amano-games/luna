@@ -31,7 +31,7 @@ animator_update(struct animator *animator, f32 timestamp, f32 debug)
 
 	if(bank->len > 0) {
 		TRACE_END();
-		return animation_update(animation, timestamp, debug);
+		return animation_update(animation, timestamp);
 	}
 	TRACE_END();
 	return false;
@@ -43,7 +43,7 @@ animator_get_frame(struct animator *animator, enum animation_track_type type, f3
 	assert(type == ANIMATION_TRACK_FRAME || type == ANIMATION_TRACK_SPRITE_MODE);
 
 	struct animation *animation = &animator->animation;
-	return animation_get_frame(animation, type, timestamp, debug);
+	return animation_get_frame(animation, type, timestamp);
 }
 
 void
