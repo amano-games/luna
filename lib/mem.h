@@ -3,6 +3,11 @@
 #include "sys-types.h"
 #include <stdalign.h>
 
+#define MKILOBYTE(value) ((value) * 1024LL)
+#define MMEGABYTE(value) (MKILOBYTE(value) * 1024LL)
+#define MGIGABYTE(value) (MMEGABYTE(value) * 1024LL)
+#define MTERABYTE(value) (MGIGABYTE(value) * 1024LL)
+
 // used for user defined allocations
 // alloc(ctx, size) -> ctx: pointer to some memory manager
 struct alloc {

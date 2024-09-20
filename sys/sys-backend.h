@@ -3,9 +3,11 @@
 #include "sys-types.h"
 #include "sys-debug.h"
 
+#include "str.h"
+
 struct exe_path {
-	string path;
-	string dirname;
+	str8 path;
+	str8 dirname;
 };
 
 void sys_init(void);
@@ -24,15 +26,15 @@ i32 backend_parse_string(const char *str, const char *format, ...);
 void backend_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
 
 // IO
-struct sys_file_stats backend_file_stats(const char *path);
-void *backend_file_open(const char *path, int mode);
+struct sys_file_stats backend_file_stats(str8 path);
+void *backend_file_open(str8 path, int mode);
 int backend_file_flush(void *f);
 int backend_file_close(void *f);
 int backend_file_read(void *f, void *buf, usize buf_size);
 int backend_file_write(void *f, const void *buf, usize buf_size);
 int backend_file_tell(void *f);
 int backend_file_seek(void *f, int pos, int origin);
-int backend_file_remove(const char *path);
+int backend_file_remove(str8 path);
 
 // Input
 int backend_inp(void);

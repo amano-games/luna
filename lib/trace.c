@@ -27,7 +27,7 @@ trace_fclose(SpallProfile *self)
 #endif
 
 void
-trace_init(char *file_name, u8 *buffer, usize size)
+trace_init(str8 file_name, u8 *buffer, usize size)
 {
 
 #if defined(AUTO_TRACE)

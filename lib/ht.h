@@ -33,11 +33,11 @@ hash_x_y(i32 x, i32 y, usize len)
 // https://nullprogram.com/blog/2022/08/08/
 // FNV-1a
 u64
-hash_string(string v)
+hash_string(str8 v)
 {
 	uint64_t h = 0x100;
-	for(int32_t i = 0; i < v.len; i++) {
-		h ^= v.data[i] & 255;
+	for(u64 i = 0; i < v.size; i++) {
+		h ^= v.str[i] & 255;
 		h *= 1111111111111111111;
 	}
 	return h ^ h >> 32;

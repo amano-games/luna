@@ -1,22 +1,17 @@
-#include "animation-db.h"
+#include "assets-db.h"
 
-#include "ht.h"
-#include "jsmn.h"
-
-#include "animation/animation-db-parser.h"
 #include "animation/animation.h"
 #include "arr.h"
-#include "mem-arena.h"
+#include "ht.h"
 #include "str.h"
 #include "trace.h"
 
-void
-animation_db_init(struct animation_db *db, struct marena *marena, struct marena *scratch_marena)
-{
+#include "./assets-db-parser.h"
 
-	struct alloc alloc   = marena_allocator(marena);
-	struct alloc scratch = marena_allocator(scratch_marena);
-	parse_animation_db(db, "asset-db-animations.luni", &alloc, &scratch);
+void
+assets_db_parse(struct assets_db *db, str8 file_name, struct alloc *alloc, struct alloc *scratch)
+{
+	asset_db_parser_do(db, file_name, alloc, scratch);
 
 	// Set the tracks to the correct type
 	for(usize i = 0; i < arr_len(db->clips); i++) {
@@ -28,12 +23,12 @@ struct animation_data_bank_handle
 animation_db_bank_handle_from_path(char *path)
 {
 	return (struct animation_data_bank_handle){
-		.id = hash_string(str_from(path)),
+		.id = hash_string(str8_cstr(path)),
 	};
 }
 
 struct animation_data_bank *
-animation_db_get_bank(struct animation_db *db, struct animation_data_bank_handle handle)
+animation_db_get_bank(struct assets_db *db, struct animation_data_bank_handle handle)
 {
 	TRACE_START(__func__);
 	// TODO: make a hash table instead of this
@@ -48,7 +43,7 @@ animation_db_get_bank(struct animation_db *db, struct animation_data_bank_handle
 }
 
 struct animation_data
-animation_db_get_clip(struct animation_db *db, struct animation_data_bank_handle handle, usize index)
+animation_db_get_clip(struct assets_db *db, struct animation_data_bank_handle handle, usize index)
 {
 	TRACE_START(__func__);
 	struct animation_data res        = {0};

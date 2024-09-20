@@ -1,5 +1,6 @@
 #pragma once
 
+#include "str.h"
 #include "sys-types.h"
 #include "mem.h"
 
@@ -76,7 +77,7 @@ struct gfx_ctx {
 #define gfx_pattern_black() gfx_pattern_0()
 
 struct tex tex_frame_buffer(void);
-struct tex tex_load(const char *path, struct alloc ma);
+struct tex tex_load(str8 path, struct alloc ma);
 
 void tex_clr(struct tex dst, int col);
 struct gfx_pattern gfx_pattern_2x2(i32 p0, i32 p1);

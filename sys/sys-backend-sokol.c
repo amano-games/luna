@@ -266,10 +266,10 @@ backend_where(void)
 		path[len]         = '\0';
 		path[dirname_len] = '\0';
 
-		res.path.data    = path;
-		res.path.len     = len;
-		res.dirname.data = path + dirname_len + 1;
-		res.dirname.len  = len - dirname_len - 1;
+		res.path.str     = path;
+		res.path.size    = len;
+		res.dirname.str  = path + dirname_len + 1;
+		res.dirname.size = len - dirname_len - 1;
 	}
 
 	return res;
@@ -360,13 +360,13 @@ get_file_size(const char *path)
 }
 
 struct sys_file_stats
-backend_file_stats(const char *path)
+backend_file_stats(str8 path)
 {
 	// TODO: Fill the other stats
 	struct sys_file_stats res = {0};
-	int size                  = get_file_size(path);
+	int size                  = get_file_size(path.str);
 	if(size < 0) {
-		log_error("IO", "failed to get file stats %s", path);
+		log_error("IO", "failed to get file stats %s", path.str);
 	}
 	res.size = size;
 	return res;

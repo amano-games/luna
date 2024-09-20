@@ -1,5 +1,6 @@
 #pragma once
 
+#include "str.h"
 #include "sys-types.h"
 #if defined(AUTO_TRACE)
 #define SPALL_AUTO_IMPLEMENTATION
@@ -10,7 +11,7 @@ static SpallProfile SPALL_CTX;
 static SpallBuffer SPALL_BUFFER;
 #endif
 
-void trace_init(char *file_name, uchar *buffer, usize size);
+void trace_init(str8 file_name, uchar *buffer, usize size);
 void trace_buffer_close(void);
 void trace_close(void);
 

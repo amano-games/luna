@@ -1,9 +1,7 @@
 #pragma once
 
-#if !defined(STB_SPRINTF_IMPLEMENTATION)
-#include "stb_sprintf.h"
-#endif
 #include "sys-types.h"
+#include "str.h"
 #include <inttypes.h>
 
 #define DISABLE_LOGGING 0

@@ -1,12 +1,9 @@
 #include "sys.h"
-#include "mem-arena.h"
-#include "sys-io.h"
 #include "sys-utils.h"
 #include "sys-backend.h"
 #include "sys-font.h"
 #include "sys-log.h"
 #include "sys-assert.h"
-#include <string.h>
 
 #if !defined(SYS_SHOW_FPS)
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
