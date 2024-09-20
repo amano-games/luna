@@ -20,10 +20,10 @@ assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct
 }
 
 struct animation_data_bank_handle
-animation_db_bank_handle_from_path(char *path)
+animation_db_bank_handle_from_path(str8 path)
 {
 	return (struct animation_data_bank_handle){
-		.id = hash_string(str8_cstr(path)),
+		.id = hash_string(path),
 	};
 }
 

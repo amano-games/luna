@@ -21,7 +21,7 @@ animator_init(struct animator *animator, f32 timestamp)
 }
 
 bool32
-animator_update(struct animator *animator, f32 timestamp, f32 debug)
+animator_update(struct animator *animator, f32 timestamp)
 {
 	TRACE_START(__func__);
 	usize current_animation          = animator->index;
@@ -37,7 +37,7 @@ animator_update(struct animator *animator, f32 timestamp, f32 debug)
 }
 
 usize
-animator_get_frame(struct animator *animator, enum animation_track_type type, f32 timestamp, bool32 debug)
+animator_get_frame(struct animator *animator, enum animation_track_type type, f32 timestamp)
 {
 	assert(type == ANIMATION_TRACK_FRAME || type == ANIMATION_TRACK_SPRITE_MODE);
 
