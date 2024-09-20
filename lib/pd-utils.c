@@ -29,12 +29,12 @@ extract_int_value(char *line, char *key, int *dest)
 }
 
 void
-pdxinfo_parse(struct pdxinfo *info, struct marena *scratch)
+pdxinfo_parse(struct pdxinfo *info, struct alloc *scratch)
 {
-	void *f = sys_file_open("pdxinfo", SYS_FILE_R);
+	void *f = sys_file_open(str8_lit("pdxinfo"), SYS_FILE_R);
 	if(f != NULL) {
-		struct sys_file_stats stats = sys_fstats("pdxinfo");
-		char *buffer                = marena_alloc(scratch, stats.size);
+		struct sys_file_stats stats = sys_fstats(str8_lit("pdxinfo"));
+		char *buffer                = scratch->allocf(scratch->ctx, stats.size);
 		sys_file_read(f, (void *)buffer, stats.size);
 
 		char *line = strtok(buffer, "\n");

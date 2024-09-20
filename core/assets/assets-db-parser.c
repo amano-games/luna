@@ -13,9 +13,9 @@
 #include "sys-utils.h"
 
 str8
-get_animation_json(str8 file_name, struct alloc *alloc, struct alloc *scratch)
+get_animation_json(str8 file_name, struct alloc alloc, struct alloc scratch)
 {
-	str8 path_name = str8_fmt_push(scratch, "%s.%s", file_name, FILE_PATH_TEX);
+	str8 path_name = str8_fmt_push(scratch, "%s%s", FILE_PATH_TEX, file_name.str);
 
 	void *f = sys_file_open(path_name, SYS_FILE_R);
 	if(f == NULL) {
@@ -27,7 +27,7 @@ get_animation_json(str8 file_name, struct alloc *alloc, struct alloc *scratch)
 
 	log_info("Animation", "animation db size: %d", (int)file_size);
 
-	u8 *data = alloc->allocf(alloc->ctx, file_size);
+	u8 *data = alloc.allocf(alloc.ctx, file_size);
 
 	usize result = sys_file_read(f, data, file_size);
 
@@ -177,7 +177,7 @@ handle_info(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 void
-asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc *alloc, struct alloc *scratch)
+asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	log_info("Animation DB", "init: %s", file_name.str);
 

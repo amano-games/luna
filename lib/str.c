@@ -1,6 +1,7 @@
 #include "sys-utils.h"
 #include "str.h"
 #include "sys-utils.h"
+#include "sys-assert.h"
 #include <string.h>
 
 static u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -163,22 +164,22 @@ str8_cpy(str8 *src, str8 *dst)
 }
 
 inline str8
-str8_cpy_push(struct alloc *alloc, str8 src)
+str8_cpy_push(struct alloc alloc, str8 src)
 {
 	str8 dst;
 	dst.size = src.size;
-	dst.str  = alloc->allocf(alloc->ctx, src.size + 1 * sizeof(u8));
-	memcpy(src.str, dst.str, src.size);
+	dst.str  = alloc.allocf(alloc.ctx, src.size + 1 * sizeof(u8));
+	memcpy(dst.str, src.str, src.size);
 	dst.str[dst.size] = 0;
 	return dst;
 }
 
 inline str8
-str8_cat_push(struct alloc *alloc, str8 s1, str8 s2)
+str8_cat_push(struct alloc alloc, str8 s1, str8 s2)
 {
 	str8 str;
 	str.size = s1.size + s2.size;
-	str.str  = alloc->allocf(alloc->ctx, str.size + 1 * sizeof(u8));
+	str.str  = alloc.allocf(alloc.ctx, str.size + 1 * sizeof(u8));
 	memcpy(str.str, s1.str, s1.size);
 	memcpy(str.str + s1.size, s2.str, s2.size);
 	str.str[str.size] = 0;
@@ -186,13 +187,13 @@ str8_cat_push(struct alloc *alloc, str8 s1, str8 s2)
 }
 
 str8
-str8_fmtv_push(struct alloc *alloc, char *fmt, va_list args)
+str8_fmtv_push(struct alloc alloc, char *fmt, va_list args)
 {
 	va_list args2;
 	va_copy(args2, args);
 	u32 needed_bytes        = stbsp_vsnprintf(0, 0, fmt, args) + 1;
 	str8 result             = {0};
-	result.str              = alloc->allocf(alloc->ctx, needed_bytes * sizeof(u8));
+	result.str              = alloc.allocf(alloc.ctx, needed_bytes * sizeof(u8));
 	result.size             = stbsp_vsnprintf((char *)result.str, needed_bytes, fmt, args2);
 	result.str[result.size] = 0;
 	va_end(args2);
@@ -200,8 +201,9 @@ str8_fmtv_push(struct alloc *alloc, char *fmt, va_list args)
 }
 
 str8
-str8_fmt_push(struct alloc *alloc, char *fmt, ...)
+str8_fmt_push(struct alloc alloc, char *fmt, ...)
 {
+	assert(alloc.allocf != NULL);
 	va_list args;
 	va_start(args, fmt);
 	str8 result = str8_fmtv_push(alloc, fmt, args);

@@ -169,7 +169,7 @@ struct sys_file_stats
 backend_file_stats(str8 path)
 {
 	FileStat pd_stat = {0};
-	int res          = PD->file->stat((char *)path.str, &pd_stat);
+	int res          = PD->file->stat((const char *)path.str, &pd_stat);
 	if(res == -1) {
 		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
 	}
@@ -188,7 +188,7 @@ backend_file_stats(str8 path)
 void *
 backend_file_open(str8 path, int mode)
 {
-	void *r = (void *)PD->file->open((char *)path.str, mode);
+	void *r = (void *)PD->file->open((const char *)path.str, mode);
 	if(r == NULL) {
 		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
 	}
@@ -241,7 +241,7 @@ backend_file_seek(void *f, int pos, int origin)
 int
 backend_file_remove(str8 path)
 {
-	int r = PD->file->unlink((char *)path.str, 0);
+	int r = PD->file->unlink((const char *)path.str, 0);
 	return r;
 }
 

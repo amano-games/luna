@@ -34,10 +34,10 @@ arr_zero(void *arr, usize size)
 }
 
 void *
-arr_ini(usize size, usize elem_size, struct alloc *alloc)
+arr_ini(usize size, usize elem_size, struct alloc alloc)
 {
 	usize new_size            = sizeof(struct arr_header) + size * elem_size;
-	struct arr_header *header = alloc->allocf(alloc->ctx, new_size);
+	struct arr_header *header = alloc.allocf(alloc.ctx, new_size);
 	header->len               = 0;
 	header->cap               = size;
 	char *res                 = (char *)header + sizeof(struct arr_header);
@@ -54,7 +54,7 @@ arr_grow(void *a, usize size)
 }
 
 void *
-arr_grow_packed(void *a, usize new_len, usize elem_size, struct alloc *alloc)
+arr_grow_packed(void *a, usize new_len, usize elem_size, struct alloc alloc)
 {
 	struct arr_header *header = a ? arr_header(a) : arr_header(arr_ini(new_len, elem_size, alloc));
 	usize new_cap             = new_len;
@@ -62,7 +62,7 @@ arr_grow_packed(void *a, usize new_len, usize elem_size, struct alloc *alloc)
 	usize len   = arr_len(a);
 	usize count = new_len - len;
 
-	void *res = alloc->allocf(alloc->ctx, count * elem_size);
+	void *res = alloc.allocf(alloc.ctx, count * elem_size);
 	// TODO: Check if packed
 
 	header->cap = new_cap;

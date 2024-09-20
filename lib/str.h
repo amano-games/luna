@@ -1,12 +1,10 @@
 #pragma once
-#define STB_SPRINTF_IMPLEMENTATION
-#define STB_SPRINTF_STATIC
-#include "stb_sprintf.h"
 
 #include "sys-types.h"
 #include "sys-log.h"
 #include "mem.h"
 
+#include <stdarg.h>
 #include <string.h>
 
 typedef struct str8 {
@@ -36,7 +34,9 @@ u8 char_to_correct_slash(u8 c);
 u64 cstr8_len(u8 *c);
 
 // String Constructors
-#define str8_lit(S) string8((u8 *)(S), sizeof(S) - 1)
+#define str8_lit(S)         string8((u8 *)(S), sizeof(S) - 1)
+#define str8_array(S, C)    string8((u8 *)(S), sizeof(*(S)) * (C))
+#define str8_array_fixed(S) string8((u8 *)(S), sizeof(S))
 
 str8 string8(u8 *str, u64 size);
 str8 str8_range(u8 *first, u8 *one_past_last);
@@ -47,10 +47,10 @@ str8 str8_cstr_cappend(void *cstr, void *cap);
 bool32 str8_match(str8 a, str8 b, str_match_flags flags);
 
 void str8_cpy(str8 *a, str8 *b);
-str8 str8_cpy_push(struct alloc *alloc, str8 src);
-str8 str8_cat_push(struct alloc *alloc, str8 s1, str8 s2);
-str8 str8_fmtv_push(struct alloc *alloc, char *fmt, va_list args);
-str8 str8_fmt_push(struct alloc *alloc, char *fmt, ...);
+str8 str8_cpy_push(struct alloc alloc, str8 src);
+str8 str8_cat_push(struct alloc alloc, str8 s1, str8 s2);
+str8 str8_fmtv_push(struct alloc alloc, char *fmt, va_list args);
+str8 str8_fmt_push(struct alloc alloc, char *fmt, ...);
 
 f32 str8_to_f32(str8 str);
 

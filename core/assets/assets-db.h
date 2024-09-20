@@ -27,7 +27,7 @@ struct assets_db {
 	struct animation_data *clips;
 };
 
-void assets_db_parse(struct assets_db *db, str8 file_name, struct alloc *alloc, struct alloc *scratch);
+void assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);
 struct animation_data_bank_handle animation_db_bank_handle_from_path(char *path);
 
 struct animation_data_bank *animation_db_get_bank(struct assets_db *db, struct animation_data_bank_handle handle);
