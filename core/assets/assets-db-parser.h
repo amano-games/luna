@@ -30,4 +30,4 @@ struct animation_db_res {
 	struct animation_data_bank *banks;
 };
 
-void asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc *alloc, struct alloc *scratch);
+void asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);

@@ -6,6 +6,10 @@
 #include <stdalign.h>
 #include <stddef.h>
 
+#define STB_SPRINTF_IMPLEMENTATION
+#define STB_SPRINTF_STATIC
+#include "stb_sprintf.h"
+
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;

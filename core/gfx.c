@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "gfx.h"
+#include "sys-log.h"
 #include "sys.h"
 #include "sys-intrin.h"
 #include "sys-io.h"
@@ -74,11 +75,12 @@ tex_create(int w, int h, struct alloc ma)
 }
 
 struct tex
-tex_load(str8 path, struct alloc ma)
+tex_load(str8 path, struct alloc alloc)
 {
 	void *f = sys_file_open(path, SYS_FILE_R);
 	if(f == NULL) {
 		log_error("Assets", "failed to open texture %s", path.str);
+		return (struct tex){0};
 	}
 
 	uint w;
@@ -89,7 +91,7 @@ tex_load(str8 path, struct alloc ma)
 	int width_alinged = (w + 31) & ~31;
 	usize size        = ((width_alinged * h) * 2) / 8;
 
-	struct tex t = tex_create(w, h, ma);
+	struct tex t = tex_create(w, h, alloc);
 	sys_file_read(f, t.px, size);
 	sys_file_close(f);
 	return t;

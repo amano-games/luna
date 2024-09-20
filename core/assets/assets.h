@@ -4,6 +4,7 @@
 #include "assets/assets-db.h"
 
 #include "gfx.h"
+#include "mem.h"
 #include "mem-arena.h"
 
 #define FILE_PATH_TEX "assets/"
@@ -32,11 +33,12 @@ struct assets {
 	struct assets_db assets_db;
 
 	struct marena marena;
+	struct alloc alloc;
 };
 
 struct assets ASSETS;
 
-void *asset_mem_alloc(usize s);
+struct alloc assets_allocator(struct assets *assets);
 
 void assets_init(void *mem, usize size);
 struct tex asset_tex(i32 id);

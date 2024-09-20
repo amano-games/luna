@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mem-arena.h"
+#include "mem.h"
 
 struct pdxinfo {
 	char name[50];
@@ -12,4 +12,4 @@ struct pdxinfo {
 	char image_path[100];
 };
 
-void pdxinfo_parse(struct pdxinfo *pdxinfo, struct marena *scratch);
+void pdxinfo_parse(struct pdxinfo *pdxinfo, struct alloc *scratch);

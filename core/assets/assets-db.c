@@ -9,7 +9,7 @@
 #include "./assets-db-parser.h"
 
 void
-assets_db_parse(struct assets_db *db, str8 file_name, struct alloc *alloc, struct alloc *scratch)
+assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	asset_db_parser_do(db, file_name, alloc, scratch);
 
