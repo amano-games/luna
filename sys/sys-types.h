@@ -54,8 +54,3 @@ typedef struct {
 	f32 m10;
 	f32 m11;
 } mat22;
-
-typedef struct {
-	ptrdiff_t len;
-	char *data;
-} string;

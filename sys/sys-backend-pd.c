@@ -166,12 +166,12 @@ backend_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint3
 }
 
 struct sys_file_stats
-backend_file_stats(const char *path)
+backend_file_stats(str8 path)
 {
 	FileStat pd_stat = {0};
-	int res          = PD->file->stat(path, &pd_stat);
+	int res          = PD->file->stat((char *)path.str, &pd_stat);
 	if(res == -1) {
-		log_error("IO", "%s: %s", PD->file->geterr(), path);
+		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
 	}
 	return (struct sys_file_stats){
 		.isdir    = pd_stat.isdir,
@@ -186,11 +186,11 @@ backend_file_stats(const char *path)
 }
 
 void *
-backend_file_open(const char *path, int mode)
+backend_file_open(str8 path, int mode)
 {
-	void *r = (void *)PD->file->open(path, mode);
+	void *r = (void *)PD->file->open((char *)path.str, mode);
 	if(r == NULL) {
-		log_error("IO", "%s: %s", PD->file->geterr(), path);
+		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
 	}
 
 	return r;
@@ -239,9 +239,9 @@ backend_file_seek(void *f, int pos, int origin)
 }
 
 int
-backend_file_remove(const char *path)
+backend_file_remove(str8 path)
 {
-	int r = PD->file->unlink(path, 0);
+	int r = PD->file->unlink((char *)path.str, 0);
 	return r;
 }
 

@@ -45,8 +45,8 @@ struct sys_file_stats {
 
 typedef void *sys_file;
 
-struct sys_file_stats sys_fstats(const char *path);
-sys_file *sys_fopen(const char *path, const char *mode);
+struct sys_file_stats sys_fstats(str8 path);
+sys_file *sys_fopen(str8 path, const char *mode);
 int sys_fclose(sys_file *f);
 usize sys_fread(void *buf, usize size, usize count, sys_file *f);
 usize sys_fwrite(const void *buf, usize size, usize count, sys_file *f);

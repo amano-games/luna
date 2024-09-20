@@ -1,12 +1,11 @@
 #include "animator.h"
-#include "animation/animation-db.h"
+
+#include "assets/assets.h"
+#include "assets/assets-db.h"
+
 #include "animation/animation.h"
-#include "assets.h"
-#include "sys-backend.h"
-#include "sys-log.h"
-#include "sys-utils.h"
+
 #include "trace.h"
-#include <assert.h>
 
 void animator_set_animation(struct animator *animator, usize index);
 
@@ -27,7 +26,7 @@ animator_update(struct animator *animator, f32 timestamp, f32 debug)
 	TRACE_START(__func__);
 	usize current_animation          = animator->index;
 	struct animation *animation      = &animator->animation;
-	struct animation_data_bank *bank = animation_db_get_bank(&ASSETS.animation_db, animator->clips);
+	struct animation_data_bank *bank = animation_db_get_bank(&ASSETS.assets_db, animator->clips);
 
 	if(bank->len > 0) {
 		TRACE_END();
@@ -51,7 +50,7 @@ animator_play_animation(struct animator *animator, usize index, f32 timestamp)
 {
 	TRACE_START(__func__);
 	assert(index != 0);
-	struct animation_data_bank *bank = animation_db_get_bank(&ASSETS.animation_db, animator->clips);
+	struct animation_data_bank *bank = animation_db_get_bank(&ASSETS.assets_db, animator->clips);
 	assert(index <= bank->len);
 	if(index != animator->index) {
 		animator_set_animation(animator, index);
@@ -66,6 +65,6 @@ animator_set_animation(struct animator *animator, usize index)
 	assert(index != 0);
 	animator->index = index;
 	// TODO: Replace with function
-	animator->animation.data = animation_db_get_clip(&ASSETS.animation_db, animator->clips, index);
+	animator->animation.data = animation_db_get_clip(&ASSETS.assets_db, animator->clips, index);
 	animation_init(&animator->animation);
 }

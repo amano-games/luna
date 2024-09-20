@@ -2,7 +2,7 @@
 #include "sys-backend.h"
 
 sys_file *
-sys_fopen(const char *path, const char *mode)
+sys_fopen(str8 path, const char *mode)
 {
 	switch(mode[0]) {
 	case 'r': return (sys_file *)backend_file_open(path, SYS_FILE_R);
@@ -45,7 +45,7 @@ sys_fseek(sys_file *f, int pos, int origin)
 }
 
 struct sys_file_stats
-sys_fstats(const char *path)
+sys_fstats(str8 path)
 {
 	return backend_file_stats(path);
 }

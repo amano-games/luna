@@ -7,35 +7,34 @@
 #include "str.h"
 
 static i32
-json_eq(const char *json, jsmntok_t *tok, const char *s)
+json_eq(str8 json, jsmntok_t *tok, str8 b)
 {
-	if(
-		tok->type == JSMN_STRING &&
-		(i32)str_len(s) == tok->end - tok->start &&
-		str_cmp(json + tok->start, s, tok->end - tok->start) == 0) {
+	str8 a = {.str = json.str + tok->start, .size = tok->end - tok->start};
+
+	if(tok->type == JSMN_STRING && str8_match(a, b, 0)) {
 		return 0;
 	}
 	return -1;
 }
 
 static i32
-json_parse_i32(char *json, jsmntok_t *tok)
+json_parse_i32(str8 json, jsmntok_t *tok)
 {
-	char *end = json + (tok->end - tok->start);
+	char *end = (char *)json.str + (tok->end - tok->start);
 	i32 num   = 0;
-	sys_parse_string(json + tok->start, "%d", &num);
+	sys_parse_string((char *)json.str + tok->start, "%d", &num);
 
 	return num;
 }
 
 static f32
-json_parse_f32(char *json, jsmntok_t *tok)
+json_parse_f32(str8 json, jsmntok_t *tok)
 {
-	char *end = json + (tok->end - tok->start);
+	char *end = (char *)json.str + (tok->end - tok->start);
 	// TODO: Replace with sys_parse_string to use sscanf when it's not broken
-	f32 num = str_to_f32((string){
-		.data = json + tok->start,
-		.len  = tok->end - tok->start,
+	f32 num = str8_to_f32((str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
 	});
 	return num;
 }

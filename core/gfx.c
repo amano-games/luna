@@ -74,11 +74,11 @@ tex_create(int w, int h, struct alloc ma)
 }
 
 struct tex
-tex_load(const char *path, struct alloc ma)
+tex_load(str8 path, struct alloc ma)
 {
 	void *f = sys_file_open(path, SYS_FILE_R);
 	if(f == NULL) {
-		log_error("Assets", "failed to open texture %s", path);
+		log_error("Assets", "failed to open texture %s", path.str);
 	}
 
 	uint w;
