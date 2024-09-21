@@ -20,14 +20,14 @@ struct animation_data_res {
 	struct animation_data item;
 };
 
-struct animation_data_bank_res {
+struct animation_data_slice_res {
 	usize token_count;
-	struct animation_data_bank item;
+	struct animation_data_slice item;
 };
 
 struct animation_db_res {
 	struct animation_data *clips;
-	struct animation_data_bank *banks;
+	struct animation_data_slice *banks;
 };
 
 void asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);

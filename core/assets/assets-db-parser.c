@@ -105,8 +105,8 @@ handle_animation_data(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 // TODO: allocate and push to the db
-struct animation_data_bank_res
-handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct animation_data *arr)
+struct animation_data_slice_res
+handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct assets_db *assets_db)
 {
 
 	jsmntok_t *root = &tokens[index];
@@ -119,7 +119,7 @@ handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct animation_
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)bank_json.str, bank_json.size, NULL, 0);
 
-	struct animation_data_bank_res res = {.token_count = token_count};
+	struct animation_data_slice_res res = {.token_count = token_count};
 
 	for(i32 i = index + 1; i < index + token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
@@ -137,7 +137,7 @@ handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct animation_
 				jsmntok_t *clip = &tokens[clip_index];
 				assert(clip->type == JSMN_OBJECT);
 				struct animation_data_res res = handle_animation_data(json, tokens, clip_index);
-				arr_push(arr, res.item);
+				assets_db_push_animation_data(assets_db, res.item);
 				i += res.token_count;
 			}
 		}
@@ -192,32 +192,27 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	assert(json_res == token_count);
 
-	struct asset_db_info info = {0};
-
 	for(i32 i = 1; i < token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("animations")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
-				i32 bank_index                     = i + 2;
-				usize bank_clip_index              = arr_len(db->clips);
-				struct animation_data_bank_res res = handle_animation_bank(json, tokens, bank_index, db->clips);
-				res.item.index                     = bank_clip_index;
-				arr_push(db->banks, res.item);
+				i32 bank_index                      = i + 2;
+				usize bank_clip_index               = arr_len(db->clips);
+				struct animation_data_slice_res res = handle_animation_bank(json, tokens, bank_index, db);
+				res.item.index                      = bank_clip_index;
+				arr_push(db->slices, res.item);
 				i += res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("info")) == 0) {
-			struct animation_db_info_res info_res = handle_info(json, tokens, i + 1);
-			info                                  = info_res.item;
-			db->clips                             = arr_ini(info.animation_clip_count, sizeof(*db->clips), alloc);
-			db->banks                             = arr_ini(info.animation_bank_count, sizeof(*db->banks), alloc);
-			i += info_res.token_count;
+			struct animation_db_info_res info_data = handle_info(json, tokens, i + 1);
+			struct asset_db_info info              = info_data.item;
+			assets_db_init(db, info.animation_bank_count, info.animation_bank_count, alloc);
+			i += info_data.token_count;
 		}
 	}
-
-	assert(arr_len(db->clips) == info.animation_clip_count);
-	assert(arr_len(db->banks) == info.animation_bank_count);
-
-	log_info("Animation DB", "tokens:%" PRId32 " banks: %zu clips: %zu", token_count, info.animation_bank_count, info.animation_clip_count);
+	assert(arr_len(db->clips) == arr_cap(db->clips));
+	assert(arr_len(db->slices) == arr_cap(db->slices));
+	log_info("Animation DB", "tokens:%" PRId32 " banks: %zu clips: %zu", token_count, arr_len(db->slices), arr_len(db->clips));
 }
