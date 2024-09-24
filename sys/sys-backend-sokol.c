@@ -191,18 +191,18 @@ sokol_main(i32 argc, char **argv)
 
 	if(!getenv("STEAM_RUNTIME")) {
 		struct exe_path exe_path = backend_where();
-		if(exe_path.path.len != 0) {
+		if(exe_path.path.size != 0) {
 
-			i32 runtime_path_size = 1 + exe_path.path.len + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
+			i32 runtime_path_size = 1 + exe_path.path.size + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
 			char *runtime_path    = (char *)malloc(runtime_path_size);
-			stbsp_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)exe_path.path.len, exe_path.path.data, STEAM_RUNTIME_RELATIVE_PATH);
+			stbsp_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)exe_path.path.size, exe_path.path.str, STEAM_RUNTIME_RELATIVE_PATH);
 
-			log_info("SYS", "dirname:  %.*s", (i32)exe_path.path.len, exe_path.path.data);
-			log_info("SYS", "basename:  %.*s", (i32)exe_path.dirname.len, exe_path.dirname.data);
+			log_info("SYS", "dirname:  %.*s", (i32)exe_path.path.size, exe_path.path.str);
+			log_info("SYS", "basename:  %.*s", (i32)exe_path.dirname.size, exe_path.dirname.str);
 			log_info("SYS", "STEAM_RUNTIME %s", runtime_path);
 
 			setenv("STEAM_RUNTIME", runtime_path, 1);
-			free(exe_path.path.data);
+			free(exe_path.path.str);
 		}
 	}
 
@@ -251,25 +251,23 @@ struct exe_path
 backend_where(void)
 {
 	struct exe_path res = {0};
-	i32 len             = 0;
 	i32 dirname_len     = 0;
-	char *path          = NULL;
+	str8 path           = {0};
 #if !defined(TARGET_WASM)
-	len = wai_getExecutablePath(NULL, 0, &dirname_len);
+	path.size = wai_getExecutablePath(NULL, 0, &dirname_len);
 #endif
 
-	if(len > 0) {
-		path = (char *)malloc(len + 1);
+	if(path.size > 0) {
+		path.str = (u8 *)malloc(path.size + 1);
 #if !defined(TARGET_WASM)
-		wai_getExecutablePath(path, len, &dirname_len);
+		wai_getExecutablePath((char *)path.str, path.size, &dirname_len);
 #endif
-		path[len]         = '\0';
-		path[dirname_len] = '\0';
+		path.str[path.size]   = '\0';
+		path.str[dirname_len] = '\0';
 
-		res.path.str     = path;
-		res.path.size    = len;
-		res.dirname.str  = path + dirname_len + 1;
-		res.dirname.size = len - dirname_len - 1;
+		res.path         = path;
+		res.dirname.str  = path.str + dirname_len + 1;
+		res.dirname.size = path.size - dirname_len - 1;
 	}
 
 	return res;
@@ -341,7 +339,7 @@ backend_log(const char *tag, u32 log_level, u32 log_item, const char *msg, u32 l
 }
 
 long
-get_file_size(const char *path)
+get_file_size(const str8 path)
 {
 	FILE *fp = backend_file_open(path, SYS_FILE_R);
 
@@ -364,7 +362,7 @@ backend_file_stats(str8 path)
 {
 	// TODO: Fill the other stats
 	struct sys_file_stats res = {0};
-	int size                  = get_file_size(path.str);
+	int size                  = get_file_size(path);
 	if(size < 0) {
 		log_error("IO", "failed to get file stats %s", path.str);
 	}
@@ -373,19 +371,19 @@ backend_file_stats(str8 path)
 }
 
 void *
-backend_file_open(const char *path, i32 mode)
+backend_file_open(const str8 path, i32 mode)
 {
 	switch(mode) {
 	case SYS_FILE_R: {
-		void *res = (void *)fopen(path, "rb");
+		void *res = (void *)fopen((char *)path.str, "rb");
 		return res;
 	}
 	case SYS_FILE_W: {
-		void *res = (void *)fopen(path, "w");
+		void *res = (void *)fopen((char *)path.str, "w");
 		return res;
 	}
 	case SYS_FILE_A: {
-		void *res = (void *)fopen(path, "ab");
+		void *res = (void *)fopen((char *)path.str, "ab");
 		return res;
 	}
 	default:
@@ -441,7 +439,7 @@ backend_file_seek(void *f, i32 pos, i32 origin)
 }
 
 i32
-backend_file_remove(const char *path)
+backend_file_remove(const str8 path)
 {
 	NOT_IMPLEMENTED;
 	return 0;

@@ -56,9 +56,6 @@ RELEASE_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += -DDEBUG=1
 DEBUG_CFLAGS += $(WARN_FLAGS)
-ifeq ($(DETECTED_OS), Linux)
-DEBUG_CFLAGS  += -fsanitize=undefined -fsanitize-trap
-endif
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -108,6 +105,9 @@ PD_LDFLAGS     += -Wl,--emit-relocs
 
 SIM_CFLAGS     :=
 SIM_CFLAGS     += $(SIM_DEFS)
+ifeq ($(DETECTED_OS), Linux)
+SIM_CFLAGS     += -fsanitize-trap -fsanitize=address,unreachable
+endif
 
 .DEFAULT_GOAL := all
 .PHONY: all clean build run

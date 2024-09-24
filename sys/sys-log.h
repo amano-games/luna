@@ -25,6 +25,7 @@ void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint
 		sys_log(tag, level, 0, strret, __LINE__, __FILE__); \
 	}
 #if defined(BACKEND_SOKOL)
+#include <stdio.h>
 #define sys_printf(...) \
 	{ \
 		char strret[1024] = {0}; \

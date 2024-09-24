@@ -126,9 +126,9 @@ handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct assets_db 
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("id")) == 0) {
 		} else if(json_eq(json, key, str8_lit("path")) == 0) {
-			str8 path   = {.str = json.str + value->start, .size = value->end - value->start};
-			u64 hash    = hash_string(path);
-			res.item.id = hash;
+			str8 path          = {.str = json.str + value->start, .size = value->end - value->start};
+			u64 hash           = hash_string(path);
+			res.item.path_hash = hash;
 		} else if(json_eq(json, key, str8_lit("len")) == 0) {
 			res.item.len = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
@@ -137,7 +137,7 @@ handle_animation_bank(str8 json, jsmntok_t *tokens, i32 index, struct assets_db 
 				jsmntok_t *clip = &tokens[clip_index];
 				assert(clip->type == JSMN_OBJECT);
 				struct animation_data_res res = handle_animation_data(json, tokens, clip_index);
-				assets_db_push_animation_data(assets_db, res.item);
+				assets_db_push_animation_clip(assets_db, res.item);
 				i += res.token_count;
 			}
 		}
