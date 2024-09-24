@@ -31,13 +31,13 @@ RELEASE_CFLAGS += -std=gnu11
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
-DEBUG_FLAGS  += -fsanitize=undefined -fsanitize-trap
+DEBUG_CFLAGS  += -fsanitize=undefined -fsanitize-trap
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-	CFLAGS := $(DEBUG_CFLAGS)
+CFLAGS := $(DEBUG_CFLAGS)
 else
-	CFLAGS := $(RELEASE_CFLAGS)
+CFLAGS := $(RELEASE_CFLAGS)
 endif
 
 CFLAGS += $(CDEFS)
@@ -76,7 +76,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 run: build
-	cd $(BUILD_DIR) && ./$(TARGET)
+	cd $(BUILD_DIR) && LD_PRELOAD=/usr/lib/libasan.so ./$(TARGET)
 
 build: $(OBJS)
 release: clean $(PUBLISH_OBJS)

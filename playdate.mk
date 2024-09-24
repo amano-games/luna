@@ -57,7 +57,7 @@ DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += -DDEBUG=1
 DEBUG_CFLAGS += $(WARN_FLAGS)
 ifeq ($(DETECTED_OS), Linux)
-DEBUG_FLAGS  += -fsanitize=undefined -fsanitize-trap
+DEBUG_CFLAGS  += -fsanitize=undefined -fsanitize-trap
 endif
 
 DEBUG ?= 0
@@ -162,7 +162,7 @@ clean:
 ifeq ($(DETECTED_OS), Linux)
 run: build_sim
 	$(LUNA_DIR)/close-sim.sh
-	$(SIM) "$(abspath $(OBJS))"
+	LD_PRELOAD=/usr/lib/libasan.so $(SIM) "$(abspath $(OBJS))"
 endif
 
 ifeq ($(DETECTED_OS), Darwin)
