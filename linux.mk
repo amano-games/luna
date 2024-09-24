@@ -31,7 +31,7 @@ RELEASE_CFLAGS += -std=gnu11
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
-DEBUG_CFLAGS  += -fsanitize=undefined -fsanitize-trap
+DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)

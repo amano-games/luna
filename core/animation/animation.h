@@ -25,7 +25,7 @@ struct animation_track {
 	struct frames frames;
 };
 
-struct animation_data {
+struct animation_clip {
 	struct animation_track tracks[2];
 	f32 clip_duration;
 	// used to calculate the total duration
@@ -43,13 +43,13 @@ struct animation_data {
 struct animation {
 	bool32 is_stopped;
 	struct animation_timer timer;
-	struct animation_data data;
+	struct animation_clip clip;
 };
 
 void animation_init(struct animation *animation);
-void animation_data_init(struct animation_data *data);
+void animation_clip_init(struct animation_clip *data);
 bool32 animation_update(struct animation *ani, f32 timestamp);
 usize animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 void animation_start(struct animation *ani, f32 timestamp);
 
-f32 animation_data_get_clip_duration(struct animation_data *data);
+f32 animation_data_get_clip_duration(struct animation_clip *data);

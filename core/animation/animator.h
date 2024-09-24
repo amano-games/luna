@@ -10,7 +10,7 @@ struct animator {
 	usize index;
 	struct assets_db *assets_db;
 	struct animation animation;
-	struct animation_data_slice_handle clips_handle;
+	struct asset_handle clips_handle;
 	usize transitions[MAX_ANIMATIONS];
 };
 

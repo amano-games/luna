@@ -4,7 +4,7 @@
 #include "sys-utils.h"
 
 void
-animation_data_init(struct animation_data *data)
+animation_clip_init(struct animation_clip *data)
 {
 	for(usize i = 0; i < ARRLEN(data->tracks); ++i) {
 		struct animation_track *track = &data->tracks[i];
@@ -37,10 +37,10 @@ bool32 // finished?
 animation_update(struct animation *ani, f32 timestamp)
 {
 	if(ani->is_stopped) { return false; }
-	if(ani->data.count == -1) { return false; }
+	if(ani->clip.count == -1) { return false; }
 
 	struct animation_timer *timer = &ani->timer;
-	f32 duration                  = ani->data.clip_duration * ani->data.count;
+	f32 duration                  = ani->clip.clip_duration * ani->clip.count;
 	f32 start                     = timer->timestamp;
 	f32 current                   = timestamp;
 	f32 delta                     = current - start;
@@ -75,7 +75,7 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
 	usize track_index             = track_type - 1;
-	struct animation_track *track = &ani->data.tracks[track_index];
+	struct animation_track *track = &ani->clip.tracks[track_index];
 
 	if(ani->is_stopped) {
 		return animation_get_last_frame(track);
@@ -91,9 +91,9 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	f32 current = timestamp;
 	f32 delta   = current - start;
 	// c32 frame_index = delta / (ani->data.frame_duration * ani->data.scale);
-	i32 frame_index = delta * ani->data.frame_duration_inv;
+	i32 frame_index = delta * ani->clip.frame_duration_inv;
 
-	bool32 loop = ani->data.count == -1;
+	bool32 loop = ani->clip.count == -1;
 
 	if(!loop) {
 		frame_index = clamp_i32(frame_index, 0, track->frames.len - 1);
@@ -106,7 +106,7 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 }
 
 f32
-animation_data_get_clip_duration(struct animation_data *data)
+animation_data_get_clip_duration(struct animation_clip *data)
 {
 	f32 duration = 0;
 	for(usize i = 0; i < ARRLEN(data->tracks); ++i) {

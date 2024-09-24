@@ -15,7 +15,7 @@ assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct
 
 	// Set the tracks to the correct type
 	for(usize i = 0; i < arr_len(db->clips); i++) {
-		animation_data_init(&db->clips[i]);
+		animation_clip_init(&db->clips[i]);
 	}
 }
 
@@ -27,34 +27,35 @@ assets_db_init(struct assets_db *db, usize bank_count, usize clip_count, struct 
 }
 
 void
-assets_db_push_animation_data(struct assets_db *db, struct animation_data clip)
+assets_db_push_animation_clip(struct assets_db *db, struct animation_clip clip)
 {
 	arr_push(db->clips, clip);
-	animation_data_init(&db->clips[arr_len(db->clips) - 1]);
+	animation_clip_init(&db->clips[arr_len(db->clips) - 1]);
 }
 
 void
-assets_db_push_animation_data_slice(struct assets_db *db, struct animation_data_slice slice)
+assets_db_push_animation_clip_slice(struct assets_db *db, struct animation_clips_slice slice)
 {
 	arr_push(db->slices, slice);
-	animation_data_init(&db->clips[arr_len(db->clips) - 1]);
+	animation_clip_init(&db->clips[arr_len(db->clips) - 1]);
 }
 
-struct animation_data_slice_handle
-animation_db_bank_handle_from_path(str8 path)
+struct asset_handle
+assets_db_handle_from_path(str8 path, enum asset_type type)
 {
-	return (struct animation_data_slice_handle){
-		.id = hash_string(path),
+	return (struct asset_handle){
+		.path_hash = hash_string(path),
+		.type      = type,
 	};
 }
 
-struct animation_data_slice *
-animation_db_get_data_slice(struct assets_db *db, struct animation_data_slice_handle handle)
+struct animation_clips_slice *
+animation_db_get_data_slice(struct assets_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
 	// TODO: make a hash table instead of this
 	for(usize i = 0; i < arr_len(db->slices); ++i) {
-		if(db->slices[i].id == handle.id) {
+		if(db->slices[i].path_hash == handle.path_hash) {
 			TRACE_END();
 			return &db->slices[i];
 		}
@@ -63,12 +64,12 @@ animation_db_get_data_slice(struct assets_db *db, struct animation_data_slice_ha
 	return NULL;
 }
 
-struct animation_data
-animation_db_get_clip(struct assets_db *db, struct animation_data_slice_handle handle, usize index)
+struct animation_clip
+assets_db_get_animation_clip(struct assets_db *db, struct asset_handle handle, usize index)
 {
 	TRACE_START(__func__);
-	struct animation_data res         = {0};
-	struct animation_data_slice *bank = animation_db_get_data_slice(db, handle);
+	struct animation_clip res          = {0};
+	struct animation_clips_slice *bank = animation_db_get_data_slice(db, handle);
 
 	if(bank != NULL) {
 		assert(index <= bank->len);

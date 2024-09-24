@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sys-types.h"
+
 #include "./assets-db.h"
 
 #include "animation/animation.h"
@@ -17,17 +18,17 @@ struct animation_track_res {
 
 struct animation_data_res {
 	usize token_count;
-	struct animation_data item;
+	struct animation_clip item;
 };
 
 struct animation_data_slice_res {
 	usize token_count;
-	struct animation_data_slice item;
+	struct animation_clips_slice item;
 };
 
 struct animation_db_res {
-	struct animation_data *clips;
-	struct animation_data_slice *banks;
+	struct animation_clip *clips;
+	struct animation_clips_slice *banks;
 };
 
 void asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);
