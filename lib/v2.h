@@ -231,7 +231,7 @@ v2_move_towards(v2 a, v2 b, f32 delta)
 		return b;
 	} else {
 		f32 len_inv = 1.0f / len;
-		v2 norm     = {ba.x * len_inv, a.y * len_inv};
+		v2 norm     = {ba.x * len_inv, ba.y * len_inv};
 		v2 res      = v2_add(a, v2_mul(norm, delta));
 		return res;
 	}
