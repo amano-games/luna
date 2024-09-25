@@ -6,10 +6,15 @@
 
 #include "animation/animation.h"
 
-struct asset_path_db {
-	struct ht ht;
-	i32 len;
-	char *buf;
+struct asset_path_table {
+	struct ht_u32 ht;
+	str8 *arr;
+	char *data;
+};
+
+struct asset_info_table {
+	struct ht_u32 ht;
+	struct asset_info *arr;
 };
 
 enum asset_type {
@@ -36,9 +41,15 @@ struct animation_clips_slice {
 	u32 len;       // how many elements it has
 };
 
+struct asset_info {
+	u64 path_hash;
+	v2_i32 cell_size;
+};
+
 // [id] = index and count
 struct assets_db {
-	struct asset_path_db paths;
+	struct asset_path_table paths;
+	struct asset_info_table infos;
 
 	struct asset_tex *tex;
 	struct animation_clips_slice *slices;
@@ -50,8 +61,14 @@ void assets_db_init(struct assets_db *db, usize clip_count, usize slice_count, s
 
 struct asset_handle assets_db_handle_from_path(str8 path, enum asset_type type);
 
-void assets_db_push_animation_clip(struct assets_db *db, struct animation_clip clip);
-void assets_db_push_animation_clip_slice(struct assets_db *db, struct animation_clips_slice slice);
+str8 assets_db_push_path(struct assets_db *db, str8 path);
+str8 assets_db_get_path(struct assets_db *db, u64 hash);
 
-struct animation_clips_slice *animation_db_get_clips_slice(struct assets_db *db, struct asset_handle handle);
+i32 assets_db_push_asset_info(struct assets_db *db, str8 path, struct asset_info info);
+struct asset_info assets_db_get_asset_info(struct assets_db *db, u64 hash);
+
+void assets_db_push_animation_clip(struct assets_db *db, struct animation_clip clip);
 struct animation_clip assets_db_get_animation_clip(struct assets_db *db, struct asset_handle handle, usize index);
+
+void assets_db_push_animation_clip_slice(struct assets_db *db, struct animation_clips_slice slice);
+struct animation_clips_slice *animation_db_get_clips_slice(struct assets_db *db, struct asset_handle handle);
