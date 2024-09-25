@@ -34,6 +34,12 @@ hash_string(str8 v)
 	return h ^ h >> 32;
 }
 
+struct ht_u32 {
+	i32 len;
+	int exp;
+	u32 *ht;
+};
+
 // Compute the next candidate index. Initialize idx to the hash.
 i32
 ht_lookup(u64 hash, int exp, i32 idx)
@@ -43,37 +49,37 @@ ht_lookup(u64 hash, int exp, i32 idx)
 	return (idx + step) & mask;
 }
 
-struct ht {
-	i32 len;
-	int exp;
-	char **ht;
-};
-
-char *
-ht_intern(struct ht *t, char *key)
+i32
+ht_has_u32(struct ht_u32 *t, u64 key)
 {
-	uint64_t h = hash_string(str8_cstr(key));
-	for(int32_t i = h;;) {
-		i = ht_lookup(h, t->exp, i);
+	for(int32_t i = key;;) {
+		i = ht_lookup(key, t->exp, i);
+		return t->ht[i];
+	}
+}
+
+i32
+ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
+{
+	for(int32_t i = key;;) {
+		i = ht_lookup(key, t->exp, i);
+		// empty, insert here
 		if(!t->ht[i]) {
-			// empty, insert here
 			if((uint32_t)t->len + 1 == (uint32_t)1 << t->exp) {
 				return 0; // out of memory
 			}
 			t->len++;
-			t->ht[i] = key;
-			return key;
-		} else if(!strcmp(t->ht[i], key)) {
-			// found, return canonical instance
-			return t->ht[i];
+			t->ht[i] = value;
+			return value;
 		}
 	}
+	return -1;
 }
 
-static struct ht
-ht_new(int exp, struct alloc alloc)
+static struct ht_u32
+ht_new_u32(int exp, struct alloc alloc)
 {
-	struct ht ht = {0, exp, 0};
+	struct ht_u32 ht = {0, exp, 0};
 
 	assert(exp >= 0);
 	if(exp >= 32) {

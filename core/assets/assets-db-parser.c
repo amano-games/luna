@@ -1,6 +1,7 @@
 #include "assets-db-parser.h"
 
 #include "assets.h"
+#include "assets/assets-db.h"
 #include "ht.h"
 #include "str.h"
 #include "sys-io.h"
@@ -104,20 +105,19 @@ handle_animation_clip(str8 json, jsmntok_t *tokens, i32 index)
 	return data_res;
 }
 
-// TODO: allocate and push to the db
 struct animation_clips_slice_res
-handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct assets_db *assets_db)
+handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct assets_db *db)
 {
 
 	jsmntok_t *root = &tokens[index];
 	assert(root->type == JSMN_OBJECT);
-	str8 bank_json = {
+	str8 item_json = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
 	};
 	jsmn_parser parser;
 	jsmn_init(&parser);
-	i32 token_count = jsmn_parse(&parser, (char *)bank_json.str, bank_json.size, NULL, 0);
+	i32 token_count = jsmn_parse(&parser, (char *)item_json.str, item_json.size, NULL, 0);
 
 	struct animation_clips_slice_res res = {.token_count = token_count};
 
@@ -128,6 +128,7 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 		} else if(json_eq(json, key, str8_lit("path")) == 0) {
 			str8 path          = {.str = json.str + value->start, .size = value->end - value->start};
 			u64 hash           = hash_string(path);
+			str8 a             = assets_db_get_path(db, hash);
 			res.item.path_hash = hash;
 		} else if(json_eq(json, key, str8_lit("len")) == 0) {
 			res.item.len = json_parse_i32(json, value);
@@ -137,12 +138,80 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 				jsmntok_t *clip = &tokens[clip_index];
 				assert(clip->type == JSMN_OBJECT);
 				struct animation_clip_res res = handle_animation_clip(json, tokens, clip_index);
-				assets_db_push_animation_clip(assets_db, res.item);
+				assets_db_push_animation_clip(db, res.item);
 				i += res.token_count;
 			}
 		}
 	}
 
+	return res;
+}
+
+struct asset_info_res
+handle_asset_info(str8 json, jsmntok_t *tokens, i32 index)
+{
+	jsmntok_t *root = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	jsmn_parser parser;
+	jsmn_init(&parser);
+
+	str8 item_json = {
+		.str  = json.str + root->start,
+		.size = root->end - root->start,
+	};
+
+	i32 token_count           = jsmn_parse(&parser, (char *)item_json.str, item_json.size, NULL, 0);
+	struct asset_info_res res = {.token_count = token_count};
+	for(i32 i = index + 1; i < index + token_count; i++) {
+		jsmntok_t *key   = &tokens[i];
+		jsmntok_t *value = &tokens[i + 1];
+		if(json_eq(json, key, str8_lit("cell_width")) == 0) {
+			res.asset_info.cell_size.x = json_parse_i32(json, value);
+			i++;
+		} else if(json_eq(json, key, str8_lit("cell_height")) == 0) {
+			res.asset_info.cell_size.y = json_parse_i32(json, value);
+			i++;
+		} else {
+			log_info("Animation", "Unhandled key: %.*s", key->end - key->start, json.str + key->start);
+		}
+	}
+
+	return res;
+}
+
+struct asset_res
+handle_asset(str8 json, jsmntok_t *tokens, i32 index)
+{
+	jsmntok_t *root = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	jsmn_parser parser;
+	jsmn_init(&parser);
+
+	str8 item_json = {
+		.str  = json.str + root->start,
+		.size = root->end - root->start,
+	};
+
+	i32 token_count = jsmn_parse(&parser, (char *)item_json.str, item_json.size, NULL, 0);
+
+	struct asset_res res = {.token_count = token_count};
+	for(i32 i = index + 1; i < index + token_count; i++) {
+		jsmntok_t *key   = &tokens[i];
+		jsmntok_t *value = &tokens[i + 1];
+		if(json_eq(json, key, str8_lit("path")) == 0) {
+			res.path = (str8){.str = json.str + value->start, .size = value->end - value->start};
+			i++;
+		} else if(json_eq(json, key, str8_lit("info")) == 0) {
+			i32 item_index        = i + 1;
+			jsmntok_t *item_token = &tokens[item_index];
+			assert(item_token->type == JSMN_OBJECT);
+			struct asset_info_res item_res = handle_asset_info(json, tokens, item_index);
+			res.asset_info                 = item_res.asset_info;
+			i += item_res.token_count;
+		} else {
+			log_info("Animation", "Unhandled key handle assets: %.*s", key->end - key->start, json.str + key->start);
+		}
+	}
 	return res;
 }
 
@@ -207,16 +276,20 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 		} else if(json_eq(json, key, str8_lit("assets")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
-				i32 asset_index = i + 2;
+				i32 item_index       = i + 2;
+				struct asset_res res = handle_asset(json, tokens, item_index);
+				assets_db_push_path(db, res.path);
+				assets_db_push_asset_info(db, res.path, res.asset_info);
+				i += res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("animations")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
-				i32 slice_index                      = i + 2;
+				i32 item_index                       = i + 2;
 				usize slice_clip_index               = arr_len(db->clips);
-				struct animation_clips_slice_res res = handle_animation_clips_slice(json, tokens, slice_index, db);
+				struct animation_clips_slice_res res = handle_animation_clips_slice(json, tokens, item_index, db);
 				res.item.index                       = slice_clip_index;
-				arr_push(db->slices, res.item);
+				assets_db_push_animation_clip_slice(db, res.item);
 				i += res.token_count;
 			}
 		}
