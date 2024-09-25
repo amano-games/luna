@@ -2,19 +2,10 @@
 
 // https://nullprogram.com/blog/2022/08/08/
 
+#include "mem.h"
+#include "str.h"
 #include "sys-types.h"
 #include "sys-assert.h"
-
-#define HT_EXP 15
-#define HT_INIT \
-	{ \
-		{0}, 0 \
-	}
-
-struct ht {
-	char *ht[1 << HT_EXP];
-	i32 len;
-};
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
@@ -47,7 +38,49 @@ hash_string(str8 v)
 i32
 ht_lookup(u64 hash, int exp, i32 idx)
 {
-	u64 mask = ((u64)1 << exp) - 1;
-	u64 step = (hash >> (64 - exp)) | 1;
+	u32 mask = ((u64)1 << exp) - 1;
+	u32 step = (hash >> (64 - exp)) | 1;
 	return (idx + step) & mask;
+}
+
+struct ht {
+	i32 len;
+	int exp;
+	char **ht;
+};
+
+char *
+ht_intern(struct ht *t, char *key)
+{
+	uint64_t h = hash_string(str8_cstr(key));
+	for(int32_t i = h;;) {
+		i = ht_lookup(h, t->exp, i);
+		if(!t->ht[i]) {
+			// empty, insert here
+			if((uint32_t)t->len + 1 == (uint32_t)1 << t->exp) {
+				return 0; // out of memory
+			}
+			t->len++;
+			t->ht[i] = key;
+			return key;
+		} else if(!strcmp(t->ht[i], key)) {
+			// found, return canonical instance
+			return t->ht[i];
+		}
+	}
+}
+
+static struct ht
+ht_new(int exp, struct alloc alloc)
+{
+	struct ht ht = {0, exp, 0};
+
+	assert(exp >= 0);
+	if(exp >= 32) {
+		return ht; // request too large
+	}
+
+	ht.ht = alloc.allocf(alloc.ctx, ((size_t)1 << exp) * sizeof(*ht.ht));
+
+	return ht;
 }

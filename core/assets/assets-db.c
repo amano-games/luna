@@ -20,10 +20,21 @@ assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct
 }
 
 void
-assets_db_init(struct assets_db *db, usize bank_count, usize clip_count, struct alloc alloc)
+assets_db_init(struct assets_db *db, usize clip_count, usize slice_count, struct alloc alloc)
 {
-	db->slices = arr_ini(bank_count, sizeof(*db->slices), alloc);
-	db->clips  = arr_ini(clip_count, sizeof(*db->clips), alloc);
+	db->clips     = arr_ini(clip_count, sizeof(*db->clips), alloc);
+	db->slices    = arr_ini(slice_count, sizeof(*db->slices), alloc);
+	db->paths.ht  = ht_new(10, alloc);
+	db->paths.buf = alloc.allocf(alloc.ctx, sizeof(char) * 10000);
+}
+
+struct asset_handle
+assets_db_handle_from_path(str8 path, enum asset_type type)
+{
+	return (struct asset_handle){
+		.path_hash = hash_string(path),
+		.type      = type,
+	};
 }
 
 void
@@ -40,17 +51,8 @@ assets_db_push_animation_clip_slice(struct assets_db *db, struct animation_clips
 	animation_clip_init(&db->clips[arr_len(db->clips) - 1]);
 }
 
-struct asset_handle
-assets_db_handle_from_path(str8 path, enum asset_type type)
-{
-	return (struct asset_handle){
-		.path_hash = hash_string(path),
-		.type      = type,
-	};
-}
-
 struct animation_clips_slice *
-animation_db_get_data_slice(struct assets_db *db, struct asset_handle handle)
+animation_db_get_clips_slice(struct assets_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
 	// TODO: make a hash table instead of this
@@ -68,12 +70,14 @@ struct animation_clip
 assets_db_get_animation_clip(struct assets_db *db, struct asset_handle handle, usize index)
 {
 	TRACE_START(__func__);
-	struct animation_clip res          = {0};
-	struct animation_clips_slice *bank = animation_db_get_data_slice(db, handle);
+	struct animation_clip res           = {0};
+	struct animation_clips_slice *slice = animation_db_get_clips_slice(db, handle);
 
-	if(bank != NULL) {
-		assert(index <= bank->len);
-		res = db->clips[bank->index + (index - 1)];
+	if(slice != NULL) {
+		usize abs_index = slice->index + index;
+		assert(index <= slice->len);
+		assert(abs_index <= arr_len(db->clips));
+		res = db->clips[abs_index];
 	}
 
 	TRACE_END();
