@@ -26,7 +26,6 @@ struct asset_tex {
 };
 
 struct assets {
-	char assets_paths[NUM_TEX_ID_MAX][30];
 	struct asset_tex tex[NUM_TEX_ID_MAX];
 
 	i32 next_tex_id;
