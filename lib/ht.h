@@ -6,6 +6,7 @@
 #include "str.h"
 #include "sys-types.h"
 #include "sys-assert.h"
+#include <string.h>
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
@@ -86,7 +87,8 @@ ht_new_u32(int exp, struct alloc alloc)
 		return ht; // request too large
 	}
 
-	ht.ht = alloc.allocf(alloc.ctx, ((size_t)1 << exp) * sizeof(*ht.ht));
-
+	usize size = ((size_t)1 << exp) * sizeof(*ht.ht);
+	ht.ht      = alloc.allocf(alloc.ctx, size);
+	memset(ht.ht, 0, size);
 	return ht;
 }
