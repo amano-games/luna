@@ -284,7 +284,7 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 			assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index                       = i + 2;
-				struct animation_clip *first_clip    = &db->animation.data[arr_len(db->animation.data)];
+				struct animation_clip *first_clip    = &db->animations.data[arr_len(db->animations.data)];
 				struct animation_clips_slice_res res = handle_animation_clips_slice(json, tokens, item_index, db);
 				res.item.clip                        = first_clip;
 				assets_db_push_animation_clip_slice(db, res.path, res.item);
@@ -292,7 +292,7 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 			}
 		}
 	}
-	assert(arr_len(db->animation.data) == arr_cap(db->animation.data));
-	assert(arr_len(db->animation.arr) == arr_cap(db->animation.arr));
-	log_info("Animation DB", "tokens:%" PRId32 " banks: %zu clips: %zu", token_count, arr_len(db->animation.arr), arr_len(db->animation.data));
+	assert(arr_len(db->animations.data) == arr_cap(db->animations.data));
+	assert(arr_len(db->animations.arr) == arr_cap(db->animations.arr));
+	log_info("Animation DB", "tokens:%" PRId32 " banks: %zu clips: %zu", token_count, arr_len(db->animations.arr), arr_len(db->animations.data));
 }
