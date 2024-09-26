@@ -24,18 +24,19 @@ struct animation_clip_res {
 
 struct animation_clips_slice_res {
 	usize token_count;
+	str8 path;
 	struct animation_clips_slice item;
 };
 
 struct asset_res {
 	usize token_count;
 	struct str8 path;
-	struct asset_info asset_info;
+	struct texture_info asset_info;
 };
 
 struct asset_info_res {
 	usize token_count;
-	struct asset_info asset_info;
+	struct texture_info asset_info;
 };
 
 struct assets_db_res {

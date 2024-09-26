@@ -24,11 +24,11 @@ bool32
 animator_update(struct animator *animator, f32 timestamp)
 {
 	TRACE_START(__func__);
-	usize current_animation             = animator->index;
-	struct animation *animation         = &animator->animation;
-	struct animation_clips_slice *slice = animation_db_get_clips_slice(animator->assets_db, animator->clips_handle);
+	usize current_animation            = animator->index;
+	struct animation *animation        = &animator->animation;
+	struct animation_clips_slice slice = animation_db_get_clips_slice(animator->assets_db, animator->clips_handle);
 
-	if(slice->len > 0) {
+	if(slice.size > 0) {
 		TRACE_END();
 		return animation_update(animation, timestamp);
 	}
@@ -50,8 +50,8 @@ animator_play_animation(struct animator *animator, usize index, f32 timestamp)
 {
 	TRACE_START(__func__);
 	assert(index != 0);
-	struct animation_clips_slice *bank = animation_db_get_clips_slice(animator->assets_db, animator->clips_handle);
-	assert(index <= bank->len);
+	struct animation_clips_slice slice = animation_db_get_clips_slice(animator->assets_db, animator->clips_handle);
+	assert(index <= slice.size);
 	if(index != animator->index) {
 		animator_set_animation(animator, index);
 	}
