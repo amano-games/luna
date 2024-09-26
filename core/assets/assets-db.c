@@ -15,19 +15,18 @@ void
 assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	asset_db_parser_do(db, file_name, alloc, scratch);
-
-	// Set the tracks to the correct type
-	for(usize i = 0; i < arr_len(db->animations.data); i++) {
-		animation_clip_init(&db->animations.data[i]);
-	}
 }
 
 void
-assets_db_init(struct assets_db *db, usize clip_count, usize slice_count, struct alloc alloc)
+assets_db_init(
+	struct assets_db *db,
+	usize paths_count,
+	usize textures_count,
+	usize clip_count,
+	usize slice_count,
+	struct alloc alloc)
 {
-	usize paths_data_size = 10000;
-	usize paths_count     = 80;
-	usize textures_count  = 80;
+	usize paths_data_size = paths_count * 50;
 	i32 exp               = 10;
 
 	db->animations.ht   = ht_new_u32(exp, alloc);

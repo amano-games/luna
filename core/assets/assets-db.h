@@ -66,7 +66,7 @@ struct assets_db {
 };
 
 void assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);
-void assets_db_init(struct assets_db *db, usize clip_count, usize slice_count, struct alloc alloc);
+void assets_db_init(struct assets_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, struct alloc alloc);
 
 struct asset_handle assets_db_handle_from_path(str8 path, enum asset_type type);
 
