@@ -52,13 +52,17 @@ struct animation_table {
 	struct animation_clip *data;
 };
 
+struct texture_table {
+	struct ht_u32 ht;
+	struct asset_tex *arr;
+};
+
 // [id] = index and count
 struct assets_db {
-	struct asset_path_table asset_paths;
+	struct asset_path_table assets_path;
 	struct texture_info_table textures_info;
-	struct animation_table animation;
-
-	struct asset_tex *tex;
+	struct animation_table animations;
+	struct texture_table textures;
 };
 
 void assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);

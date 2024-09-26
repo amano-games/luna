@@ -17,8 +17,8 @@ assets_db_parse(struct assets_db *db, str8 file_name, struct alloc alloc, struct
 	asset_db_parser_do(db, file_name, alloc, scratch);
 
 	// Set the tracks to the correct type
-	for(usize i = 0; i < arr_len(db->animation.data); i++) {
-		animation_clip_init(&db->animation.data[i]);
+	for(usize i = 0; i < arr_len(db->animations.data); i++) {
+		animation_clip_init(&db->animations.data[i]);
 	}
 }
 
@@ -30,14 +30,14 @@ assets_db_init(struct assets_db *db, usize clip_count, usize slice_count, struct
 	usize textures_count  = 80;
 	i32 exp               = 10;
 
-	db->animation.ht   = ht_new_u32(exp, alloc);
-	db->animation.data = arr_ini(clip_count, sizeof(*db->animation.data), alloc);
-	db->animation.arr  = arr_ini(slice_count, sizeof(*db->animation.arr), alloc);
+	db->animations.ht   = ht_new_u32(exp, alloc);
+	db->animations.data = arr_ini(clip_count, sizeof(*db->animations.data), alloc);
+	db->animations.arr  = arr_ini(slice_count, sizeof(*db->animations.arr), alloc);
 
-	db->asset_paths.ht   = ht_new_u32(exp, alloc);
-	db->asset_paths.arr  = arr_ini(paths_count, sizeof(*db->asset_paths.arr), alloc);
-	db->asset_paths.data = arr_ini(paths_data_size, sizeof(*db->asset_paths.data), alloc);
-	arr_push(db->asset_paths.arr, (str8){0});
+	db->assets_path.ht   = ht_new_u32(exp, alloc);
+	db->assets_path.arr  = arr_ini(paths_count, sizeof(*db->assets_path.arr), alloc);
+	db->assets_path.data = arr_ini(paths_data_size, sizeof(*db->assets_path.data), alloc);
+	arr_push(db->assets_path.arr, (str8){0});
 
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
 	db->textures_info.arr = arr_ini(textures_count, sizeof(*db->textures_info.arr), alloc);
@@ -56,7 +56,7 @@ assets_db_handle_from_path(str8 path, enum asset_type type)
 str8
 assets_db_push_path(struct assets_db *db, str8 path)
 {
-	struct asset_path_table *table = &db->asset_paths;
+	struct asset_path_table *table = &db->assets_path;
 	usize table_len                = arr_len(table->data);
 	usize table_cap                = arr_cap(table->data);
 
@@ -89,7 +89,7 @@ assets_db_push_path(struct assets_db *db, str8 path)
 str8
 assets_db_get_path(struct assets_db *db, struct asset_handle handle)
 {
-	struct asset_path_table *table = &db->asset_paths;
+	struct asset_path_table *table = &db->assets_path;
 	u32 value                      = ht_has_u32(&table->ht, handle.path_hash);
 	str8 res                       = table->arr[value];
 	return res;
@@ -134,9 +134,9 @@ assets_db_get_asset_info(struct assets_db *db, struct asset_handle handle)
 i32
 assets_db_push_animation_clip(struct assets_db *db, struct animation_clip clip)
 {
-	usize index = arr_len(db->animation.data);
-	arr_push(db->animation.data, clip);
-	animation_clip_init(&db->animation.data[index]);
+	usize index = arr_len(db->animations.data);
+	arr_push(db->animations.data, clip);
+	animation_clip_init(&db->animations.data[index]);
 	return index;
 }
 
@@ -160,7 +160,7 @@ assets_db_get_animation_clip(struct assets_db *db, struct asset_handle handle, u
 i32
 assets_db_push_animation_clip_slice(struct assets_db *db, str8 path, struct animation_clips_slice slice)
 {
-	struct animation_table *table = &db->animation;
+	struct animation_table *table = &db->animations;
 	usize table_len               = arr_len(table->arr);
 	usize table_cap               = arr_cap(table->arr);
 
@@ -188,8 +188,8 @@ struct animation_clips_slice
 animation_db_get_clips_slice(struct assets_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index                        = ht_has_u32(&db->animation.ht, handle.path_hash);
-	struct animation_clips_slice res = db->animation.arr[index];
+	i32 index                        = ht_has_u32(&db->animations.ht, handle.path_hash);
+	struct animation_clips_slice res = db->animations.arr[index];
 	TRACE_END();
 	return res;
 }
