@@ -265,11 +265,8 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 		if(json_eq(json, key, str8_lit("info")) == 0) {
 			struct assets_db_info_res info_data = handle_info(json, tokens, i + 1);
 			struct asset_db_info info           = info_data.item;
-			assets_db_init(
-				db,
-				info.animation_clip_count,
-				info.animation_slice_count,
-				alloc);
+			assert(info.animation_clip_count <= arr_cap(db->animations.data));
+			assert(info.animation_slice_count <= arr_cap(db->animations.arr));
 			i += info_data.token_count;
 		} else if(json_eq(json, key, str8_lit("assets")) == 0) {
 			assert(value->type == JSMN_ARRAY);
@@ -292,7 +289,5 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 			}
 		}
 	}
-	assert(arr_len(db->animations.data) == arr_cap(db->animations.data));
-	assert(arr_len(db->animations.arr) == arr_cap(db->animations.arr));
 	log_info("Animation DB", "tokens:%" PRId32 " banks: %zu clips: %zu", token_count, arr_len(db->animations.arr), arr_len(db->animations.data));
 }
