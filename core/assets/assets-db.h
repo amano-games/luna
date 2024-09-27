@@ -80,4 +80,4 @@ i32 assets_db_push_animation_clip(struct assets_db *db, struct animation_clip cl
 struct animation_clip assets_db_get_animation_clip(struct assets_db *db, struct asset_handle handle, usize index);
 
 i32 assets_db_push_animation_clip_slice(struct assets_db *db, str8 path, struct animation_clips_slice slice);
-struct animation_clips_slice animation_db_get_clips_slice(struct assets_db *db, struct asset_handle handle);
+struct animation_clips_slice assets_db_get_animation_clips_slice(struct assets_db *db, struct asset_handle handle);
