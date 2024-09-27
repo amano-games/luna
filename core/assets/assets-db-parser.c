@@ -2,7 +2,6 @@
 
 #include "assets.h"
 #include "assets/assets-db.h"
-#include "ht.h"
 #include "str.h"
 #include "sys-io.h"
 #include "arr.h"
@@ -128,6 +127,7 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 		} else if(json_eq(json, key, str8_lit("path")) == 0) {
 			str8 path = {.str = json.str + value->start, .size = value->end - value->start};
 			res.path  = assets_db_push_path(db, path);
+			assert(str8_match(path, res.path, 0));
 		} else if(json_eq(json, key, str8_lit("len")) == 0) {
 			res.item.size = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
@@ -273,7 +273,8 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index       = i + 2;
 				struct asset_res res = handle_asset(json, tokens, item_index);
-				assets_db_push_path(db, res.path);
+				str8 res_path        = assets_db_push_path(db, res.path);
+				assert(str8_match(res_path, res.path, 0));
 				assets_db_push_asset_info(db, res.path, res.asset_info);
 				i += res.token_count;
 			}
