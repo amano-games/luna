@@ -5,12 +5,6 @@
 #include "mem.h"
 
 #include <stdarg.h>
-#include <string.h>
-
-typedef struct str8 {
-	u8 *str;
-	u64 size;
-} str8;
 
 typedef u32 str_match_flags;
 
@@ -64,7 +58,7 @@ ascii_progress_bar(u8 percent)
 {
 	if(SYS_LOG_LEVEL > 2) {
 		char pbstr[PBWIDTH];
-		memset(pbstr, PBCHAR, PBWIDTH);
+		mset(pbstr, PBCHAR, PBWIDTH);
 		sys_printf("[%-" S(PBWIDTH) ".*s] %u%%", percent * PBWIDTH / 100, pbstr, percent);
 		sys_printf(" ");
 	}

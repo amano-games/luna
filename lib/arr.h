@@ -3,7 +3,6 @@
 #include "mem.h"
 #include "sys-assert.h"
 #include "sys-types.h"
-#include <string.h>
 
 // https://ruby0x1.github.io/machinery_blog_archive/post/minimalist-container-library-in-c-part-1/index.html
 
@@ -30,7 +29,7 @@ void
 arr_zero(void *arr, usize size)
 {
 	usize count = arr_cap(arr);
-	memset(arr, 0, size * count);
+	mclr(arr, size * count);
 }
 
 void *
