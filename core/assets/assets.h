@@ -29,7 +29,7 @@ struct assets {
 	struct asset_tex tex[NUM_TEX_ID_MAX];
 
 	i32 next_tex_id;
-	struct asset_db assets_db;
+	struct asset_db db;
 
 	struct marena marena;
 	struct alloc alloc;
