@@ -1,7 +1,7 @@
-#include "assets-db-parser.h"
+#include "asset-db-parser.h"
 
 #include "assets.h"
-#include "assets/assets-db.h"
+#include "assets/asset-db.h"
 #include "str.h"
 #include "sys-io.h"
 #include "arr.h"
@@ -104,8 +104,8 @@ handle_animation_clip(str8 json, jsmntok_t *tokens, i32 index)
 	return data_res;
 }
 
-struct animation_clips_slice_res
-handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct assets_db *db)
+struct animation_slice_res
+handle_animation_slice(str8 json, jsmntok_t *tokens, i32 index, struct asset_db *db)
 {
 
 	jsmntok_t *root = &tokens[index];
@@ -118,7 +118,7 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)item_json.str, item_json.size, NULL, 0);
 
-	struct animation_clips_slice_res res = {.token_count = token_count};
+	struct animation_slice_res res = {.token_count = token_count};
 
 	for(i32 i = index + 1; i < index + token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
@@ -126,7 +126,7 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 		if(json_eq(json, key, str8_lit("id")) == 0) {
 		} else if(json_eq(json, key, str8_lit("path")) == 0) {
 			str8 path = {.str = json.str + value->start, .size = value->end - value->start};
-			res.path  = assets_db_push_path(db, path);
+			res.path  = asset_db_push_path(db, path);
 			assert(str8_match(path, res.path, 0));
 		} else if(json_eq(json, key, str8_lit("len")) == 0) {
 			res.item.size = json_parse_i32(json, value);
@@ -136,7 +136,7 @@ handle_animation_clips_slice(str8 json, jsmntok_t *tokens, i32 index, struct ass
 				jsmntok_t *clip = &tokens[clip_index];
 				assert(clip->type == JSMN_OBJECT);
 				struct animation_clip_res res = handle_animation_clip(json, tokens, clip_index);
-				assets_db_push_animation_clip(db, res.item);
+				asset_db_push_animation_clip(db, res.item);
 				i += res.token_count;
 			}
 		}
@@ -244,7 +244,7 @@ handle_info(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 void
-asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
+asset_db_parser_do(struct asset_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	log_info("Animation DB", "init: %s", file_name.str);
 
@@ -273,19 +273,19 @@ asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, str
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index       = i + 2;
 				struct asset_res res = handle_asset(json, tokens, item_index);
-				str8 res_path        = assets_db_push_path(db, res.path);
+				str8 res_path        = asset_db_push_path(db, res.path);
 				assert(str8_match(res_path, res.path, 0));
-				assets_db_push_asset_info(db, res.path, res.asset_info);
+				asset_db_push_asset_info(db, res.path, res.asset_info);
 				i += res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("animations")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
-				i32 item_index                       = i + 2;
-				struct animation_clip *first_clip    = &db->animations.data[arr_len(db->animations.data)];
-				struct animation_clips_slice_res res = handle_animation_clips_slice(json, tokens, item_index, db);
-				res.item.clip                        = first_clip;
-				assets_db_push_animation_clip_slice(db, res.path, res.item);
+				i32 item_index                    = i + 2;
+				struct animation_clip *first_clip = &db->animations.data[arr_len(db->animations.data)];
+				struct animation_slice_res res    = handle_animation_slice(json, tokens, item_index, db);
+				res.item.clip                     = first_clip;
+				asset_db_push_animation_slice(db, res.path, res.item);
 				i += res.token_count;
 			}
 		}

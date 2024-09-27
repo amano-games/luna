@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assets/assets-db.h"
+#include "assets/asset-db.h"
 #include "animation/animation.h"
 
 #define MAX_ANIMATIONS 10
