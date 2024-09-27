@@ -52,14 +52,6 @@ debug_draw_push_shape(struct debug_shape shape)
 }
 
 void
-debug_print_v2(v2 v)
-{
-#if !defined(TARGET_PLAYDATE) && defined(DEBUG)
-	// sys_printf("%f, %f", v.x, v.y);
-#endif
-}
-
-void
 debug_draw_line(f32 x1, f32 y1, f32 x2, f32 y2)
 {
 	struct debug_shape d_shape = {0};
