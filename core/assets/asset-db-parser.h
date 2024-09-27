@@ -1,9 +1,8 @@
 #pragma once
 
-#include "assets/assets.h"
 #include "sys-types.h"
 
-#include "./assets-db.h"
+#include "./asset-db.h"
 
 #include "animation/animation.h"
 
@@ -22,10 +21,10 @@ struct animation_clip_res {
 	struct animation_clip item;
 };
 
-struct animation_clips_slice_res {
+struct animation_slice_res {
 	usize token_count;
 	str8 path;
-	struct animation_clips_slice item;
+	struct animation_slice item;
 };
 
 struct asset_res {
@@ -41,7 +40,7 @@ struct asset_info_res {
 
 struct assets_db_res {
 	struct animation_clip *clips;
-	struct animation_clips_slice *slices;
+	struct animation_slice *slices;
 };
 
-void asset_db_parser_do(struct assets_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);
+void asset_db_parse(struct asset_db *db, str8 file_name, struct alloc alloc, struct alloc scratch);

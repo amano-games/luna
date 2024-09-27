@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sys-types.h"
-#include "assets/assets-db.h"
+#include "assets/asset-db.h"
 
 #include "gfx.h"
 #include "mem.h"
@@ -29,7 +29,7 @@ struct assets {
 	struct asset_tex tex[NUM_TEX_ID_MAX];
 
 	i32 next_tex_id;
-	struct assets_db assets_db;
+	struct asset_db assets_db;
 
 	struct marena marena;
 	struct alloc alloc;
