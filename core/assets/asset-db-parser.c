@@ -244,7 +244,7 @@ handle_info(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 void
-asset_db_parser_do(struct asset_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
+asset_db_parse(struct asset_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	log_info("Animation DB", "init: %s", file_name.str);
 
