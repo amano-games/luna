@@ -1,8 +1,6 @@
 #include "cam/cam.h"
 #include "mathfunc.h"
-#include "trace.h"
 #include "v2.h"
-#include "map.h"
 
 static v2 cam_limit_position(v2 p, struct col_aabb limits);
 
@@ -84,11 +82,11 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 	v2 cam_pos           = c->p;
 	struct cam_data data = c->data;
 	// TODO: grab from tiled or something
-	struct col_aabb default_limits = {.min = {0, 0}, .max = {400, 720}};
-	f32 smoothing_speed            = data.drag_vel;
+	struct col_aabb hard_limits = data.hard_limits;
+	f32 smoothing_speed         = data.drag_vel;
 
 	v2 soft_pos = cam_drag_position(c, tx, ty, data.soft.min, data.soft.max);
-	soft_pos    = cam_limit_position(soft_pos, data.limits);
+	soft_pos    = cam_limit_position(soft_pos, data.soft_limits);
 
 	v2 a = cam_pos;
 	v2 b = soft_pos;
@@ -96,18 +94,27 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 	// apply hard drag margin and if there it modifies the camera position
 	// 	set the camera position to that position without lerp
 	v2 hard_pos = cam_drag_position(c, tx, ty, data.hard.min, data.hard.max);
-	if(hard_pos.y != cam_pos.y) {
+	if(hard_pos.y != cam_pos.y || hard_pos.x != cam_pos.x) {
 		cam_pos    = hard_pos;
 		c->p_final = hard_pos;
 	} else {
 #if 1
 		// Move by a constant speed
 		c->p_final = b;
-		f32 dy     = b.y - a.y;
-		f32 sign_y = sgn_f32(dy);
-		f32 speed  = min_f32(abs_f32(dy), dt * smoothing_speed);
+		{
+			f32 delta = b.y - a.y;
+			f32 sign  = sgn_f32(delta);
+			f32 speed = min_f32(abs_f32(delta), dt * smoothing_speed);
 
-		cam_pos.y = a.y + (sign_y * speed);
+			cam_pos.y = a.y + (sign * speed);
+		}
+		{
+			f32 delta = b.x - a.x;
+			f32 sign  = sgn_f32(delta);
+			f32 speed = min_f32(abs_f32(delta), dt * smoothing_speed);
+
+			cam_pos.x = a.x + (sign * speed);
+		}
 #else
 		// Exponential smoothing
 		// https://lisyarus.github.io/blog/posts/exponential-smoothing.html
@@ -117,6 +124,6 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 #endif
 	}
 
-	v2 limited_pos = cam_limit_position(cam_pos, default_limits);
+	v2 limited_pos = cam_limit_position(cam_pos, hard_limits);
 	c->p           = limited_pos;
 }

@@ -13,7 +13,8 @@ struct cam_data {
 	u32 id;
 	f32 drag_vel;
 
-	struct col_aabb limits;
+	struct col_aabb soft_limits;
+	struct col_aabb hard_limits;
 	struct col_aabb soft;
 	struct col_aabb hard;
 };

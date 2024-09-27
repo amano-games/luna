@@ -54,7 +54,7 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, int r, v2 vel, f32 dt)
 		brain->vel_t        = 0.0f;
 
 		// Set the limits or "snapping" to the current camera viewport
-		brain->c->data.limits = (struct col_aabb){
+		brain->c->data.soft_limits = (struct col_aabb){
 			.min = {cam->p.x - CAM_HALF_W, cam->p.y - CAM_HALF_H},
 			.max = {cam->p.x + CAM_HALF_W, cam->p.y + CAM_HALF_H},
 		};
@@ -93,8 +93,8 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, int r, v2 vel, f32 dt)
 	{
 		f32 limits_vel = brain->limits_speed;
 		// Move the limits at constant speed towards the new ones
-		cam->data.limits.min = v2_move_towards(data.limits.min, final.limits.min, limits_vel * dt);
-		cam->data.limits.max = v2_move_towards(data.limits.max, final.limits.max, limits_vel * dt);
+		cam->data.soft_limits.min = v2_move_towards(data.soft_limits.min, final.soft_limits.min, limits_vel * dt);
+		cam->data.soft_limits.max = v2_move_towards(data.soft_limits.max, final.soft_limits.max, limits_vel * dt);
 	}
 
 	if(brain->vel_t < 1.0f) {
