@@ -1,7 +1,6 @@
 #include "sys-utils.h"
 #include "str.h"
 #include "sys-utils.h"
-#include <string.h>
 
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -158,7 +157,7 @@ inline void
 str8_cpy(str8 *src, str8 *dst)
 {
 	dst->size = src->size;
-	memcpy(src->str, dst->str, src->size);
+	mcpy(src->str, dst->str, src->size);
 	dst->str[dst->size] = 0;
 }
 
@@ -168,7 +167,7 @@ str8_cpy_push(struct alloc alloc, str8 src)
 	str8 dst;
 	dst.size = src.size;
 	dst.str  = alloc.allocf(alloc.ctx, src.size + 1 * sizeof(u8));
-	memcpy(dst.str, src.str, src.size);
+	mcpy(dst.str, src.str, src.size);
 	dst.str[dst.size] = 0;
 	return dst;
 }
@@ -179,8 +178,8 @@ str8_cat_push(struct alloc alloc, str8 s1, str8 s2)
 	str8 str;
 	str.size = s1.size + s2.size;
 	str.str  = alloc.allocf(alloc.ctx, str.size + 1 * sizeof(u8));
-	memcpy(str.str, s1.str, s1.size);
-	memcpy(str.str + s1.size, s2.str, s2.size);
+	mcpy(str.str, s1.str, s1.size);
+	mcpy(str.str + s1.size, s2.str, s2.size);
 	str.str[str.size] = 0;
 	return (str);
 }

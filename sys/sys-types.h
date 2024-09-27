@@ -33,6 +33,28 @@ typedef intptr_t iptr;
 
 typedef size_t usize;
 
+#define I64_MAX INT64_MAX
+#define I64_MIN INT64_MIN
+#define U64_MAX UINT64_MAX
+#define U64_MIN 0
+#define I32_MAX INT32_MAX
+#define I32_MIN INT32_MIN
+#define U32_MAX UINT32_MAX
+#define U32_MIN 0
+#define I16_MAX INT16_MAX
+#define I16_MIN INT16_MIN
+#define U16_MAX UINT16_MAX
+#define U16_MIN 0
+#define I8_MAX  INT8_MAX
+#define I8_MIN  INT8_MIN
+#define U8_MAX  UINT8_MAX
+#define U8_MIN  0
+
+#define mset            memset
+#define mcpy            memcpy
+#define mmov            memmove
+#define mclr(DST, SIZE) mset(DST, 0, SIZE)
+
 typedef struct v2_i32 {
 	i32 x, y;
 } v2_i32;
@@ -58,3 +80,8 @@ typedef struct {
 	f32 m10;
 	f32 m11;
 } mat22;
+
+typedef struct str8 {
+	u8 *str;
+	u64 size;
+} str8;
