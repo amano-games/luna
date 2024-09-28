@@ -8,7 +8,7 @@ inp_update(void)
 {
 	TRACE_START(__func__);
 	INP.prev = INP.curr;
-	memcpy(INP.prev.keys, INP.curr.keys, sizeof(u8) * SYS_KEYS_LEN);
+	mcpy(INP.prev.keys, INP.curr.keys, sizeof(INP.curr.keys));
 	INP.curr.btn          = sys_inp();
 	INP.curr.crank        = sys_crank();
 	INP.curr.crank_docked = sys_crank_docked();

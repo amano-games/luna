@@ -22,14 +22,12 @@ struct span_blit {
 struct tex
 tex_frame_buffer(void)
 {
-	struct sys_display d = sys_display();
-	struct tex t         = {0};
-	t.fmt                = TEX_FMT_OPAQUE;
-	t.px                 = d.px;
-	t.w                  = d.w;
-	t.h                  = d.h;
-	t.wword              = d.wword;
-
+	struct tex t = {0};
+	t.fmt        = TEX_FMT_OPAQUE;
+	t.px         = (u32 *)sys_1bit_buffer();
+	t.w          = SYS_DISPLAY_W;
+	t.h          = SYS_DISPLAY_H;
+	t.wword      = SYS_DISPLAY_WWORDS;
 	return t;
 }
 
@@ -81,7 +79,7 @@ tex_create_opaque(i32 w, i32 h, struct alloc alloc)
 struct tex
 tex_load(str8 path, struct alloc alloc)
 {
-	void *f = sys_file_open(path, SYS_FILE_R);
+	void *f = sys_file_open(path, SYS_FILE_MODE_R);
 	if(f == NULL) {
 		log_error("Assets", "failed to open texture %s", path.str);
 		return (struct tex){0};
@@ -89,14 +87,14 @@ tex_load(str8 path, struct alloc alloc)
 
 	u32 w;
 	u32 h;
-	sys_file_read(f, &w, sizeof(uint));
-	sys_file_read(f, &h, sizeof(uint));
+	sys_file_r(f, &w, sizeof(uint));
+	sys_file_r(f, &h, sizeof(uint));
 
 	i32 width_alinged = (w + 31) & ~31;
 	usize size        = ((width_alinged * h) * 2) / 8;
 
 	struct tex t = tex_create(w, h, alloc);
-	sys_file_read(f, t.px, size);
+	sys_file_r(f, t.px, size);
 	sys_file_close(f);
 	return t;
 }

@@ -6,7 +6,7 @@ SPALL_NOINSTRUMENT
 bool
 trace_fwrite(SpallProfile *self, const void *p, size_t length)
 {
-	int res = sys_file_write(self->data, p, length);
+	int res = sys_file_w(self->data, p, length);
 	return res;
 }
 
@@ -39,7 +39,7 @@ trace_init(str8 file_name, u8 *buffer, usize size)
 #else
 #if DEBUG
 	log_info("Trace", "Init (Manual)");
-	void *f   = sys_file_open(file_name, SYS_FILE_W);
+	void *f   = sys_file_open_w(file_name);
 	SPALL_CTX = spall_init_callbacks(1, &trace_fwrite, &trace_fflush, &trace_fclose, f, false);
 	// SPALL_CTX    = spall_init_file("pinball-trace.spall", 1);
 	SPALL_BUFFER = (SpallBuffer){

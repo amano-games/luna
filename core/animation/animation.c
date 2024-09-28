@@ -1,7 +1,10 @@
 #include "animation.h"
-#include "mathfunc.h"
-#include "sys-log.h"
+
+#include "sys-types.h"
 #include "sys-utils.h"
+#include "sys-assert.h"
+
+#include "mathfunc.h"
 
 void
 animation_clip_init(struct animation_clip *data)

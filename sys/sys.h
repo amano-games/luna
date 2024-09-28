@@ -3,25 +3,33 @@
 #include "sys-types.h"
 #include "mem.h"
 
-#define SYS_UPS       50
-#define SYS_DISPLAY_W 400
-#define SYS_DISPLAY_H 240
+#define SYS_UPS            50
+#define SYS_DISPLAY_W      400
+#define SYS_DISPLAY_H      240
+#define SYS_DISPLAY_WBYTES 52
+#define SYS_DISPLAY_WWORDS 13
+
+#define SYS_UPS_DT      0.0200f // elapsed seconds per update step (1/UPS)
+#define SYS_UPS_DT_TEST 0.0195f // elapsed seconds required to run a tick - improves frame skips at max FPS
+#define SYS_UPS_DT_CAP  0.0600f // max elapsed seconds
+
+#if defined BACKEND_PD
+#define SYS_ACCELEROMETER_SUPPORT 1
+#else
+#define SYS_ACCELEROMETER_SUPPORT 0
+#endif
+
 #if !defined(TARGET_PLAYDATE)
 #define SYS_MAX_MEM MMEGABYTE(100)
 #else
 #define SYS_MAX_MEM 8388208
 #endif
 
-#define SYS_DISPLAY_WBYTES 52
-#define SYS_DISPLAY_WWORDS 13
-
-struct sys_display {
-	u32 *px;
-	int w;
-	int h;
-	int wword;
-	int wbyte;
-};
+#if defined(BACKEND_SOKOL)
+#include "sys-sokol.h"
+#else
+#include "sys-pd.h"
+#endif
 
 struct mem_block {
 	usize size;
@@ -44,15 +52,31 @@ void app_init(struct app_mem mem);
 void app_tick(f32 dt);
 void app_draw(void);
 void app_close(void);
-void app_resume(void);
 void app_pause(void);
+void app_resume(void);
 
-struct sys_display sys_display(void);
+void *sys_alloc(void *ptr, usize size);
+void sys_free(void *ptr);
+
+void sys_blit_text(char *str, i32 tile_x, i32 tile_y);
 f32 sys_seconds(void);
-void sys_display_update_rows(int a, int b);
+u32 sys_time(void);
 
+void sys_1bit_invert(bool32 i);
+void *sys_1bit_buffer(void);
+
+void sys_accelerometer_set(bool32 enabled);
+void sys_accelerometer(f32 *x, f32 *y, f32 *z);
+
+void sys_internal_init(void);
+i32 sys_internal_update(void);
+void sys_internal_close(void);
+void sys_internal_pause(void);
+void sys_internal_resume(void);
+
+// TODO: Should we do this only on playdate?
 void sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg);
 void sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)(void *arg), void *arg);
-int sys_menu_value(int id);
 void sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);
+int sys_menu_value(int id);
 void sys_menu_clr(void);
