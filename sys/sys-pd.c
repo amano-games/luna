@@ -1,5 +1,6 @@
 
 #include "mathfunc.h"
+#include "sys-debug.h"
 #include "sys.h"
 #include "sys-types.h"
 #include "sys-log.h"
