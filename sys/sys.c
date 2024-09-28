@@ -1,6 +1,5 @@
 #include "sys.h"
 #include "sys-utils.h"
-#include "sys-backend.h"
 #include "sys-font.h"
 #include "sys-log.h"
 #include "sys-assert.h"
@@ -9,29 +8,35 @@
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
 #endif
 
-#define SYS_FIXED_DT    .0200f // 1 /  50
-#define SYS_DT_MAX      .0600f // 3 /  50fps
-#define SYS_UPS_DT_TEST .0195f // 1 / ~51
-
-static struct {
-	void *menu_items[8];
-	f32 last_time;
+struct sys_data {
+	void *frame_buffer;
 	u32 tick;
-	f32 ups_time_accumulator;
-	struct sys_mem mem;
-#if SYS_SHOW_FPS
+	f32 last_time;
+	f32 ups_time_acc;
 	f32 fps_time_acc;
-	int fps_counter;
-	int fps; // updates per second
-#endif
-} SYS;
+	f32 ups_ft_acc;
+	f32 fps_ft_acc;
+	u16 fps_counter;
+	u16 ups_counter;
+	u16 fps; // rendered frames per second
+	u16 ups; // updates per second
+	u16 ups_ft;
+	u16 fps_ft;
+	void *menu_items[8];
+	struct sys_mem mem;
+};
+
+struct sys_data SYS;
 
 void
-sys_init(void)
+sys_internal_init(void)
 {
 	usize max_mem           = SYS_MAX_MEM;
 	struct sys_mem *sys_mem = &SYS.mem;
 	struct app_mem app_mem  = {0};
+	SYS.fps                 = SYS_UPS;
+	SYS.last_time           = sys_seconds();
+	SYS.frame_buffer        = sys_1bit_buffer();
 
 	app_mem.permanent.size = MMEGABYTE(2.5);
 	app_mem.transient.size = MMEGABYTE(2.5);
@@ -43,7 +48,7 @@ sys_init(void)
 
 	assert((app_mem.permanent.size + app_mem.transient.size + app_mem.debug.size) <= max_mem);
 	sys_mem->app_mem.size   = app_mem.permanent.size + app_mem.transient.size + app_mem.debug.size;
-	sys_mem->app_mem.buffer = backend_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
+	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
 	if(sys_mem->app_mem.buffer == NULL) {
 		log_error("Sys", "Failed to reserve app memory %u kb", (uint)sys_mem->app_mem.size / 1024);
 	}
@@ -66,146 +71,130 @@ sys_init(void)
 // if an update tick should run (@50 FPS cap on hardware)
 //
 // https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
-int
-sys_tick(void *arg)
+i32
+sys_internal_update(void)
 {
-	f32 time       = backend_seconds();
+	f32 time       = sys_seconds();
 	f32 time_delta = time - SYS.last_time;
-	SYS.last_time  = backend_seconds();
-	SYS.ups_time_accumulator += time_delta;
+	SYS.last_time  = time;
+	SYS.ups_time_acc += time_delta;
 
-	SYS.ups_time_accumulator = MIN(SYS_DT_MAX, SYS.ups_time_accumulator);
-
-	int n_upd = 0;
-	while(SYS.ups_time_accumulator > SYS_UPS_DT_TEST) {
-		f32 dt = SYS_FIXED_DT;
-
-		app_tick(dt);
-		SYS.ups_time_accumulator -= SYS_FIXED_DT;
-
-		if(SYS.ups_time_accumulator < 0) {
-			SYS.ups_time_accumulator = 0;
-		}
-
-		n_upd++;
-		SYS.tick++;
+	if(SYS_UPS_DT_CAP < SYS.ups_time_acc) {
+		SYS.ups_time_acc = SYS_UPS_DT_CAP;
 	}
 
-	if(n_upd > 0) {
-		app_draw();
 #if SYS_SHOW_FPS
-		char fps[2] = {'0' + (SYS.fps / 10), '0' + (SYS.fps % 10)};
+	f32 tu1 = sys_seconds();
+#endif
 
-		u8 *fb = (u8 *)backend_framebuffer();
-		for(int k = 0; k <= 1; k++) {
-			int cx = ((int)fps[k] & 31);
-			int cy = ((int)fps[k] >> 5) << 3;
+	bool32 updated = 0;
 
-			for(int n = 0; n < 8; n++) {
-				int i = k + n * SYS_DISPLAY_WBYTES;
-				int j = cx + ((cy + n) << 5);
-				fb[i] = ((u8 *)SYS_CONSOLEFONT)[j];
-			}
-		}
-		sys_display_update_rows(0, 239);
+	while(SYS_UPS_DT_TEST <= SYS.ups_time_acc) {
+		SYS.ups_time_acc -= SYS_UPS_DT;
+		SYS.tick++;
+		SYS.ups_counter++;
+		updated = 1;
+		app_tick(SYS_UPS_DT);
+	}
+#if SYS_SHOW_FPS
+	f32 tu2 = sys_seconds();
+	SYS.ups_ft_acc += tu2 - tu1;
+#endif
+
+	if(updated) {
+#if SYS_SHOW_FPS
+		f32 tf1 = sys_seconds();
+		app_draw();
+		f32 tf2 = sys_seconds();
+		SYS.fps_ft_acc += tf2 - tf1;
 		SYS.fps_counter++;
+
+		i32 fps_ft = 100 <= SYS.fps_ft ? 99 : SYS.fps_ft;
+		i32 ups_ft = 100 <= SYS.ups_ft ? 99 : SYS.ups_ft;
+		char fps[] = {
+			'0' + (SYS.fps / 10),
+			'0' + (SYS.fps % 10),
+			'\0',
+		};
+		char ups[] = {
+			'U',
+			' ',
+			'0' + (SYS.ups / 10),
+			'0' + (SYS.ups % 10),
+			' ',
+			10 <= ups_ft ? '0' + (ups_ft / 10) % 10 : ' ',
+			'0' + (ups_ft % 10),
+			'\0',
+		};
+		sys_blit_text(fps, 0, 29);
+		// sys_blit_text(ups, 0, 1);
+#else
+		app_draw();
 #endif
 	}
 
 #if SYS_SHOW_FPS
 	SYS.fps_time_acc += time_delta;
-	if(1.0f <= SYS.fps_time_acc) {
+	if(1.f <= SYS.fps_time_acc) {
 		SYS.fps_time_acc -= 1.f;
 		SYS.fps         = SYS.fps_counter;
+		SYS.ups         = SYS.ups_counter;
+		SYS.ups_counter = 0;
 		SYS.fps_counter = 0;
+		if(0 < SYS.ups) {
+			SYS.ups_ft = (i32)(SYS.ups_ft_acc * 1000.5f) / SYS.ups;
+		} else {
+			SYS.ups_ft = U16_MAX;
+		}
+		if(0 < SYS.fps) {
+			SYS.fps_ft = (i32)(SYS.fps_ft_acc * 1000.5f) / SYS.fps;
+		} else {
+			SYS.fps_ft = U16_MAX;
+		}
+		SYS.fps_ft_acc = 0.f;
+		SYS.ups_ft_acc = 0.f;
 	}
 #endif
-
-	return (0 < n_upd);
+	return updated;
 }
 
 void
-sys_close(void)
+sys_blit_text(char *str, i32 tile_x, i32 tile_y)
+{
+	u8 *fb = (u8 *)SYS.frame_buffer;
+	i32 i  = tile_x;
+	for(char *c = str; *c != '\0'; c++) {
+		i32 cx = ((i32)*c & 31);
+		i32 cy = ((i32)*c >> 5) << 3;
+		for(i32 n = 0; n < 8; n++) {
+			fb[i + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] =
+				((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
+		}
+		i++;
+	}
+}
+
+void
+sys_internal_close(void)
 {
 	app_close();
-	backend_free(SYS.mem.app_mem.buffer);
+	sys_free(SYS.mem.app_mem.buffer);
 }
 
 void
-sys_pause(void)
+sys_internal_pause(void)
 {
 	app_pause();
 }
 
 void
-sys_resume(void)
+sys_internal_resume(void)
 {
 	app_resume();
 }
 
-f32
-sys_seconds(void)
+u32
+sys_time(void)
 {
-	f32 r = backend_seconds();
-	return r;
-}
-
-struct sys_display
-sys_display(void)
-{
-	struct sys_display s;
-	s.px    = backend_framebuffer();
-	s.w     = SYS_DISPLAY_W;
-	s.h     = SYS_DISPLAY_H;
-	s.wbyte = SYS_DISPLAY_WBYTES;
-	s.wword = SYS_DISPLAY_WWORDS;
-
-	return s;
-}
-
-void
-sys_display_update_rows(int a, int b)
-{
-	assert(0 <= a && b < SYS_DISPLAY_H);
-	backend_display_row_updated(a, b);
-}
-
-void
-sys_debug_draw(struct debug_shape *shapes, int count)
-{
-	backend_draw_debug_shape(shapes, count);
-}
-
-void
-sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg)
-{
-	void *item         = backend_menu_item_add(title, callback, arg);
-	SYS.menu_items[id] = item;
-}
-
-void
-sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)(void *arg), void *arg)
-{
-	void *item         = backend_menu_checkmark_add(title, val, callback, arg);
-	SYS.menu_items[id] = item;
-}
-
-void
-sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
-{
-	void *item         = backend_menu_options_add(title, options, count, callback, arg);
-	SYS.menu_items[id] = item;
-}
-
-int
-sys_menu_value(int id)
-{
-	return backend_menu_value(SYS.menu_items[id]);
-}
-
-void
-sys_menu_clr(void)
-{
-	backend_menu_clr();
-	memset(SYS.menu_items, 0, sizeof(SYS.menu_items));
+	return SYS.tick;
 }

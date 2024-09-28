@@ -33,10 +33,10 @@ void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint
 		printf("%s\n", strret); \
 	}
 #else
-extern void (*PD_LOG)(const char *format, ...);
+extern void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *format, ...);
 #define sys_printf(...) \
 	{ \
-		PD_LOG(__VA_ARGS__); \
+		PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__); \
 	}
 #endif
 #endif

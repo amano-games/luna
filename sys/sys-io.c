@@ -1,51 +1,12 @@
 #include "sys-io.h"
-#include "sys-backend.h"
 
-sys_file *
-sys_fopen(str8 path, const char *mode)
+void *
+sys_file_open(str8 path, i32 sys_file_mode)
 {
-	switch(mode[0]) {
-	case 'r': return (sys_file *)backend_file_open(path, SYS_FILE_R);
-	case 'w': return (sys_file *)backend_file_open(path, SYS_FILE_W);
+	switch(sys_file_mode) {
+	case SYS_FILE_MODE_R: return sys_file_open_r(path);
+	case SYS_FILE_MODE_W: return sys_file_open_w(path);
+	case SYS_FILE_MODE_A: return sys_file_open_a(path);
 	}
-
 	return NULL;
-}
-
-int
-sys_fclose(sys_file *f)
-{
-	return backend_file_close(f);
-}
-
-usize
-sys_fread(void *buf, usize size, usize count, sys_file *f)
-{
-	int i = backend_file_read(f, buf, size * count);
-	return (i * count);
-}
-
-usize
-sys_fwrite(const void *buf, usize size, usize count, sys_file *f)
-{
-	int i = backend_file_write(f, buf, size * count);
-	return (i * count);
-}
-
-int
-sys_ftell(sys_file *f)
-{
-	return backend_file_tell(f);
-}
-
-int
-sys_fseek(sys_file *f, int pos, int origin)
-{
-	return backend_file_seek(f, pos, origin);
-}
-
-struct sys_file_stats
-sys_fstats(str8 path)
-{
-	return backend_file_stats(path);
 }

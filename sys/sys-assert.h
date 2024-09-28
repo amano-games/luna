@@ -4,13 +4,8 @@
 
 #if defined(TARGET_PLAYDATE) // assertions don't work on hardware - disable
 #undef assert
-#undef static_assert
 #define assert(X)
-
-// https: //stackoverflow.com/questions/53923706/workaround-for-semicolon-in-global-scope-warning-for-no-op-c-macro
-#define static_assert(A, B) struct GlobalScopeNoopTrick
 #else
-#include <assert.h>
 #undef assert
 #define assert(c) \
 	while(!(c)) __builtin_unreachable()

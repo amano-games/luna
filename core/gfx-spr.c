@@ -393,9 +393,6 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, v2_i32 pos, int flip, int mode)
 
 	if(dst_words_to_px == 1 && src_words_to_px == 2) {
 		for(int y = y1; y <= y2; y++, src_pixel_words += stex.wword * sign_flip_y, dst_px_word += dtex.wword) {
-			if(y > 230) {
-				sys_display_update_rows(0, SYS_DISPLAY_H - 1);
-			}
 			u32 pattern = ctx.pat.p[y & 7];
 			if(pattern == 0) continue;
 			if(fx) {
