@@ -1,4 +1,5 @@
 #include "pd-utils.h"
+#include "str.h"
 #include "sys-io.h"
 // TODO: Remove this
 #include <string.h>
@@ -32,11 +33,11 @@ extract_int_value(char *line, char *key, int *dest)
 void
 pdxinfo_parse(struct pdxinfo *info, struct alloc *scratch)
 {
-	void *f = sys_file_open(str8_lit("pdxinfo"), SYS_FILE_R);
+	void *f = sys_file_open_r(str8_lit("pdxinfo"));
 	if(f != NULL) {
-		struct sys_file_stats stats = sys_fstats(str8_lit("pdxinfo"));
+		struct sys_file_stats stats = sys_file_stats(str8_lit("pdxinfo"));
 		char *buffer                = scratch->allocf(scratch->ctx, stats.size);
-		sys_file_read(f, (void *)buffer, stats.size);
+		sys_file_r(f, (void *)buffer, stats.size);
 
 		char *line = strtok(buffer, "\n");
 		while(line) {
