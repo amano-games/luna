@@ -12,7 +12,7 @@
 #include "../external/stb_image.h"
 
 #define IMG_EXT ".png"
-#define ANI_EXT ".luni"
+#define ANI_EXT ".lunass"
 
 struct pixel {
 	uint8_t red;

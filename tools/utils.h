@@ -6,6 +6,11 @@
 #include <string.h>
 #include <stdio.h>
 
+#define MKILOBYTE(value) ((value) * 1024LL)
+#define MMEGABYTE(value) (MKILOBYTE(value) * 1024LL)
+#define MGIGABYTE(value) (MMEGABYTE(value) * 1024LL)
+#define MTERABYTE(value) (MGIGABYTE(value) * 1024LL)
+
 // Function to convert a 32-bit unsigned integer to big-endian
 uint32_t
 to_big_endian(uint32_t value)
