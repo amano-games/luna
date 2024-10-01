@@ -51,6 +51,7 @@ struct app_mem {
 void app_init(struct app_mem mem);
 void app_tick(f32 dt);
 void app_draw(void);
+void app_audio(i16 *lbuf, i16 *rbuf, i32 len);
 void app_close(void);
 void app_pause(void);
 void app_resume(void);
@@ -70,6 +71,7 @@ void sys_accelerometer(f32 *x, f32 *y, f32 *z);
 
 void sys_internal_init(void);
 i32 sys_internal_update(void);
+void sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len);
 void sys_internal_close(void);
 void sys_internal_pause(void);
 void sys_internal_resume(void);

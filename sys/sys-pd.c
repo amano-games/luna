@@ -31,6 +31,7 @@ int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
 
 int sys_pd_update(void *user);
+int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
 
 int
 eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
@@ -51,6 +52,8 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_FILE_WRITE                 = PD->file->write;
 
 		PD->system->setUpdateCallback(sys_pd_update, PD);
+		PD->sound->addSource(sys_pd_audio, NULL, 0);
+
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
 		sys_internal_init();
@@ -97,10 +100,14 @@ sys_pd_update_rows(i32 from_incl, i32 to_incl)
 int
 sys_pd_update(void *pd)
 {
-	// PDButtons cur;
-	// PD_SYSTEM_GET_BUTTON_STATE(&cur, NULL, NULL);
-	// PD_STATE.b |= cur;
 	return sys_internal_update();
+}
+
+int
+sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len)
+{
+	sys_internal_audio(lbuf, rbuf, len);
+	return 1;
 }
 
 int

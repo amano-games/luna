@@ -85,3 +85,11 @@ typedef struct str8 {
 	u8 *str;
 	u64 size;
 } str8;
+
+static inline i32
+i16_sat(i32 x)
+{
+	if(x < I16_MIN) return I16_MIN;
+	if(x > I16_MAX) return I16_MAX;
+	return x;
+}

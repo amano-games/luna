@@ -1,4 +1,5 @@
 #include "sys-sokol.h"
+#include "mathfunc.h"
 
 #if !defined(TARGET_WASM)
 #include <whereami.h>
@@ -21,6 +22,7 @@
 #include "sokol_time.h"
 #include "sokol_glue.h"
 #include "sokol_log.h"
+#include "sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
 struct sokol_state {
@@ -64,6 +66,37 @@ event(const sapp_event *e)
 	}
 }
 
+#define F32_SCALE (1.0f / I16_MAX)
+static void
+stream_cb(f32 *buffer, int num_frames, int num_channels)
+{
+	assert(1 == num_channels);
+	bool32 is_mono = (num_channels == 1);
+
+	static i16 lbuf[0x1000];
+	static i16 rbuf[0x1000];
+	mclr(lbuf, sizeof(lbuf));
+	mclr(rbuf, sizeof(rbuf));
+
+	sys_internal_audio(lbuf, rbuf, num_frames);
+
+	f32 *s     = buffer;
+	i16 *l     = lbuf;
+	i16 *r     = rbuf;
+	f32 volume = 0.1f;
+
+	for(i32 n = 0; n < num_frames; n++) {
+		f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
+		f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
+
+		// Store the f32 values in the output stream buffer
+		*s++ = vl; // Left channel
+		if(num_channels == 2) {
+			*s++ = vr; // Right channel, only if stereo
+		}
+	}
+}
+
 void
 init(void)
 {
@@ -72,6 +105,12 @@ init(void)
 	stm_setup();
 	sg_setup(&(sg_desc){
 		.environment = sglue_environment(),
+		.logger.func = slog_func,
+	});
+
+	saudio_setup(&(saudio_desc){
+		// .stream_cb   = stream_cb,
+		.stream_cb   = stream_cb,
 		.logger.func = slog_func,
 	});
 
@@ -185,6 +224,7 @@ void
 cleanup(void)
 {
 	sg_shutdown();
+	saudio_shutdown();
 	sys_internal_close();
 }
 
