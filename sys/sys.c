@@ -159,6 +159,19 @@ sys_internal_update(void)
 }
 
 void
+sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
+{
+#if SYS_SHOW_FPS
+	f32 tu1 = sys_seconds();
+#endif
+	app_audio(lbuf, rbuf, len);
+#if SYS_SHOW_FPS
+	f32 tu2 = sys_seconds();
+	SYS.ups_ft_acc += tu2 - tu1;
+#endif
+}
+
+void
 sys_blit_text(char *str, i32 tile_x, i32 tile_y)
 {
 	u8 *fb = (u8 *)SYS.frame_buffer;
@@ -172,6 +185,12 @@ sys_blit_text(char *str, i32 tile_x, i32 tile_y)
 		}
 		i++;
 	}
+}
+
+u32
+sys_time(void)
+{
+	return SYS.tick;
 }
 
 void
@@ -191,10 +210,4 @@ void
 sys_internal_resume(void)
 {
 	app_resume();
-}
-
-u32
-sys_time(void)
-{
-	return SYS.tick;
 }

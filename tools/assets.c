@@ -162,6 +162,8 @@ gen_tex_recursive(const char *in_dir, const char *out_dir)
 				gen_tex(in_path, out_path);
 			} else if(strstr(entry->d_name, ANI_EXT) != NULL) {
 				fcopy(in_path, out_path);
+			} else {
+				fcopy(in_path, out_path);
 			}
 		}
 	}
