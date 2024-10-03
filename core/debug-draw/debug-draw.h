@@ -7,7 +7,7 @@
 
 struct debug_draw DEBUG_STATE;
 
-#define MAX_DEBUG_SHAPES 1000
+#define MAX_DEBUG_SHAPES 10000
 
 struct debug_draw {
 	v2_i32 draw_offset;

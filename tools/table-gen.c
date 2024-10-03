@@ -6,6 +6,7 @@
 
 #include "../external/jsmn.h"
 #include "io.h"
+#include "sys-utils.h"
 #include "utils.h"
 
 #define TABLE_EXT ".luntable"

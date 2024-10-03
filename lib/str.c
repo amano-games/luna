@@ -1,6 +1,6 @@
-#include "sys-utils.h"
 #include "str.h"
 #include "sys-utils.h"
+#include "sys-assert.h"
 
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 

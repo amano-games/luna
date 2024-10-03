@@ -1,5 +1,4 @@
 #include "sys-sokol.h"
-#include "mathfunc.h"
 
 #if !defined(TARGET_WASM)
 #include <whereami.h>
