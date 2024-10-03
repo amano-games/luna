@@ -1,15 +1,13 @@
 #pragma once
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 
-#define MKILOBYTE(value) ((value) * 1024LL)
-#define MMEGABYTE(value) (MKILOBYTE(value) * 1024LL)
-#define MGIGABYTE(value) (MMEGABYTE(value) * 1024LL)
-#define MTERABYTE(value) (MGIGABYTE(value) * 1024LL)
+#define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x0100)
 
 // Function to convert a 32-bit unsigned integer to big-endian
 uint32_t
@@ -70,5 +68,36 @@ change_extension(const char *in, char *out, const char *new_extension)
 			strcat(out, ".");                 // Add a dot
 			strcat(out, new_extension);       // Add the new extension
 		}
+	}
+}
+
+static void
+little_endian_to_native(void *data, char *format)
+{
+	unsigned char *cp = (unsigned char *)data;
+	int32_t temp;
+
+	while(*format) {
+		switch(*format) {
+		case 'L':
+			temp           = cp[0] + ((int32_t)cp[1] << 8) + ((int32_t)cp[2] << 16) + ((int32_t)cp[3] << 24);
+			*(int32_t *)cp = temp;
+			cp += 4;
+			break;
+
+		case 'S':
+			temp         = cp[0] + (cp[1] << 8);
+			*(short *)cp = (short)temp;
+			cp += 2;
+			break;
+
+		default:
+			if(isdigit((unsigned char)*format))
+				cp += *format - '0';
+
+			break;
+		}
+
+		format++;
 	}
 }
