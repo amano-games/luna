@@ -1,5 +1,6 @@
 #pragma once
 
+#include "audio/adpcm.h"
 #include "lib/mem.h"
 #include "sys-types.h"
 
@@ -23,27 +24,11 @@ struct sound {
 	u32 len;
 };
 
-struct adpcm {
-	u8 *data;        // pointer to sample data (2x 4 bit samples per byte)
-	u32 len;         // number of samples
-	u32 len_pitched; // length of pitched buffer
-	u32 data_pos;    // index in data array
-	u32 pos;         // current sample index in original buffer
-	u32 pos_pitched; // current sample index in pitched buffer
-	u16 pitch_q8;
-	u16 ipitch_q8;
-	i16 hist;
-	i16 step_size;
-	u8 nibble;
-	u8 curr_byte;    // current byte value of the sample
-	i16 curr_sample; // current decoded i16 sample value
-	i16 vol_q8;      // playback volume in Q8
-};
-
 struct mus_channel {
 	void *stream;
 	u32 total_bytes_file;
 	struct adpcm adpcm;
+
 	u8 chunk[256];
 	char mus_name[LEN_MUS_NAME];
 	i32 trg_vol_q8;
@@ -74,4 +59,3 @@ void audio_do(i16 *lbuf, i16 *rbuf, i32 len);
 void audio_mus_play(const str8 path);
 
 struct sound audio_load(const str8 path, struct alloc alloc);
-void audio_debug_plot_sound(struct sound *sound, i16 *buff);
