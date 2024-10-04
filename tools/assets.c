@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +9,7 @@
 #include "str.h"
 #include "str.c"
 
+#include "audio/adpcm.c"
 #include "./wav/wav.h"
 #include "./wav/wav.c"
 
@@ -18,6 +18,7 @@
 
 #define IMG_EXT ".png"
 #define AUD_EXT ".wav"
+// #define RAW_EXT ".raw"
 #define ANI_EXT ".lunass"
 
 void
