@@ -131,7 +131,7 @@ audio_load(const str8 path, struct alloc alloc)
 
 	res.buf = (u8 *)buf;
 	res.len = num_samples;
-	log_info("Audio", "Load aud: %s samples:%d", path.str, num_samples);
+	log_info("Audio", "Load aud: %s samples: %u", path.str, (uint)num_samples);
 	return res;
 }
 
