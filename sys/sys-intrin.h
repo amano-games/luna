@@ -14,16 +14,16 @@ brev32(u32 v)
 	return r;
 }
 
-static inline i32
-ssat16(i32 x)
-{
-	u32 r = 0;
-	u32 i = (u32)x;
-	ASM("ssat %0, %1, %2"
-		: "=r"(r)
-		: "I"(16), "r"(i));
-	return (i32)r;
-}
+// static inline i32
+// ssat16(i32 x)
+// {
+// 	u32 r = 0;
+// 	u32 i = (u32)x;
+// 	ASM("ssat %0, %1, %2"
+// 		: "=r"(r)
+// 		: "I"(16), "r"(i));
+// 	return (i32)r;
+// }
 #else
 static u32
 bswap32(u32 i)
@@ -44,6 +44,7 @@ brev32(u32 x)
 	return (r << s);
 }
 
+#endif
 static inline i32
 ssat16(i32 x)
 {
@@ -51,4 +52,3 @@ ssat16(i32 x)
 	if(x > I16_MAX) return I16_MAX;
 	return x;
 }
-#endif
