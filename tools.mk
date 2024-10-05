@@ -42,10 +42,10 @@ all: $(BUILD_DIR) $(BUILD_DIR)/luna-table-gen $(BUILD_DIR)/luna-assets
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/luna-table-gen: $(SRC_DIR)/table-gen.c
+$(BUILD_DIR)/luna-table-gen: $(SRC_DIR)/table-gen.c $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
-$(BUILD_DIR)/luna-assets: $(SRC_DIR)/assets.c
+$(BUILD_DIR)/luna-assets: $(SRC_DIR)/assets.c $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
 # Clean tools bin
