@@ -4,6 +4,7 @@
 #include "arr.h"
 #include "ht.h"
 #include "str.h"
+#include "sys-log.h"
 #include "trace.h"
 
 void
@@ -15,6 +16,7 @@ asset_db_init(
 	usize slice_count,
 	struct alloc alloc)
 {
+	log_info("Assets DB", "init");
 	usize paths_data_size = paths_count * 50;
 	i32 exp               = 10;
 
