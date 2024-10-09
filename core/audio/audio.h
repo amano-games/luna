@@ -106,7 +106,7 @@ void aud_allow_playing_new_snd(bool32 enabled);
 void aud_set_lowpass(i32 lp); // 0 for off, otherwise increasing intensity
 void aud_cmd_queue_commit(void);
 
-struct snd snd_load(const char *pathname, struct alloc alloc);
+struct snd snd_load(const str8 path, struct alloc alloc);
 u32 snd_instance_play(struct snd s, f32 vol, f32 pitch); // returns an integer to refer to an active snd instance
 void snd_instance_stop(u32 snd_id);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
