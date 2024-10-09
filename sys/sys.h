@@ -48,6 +48,18 @@ struct app_mem {
 	bool is_initialized;
 };
 
+#if defined BACKEND_PD
+#define sys_audio_set_volume(V)
+#define sys_audio_get_volume() 1.f
+#define sys_audio_lock()
+#define sys_audio_unlock()
+#else
+void sys_audio_set_volume(f32 vol);
+f32 sys_audio_get_volume(void);
+void sys_audio_lock(void);
+void sys_audio_unlock(void);
+#endif
+
 void app_init(struct app_mem mem);
 void app_tick(f32 dt);
 void app_draw(void);

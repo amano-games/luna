@@ -530,3 +530,26 @@ void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
 }
+
+void
+sys_audio_set_volume(f32 vol)
+{
+	sys_audio_lock();
+	sys_audio_unlock();
+}
+
+f32
+sys_audio_get_volume(void)
+{
+	return 1.0f;
+}
+
+void
+sys_audio_lock(void)
+{
+}
+
+void
+sys_audio_unlock(void)
+{
+}
