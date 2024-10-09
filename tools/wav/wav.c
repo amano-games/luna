@@ -89,12 +89,12 @@ handle_wav(str8 in_file_path, str8 out_path)
 			}
 
 			// fprintf(stderr, "%d-bit ADPCM, %d channels, %d samples/block, %d-byte block alignment\n", bits_per_sample, wave_header.num_channels, wave_header.samples.samples_per_block, wave_header.block_align);
-
-			if(wave_header.samples.samples_per_block >
-				adpcm_block_size_to_sample_count(wave_header.block_align, wave_header.num_channels, bits_per_sample)) {
-				fprintf(stderr, "[err] %s is not a valid .WAV file, bad samples per block\n", in_file_path.str);
-				return -1;
-			}
+			// TODO: Only needed in ADPCM not WAV
+			// if(wave_header.samples.samples_per_block >
+			// 	adpcm_block_size_to_sample_count(wave_header.block_align, wave_header.num_channels, bits_per_sample)) {
+			// 	fprintf(stderr, "[err] %s is not a valid .WAV file, bad samples per block\n", in_file_path.str);
+			// 	return -1;
+			// }
 		} else if(!strncmp(chunk_header.chunk_id, "fact", 4)) {
 			if(chunk_header.chunk_size < 4 || !fread(&fact_samples, sizeof(fact_samples), 1, in_file)) {
 				fprintf(stderr, "[err] %s is not a valid .WAV file!, bad chunk size\n", in_file_path.str);
