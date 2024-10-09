@@ -135,3 +135,54 @@ asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 
 	return result;
 }
+
+struct snd
+asset_snd(i32 id)
+{
+	assert(0 <= id && id < NUM_SFX_ID_MAX);
+	return ASSETS.snd[id].snd;
+}
+
+i32
+asset_snd_load(const str8 file_name, struct snd *snd)
+{
+	// for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
+	// 	struct asset_snd *asset_snd = &ASSETS.snd[i];
+	// 	if(str8_match(asset_snd->file_name, file_name, 0)) {
+	// 		if(tex) *tex = at->tex;
+	// 		return i;
+	// 	}
+	// }
+
+	log_info("Assets", "Load snd %s", file_name.str);
+
+	struct snd s = snd_load(file_name, ASSETS.alloc);
+
+	if(snd->buf == NULL) {
+		log_info("Assets", "Lod failed %s", file_name.str);
+		return -1;
+	}
+
+	i32 id             = ASSETS.next_snd_id++;
+	ASSETS.snd[id].snd = s;
+
+	if(snd) *snd = s;
+	return id;
+}
+
+i32
+asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
+{
+	assert(0 <= id && id < NUM_SFX_ID_MAX);
+	log_info("Assets", "Load snd %s", file_name.str);
+
+	struct snd s       = snd_load(file_name, ASSETS.alloc);
+	ASSETS.snd[id].snd = s;
+
+	if(s.buf) {
+		if(snd) *snd = s;
+		return id;
+	}
+
+	return -1;
+}

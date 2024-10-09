@@ -136,7 +136,6 @@ aud_push_cmd(struct aud_cmd aud_cmd)
 
 	if(is_full) { // temporary read index
 		log_warn("Audio", "Queue Full!");
-
 		// TODO: scan queue and see if we can drop a less important command
 	} else {
 		AUDIO.cmds[AUDIO.i_cmd_w_tmp] = aud_cmd;
@@ -237,8 +236,74 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 	assert(adpcm->pos_pitched == adpcm->pos);
 }
 
+u32
+snd_instance_play(struct snd snd, f32 vol, f32 pitch)
+{
+	if(AUDIO.snd_playing_disabled) return 0;
+	if(!snd.buf || snd.len == 0) return 0;
+
+	i32 vol_q8   = (i32)(vol * 256.5f);
+	i32 pitch_q8 = (i32)(pitch * 256.5f);
+	if(vol_q8 == 0) return 0;
+
+	AUDIO.snd_id++;
+	if(AUDIO.snd_id == 0) {
+		AUDIO.snd_id = 1;
+	}
+
+	struct aud_cmd cmd      = {.type = AUD_CMD_SND_PLAY};
+	cmd.c.snd_play.snd      = snd;
+	cmd.c.snd_play.id       = AUDIO.snd_id;
+	cmd.c.snd_play.pitch_q8 = pitch_q8;
+	cmd.c.snd_play.vol_q8   = vol_q8;
+	aud_push_cmd(cmd);
+	return AUDIO.snd_id;
+}
+
+void
+snd_instance_stop(u32 id)
+{
+	struct aud_cmd cmd    = {.type = AUD_CMD_SND_MODIFY};
+	cmd.c.snd_modify.id   = id;
+	cmd.c.snd_modify.stop = 1;
+	aud_push_cmd(cmd);
+}
+
+void
+snd_instance_set_vol(u32 snd_id, f32 vol)
+{
+	struct aud_cmd cmd      = {.type = AUD_CMD_SND_MODIFY};
+	cmd.c.snd_modify.id     = snd_id;
+	cmd.c.snd_modify.vol_q8 = (i32)(vol * 256.5f);
+	aud_push_cmd(cmd);
+}
+
+static void
+sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i32 len)
+{
+	if(!sc->snd_id) return;
+
+	struct adpcm *adpcm = &sc->adpcm;
+	assert(0 < adpcm->len_pitched);
+	assert(adpcm->pos_pitched < adpcm->len_pitched);
+	i32 l = min_i32(len, adpcm->len_pitched - adpcm->pos_pitched - 1);
+	adpcm_playback(adpcm, lbuf, rbuf, l);
+	assert(adpcm->pos_pitched < adpcm->len_pitched);
+
+	if(adpcm->pos_pitched == adpcm->len_pitched - 1) {
+		sc->snd_id = 0;
+	}
+}
+
+static void
+sfx_channel_stop(struct sfx_channel *ch)
+{
+	ch->adpcm.data = NULL;
+	ch->snd_id     = 0;
+}
+
 struct snd
-aud_load(const str8 path, struct alloc alloc)
+snd_load(const str8 path, struct alloc alloc)
 {
 	struct snd res = {0};
 
@@ -266,13 +331,4 @@ aud_load(const str8 path, struct alloc alloc)
 	res.len = num_samples;
 	log_info("Audio", "Load aud: %s samples: %u", path.str, (uint)num_samples);
 	return res;
-}
-
-static void
-sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i32 len)
-{
-}
-static void
-sfx_channel_stop(struct sfx_channel *ch)
-{
 }
