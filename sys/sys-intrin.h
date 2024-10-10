@@ -2,16 +2,14 @@
 
 #include "sys-types.h"
 
-#ifdef TARGET_PLAYDATE
+#if defined(TARGET_PLAYDATE)
 #define bswap32 __builtin_bswap32
 
 static inline u32
 brev32(u32 v)
 {
 	u32 r;
-	__asm("rbit %0, %1"
-		  : "=r"(r)
-		  : "r"(v));
+	ASM("rbit %0, %1" : "=r"(r) : "r"(v));
 	return r;
 }
 
@@ -20,9 +18,7 @@ ssat16(i32 x)
 {
 	u32 r = 0;
 	u32 i = (u32)x;
-	__asm("ssat %0, %1, %2"
-		  : "=r"(r)
-		  : "I"(16), "r"(i));
+	ASM("ssat %0, %1, %2" : "=r"(r) : "I"(16), "r"(i));
 	return (i32)r;
 }
 #else
