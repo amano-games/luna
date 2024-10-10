@@ -93,6 +93,10 @@ aud_cmds_flush(void)
 			struct mus_channel *mc       = &AUDIO.mus_channel[0];
 			mus_channel_stop(mc);
 			str8 path = asset_db_get_path(&ASSETS.db, cmd->path_handle);
+			if(path.size == 0) {
+				log_warn("Audio", "Music file path doesn't exist in DB");
+				break;
+			}
 
 			void *f = sys_file_open_r(path);
 			if(!f) {
