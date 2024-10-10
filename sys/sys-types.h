@@ -33,6 +33,10 @@ typedef intptr_t iptr;
 
 typedef size_t usize;
 
+#if defined(TARGET_PLAYDATE)
+#define ASM __asm volatile
+#endif
+
 #define I64_MAX INT64_MAX
 #define I64_MIN INT64_MIN
 #define U64_MAX UINT64_MAX
