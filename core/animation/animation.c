@@ -92,17 +92,16 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 
 	struct animation_timer *timer = &ani->timer;
 
-	f32 start       = timer->timestamp;
-	f32 current     = timestamp;
-	f32 delta       = current - start;
-	delta           = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
-	i32 frame_index = delta * ani->clip.frame_duration_inv;
-
+	f32 start   = timer->timestamp;
+	f32 current = timestamp;
+	f32 delta   = current - start;
 	bool32 loop = ani->clip.count == -1;
-
-	frame_index = mod_euc_i32(frame_index, track->frames.len);
-	usize res   = track->frames.items[(usize)frame_index];
-
+	if(!loop) {
+		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
+	}
+	i32 frame_index = delta * ani->clip.frame_duration_inv;
+	frame_index     = mod_euc_i32(frame_index, track->frames.len);
+	usize res       = track->frames.items[(usize)frame_index];
 	return res;
 }
 
