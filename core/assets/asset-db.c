@@ -148,6 +148,17 @@ asset_db_get_animation_clip(struct asset_db *db, struct asset_handle handle, usi
 	return res;
 }
 
+struct animation_slice
+asset_db_gen_animation_slice(struct asset_db *db, usize count)
+{
+	struct animation_slice res = {
+		.clip = db->animations.data + arr_len(db->animations.data),
+		.size = count,
+	};
+
+	return res;
+}
+
 i32
 asset_db_push_animation_slice(struct asset_db *db, str8 path, struct animation_slice slice)
 {

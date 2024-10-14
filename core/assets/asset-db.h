@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ht.h"
-#include "str.h"
 #include "sys-types.h"
 
 #include "animation/animation.h"
@@ -78,5 +77,6 @@ struct texture_info asset_db_get_asset_info(struct asset_db *db, struct asset_ha
 i32 asset_db_push_animation_clip(struct asset_db *db, struct animation_clip clip);
 struct animation_clip asset_db_get_animation_clip(struct asset_db *db, struct asset_handle handle, usize index);
 
+struct animation_slice asset_db_gen_animation_slice(struct asset_db *db, usize count);
 i32 asset_db_push_animation_slice(struct asset_db *db, str8 path, struct animation_slice slice);
 struct animation_slice asset_db_get_animation_slice(struct asset_db *db, struct asset_handle handle);
