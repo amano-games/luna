@@ -90,4 +90,5 @@ rndm_weighted_choice_i32(struct rndm_weighted_choice *choices, usize count)
 	}
 
 	BAD_PATH;
+	return 0;
 }
