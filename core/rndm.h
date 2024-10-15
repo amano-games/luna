@@ -15,3 +15,5 @@ i32 rndm_next_i32(void);
 f32 rndm_next_f32(void);
 i32 rndm_range_i32(i32 min, i32 max);
 f32 rndm_range_f32(f32 min, f32 max);
+v2 rndm_point_out_rec(i32 x, i32 y, i32 w, i32 h);
+v2 rndm_point_out_cir(i32 x, i32 y, i32 r);

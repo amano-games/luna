@@ -1,4 +1,6 @@
 #include "rndm.h"
+#include "sys-log.h"
+#include "v2.h"
 
 struct rndm RNDM;
 
@@ -31,4 +33,42 @@ rndm_range_f32(f32 min, f32 max)
 {
 	f32 t = rndm_next_f32();
 	return min + t * (max - min);
+}
+
+v2
+rndm_point_out_rec(i32 x, i32 y, i32 w, i32 h)
+{
+	f32 p  = rndm_range_i32(0, w + w + h + h);
+	f32 px = 0;
+	f32 py = 0;
+
+	if(p < (w + h)) {
+		if(p < w) {
+			px = p;
+			py = 0;
+		} else {
+			px = w;
+			py = p - w;
+		}
+	} else {
+		p = p - (w + h);
+		if(p < w) {
+			px = w - p;
+			py = h;
+		} else {
+			px = 0;
+			py = h - (p - w);
+		}
+	}
+
+	return (v2){px + x, py + y};
+}
+
+v2
+rndm_point_out_cir(i32 x, i32 y, i32 r)
+{
+	f32 theta = rndm_range_f32(0.0f, 6.0f);
+	v2 res    = {cos_f32(theta) * r, sin_f32(theta) * r};
+	res       = v2_add((v2){x, y}, res);
+	return res;
 }
