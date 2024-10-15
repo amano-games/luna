@@ -72,3 +72,22 @@ rndm_point_out_cir(i32 x, i32 y, i32 r)
 	res       = v2_add((v2){x, y}, res);
 	return res;
 }
+
+i32
+rndm_weighted_choice_i32(struct rndm_weighted_choice *choices, usize count)
+{
+	i32 sum = 0;
+
+	for(usize i = 0; i < count; i++) {
+		struct rndm_weighted_choice choice = choices[i];
+		sum += choice.value;
+	}
+	assert(sum != 0);
+	u32 rnd = rndm_next_f32() * sum;
+	for(usize i = 0; i < count; i++) {
+		if(rnd < choices[i].value) return choices[i].key;
+		rnd = rnd - choices[i].value;
+	}
+
+	BAD_PATH;
+}
