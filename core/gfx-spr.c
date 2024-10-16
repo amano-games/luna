@@ -1,6 +1,5 @@
 #include "gfx-spr.h"
 
-#include "sys.h"
 #include "gfx.h"
 #include "sys-intrin.h"
 #include "mathfunc.h"
@@ -356,13 +355,13 @@ spr_blit_fwd_x(
 }
 
 void
-gfx_spr(struct gfx_ctx ctx, struct tex_rec src, v2_i32 pos, int flip, int mode)
+gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
 	// area bounds on canvas [x1/y1, x2/y2)
-	int x1 = max_i32(pos.x, ctx.clip_x1);               // inclusive
-	int y1 = max_i32(pos.y, ctx.clip_y1);               // inclusive
-	int x2 = min_i32(pos.x + src.r.w - 1, ctx.clip_x2); // inclusive
-	int y2 = min_i32(pos.y + src.r.h - 1, ctx.clip_y2); // inclusive
+	int x1 = max_i32(px, ctx.clip_x1);               // inclusive
+	int y1 = max_i32(py, ctx.clip_y1);               // inclusive
+	int x2 = min_i32(px + src.r.w - 1, ctx.clip_x2); // inclusive
+	int y2 = min_i32(py + src.r.h - 1, ctx.clip_y2); // inclusive
 	if(x2 < x1) return;
 	TRACE_START(__func__);
 
@@ -377,7 +376,7 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, v2_i32 pos, int flip, int mode)
 	int dst_words_touched = (dst_obit_offset + bits_in_row - 1) >> 5;                              // number of touched dst words -1
 	u32 mask_left         = bswap32(0xFFFFFFFFU >> (31 & dst_obit_offset));                        // mask to cut off boundary left
 	u32 mask_right        = bswap32(0xFFFFFFFFU << (31 & (uint)(-dst_obit_offset - bits_in_row))); // mask to cut off boundary right
-	int first_bit         = src.r.x - sign_flip_x * pos.x + (fx ? src.r.w - (x2 + 1) : x1);        // first bit index in src row
+	int first_bit         = src.r.x - sign_flip_x * px + (fx ? src.r.w - (x2 + 1) : x1);           // first bit index in src row
 	int src_bit_offset    = (uint)(sign_flip_x * first_bit - fx * bits_in_row) & 31;               // bitoffset in src
 	int dst_words_to_px   = 1 + (dtex.fmt == TEX_FMT_MASK);                                        // number of words to next logical pixel word in dst
 	int src_words_to_px   = 1 + (stex.fmt == TEX_FMT_MASK);                                        // number of words to next logical pixel word in src
@@ -389,7 +388,7 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, v2_i32 pos, int flip, int mode)
 	// dst pixel words
 	u32 *dst_px_word = &dtex.px[((x1 >> 5) << (dtex.fmt == TEX_FMT_MASK)) + y1 * dtex.wword];
 	// src pixel words
-	u32 *src_pixel_words = &stex.px[(first_bit >> 5) * src_words_to_px + stex.wword * (src.r.y + sign_flip_y * (y1 - pos.y) + fy * (src.r.h - 1))];
+	u32 *src_pixel_words = &stex.px[(first_bit >> 5) * src_words_to_px + stex.wword * (src.r.y + sign_flip_y * (y1 - py) + fy * (src.r.h - 1))];
 
 	if(dst_words_to_px == 1 && src_words_to_px == 2) {
 		for(int y = y1; y <= y2; y++, src_pixel_words += stex.wword * sign_flip_y, dst_px_word += dtex.wword) {
