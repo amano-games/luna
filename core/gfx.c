@@ -383,7 +383,7 @@ gfx_ctx_clipwh(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h)
 }
 
 struct span_blit
-span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, i32 mode)
+span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, enum prim_mode mode)
 {
 	i32 nbit              = (x2 + 1) - x1; // number of bits in a row to blit
 	i32 lsh               = (ctx.dst.fmt == TEX_FMT_MASK);
@@ -409,7 +409,7 @@ span_blit_incr_y(struct span_blit *info)
 }
 
 static void
-apply_prim_mode(u32 *restrict dp, u32 *restrict dm, u32 sm, i32 mode, u32 pt)
+apply_prim_mode(u32 *restrict dp, u32 *restrict dm, u32 sm, enum prim_mode mode, u32 pt)
 {
 	switch(mode) {
 	case PRIM_MODE_INV: sm &= pt, *dp = (*dp & ~sm) | (~*dp & sm); break;
@@ -437,7 +437,7 @@ prim_blit_span(struct span_blit info)
 }
 
 static void
-apply_prim_mode_x(u32 *restrict dp, u32 sm, i32 mode, u32 pt)
+apply_prim_mode_x(u32 *restrict dp, u32 sm, enum prim_mode mode, u32 pt)
 {
 	switch(mode) {
 	case PRIM_MODE_INV: sm &= pt, *dp = (*dp & ~sm) | (~*dp & sm); break;
@@ -483,18 +483,18 @@ gfx_px(struct gfx_ctx ctx, i32 x, i32 y, i32 color)
 }
 
 void
-gfx_rec(struct gfx_ctx ctx, rec_i32 rec, i32 mode, i32 r)
+gfx_rec(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 r, enum prim_mode mode)
 {
-	v2_i32 verts[4] = {{rec.x, rec.y},
-		{rec.x + rec.w, rec.y},
-		{rec.x + rec.w, rec.y + rec.h},
-		{rec.x, rec.y + rec.h}};
+	v2_i32 verts[4] = {{x, y},
+		{x + w, y},
+		{x + w, y + h},
+		{x, y + h}};
 
 	gfx_poly(ctx, verts, 4, mode, r);
 }
 
 void
-gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 mode)
+gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode)
 {
 	i32 x1 = max_i32(x, ctx.clip_x1); // area bounds on canvas [x1/y1, x2/y2]
 	i32 y1 = max_i32(y, ctx.clip_y1);
@@ -532,7 +532,7 @@ gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2)
 }
 
 void
-gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode)
+gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 {
 	if(d <= 0) return;
 	if(d == 1) {
@@ -589,7 +589,7 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode)
 }
 
 void
-gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode)
+gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 {
 	if(d <= 0) return;
 
@@ -644,13 +644,13 @@ gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode)
 }
 
 void
-gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 mode)
+gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, enum prim_mode mode)
 {
-	gfx_lin_thick(ctx, ax, ay, bx, by, mode, 1);
+	gfx_lin_thick(ctx, ax, ay, bx, by, 1, mode);
 }
 
 void
-gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 mode, i32 d)
+gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum prim_mode mode)
 {
 #define GFX_LIN_NUM_SPANS 512
 #define GFX_LIN_NUM_CIRX  64
@@ -739,7 +739,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 mode, i32 
 }
 
 void
-gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 mode, i32 r)
+gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode)
 {
 	for(i32 i = 0; i < count; ++i) {
 		v2_i32 a = verts[i];
@@ -779,7 +779,7 @@ gfx_arc_plot(
 	f32 sa,
 	f32 ea,
 	i32 thick,
-	i32 mode)
+	enum prim_mode mode)
 {
 	f32 angle = calculate_angle(px, py, x, y);
 	if(is_angle_in_range(angle, sa, ea)) {
@@ -799,7 +799,7 @@ gfx_arc(
 	f32 sa,
 	f32 ea,
 	i32 d,
-	i32 mode)
+	enum prim_mode mode)
 {
 	if(d <= 0) return;
 	if(d == 1) {
@@ -864,7 +864,7 @@ gfx_arc_thick(
 	f32 ea,
 	i32 d,
 	i32 thick,
-	i32 mode)
+	enum prim_mode mode)
 {
 	if(d <= 0) return;
 	if(d == 1) {

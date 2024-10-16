@@ -3,4 +3,4 @@
 #include "gfx.h"
 
 void
-gfx_spr(struct gfx_ctx ctx, struct tex_rec src, v2_i32 pos, int flip, int m);
+gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode);

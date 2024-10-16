@@ -11,13 +11,13 @@ enum {
 	TEX_FMT_MASK,   // color and mask interlaced in words
 };
 
-enum {
+enum gfx_col {
 	GFX_COL_BLACK,
 	GFX_COL_WHITE,
 	GFX_COL_CLEAR,
 };
 
-enum {                   // pattern holes always transparent
+enum spr_mode {          // pattern holes always transparent
 	SPR_MODE_COPY,       // 0 kDrawModeCopy
 	SPR_MODE_WHITE_ONLY, // 1 kDrawModeBlackTransparent
 	SPR_MODE_BLACK_ONLY, // 2 kDrawModeWhiteTransparent
@@ -28,7 +28,7 @@ enum {                   // pattern holes always transparent
 	SPR_MODE_INV,        // 7 kDrawModeInverted
 };
 
-enum {
+enum prim_mode {
 	PRIM_MODE_BLACK,       // fills black, pattern holes are transparent
 	PRIM_MODE_WHITE,       // fills white, pattern holes are transparent
 	PRIM_MODE_WHITE_BLACK, // fills black, pattern holes are white
@@ -36,7 +36,7 @@ enum {
 	PRIM_MODE_INV,         // inverts canvas, pattern holes are transparent
 };
 
-enum {
+enum spr_flip {
 	SPR_FLIP_X = 1, // kBitmapFlippedX
 	SPR_FLIP_Y = 2, // kBitmapFlippedY
 };
@@ -94,16 +94,16 @@ struct gfx_pattern gfx_pattern_bayer_4x4(i32 i);
 struct gfx_pattern gfx_pattern_interpolate(i32 num, i32 den);
 struct gfx_pattern gfx_pattern_interpolatec(i32 num, i32 den, i32 (*ease)(i32 a, i32 b, i32 num, i32 den));
 
-void gfx_rec(struct gfx_ctx ctx, rec_i32 rec, i32 mode, i32 r);
-void gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 mode);
-void gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode);
-void gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, i32 mode);
+void gfx_rec(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 r, enum prim_mode mode);
+void gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
+void gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode);
+void gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode);
 void gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2);
-void gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 mode);
-void gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 mode, i32 r);
-void gfx_arc(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i32 mode);
-void gfx_arc_thick(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i32 thick, i32 mode);
-void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 mode, i32 r);
+void gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, enum prim_mode mode);
+void gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 r, enum prim_mode mode);
+void gfx_arc(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, enum prim_mode mode);
+void gfx_arc_thick(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i32 thick, enum prim_mode mode);
+void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode);
 
 struct gfx_ctx gfx_ctx_display(void);
 struct gfx_ctx gfx_ctx_unclip(struct gfx_ctx ctx);
