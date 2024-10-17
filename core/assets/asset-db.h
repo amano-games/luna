@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gfx.h"
 #include "ht.h"
 #include "sys-types.h"
 
@@ -11,6 +12,8 @@ enum asset_type {
 	ASSET_TYPE_TEXTURE_INFO,
 	ASSET_TYPE_ANIMATION_SLICE,
 	ASSET_TYPE_ANIMATION_CLIP,
+	ASSET_TYPE_SOUND,
+	ASSET_TYPE_FONT,
 };
 
 struct asset_handle {
@@ -56,15 +59,21 @@ struct texture_table {
 	struct asset_tex *arr;
 };
 
+struct fnt_table {
+	struct ht_u32 ht;
+	struct fnt *arr;
+};
+
 // [id] = index and count
 struct asset_db {
 	struct asset_path_table assets_path;
 	struct texture_info_table textures_info;
 	struct animation_table animations;
 	struct texture_table textures;
+	struct fnt_table fonts;
 };
 
-void asset_db_init(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, struct alloc alloc);
+void asset_db_init(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, struct alloc alloc);
 
 struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 
@@ -80,3 +89,8 @@ struct animation_clip asset_db_get_animation_clip(struct asset_db *db, struct as
 struct animation_slice asset_db_gen_animation_slice(struct asset_db *db, usize count);
 i32 asset_db_push_animation_slice(struct asset_db *db, str8 path, struct animation_slice slice);
 struct animation_slice asset_db_get_animation_slice(struct asset_db *db, struct asset_handle handle);
+
+// TODO: Maybe for fonts we don't need that a hash table, how many fonts do we have ? 10? wouldn't it be easier to use an array and a custom handle that it's the index of the array and we save one lookup
+i32 asset_db_load_fnt(struct asset_db *db, str8 path, struct fnt *fnt);
+i32 asset_db_push_fnt(struct asset_db *db, str8 path, struct fnt fnt);
+struct fnt asset_db_get_fnt(struct asset_db *db, struct asset_handle handle);

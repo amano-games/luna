@@ -72,3 +72,6 @@ i32 asset_snd_load(const str8 file_name, struct snd *snd);
 i32 asset_snd_load_id(i32 id, str8 file_name, struct snd *snd);
 
 struct tex_rec asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h);
+struct fnt fnt_load(const str8 path, struct alloc alloc, struct alloc scratch);
+
+enum asset_type asset_path_get_type(str8 path);

@@ -2,6 +2,9 @@
 #include "sys-utils.h"
 #include "sys-assert.h"
 
+static inline str8 str8_postfix(str8 str, usize size);
+static inline str8 str8_skip(str8 str, usize amt);
+
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 u8 INTEGER_SYMBOL_REVERSE[128] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -157,7 +160,7 @@ inline void
 str8_cpy(str8 *src, str8 *dst)
 {
 	dst->size = src->size;
-	mcpy(src->str, dst->str, src->size);
+	mcpy(dst->str, src->str, src->size);
 	dst->str[dst->size] = 0;
 }
 
@@ -236,4 +239,65 @@ str8_to_f32(str8 str)
 	}
 
 	return num;
+}
+
+static inline str8
+str8_postfix(str8 str, usize size)
+{
+	size     = MIN(size, str.size);
+	str.str  = (str.str + str.size) - size;
+	str.size = size;
+	return (str);
+}
+
+static inline str8
+str8_skip(str8 str, usize amt)
+{
+	amt = MIN(amt, str.size);
+	str.str += amt;
+	str.size -= amt;
+	return (str);
+}
+
+bool32
+str8_ends_with(str8 str, str8 end, str_match_flags flags)
+{
+	str8 postfix    = str8_postfix(str, end.size);
+	bool32 is_match = str8_match(end, postfix, flags);
+	return is_match;
+}
+
+usize
+str8_find_needle(str8 str, usize start_pos, str8 needle, str_match_flags flags)
+{
+	u8 *p             = str.str + start_pos;
+	usize stop_offset = MAX(str.size + 1, needle.size) - needle.size;
+	u8 *stop_p        = str.str + stop_offset;
+
+	if(needle.size > 0) {
+		u8 *string_opl                 = str.str + str.size;
+		str8 needle_tail               = str8_skip(needle, 1);
+		str_match_flags adjusted_flags = flags | str_match_flag_right_side_sloppy;
+		u8 needle_first_char_adjusted  = needle.str[0];
+		if(adjusted_flags & str_match_flag_case_insensitive) {
+			needle_first_char_adjusted = char_to_upper(needle_first_char_adjusted);
+		}
+		for(; p < stop_p; p += 1) {
+			u8 haystack_char_adjusted = *p;
+			if(adjusted_flags & str_match_flag_case_insensitive) {
+				haystack_char_adjusted = char_to_upper(haystack_char_adjusted);
+			}
+			if(haystack_char_adjusted == needle_first_char_adjusted) {
+				if(str8_match(str8_range(p + 1, string_opl), needle_tail, adjusted_flags)) {
+					break;
+				}
+			}
+		}
+	}
+
+	usize result = str.size;
+	if(p < stop_p) {
+		result = (usize)(p - str.str);
+	}
+	return (result);
 }

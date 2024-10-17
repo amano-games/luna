@@ -1,7 +1,9 @@
 #include "gfx.h"
+#include "gfx-spr.h"
 #include "sys-log.h"
 #include "sys.h"
 #include "sys-intrin.h"
+#include "sys-assert.h"
 #include "sys-io.h"
 #include "mathfunc.h"
 #include "trace.h"
@@ -918,4 +920,70 @@ gfx_arc_thick(
 			x--;
 		}
 	} while(y <= x);
+}
+
+void
+fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode)
+{
+	v2_i32 p         = (v2_i32){x, y};
+	struct tex_rec t = {0};
+	t.t              = fnt.t;
+	t.r.w            = fnt.grid_w;
+	t.r.h            = fnt.grid_h;
+	for(usize n = 0; n < str.size; n++) {
+		i32 ci = str.str[n];
+		assert(ci > 31);
+		t.r.x = (ci & 31) * fnt.grid_w;
+		t.r.y = ((ci >> 5) - 1) * fnt.grid_h;
+		gfx_spr(ctx, t, p.x, p.y, 0, mode);
+		p.x += fnt.widths[ci] || fnt.grid_w;
+	}
+}
+
+void
+fnt_draw_ascii(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode)
+{
+	fnt_draw_str(ctx, fnt, x, y, str, mode);
+}
+
+void
+fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 spacing, i32 mode)
+{
+	v2_i32 p = (v2_i32){x, y};
+	struct tex_rec t;
+	t.t   = fnt.t;
+	t.r.w = fnt.grid_w;
+	t.r.h = fnt.grid_h;
+	i32 s = spacing ? spacing : fnt.grid_w;
+	for(usize n = 0; n < str.size; n++) {
+		i32 ci = str.str[n];
+		assert(ci > 31);
+		// Extract the lower 5 bits, giving a number between 0 and 31.
+		t.r.x = (ci & 31) * fnt.grid_w;
+		// Extract the higher bits, corresponding to a "row" index in a 32 - column grid.
+		t.r.y = ((ci >> 5) - 1) * fnt.grid_h;
+		gfx_spr(ctx, t, p.x, p.y, 0, mode);
+		p.x += s;
+	}
+}
+
+i32
+fnt_length_px(struct fnt fnt, const str8 str)
+{
+	i32 l = 0;
+	for(const u8 *c = str.str; *c != '\0'; c++) {
+		l += fnt.widths[(uint)*c];
+	}
+	return l;
+}
+
+i32
+fnt_length_px_mono(struct fnt fnt, const str8 str, i32 spacing)
+{
+	i32 l = 0;
+	i32 s = spacing ? spacing : fnt.grid_w;
+	for(const u8 *c = str.str; *c != '\0'; c++) {
+		l += s;
+	}
+	return l;
 }
