@@ -38,7 +38,9 @@ str8 str8_zero(void);
 str8 str8_cstr(char *c);
 str8 str8_cstr_cappend(void *cstr, void *cap);
 
+bool32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
 bool32 str8_match(str8 a, str8 b, str_match_flags flags);
+usize str8_find_needle(str8 str, usize start_pos, str8 needle, str_match_flags flags);
 
 void str8_cpy(str8 *a, str8 *b);
 str8 str8_cpy_push(struct alloc alloc, str8 src);

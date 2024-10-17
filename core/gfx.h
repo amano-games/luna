@@ -67,6 +67,13 @@ struct gfx_ctx {
 	i32 clip_y2;
 };
 
+struct fnt {
+	struct tex t;
+	u8 *widths;
+	u16 grid_w;
+	u16 grid_h;
+};
+
 #define gfx_pattern_100()   gfx_pattern_bayer_4x4(16)
 #define gfx_pattern_75()    gfx_pattern_bayer_4x4(12)
 #define gfx_pattern_50()    gfx_pattern_bayer_4x4(8)
@@ -114,3 +121,8 @@ struct gfx_ctx gfx_ctx_clip_left(struct gfx_ctx ctx, i32 x1);
 struct gfx_ctx gfx_ctx_clip_right(struct gfx_ctx ctx, i32 x2);
 struct gfx_ctx gfx_ctx_clipr(struct gfx_ctx ctx, rec_i32 r);
 struct gfx_ctx gfx_ctx_clipwh(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h);
+
+void fnt_draw_ascii(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode);
+void fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 spacing, i32 mode);
+i32 fnt_length_px(struct fnt fnt, const str8 str);
+i32 fnt_length_px_mono(struct fnt fnt, const str8 str, i32 spacing);

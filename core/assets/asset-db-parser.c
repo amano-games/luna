@@ -3,36 +3,29 @@
 #include "assets.h"
 #include "assets/asset-db.h"
 #include "str.h"
-#include "sys-io.h"
 #include "arr.h"
 #include "json.h"
 #include "assets.h"
 #include "str.h"
-#include "sys-io.h"
 #include "sys-log.h"
 #include "sys-utils.h"
 
+// TODO: Remove the path gen to remove the scratch allocator
 str8
 get_animation_json(str8 file_name, struct alloc alloc, struct alloc scratch)
 {
 	str8 path_name = str8_fmt_push(scratch, "%s%s", FILE_PATH_TEX, file_name.str);
 
-	void *f = sys_file_open(path_name, SYS_FILE_MODE_R);
-	if(f == NULL) {
+	str8 res       = {0};
+	bool32 success = json_load(path_name, alloc, &res);
+	if(!success) {
 		log_error("Animation DB", "failed to open db %s", path_name.str);
 		BAD_PATH
 	}
-	struct sys_file_stats stats = sys_file_stats(path_name);
-	usize file_size             = stats.size;
 
-	log_info("Animation", "animation db size: %d", (int)file_size);
+	log_info("Animation", "animation db size: %d", (int)res.size);
 
-	u8 *data = alloc.allocf(alloc.ctx, file_size);
-
-	usize result = sys_file_r(f, data, file_size);
-
-	sys_file_close(f);
-	return (str8){.size = file_size, .str = data};
+	return res;
 }
 
 struct animation_track_res

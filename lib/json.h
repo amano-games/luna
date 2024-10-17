@@ -1,10 +1,35 @@
 #pragma once
 
 #include "jsmn.h"
-#include "sys-log.h"
+#include "sys-io.h"
 #include "sys-str.h"
 #include "sys-types.h"
 #include "str.h"
+
+bool32
+json_load(const str8 path, struct alloc alloc, str8 *out)
+{
+	void *f = sys_file_open_r(path);
+	if(!f) {
+		log_warn("JSON", "Can't open %s\n", path.str);
+		return 0;
+	}
+	sys_file_seek_end(f, 0);
+	i32 size = sys_file_tell(f);
+	sys_file_seek_set(f, 0);
+	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)size + 1);
+	if(!buf) {
+		sys_file_close(f);
+		log_error("JSON", "loading %s\n", path.str);
+		return 0;
+	}
+	sys_file_r(f, buf, size);
+	sys_file_close(f);
+	buf[size] = '\0';
+	out->str  = buf;
+	out->size = size;
+	return 1;
+}
 
 static i32
 json_eq(str8 json, jsmntok_t *tok, str8 b)

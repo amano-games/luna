@@ -1,5 +1,7 @@
 #include "assets.h"
+#include "arr.h"
 #include "gfx.h"
+#include "json.h"
 #include "mem-arena.h"
 #include "sys-log.h"
 #include "sys-assert.h"
@@ -185,4 +187,84 @@ asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
 	}
 
 	return -1;
+}
+
+struct fnt
+fnt_load(const str8 path, struct alloc alloc, struct alloc scratch)
+{
+
+	struct fnt fnt = {0};
+	char *txt;
+	fnt.widths = (u8 *)alloc.allocf(alloc.ctx, sizeof(u8) * 256);
+	if(!fnt.widths) {
+		log_error("Assets", "allocating font memory");
+		return fnt;
+	}
+	str8 tex_ext  = str8_lit(".tex");
+	str8 json_ext = str8_lit(".fnt");
+
+	// replace .fnt with .tex
+	str8 filename_tex = str8_cpy_push(scratch, path);
+	str8 filename_ext = {.str = &filename_tex.str[filename_tex.size - json_ext.size], .size = json_ext.size};
+
+	assert(str8_ends_with(path, json_ext, 0));
+	str8 json = {0};
+	log_info("Assets", "Load fnt info: %s", path.str);
+
+	bool32 loaded_json = json_load(path, scratch, &json);
+	str8_cpy(&tex_ext, &filename_ext);
+
+	log_info("Assets", "Load fnt tex: %s", filename_tex.str);
+
+	fnt.t = tex_load(filename_tex, alloc);
+
+	{
+		jsmn_parser parser;
+		jsmn_init(&parser);
+		i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
+		jsmn_init(&parser);
+		jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
+		i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
+		assert(json_res == token_count);
+
+		for(i32 i = 1; i < token_count; i++) {
+			jsmntok_t *key   = &tokens[i];
+			jsmntok_t *value = &tokens[i + 1];
+			if(json_eq(json, key, str8_lit("grid_width")) == 0) {
+				assert(value->type == JSMN_PRIMITIVE);
+				fnt.grid_w = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("grid_height")) == 0) {
+				assert(value->type == JSMN_PRIMITIVE);
+				fnt.grid_h = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("glyph_widths")) == 0) {
+				assert(value->type == JSMN_ARRAY);
+				for(i32 j = 0; j < value->size; j++) {
+					jsmntok_t *item = &tokens[i + j + 2];
+					fnt.widths[j]   = json_parse_i32(json, item);
+				}
+			}
+		}
+	}
+
+	return fnt;
+}
+
+enum asset_type
+asset_path_get_type(str8 path)
+{
+	str8 tex_ext = str8_lit(".tex");
+	str8 snd_ext = str8_lit(".snd");
+	str8 fnt_ext = str8_lit(".fnt");
+
+	if(str8_ends_with(path, tex_ext, 0)) {
+		return ASSET_TYPE_TEXTURE;
+	} else if(str8_ends_with(path, snd_ext, 0)) {
+		return ASSET_TYPE_SOUND;
+	} else if(str8_ends_with(path, fnt_ext, 0)) {
+		return ASSET_TYPE_FONT;
+	}
+
+	return 0;
 }
