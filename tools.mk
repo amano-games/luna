@@ -10,7 +10,7 @@ BINDIR    ?= ${PREFIX}bin
 BUILD_DIR := ${DESTDIR}${BINDIR}
 
 WATCH_SRC      := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
-EXTERNAL_DIRS  := $(LUNA_DIR)/external
+EXTERNAL_DIRS  := $(LUNA_DIR)/external $(LUNA_DIR)/external/sokol
 EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
 INC_DIRS       := $(shell find $(SRC_DIR) -type d)
 INC_DIRS       += $(LUNA_DIR) $(LUNA_DIR)/sys $(LUNA_DIR)/lib $(LUNA_DIR)/core
@@ -19,6 +19,8 @@ INC_FLAGS      += $(EXTERNAL_FLAGS)
 
 LDLIBS := -lm
 LDFLAGS :=
+
+override CDEFS := $(CDEFS) -DBACKEND_CLI
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11
@@ -34,7 +36,7 @@ else
 	CFLAGS := $(RELEASE_CFLAGS)
 endif
 
-CFLAGS += -DBACKEND_SOKOL
+CFLAGS += $(CDEFS)
 
 all: $(BUILD_DIR) $(BUILD_DIR)/luna-table-gen $(BUILD_DIR)/luna-assets
 

@@ -27,8 +27,10 @@
 
 #if defined(BACKEND_SOKOL)
 #include "sys-sokol.h"
-#else
+#elif defined(BACKEND_PD)
 #include "sys-pd.h"
+#else
+#include "sys-cli.h"
 #endif
 
 struct mem_block {

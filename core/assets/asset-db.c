@@ -15,6 +15,7 @@ asset_db_init(
 	usize clip_count,
 	usize slice_count,
 	usize fonts_count,
+	usize bets_count,
 	struct alloc alloc)
 {
 	log_info("Assets DB", "init");
@@ -37,6 +38,11 @@ asset_db_init(
 
 	db->fonts.ht  = ht_new_u32(exp, alloc);
 	db->fonts.arr = arr_ini(fonts_count, sizeof(*db->fonts.arr), alloc);
+	arr_push(db->fonts.arr, (struct fnt){0});
+
+	db->bets.ht  = ht_new_u32(exp, alloc);
+	db->bets.arr = arr_ini(bets_count, sizeof(*db->bets.arr), alloc);
+	arr_push(db->bets.arr, (struct bet){0});
 }
 
 struct asset_handle
@@ -233,6 +239,43 @@ asset_db_get_fnt(struct asset_db *db, struct asset_handle handle)
 	TRACE_START(__func__);
 	i32 index      = ht_get_u32(&db->fonts.ht, handle.path_hash);
 	struct fnt res = db->fonts.arr[index];
+	TRACE_END();
+	return res;
+}
+
+i32
+asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
+{
+	struct bet_table *table = &db->bets;
+	usize table_len         = arr_len(table->arr);
+	usize table_cap         = arr_cap(table->arr);
+
+	// Can we add the item?
+	if(table_len + 1 > table_cap) {
+		BAD_PATH;
+		return 0;
+	}
+
+	u64 key        = hash_string(path);
+	u32 value      = ht_get_u32(&table->ht, key);
+	bool32 has_key = value != 0;
+
+	if(has_key) {
+		return value;
+	} else {
+		u32 value = table_len;
+		ht_set_u32(&table->ht, key, value);
+		arr_push(table->arr, bet);
+		return value;
+	}
+}
+
+struct bet
+asset_db_get_bet(struct asset_db *db, struct asset_handle handle)
+{
+	TRACE_START(__func__);
+	i32 index      = ht_get_u32(&db->bets.ht, handle.path_hash);
+	struct bet res = db->bets.arr[index];
 	TRACE_END();
 	return res;
 }

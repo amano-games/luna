@@ -1,4 +1,5 @@
 #include "tex.h"
+#include "sys-log.h"
 #include "tools/utils.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -24,7 +25,7 @@ handle_texture(const str8 in_path, const str8 out_path)
 	FILE *file = fopen(out_file_path, "wb");
 
 	if(file == NULL) {
-		fprintf(stderr, "Failed to open file %s\n", out_file_path);
+		log_error("tex-gen", "Failed to open file %s", out_file_path);
 		fclose(file);
 		return;
 	}
@@ -32,7 +33,7 @@ handle_texture(const str8 in_path, const str8 out_path)
 	struct img_header header = {.w = w, .h = h};
 
 	if(fwrite(&header, sizeof(header), 1, file) != 1) {
-		fprintf(stderr, "Error writing header image to file\n");
+		log_error("tex-gen", "Error writing header image to file");
 		fclose(file);
 		return;
 	}
@@ -68,25 +69,15 @@ handle_texture(const str8 in_path, const str8 out_path)
 				size_t elements_written = fwrite(data, sizeof(uint32_t), 2, file);
 
 				if(elements_written != 2) {
-					fprintf(stderr, "Error writing data to file\n");
+					log_error("tex-gen", "Error writing data to file");
 					fclose(file);
 					return;
 				}
-
-				// write
-				// for(int i = 0; i < 32; ++i) {
-				// 	printf("%u", (data_row >> i) & 1);
-				// }
-				// for(int i = 0; i < 32; ++i) {
-				// 	printf("%u", (mask_row >> i) & 1);
-				// }
-				// printf(" ");
 			}
 		}
-		// printf("\n");
 	}
 
 	fclose(file);
-	// printf("[tex] %s -> %s\n", in_path.str, out_file_path);
+	log_info("tex-gen", "%s -> %s\n", in_path.str, out_file_path);
 	stbi_image_free(data);
 }
