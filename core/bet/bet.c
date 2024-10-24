@@ -239,13 +239,13 @@ bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch)
 
 	switch(node->type) {
 	case BET_NODE_COMP: {
-		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d) child count: %d", BET_NODE_TYPE_STR[node->type], node->type, BET_COMP_TYPE_STR[node->sub_type], node->sub_type, (i32)node->children_count);
+		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d) child count: %d", BET_NODE_TYPE_STR[node->type], (int)node->type, BET_COMP_TYPE_STR[node->sub_type], node->sub_type, (int)node->children_count);
 	} break;
 	case BET_NODE_DECO: {
-		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d)", BET_NODE_TYPE_STR[node->type], node->type, BET_DECO_TYPE_STR[node->sub_type], node->sub_type);
+		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d)", BET_NODE_TYPE_STR[node->type], (int)node->type, BET_DECO_TYPE_STR[node->sub_type], (int)node->sub_type);
 	} break;
 	case BET_NODE_ACTION: {
-		stbsp_sprintf(buffer, "node type: %s - %d: %s", BET_NODE_TYPE_STR[node->type], node->sub_type, node->note);
+		stbsp_sprintf(buffer, "node type: %s - %d: %s", BET_NODE_TYPE_STR[node->type], (int)node->sub_type, node->note);
 	} break;
 	default: {
 		NOT_IMPLEMENTED;
