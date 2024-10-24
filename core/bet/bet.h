@@ -4,7 +4,6 @@
 #include "sys-types.h"
 #define MAX_BET_NODES      100
 #define MAX_BET_CHILDREN   10
-#define MAX_BET_DECORATORS 10
 #define MAX_BET_NODE_PROPS 3
 #define MAX_BET_NOTE       100
 
@@ -115,8 +114,18 @@ struct bet {
 	struct bet_node nodes[MAX_BET_NODES];
 	enum bet_res (*action_do)(struct bet *bet, struct bet_node *node, void *userdata);
 };
+struct bet_node_ctx {
+	u8 run_count;
+};
 
-void bet_init(struct bet *bet);
+struct bet_ctx {
+	u8 running_index;
+	u8 bet_node_ctx[MAX_BET_NODES];
+	enum bet_res (*action_do)(struct bet *bet, struct bet_node *node, void *userdata);
+};
+
+void
+bet_init(struct bet *bet);
 struct bet_node *bet_get_node(struct bet *bet, usize node_index);
 i32 bet_push_node(struct bet *bet, struct bet_node node);
 bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
