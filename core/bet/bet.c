@@ -1,7 +1,6 @@
 #include "bet.h"
 #include "mem.h"
 #include "rndm.h"
-#include "str.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys-types.h"
@@ -54,7 +53,7 @@ bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 }
 
 enum bet_res
-bet_tick_sequence(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_sequence(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_SEQUENCE);
@@ -62,7 +61,7 @@ bet_tick_sequence(struct bet *bet, struct bet_node *node, void *userdata)
 
 	for(usize i = 0; i < node->children_count; ++i) {
 		struct bet_node *child = bet_get_node(bet, node->children[i]);
-		res                    = bet_tick_node(bet, node->children[i], userdata);
+		res                    = bet_tick_node(bet, ctx, node->children[i], userdata);
 		if(res != BET_RES_SUCCESS) {
 			return res;
 		}
@@ -71,7 +70,7 @@ bet_tick_sequence(struct bet *bet, struct bet_node *node, void *userdata)
 }
 
 enum bet_res
-bet_tick_selector(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_selector(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_SELECTOR);
@@ -79,7 +78,7 @@ bet_tick_selector(struct bet *bet, struct bet_node *node, void *userdata)
 
 	for(usize i = 0; i < node->children_count; ++i) {
 		struct bet_node *child = bet_get_node(bet, node->children[i]);
-		res                    = bet_tick_node(bet, node->children[i], userdata);
+		res                    = bet_tick_node(bet, ctx, node->children[i], userdata);
 		if(res != BET_RES_FAILURE) {
 			return res;
 		}
@@ -88,18 +87,18 @@ bet_tick_selector(struct bet *bet, struct bet_node *node, void *userdata)
 }
 
 enum bet_res
-bet_tick_rnd(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_rnd(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_RND);
 	enum bet_res res = BET_RES_NONE;
 
 	usize child_index = rndm_range_i32(0, node->children_count);
-	return bet_tick_node(bet, node->children[child_index], userdata);
+	return bet_tick_node(bet, ctx, node->children[child_index], userdata);
 }
 
 enum bet_res
-bet_tick_rnd_weighted(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_rnd_weighted(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_RND_WEIGHTED);
@@ -114,15 +113,15 @@ bet_tick_rnd_weighted(struct bet *bet, struct bet_node *node, void *userdata)
 		choices[i].value = weights.i32_arr[i];
 	}
 	usize child_index = rndm_weighted_choice_i32(choices, node->children_count);
-	return bet_tick_node(bet, node->children[child_index], userdata);
+	return bet_tick_node(bet, ctx, node->children[child_index], userdata);
 }
 
 enum bet_res
-bet_tick_action(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_action(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_ACTION);
 	enum bet_res res = BET_RES_NONE;
-	res              = bet->action_do(bet, node, userdata);
+	res              = ctx->action_do(bet, ctx, node, userdata);
 	sys_printf("  res: %s", BET_RES_STR[res]);
 	assert(res != BET_RES_NONE);
 	node->run_count++;
@@ -131,14 +130,14 @@ bet_tick_action(struct bet *bet, struct bet_node *node, void *userdata)
 }
 
 enum bet_res
-bet_tick_deco(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_DECO);
 	assert(node->children_count == 1);
 	enum bet_deco_type type = node->sub_type;
 	enum bet_res res        = BET_RES_NONE;
 
-	res = bet_tick_node(bet, node->children[0], userdata);
+	res = bet_tick_node(bet, ctx, node->children[0], userdata);
 
 	switch(type) {
 	case BET_DECO_INVERT: {
@@ -172,7 +171,7 @@ bet_tick_deco(struct bet *bet, struct bet_node *node, void *userdata)
 }
 
 enum bet_res
-bet_tick_comp(struct bet *bet, struct bet_node *node, void *userdata)
+bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
 {
 	assert(node->type == BET_NODE_COMP);
 	enum bet_res res        = BET_RES_NONE;
@@ -180,19 +179,19 @@ bet_tick_comp(struct bet *bet, struct bet_node *node, void *userdata)
 	switch(type) {
 	case BET_COMP_SEQUENCE: {
 		sys_printf("->");
-		return bet_tick_sequence(bet, node, userdata);
+		return bet_tick_sequence(bet, ctx, node, userdata);
 	} break;
 	case BET_COMP_SELECTOR: {
 		sys_printf("?");
-		return bet_tick_selector(bet, node, userdata);
+		return bet_tick_selector(bet, ctx, node, userdata);
 	} break;
 	case BET_COMP_RND: {
 		sys_printf("rnd");
-		return bet_tick_rnd(bet, node, userdata);
+		return bet_tick_rnd(bet, ctx, node, userdata);
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
 		sys_printf("rnd weighted");
-		return bet_tick_rnd_weighted(bet, node, userdata);
+		return bet_tick_rnd_weighted(bet, ctx, node, userdata);
 	} break;
 	default: {
 		NOT_IMPLEMENTED;
@@ -202,28 +201,28 @@ bet_tick_comp(struct bet *bet, struct bet_node *node, void *userdata)
 }
 
 enum bet_res
-bet_tick(struct bet *bet, void *userdata)
+bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 {
 	enum bet_res res = BET_RES_NONE;
 	if(bet->count == 0) { return res; }
 
-	return bet_tick_node(bet, 1, userdata);
+	return bet_tick_node(bet, ctx, 1, userdata);
 }
 
 enum bet_res
-bet_tick_node(struct bet *bet, usize node_index, void *userdata)
+bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
 {
 	enum bet_res res      = BET_RES_NONE;
 	struct bet_node *node = bet_get_node(bet, node_index);
 	switch(node->type) {
 	case BET_NODE_COMP: {
-		return bet_tick_comp(bet, node, userdata);
+		return bet_tick_comp(bet, ctx, node, userdata);
 	} break;
 	case BET_NODE_ACTION: {
-		return bet_tick_action(bet, node, userdata);
+		return bet_tick_action(bet, ctx, node, userdata);
 	} break;
 	case BET_NODE_DECO: {
-		return bet_tick_deco(bet, node, userdata);
+		return bet_tick_deco(bet, ctx, node, userdata);
 	} break;
 	default: {
 		NOT_IMPLEMENTED;
