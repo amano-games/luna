@@ -117,27 +117,34 @@ bet_tick_rnd_weighted(struct bet *bet, struct bet_ctx *ctx, struct bet_node *nod
 }
 
 enum bet_res
-bet_tick_action(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
+bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
 {
+	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_ACTION);
 	enum bet_res res = BET_RES_NONE;
 	res              = ctx->action_do(bet, ctx, node, userdata);
 	sys_printf("  res: %s", BET_RES_STR[res]);
 	assert(res != BET_RES_NONE);
-	node->run_count++;
+	// Reset running index
+	if(ctx->running_index == node_index && res != BET_RES_RUNNING) {
+		ctx->running_index = 0;
+	} else if(res == BET_RES_RUNNING) {
+		ctx->running_index = node_index;
+	}
 
 	return res;
 }
 
 enum bet_res
-bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata)
+bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
 {
+	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_DECO);
 	assert(node->children_count == 1);
-	enum bet_deco_type type = node->sub_type;
-	enum bet_res res        = BET_RES_NONE;
-
-	res = bet_tick_node(bet, ctx, node->children[0], userdata);
+	enum bet_deco_type type       = node->sub_type;
+	enum bet_res res              = BET_RES_NONE;
+	res                           = bet_tick_node(bet, ctx, node->children[0], userdata);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
 
 	switch(type) {
 	case BET_DECO_INVERT: {
@@ -154,18 +161,34 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void 
 	case BET_DECO_SUCCESS: {
 		res = BET_RES_SUCCESS;
 	} break;
-	// TODO: Reset memory ?
-	// case BET_DECO_ONE_SHOT: {
-	// 	if(node->run_count > 1) { res = BET_RES_FAILURE; }
-	// } break;
-	// case BET_DECO_REPEAT_X_TIMES: {
-	// 	struct bet_prop prop = node->props[0];
-	// 	assert(prop.type == BET_PROP_I32);
-	// 	if((i32)node->run_count > prop.i32) { res = BET_RES_FAILURE; }
-	// } break;
+	case BET_DECO_ONE_SHOT: {
+		if(node_ctx->run_count > 1) { res = BET_RES_FAILURE; }
+	} break;
+	case BET_DECO_REPEAT_X_TIMES: {
+		struct bet_prop prop = node->props[0];
+		assert(prop.type == BET_PROP_I32);
+		if((i32)node_ctx->run_count > prop.i32) { res = BET_RES_FAILURE; }
+	} break;
+	case BET_DECO_REPEAT_UNTIL_SUCCESS: {
+		if(res != BET_RES_SUCCESS) {
+			res = BET_RES_RUNNING;
+		}
+	} break;
+	case BET_DECO_REPEAT_UNTIL_FAILURE: {
+		if(res != BET_RES_FAILURE) {
+			res = BET_RES_RUNNING;
+		}
+	} break;
 	default: {
 		NOT_IMPLEMENTED;
 	} break;
+	}
+	ctx->bet_node_ctx[node_index].run_count++;
+	// Reset running index
+	if(ctx->running_index == node_index && res != BET_RES_RUNNING) {
+		ctx->running_index = 0;
+	} else if(res == BET_RES_RUNNING) {
+		ctx->running_index = node_index;
 	}
 	return res;
 }
@@ -176,6 +199,13 @@ bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void 
 	assert(node->type == BET_NODE_COMP);
 	enum bet_res res        = BET_RES_NONE;
 	enum bet_comp_type type = node->sub_type;
+
+	// NOTE: Clear memory of decos
+	for(usize i = 0; i < node->children_count; ++i) {
+		usize child_index                        = node->children[i];
+		ctx->bet_node_ctx[child_index].run_count = 0;
+	}
+
 	switch(type) {
 	case BET_COMP_SEQUENCE: {
 		sys_printf("->");
@@ -219,10 +249,10 @@ bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		return bet_tick_comp(bet, ctx, node, userdata);
 	} break;
 	case BET_NODE_ACTION: {
-		return bet_tick_action(bet, ctx, node, userdata);
+		return bet_tick_action(bet, ctx, node_index, userdata);
 	} break;
 	case BET_NODE_DECO: {
-		return bet_tick_deco(bet, ctx, node, userdata);
+		return bet_tick_deco(bet, ctx, node_index, userdata);
 	} break;
 	default: {
 		NOT_IMPLEMENTED;

@@ -101,7 +101,6 @@ struct bet_prop {
 struct bet_node {
 	enum bet_node_type type;
 	i32 sub_type;
-	u8 run_count;
 	u8 children_count;
 	u8 children[MAX_BET_CHILDREN];
 	u8 prop_count;
@@ -120,7 +119,7 @@ struct bet_node_ctx {
 
 struct bet_ctx {
 	u8 running_index;
-	u8 bet_node_ctx[MAX_BET_NODES];
+	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
 
