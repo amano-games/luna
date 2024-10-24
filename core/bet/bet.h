@@ -117,10 +117,20 @@ struct bet_node_ctx {
 	u8 run_count;
 };
 
+struct bet_queue {
+	u8 data[MAX_BET_NODES];
+	u8 head;
+	u8 tail;
+	u8 count;
+};
+
+struct bet_stack {
+	u8 data[MAX_BET_NODES];
+	u8 count;
+};
+
 struct bet_ctx {
-	u8 running_index;
-	u8 running_stack[MAX_BET_NODES];
-	u8 running_stack_count;
+	struct bet_queue running_queue;
 	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
