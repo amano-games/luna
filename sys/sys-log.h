@@ -32,11 +32,19 @@ void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint
 		stbsp_snprintf(strret, sizeof(strret) - 1, __VA_ARGS__); \
 		printf("%s\n", strret); \
 	}
-#else
+#elif defined(BACKEND_PD)
 extern void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *format, ...);
 #define sys_printf(...) \
 	{ \
 		PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__); \
+	}
+#else
+#include <stdio.h>
+#define sys_printf(...) \
+	{ \
+		char strret[1024] = {0}; \
+		stbsp_snprintf(strret, sizeof(strret) - 1, __VA_ARGS__); \
+		printf("%s\n", strret); \
 	}
 #endif
 #endif

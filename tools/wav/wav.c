@@ -24,7 +24,7 @@ handle_wav(str8 in_file_path, str8 out_path)
 	FILE *in_file, *out_file;
 
 	if(!(in_file = fopen((char *)in_file_path.str, "rb"))) {
-		fprintf(stderr, "Failed to open file %s\n", in_file_path.str);
+		log_error("snd-gen", "Failed to open file %s", in_file_path.str);
 		fclose(in_file);
 		return -1;
 	}
@@ -39,13 +39,13 @@ handle_wav(str8 in_file_path, str8 out_path)
 	if(!fread(&riff_chunk_header, sizeof(struct riff_chunk_header), 1, in_file) ||
 		strncmp(riff_chunk_header.chunk_id, "RIFF", 4) ||
 		strncmp(riff_chunk_header.form_type, "WAVE", 4)) {
-		fprintf(stderr, "[err] %s is not a valid .WAV file, wrong header\n", in_file_path.str);
+		log_error("snd-gen", "%s is not a valid .WAV file, wrong header", in_file_path.str);
 		return -1;
 	}
 
 	while(1) {
 		if(!fread(&chunk_header, sizeof(struct chunk_header), 1, in_file)) {
-			fprintf(stderr, "[err] %s is not a valid .WAV file, chunk error\n", in_file_path.str);
+			log_error("snd-gen", "%s is not a valid .WAV file, chunk error", in_file_path.str);
 			return -1;
 		}
 
@@ -55,49 +55,49 @@ handle_wav(str8 in_file_path, str8 out_path)
 			int supported = 1;
 			if(chunk_header.chunk_size < 16 || chunk_header.chunk_size > sizeof(struct wave_header) ||
 				!fread(&wave_header, chunk_header.chunk_size, 1, in_file)) {
-				fprintf(stderr, "[err] %s is not a valid .WAV file! bad chunk\n", in_file_path.str);
+				log_error("snd-gen", "%s is not a valid .WAV file! bad chunk", in_file_path.str);
 				return -1;
 			}
 			little_endian_to_native(&wave_header, WAVE_HEADER_FMT);
 
 			format = (wave_header.format_tag == WAVE_FORMAT_EXTENSIBLE && chunk_header.chunk_size == 40) ? wave_header.sub_format : wave_header.format_tag;
 			if(format != WAVE_FORMAT_PCM) {
-				fprintf(stderr, "[err] %s is not a supported .WAV format:%d\n", in_file_path.str, format);
+				log_error("snd-gen", "%s is not a supported .WAV format:%d", in_file_path.str, format);
 				return -1;
 			}
 
 			bits_per_sample = (chunk_header.chunk_size == 40 && wave_header.samples.valid_bits_per_sample) ? wave_header.samples.valid_bits_per_sample : wave_header.bits_per_sample;
 
 			if(wave_header.num_channels < 1 || wave_header.num_channels > 2) {
-				fprintf(stderr, "[err] %s is not has a wierd number [%d] of channels!\n", in_file_path.str, wave_header.num_channels);
+				log_error("snd-gen", "%s is not has a wierd number [%d] of channels!", in_file_path.str, wave_header.num_channels);
 				return -1;
 			}
 
 			if(wave_header.num_channels != 1) {
-				fprintf(stderr, "[err] %s stereo not supported!\n", in_file_path.str);
+				log_error("snd-gen", "%s stereo not supported!", in_file_path.str);
 				return -1;
 			}
 
 			if(wave_header.sample_rate != 44100) {
-				fprintf(stderr, "[err] %s sample rate not supported! %d\n", in_file_path.str, wave_header.sample_rate);
+				log_error("snd-gen", "%s sample rate not supported! %d", in_file_path.str, wave_header.sample_rate);
 				return -1;
 			}
 
 			if(wave_header.bits_per_sample != 16) {
-				fprintf(stderr, "[err] %s Bits per sample not supported! %d\n", in_file_path.str, wave_header.bits_per_sample);
+				log_error("snd-gen", "%s Bits per sample not supported! %d", in_file_path.str, wave_header.bits_per_sample);
 				return -1;
 			}
 
-			// fprintf(stderr, "%d-bit ADPCM, %d channels, %d samples/block, %d-byte block alignment\n", bits_per_sample, wave_header.num_channels, wave_header.samples.samples_per_block, wave_header.block_align);
+			// fprintf(stderr, "%d-bit ADPCM, %d channels, %d samples/block, %d-byte block alignment", bits_per_sample, wave_header.num_channels, wave_header.samples.samples_per_block, wave_header.block_align);
 			// TODO: Only needed in ADPCM not WAV
 			// if(wave_header.samples.samples_per_block >
 			// 	adpcm_block_size_to_sample_count(wave_header.block_align, wave_header.num_channels, bits_per_sample)) {
-			// 	fprintf(stderr, "[err] %s is not a valid .WAV file, bad samples per block\n", in_file_path.str);
+			// 	fprintf(stderr, "%s is not a valid .WAV file, bad samples per block", in_file_path.str);
 			// 	return -1;
 			// }
 		} else if(!strncmp(chunk_header.chunk_id, "fact", 4)) {
 			if(chunk_header.chunk_size < 4 || !fread(&fact_samples, sizeof(fact_samples), 1, in_file)) {
-				fprintf(stderr, "[err] %s is not a valid .WAV file!, bad chunk size\n", in_file_path.str);
+				log_error("snd-gen", "%s is not a valid .WAV file!, bad chunk size", in_file_path.str);
 				return -1;
 			}
 
@@ -109,7 +109,7 @@ handle_wav(str8 in_file_path, str8 out_path)
 
 				while(bytes_to_skip--)
 					if(!fread(&dummy, 1, 1, in_file)) {
-						fprintf(stderr, "[err] %s is not a valid .WAV file, dummy error\n", in_file_path.str);
+						log_error("snd-gen", "%s is not a valid .WAV file, dummy error", in_file_path.str);
 						return -1;
 					}
 			}
@@ -117,18 +117,18 @@ handle_wav(str8 in_file_path, str8 out_path)
 			// on the data chunk, get size and exit parsing loop
 
 			if(!wave_header.num_channels) { // make sure we saw a "fmt" chunk...
-				fprintf(stderr, "\"%s\" is not a valid .WAV file!\n", in_file_path.str);
+				log_error("snd-gen", "%s is not a valid .WAV file!", in_file_path.str);
 				return -1;
 			}
 
 			if(!chunk_header.chunk_size) {
-				fprintf(stderr, "[aud] %s this .WAV file has no audio samples, probably is corrupt!\n", in_file_path.str);
+				log_error("snd-gen", "%s this .WAV file has no audio samples, probably is corrupt!", in_file_path.str);
 				return -1;
 			}
 
 			if(format == WAVE_FORMAT_PCM) {
 				if(chunk_header.chunk_size % wave_header.block_align) {
-					fprintf(stderr, "[snd] %s is not a valid .WAV file!\n", in_file_path.str);
+					log_error("snd-gen", "%s is not a valid .WAV file!", in_file_path.str);
 					return -1;
 				}
 
@@ -145,11 +145,11 @@ handle_wav(str8 in_file_path, str8 out_path)
 
 				if(leftover_bytes) {
 					if(leftover_bytes % (wave_header.num_channels * 4)) {
-						fprintf(stderr, "\"%s\" is not a valid .WAV file!\n", in_file_path.str);
+						fprintf(stderr, "\"%s\" is not a valid .WAV file!", in_file_path.str);
 						return -1;
 					}
 
-					printf("data chunk has %d bytes left over for final ADPCM block\n", leftover_bytes);
+					printf("data chunk has %d bytes left over for final ADPCM block", leftover_bytes);
 					samples_last_block = ((leftover_bytes - (wave_header.num_channels * 4)) * 8) / (bits_per_sample * wave_header.num_channels) + 1;
 					num_samples += samples_last_block;
 				} else {
@@ -157,10 +157,10 @@ handle_wav(str8 in_file_path, str8 out_path)
 
 					if(fact_samples) {
 						if(fact_samples < num_samples && fact_samples > num_samples - samples_last_block) {
-							printf("total samples reduced %lu by FACT chunk\n", (unsigned long)(num_samples - fact_samples));
+							printf("total samples reduced %lu by FACT chunk", (unsigned long)(num_samples - fact_samples));
 							num_samples = fact_samples;
 						} else if(wave_header.num_channels == 2 && (fact_samples >>= 1) < num_samples && fact_samples > num_samples - samples_last_block) {
-							printf("num samples reduced %lu by [incorrect] FACT chunk\n", (unsigned long)(num_samples - fact_samples));
+							printf("num samples reduced %lu by [incorrect] FACT chunk", (unsigned long)(num_samples - fact_samples));
 							num_samples = fact_samples;
 						}
 					}
@@ -169,11 +169,11 @@ handle_wav(str8 in_file_path, str8 out_path)
 			}
 
 			if(!num_samples) {
-				fprintf(stderr, "[aud] %s this .WAV file has no audio samples, probably is corrupt!\n", in_file_path.str);
+				log_error("snd-gen", "%s this .WAV file has no audio samples, probably is corrupt!", in_file_path.str);
 				return -1;
 			}
 
-			// printf("num samples = %lu\n", (unsigned long)num_samples);
+			// printf("num samples = %lu", (unsigned long)num_samples);
 
 			num_channels = wave_header.num_channels;
 			sample_rate  = wave_header.sample_rate;
@@ -183,11 +183,11 @@ handle_wav(str8 in_file_path, str8 out_path)
 			int bytes_to_eat = (chunk_header.chunk_size + 1) & ~1L;
 			char dummy;
 
-			// fprintf(stderr, "extra unknown chunk \"%c%c%c%c\" of %d bytes\n", chunk_header.chunk_id[0], chunk_header.chunk_id[1], chunk_header.chunk_id[2], chunk_header.chunk_id[3], chunk_header.chunk_size);
+			// fprintf(stderr, "extra unknown chunk \"%c%c%c%c\" of %d bytes", chunk_header.chunk_id[0], chunk_header.chunk_id[1], chunk_header.chunk_id[2], chunk_header.chunk_id[3], chunk_header.chunk_size);
 
 			while(bytes_to_eat--)
 				if(!fread(&dummy, 1, 1, in_file)) {
-					fprintf(stderr, "\"%s\" is not a valid .WAV file!\n", in_file_path.str);
+					log_error("snd-gen", "%s is not a valid .WAV file!", in_file_path.str);
 					return -1;
 				}
 		}
@@ -198,12 +198,12 @@ handle_wav(str8 in_file_path, str8 out_path)
 	change_extension((char *)out_path.str, (char *)out_file_path.str, SND_FILE_EXT);
 
 	if(!(out_file = fopen((char *)out_file_path.str, "wb"))) {
-		fprintf(stderr, "can't open file \"%s\" for writing!\n", out_file_path.str);
+		log_error("snd-gen", "can't open file \"%s\" for writing!", out_file_path.str);
 		return -1;
 	}
 
 	if(fwrite(&num_samples, sizeof(u32), 1, out_file) != 1) {
-		fprintf(stderr, "failed to write file \"%s\"!\n", out_file_path.str);
+		log_error("snd-gen", "failed to write file \"%s\"!", out_file_path.str);
 		return -1;
 	}
 
@@ -215,7 +215,7 @@ handle_wav(str8 in_file_path, str8 out_path)
 		u8 *out_buffer = (u8 *)malloc(data_size / 2);
 		usize res      = fread(in_buffer, 1, data_size, in_file);
 		if(res != data_size) {
-			fprintf(stderr, "error reading full file \"%s\"!\n", in_file_path.str);
+			log_error("snd-gen", "error reading full file \"%s\"!", in_file_path.str);
 		}
 
 		fclose(in_file);
@@ -232,7 +232,7 @@ handle_wav(str8 in_file_path, str8 out_path)
 		free(in_buffer);
 		free(out_buffer);
 
-		printf("[aud] %s -> %s\n", in_file_path.str, out_file_path.str);
+		log_info("snd-gen", "%s -> %s", in_file_path.str, out_file_path.str);
 
 	} else {
 		NOT_IMPLEMENTED;

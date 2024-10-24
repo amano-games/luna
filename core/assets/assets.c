@@ -257,6 +257,7 @@ asset_path_get_type(str8 path)
 	str8 tex_ext = str8_lit(".tex");
 	str8 snd_ext = str8_lit(".snd");
 	str8 fnt_ext = str8_lit(".fnt");
+	str8 bet_ext = str8_lit(".bet");
 
 	if(str8_ends_with(path, tex_ext, 0)) {
 		return ASSET_TYPE_TEXTURE;
@@ -264,6 +265,8 @@ asset_path_get_type(str8 path)
 		return ASSET_TYPE_SOUND;
 	} else if(str8_ends_with(path, fnt_ext, 0)) {
 		return ASSET_TYPE_FONT;
+	} else if(str8_ends_with(path, bet_ext, 0)) {
+		return ASSET_TYPE_BET;
 	}
 
 	return 0;

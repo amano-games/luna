@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bet/bet.h"
 #include "gfx.h"
 #include "ht.h"
 #include "sys-types.h"
@@ -14,6 +15,7 @@ enum asset_type {
 	ASSET_TYPE_ANIMATION_CLIP,
 	ASSET_TYPE_SOUND,
 	ASSET_TYPE_FONT,
+	ASSET_TYPE_BET,
 };
 
 struct asset_handle {
@@ -64,6 +66,11 @@ struct fnt_table {
 	struct fnt *arr;
 };
 
+struct bet_table {
+	struct ht_u32 ht;
+	struct bet *arr;
+};
+
 // [id] = index and count
 struct asset_db {
 	struct asset_path_table assets_path;
@@ -71,9 +78,10 @@ struct asset_db {
 	struct animation_table animations;
 	struct texture_table textures;
 	struct fnt_table fonts;
+	struct bet_table bets;
 };
 
-void asset_db_init(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, struct alloc alloc);
+void asset_db_init(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, usize bets_count, struct alloc alloc);
 
 struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 
@@ -94,3 +102,6 @@ struct animation_slice asset_db_get_animation_slice(struct asset_db *db, struct 
 i32 asset_db_load_fnt(struct asset_db *db, str8 path, struct fnt *fnt);
 i32 asset_db_push_fnt(struct asset_db *db, str8 path, struct fnt fnt);
 struct fnt asset_db_get_fnt(struct asset_db *db, struct asset_handle handle);
+
+i32 asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet);
+struct bet asset_db_get_bet(struct asset_db *db, struct asset_handle handle);
