@@ -198,6 +198,7 @@ bet_tick_comp(struct bet *bet, struct bet_node *node, void *userdata)
 		NOT_IMPLEMENTED;
 	} break;
 	}
+	return res;
 }
 
 enum bet_res
