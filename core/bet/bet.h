@@ -112,8 +112,8 @@ struct bet_node {
 struct bet {
 	usize count;
 	struct bet_node nodes[MAX_BET_NODES];
-	enum bet_res (*action_do)(struct bet *bet, struct bet_node *node, void *userdata);
 };
+
 struct bet_node_ctx {
 	u8 run_count;
 };
@@ -121,7 +121,7 @@ struct bet_node_ctx {
 struct bet_ctx {
 	u8 running_index;
 	u8 bet_node_ctx[MAX_BET_NODES];
-	enum bet_res (*action_do)(struct bet *bet, struct bet_node *node, void *userdata);
+	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
 
 void
@@ -131,8 +131,9 @@ i32 bet_push_node(struct bet *bet, struct bet_node node);
 bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
 bool32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
 
-enum bet_res bet_tick(struct bet *bet, void *userdata);
-enum bet_res bet_tick_node(struct bet *bet, usize node_index, void *userdata);
+enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
+enum bet_res bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
 str8 bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch);
 
+// TODO: Move to assets
 struct bet bet_load(str8 path);

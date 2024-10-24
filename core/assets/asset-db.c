@@ -243,7 +243,7 @@ asset_db_get_fnt(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
-i32
+struct asset_bet_handle
 asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
 {
 	struct bet_table *table = &db->bets;
@@ -253,7 +253,7 @@ asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
 	// Can we add the item?
 	if(table_len + 1 > table_cap) {
 		BAD_PATH;
-		return 0;
+		return (struct asset_bet_handle){0};
 	}
 
 	u64 key        = hash_string(path);
@@ -261,21 +261,42 @@ asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
 	bool32 has_key = value != 0;
 
 	if(has_key) {
-		return value;
+		return (struct asset_bet_handle){.id = value};
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, bet);
-		return value;
+		return (struct asset_bet_handle){.id = value};
 	}
 }
 
-struct bet
-asset_db_get_bet(struct asset_db *db, struct asset_handle handle)
+struct asset_bet_handle
+asset_db_get_bet_handle(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index      = ht_get_u32(&db->bets.ht, handle.path_hash);
-	struct bet res = db->bets.arr[index];
+	i32 index                   = ht_get_u32(&db->bets.ht, handle.path_hash);
+	struct asset_bet_handle res = (struct asset_bet_handle){.id = index};
+	TRACE_END();
+	return res;
+}
+
+struct bet *
+asset_db_get_bet_by_path(struct asset_db *db, struct asset_handle handle)
+{
+	TRACE_START(__func__);
+	i32 index       = ht_get_u32(&db->bets.ht, handle.path_hash);
+	struct bet *res = db->bets.arr + index;
+	TRACE_END();
+	return res;
+}
+
+struct bet *
+asset_db_get_bet_by_id(struct asset_db *db, struct asset_bet_handle handle)
+{
+	TRACE_START(__func__);
+	assert(handle.id < arr_len(db->bets.arr));
+	i32 index       = handle.id;
+	struct bet *res = db->bets.arr + index;
 	TRACE_END();
 	return res;
 }
