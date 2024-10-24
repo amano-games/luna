@@ -7,6 +7,10 @@
 #include "sys-assert.h"
 #include "sys-utils.h"
 
+bool32 bet_ctx_push_running_node(struct bet_ctx *ctx, u8 index);
+u8 bet_ctx_pop_running_node(struct bet_ctx *ctx, u8 index);
+u8 bet_ctx_peek_running_node(struct bet_ctx *ctx, u8 index);
+
 void
 bet_init(struct bet *bet)
 {
@@ -167,8 +171,18 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 	} break;
 	case BET_DECO_REPEAT_X_TIMES: {
 		struct bet_prop prop = node->props[0];
-		assert(prop.type == BET_PROP_I32);
-		if((i32)node_ctx->run_count > prop.i32) { res = BET_RES_FAILURE; }
+		assert(prop.type == BET_PROP_F32);
+		// If the run count is less than the prop trap in running
+		if((i32)node_ctx->run_count >= (i32)prop.f32) {
+			// But only if the child is not running
+			if(res != BET_RES_RUNNING) {
+				res                = BET_RES_RUNNING;
+				ctx->running_index = node_index;
+				ctx->bet_node_ctx[node_index].run_count++;
+			}
+		}
+		sys_printf("  deco-run-x: %d,%d -> %s", (i32)node_ctx->run_count, (i32)prop.f32, BET_RES_STR[res]);
+
 	} break;
 	case BET_DECO_REPEAT_UNTIL_SUCCESS: {
 		if(res != BET_RES_SUCCESS) {
@@ -184,12 +198,8 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		NOT_IMPLEMENTED;
 	} break;
 	}
-	ctx->bet_node_ctx[node_index].run_count++;
-	// Reset running index
 	if(ctx->running_index == node_index && res != BET_RES_RUNNING) {
 		ctx->running_index = 1;
-	} else if(res == BET_RES_RUNNING) {
-		ctx->running_index = node_index;
 	}
 	return res;
 }
@@ -238,7 +248,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 	if(bet->count == 0) { return res; }
 	usize node_index = MAX(ctx->running_index, 1);
 	if(node_index > 1) {
-		sys_printf("bet tick: %d", node_index);
+		sys_printf("bet tick: %d", (int)node_index);
 		enum bet_res res = bet_tick_node(bet, ctx, node_index, userdata);
 		if(res != BET_RES_RUNNING && node_index < bet->count - 1) {
 			return bet_tick_node(bet, ctx, node_index + 1, userdata);
@@ -246,6 +256,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			return res;
 		}
 	}
+
 	return bet_tick_node(bet, ctx, 1, userdata);
 }
 
@@ -311,4 +322,27 @@ bet_load(str8 path)
 	sys_file_r(f, &bet, sizeof(struct bet));
 	sys_file_close(f);
 	return bet;
+}
+
+bool32
+bet_ctx_push_running_node(struct bet_ctx *ctx, u8 index)
+{
+	assert(ctx->running_stack_count + 1 < MAX_BET_NODES);
+	ctx->running_stack[ctx->running_stack_count++] = index;
+	return true;
+}
+
+u8
+bet_ctx_pop_running_node(struct bet_ctx *ctx, u8 index)
+{
+	u8 res                                       = ctx->running_stack[--ctx->running_stack_count];
+	ctx->running_stack[ctx->running_stack_count] = 0;
+	return res;
+}
+
+u8
+bet_ctx_peek_running_node(struct bet_ctx *ctx, u8 index)
+{
+	u8 res = ctx->running_stack[ctx->running_stack_count - 1];
+	return res;
 }
