@@ -5,6 +5,7 @@
 #include "sys-log.h"
 #include "sys-types.h"
 #include "sys-assert.h"
+#include "sys-utils.h"
 
 void
 bet_init(struct bet *bet)
@@ -127,7 +128,7 @@ bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *us
 	assert(res != BET_RES_NONE);
 	// Reset running index
 	if(ctx->running_index == node_index && res != BET_RES_RUNNING) {
-		ctx->running_index = 0;
+		ctx->running_index = 1;
 	} else if(res == BET_RES_RUNNING) {
 		ctx->running_index = node_index;
 	}
@@ -186,7 +187,7 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 	ctx->bet_node_ctx[node_index].run_count++;
 	// Reset running index
 	if(ctx->running_index == node_index && res != BET_RES_RUNNING) {
-		ctx->running_index = 0;
+		ctx->running_index = 1;
 	} else if(res == BET_RES_RUNNING) {
 		ctx->running_index = node_index;
 	}
@@ -235,7 +236,16 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 {
 	enum bet_res res = BET_RES_NONE;
 	if(bet->count == 0) { return res; }
-
+	usize node_index = MAX(ctx->running_index, 1);
+	if(node_index > 1) {
+		sys_printf("bet tick: %d", node_index);
+		enum bet_res res = bet_tick_node(bet, ctx, node_index, userdata);
+		if(res != BET_RES_RUNNING && node_index < bet->count - 1) {
+			return bet_tick_node(bet, ctx, node_index + 1, userdata);
+		} else {
+			return res;
+		}
+	}
 	return bet_tick_node(bet, ctx, 1, userdata);
 }
 
