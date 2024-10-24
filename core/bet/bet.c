@@ -234,6 +234,7 @@ bet_tick_node(struct bet *bet, usize node_index, void *userdata)
 str8
 bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch)
 {
+#if 0
 	struct bet_node *node = bet_get_node(bet, node_index);
 	char *buffer          = scratch.allocf(scratch.ctx, sizeof(char) * 200);
 
@@ -252,6 +253,8 @@ bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch)
 	} break;
 	}
 	str8 res = str8_cstr(buffer);
+#endif
+	str8 res = {0};
 	return res;
 }
 
