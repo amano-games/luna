@@ -36,12 +36,10 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			case JSMN_ARRAY: {
 				res.prop.type = BET_PROP_I32_ARR;
 				for(int j = 0; j < value->size; j++) {
-					jsmntok_t *num      = &tokens[i + j + 2];
+					jsmntok_t *num = &tokens[i + j + 2];
+					assert(num->type == JSMN_PRIMITIVE);
 					res.prop.i32_arr[j] = json_parse_i32(json, num);
 				}
-			} break;
-			case JSMN_STRING: {
-				sys_printf("prop string: %.*s", value->end - value->start, json.str + value->start);
 			} break;
 			case JSMN_PRIMITIVE: {
 				res.prop.type = BET_PROP_F32;
@@ -109,7 +107,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 														.type     = BET_NODE_DECO,
 														.sub_type = BET_DECO_REPEAT_X_TIMES,
 													});
-			} else if(json_eq(json, value, str8_lit("Do once")) == 0) {
+			} else if(json_eq(json, value, str8_lit("One shot")) == 0) {
 				res.node_index = bet_push_node(bet, (struct bet_node){
 														.type     = BET_NODE_DECO,
 														.sub_type = BET_DECO_ONE_SHOT,
@@ -144,6 +142,12 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				struct prop_res prop_res = handle_prop(json, tokens, prop_index, bet, scratch);
 				bet_push_prop(bet, res.node_index, prop_res.prop);
 				i += prop_res.token_count;
+			}
+		} else if(json_eq(json, key, str8_lit("decorators")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			assert(res.node_index != 0);
+			if(value->size > 0) {
+				log_warn("ai-gen", "using decorators, not supported");
 			}
 
 		} else if(json_eq(json, key, str8_lit("childNodes")) == 0) {
