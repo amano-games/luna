@@ -116,8 +116,19 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			}
 
 			struct bet_node *parent = bet_get_node(bet, parent_index);
-			bool32 is_last_child    = current->i == parent->children_count - 1;
-			node_index              = parent_index;
+			bool32 is_last_child    = true;
+			if(parent->type == BET_NODE_COMP) {
+				enum bet_comp_type type = parent->sub_type;
+				switch(type) {
+				case BET_COMP_SELECTOR:
+				case BET_COMP_SEQUENCE: {
+					is_last_child = current->i == parent->children_count - 1;
+				} break;
+				default: {
+				} break;
+				}
+			}
+			node_index = parent_index;
 
 			if(is_last_child) {
 				ctx->i = parent->i;
@@ -221,10 +232,10 @@ bet_tick_rnd_weighted(struct bet *bet, struct bet_ctx *ctx, usize node_index, vo
 	assert(weights.type == BET_PROP_I32_ARR);
 
 	for(usize i = 0; i < node->children_count; ++i) {
-		choices[i].key   = node->children[i];
+		choices[i].key   = i;
 		choices[i].value = weights.i32_arr[i];
 	}
-	usize rnd         = rndm_weighted_choice_i32(choices, node->children_count);
+	usize rnd         = rndm_weighted_choice_i32(choices, node->children_count - 1);
 	usize child_index = node->children[rnd];
 	return bet_tick_node(bet, ctx, child_index, userdata);
 }
