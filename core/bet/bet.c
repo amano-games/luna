@@ -128,14 +128,14 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 
 			if(should_check_sibling) {
 				// Go up in the tree
-				// And set the current
-				// index that should be checked to the parent index
-				ctx->i = parent->i;
-			} else {
-				// Go up in the tree
 				// and check the next child
 				ctx->i = current->i + 1;
 				break;
+			} else {
+				// Go up in the tree
+				// And set the current
+				// index that should be checked to the parent index
+				ctx->i = parent->i;
 			}
 		}
 	}
