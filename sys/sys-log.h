@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sys-types.h"
-#include <inttypes.h>
 
 #define DISABLE_LOGGING 0
 #if !defined(SYS_LOG_LEVEL)
