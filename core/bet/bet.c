@@ -236,7 +236,7 @@ bet_tick_rnd_weighted(struct bet *bet, struct bet_ctx *ctx, usize node_index, vo
 		choices[i].key   = i;
 		choices[i].value = weights.i32_arr[i];
 	}
-	usize rnd         = rndm_weighted_choice_i32(choices, node->children_count - 1);
+	usize rnd         = rndm_weighted_choice_i32(choices, node->children_count);
 	usize child_index = node->children[rnd];
 	return bet_tick_node(bet, ctx, child_index, userdata);
 }
