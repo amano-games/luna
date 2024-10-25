@@ -74,14 +74,6 @@ bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 	return true;
 }
 
-void
-bet_ctx_init(struct bet *bet, struct bet_ctx *ctx, usize root_index)
-{
-	struct bet_node *root = bet_get_node(bet, root_index);
-	ctx->current          = root_index;
-	ctx->res              = BET_RES_NONE;
-}
-
 enum bet_res
 bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 {
