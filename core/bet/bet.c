@@ -7,14 +7,7 @@
 #include "sys-assert.h"
 #include "sys-utils.h"
 
-bool32 bet_ctx_handle_node_res(struct bet_ctx *bet_ctx, u8 node_index, enum bet_res res);
-void bet_enqueue_init(struct bet_queue *queue);
-bool32 bet_enqueue(struct bet_queue *queue, u8 value);
-u8 bet_dequeue(struct bet_queue *queue);
-u8 bet_queue_peek(struct bet_queue *queue);
-bool32 bet_queue_is_empty(struct bet_queue *queue);
-bool32 bet_queue_is_full(struct bet_queue *queue);
-void bet_queue_print(struct bet_queue *queue);
+bool32 bet_ctx_handle_node_res(struct bet *bet, struct bet_ctx *bet_ctx, u8 node_index, enum bet_res res);
 
 enum bet_res bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
 enum bet_res bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
@@ -66,6 +59,8 @@ bet_push_child(struct bet *bet, usize parent_index, usize child_index)
 	assert(parent->children_count + 1 < MAX_BET_CHILDREN);
 
 	parent->children[parent->children_count++] = child_index;
+	bet->nodes[child_index].parent             = parent_index;
+	bet->nodes[child_index].i                  = parent->children_count - 1;
 
 	return true;
 }
@@ -79,30 +74,12 @@ bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 	return true;
 }
 
-usize
-bet_get_next_node(struct bet *bet, struct bet_ctx *ctx, usize current_index)
+void
+bet_ctx_init(struct bet *bet, struct bet_ctx *ctx, usize root_index)
 {
-	usize parent_index      = MAX(bet_queue_peek(&ctx->running_queue), 1);
-	struct bet_node *parent = bet_get_node(bet, parent_index);
-
-	assert(parent->children_count > 0);
-
-	bool32 is_root       = parent_index == 1;
-	i32 child_index      = bet_find_child(bet, parent_index, current_index);
-	bool32 is_last_child = child_index == parent->children_count - 1;
-
-	if(is_root && is_last_child) {
-		return 0;
-	}
-	if(is_last_child) {
-		bet_dequeue(&ctx->running_queue);
-		return bet_get_next_node(bet, ctx, parent_index);
-	} else {
-		usize res = parent->children[child_index + 1];
-		return res;
-	}
-
-	return 0;
+	struct bet_node *root = bet_get_node(bet, root_index);
+	ctx->current          = root_index;
+	ctx->res              = BET_RES_NONE;
 }
 
 enum bet_res
@@ -111,27 +88,43 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 	enum bet_res res = BET_RES_NONE;
 	if(bet->count == 0) { return res; }
 
-	// Make sure at least we run the root (1)
-	usize current_index = bet_queue_peek(&ctx->running_queue);
-	if(current_index == 0) {
-		current_index = 1;
-	}
+	usize node_index = MAX(ctx->current, 1);
 
-	while(current_index > 0) {
-		res = bet_tick_node(bet, ctx, current_index, userdata);
+	for(;;) {
+		if(node_index == 0) {
+			return res;
+		}
 
-		if(res != BET_RES_RUNNING) {
-			// TODO: Maybe it would be simpler to use a stack instead of a queue
-			// Check the parent and start from there
-			if(!bet_queue_is_empty(&ctx->running_queue)) {
-				assert(bet_dequeue(&ctx->running_queue) == current_index);
-				current_index = bet_get_next_node(bet, ctx, current_index);
-				if(current_index != 0) {
-					bet_enqueue_init(&ctx->running_queue);
-				}
-			}
+		struct bet_node *current = bet_get_node(bet, node_index);
+		res                      = bet_tick_node(bet, ctx, node_index, userdata);
+
+		// Running node, store it and save it for next frame
+		if(res == BET_RES_RUNNING) {
+			return res;
 		} else {
-			current_index = 0;
+			ctx->current = 0;
+		}
+
+		for(;;) {
+			struct bet_node *current = bet_get_node(bet, node_index);
+			usize parent_index       = current->parent;
+			// We arrived at root
+			if(parent_index == 0) {
+				ctx->i       = 0;
+				ctx->current = 0;
+				return res;
+			}
+
+			struct bet_node *parent = bet_get_node(bet, parent_index);
+			bool32 is_last_child    = current->i == parent->children_count - 1;
+			node_index              = parent_index;
+
+			if(is_last_child) {
+				ctx->i = parent->i;
+			} else {
+				ctx->i = current->i + 1;
+				break;
+			}
 		}
 	}
 
@@ -141,14 +134,9 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 enum bet_res
 bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
 {
+	sys_printf("tick: %d", (int)node_index);
 	enum bet_res res      = BET_RES_NONE;
 	struct bet_node *node = bet_get_node(bet, node_index);
-
-	// NOTE: Clear memory
-	for(usize i = 0; i < node->children_count; ++i) {
-		usize child_index                        = node->children[i];
-		ctx->bet_node_ctx[child_index].run_count = 0;
-	}
 
 	switch(node->type) {
 	case BET_NODE_COMP: {
@@ -164,20 +152,20 @@ bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		NOT_IMPLEMENTED;
 	} break;
 	}
-	bet_ctx_handle_node_res(ctx, node_index, res);
+	bet_ctx_handle_node_res(bet, ctx, node_index, res);
 
 	return res;
 }
 
 enum bet_res
-bet_tick_sequence(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
+bet_tick_sequence(struct bet *bet, struct bet_ctx *ctx, usize node_index, usize initial, void *userdata)
 {
 	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_SEQUENCE);
 	enum bet_res res = BET_RES_NONE;
 
-	for(usize i = 0; i < node->children_count; ++i) {
+	for(usize i = initial; i < node->children_count; ++i) {
 		usize child_index      = node->children[i];
 		struct bet_node *child = bet_get_node(bet, child_index);
 		res                    = bet_tick_node(bet, ctx, child_index, userdata);
@@ -189,14 +177,14 @@ bet_tick_sequence(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *
 }
 
 enum bet_res
-bet_tick_selector(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
+bet_tick_selector(struct bet *bet, struct bet_ctx *ctx, usize node_index, usize initial, void *userdata)
 {
 	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_COMP);
 	assert(node->sub_type == BET_COMP_SELECTOR);
 	enum bet_res res = BET_RES_NONE;
 
-	for(usize i = 0; i < node->children_count; ++i) {
+	for(usize i = initial; i < node->children_count; ++i) {
 		usize child_index      = node->children[i];
 		struct bet_node *child = bet_get_node(bet, child_index);
 		res                    = bet_tick_node(bet, ctx, child_index, userdata);
@@ -321,15 +309,17 @@ bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 	assert(node->type == BET_NODE_COMP);
 	enum bet_res res        = BET_RES_NONE;
 	enum bet_comp_type type = node->sub_type;
+	usize initial           = ctx->i;
+	ctx->i                  = 0;
 
 	switch(type) {
 	case BET_COMP_SEQUENCE: {
-		sys_printf("->");
-		return bet_tick_sequence(bet, ctx, node_index, userdata);
+		sys_printf("-> %d", ctx->i);
+		return bet_tick_sequence(bet, ctx, node_index, initial, userdata);
 	} break;
 	case BET_COMP_SELECTOR: {
-		sys_printf("?");
-		return bet_tick_selector(bet, ctx, node_index, userdata);
+		sys_printf("? %d", ctx->i);
+		return bet_tick_selector(bet, ctx, node_index, initial, userdata);
 	} break;
 	case BET_COMP_RND: {
 		sys_printf("rnd");
@@ -343,6 +333,7 @@ bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		NOT_IMPLEMENTED;
 	} break;
 	}
+
 	return res;
 }
 
@@ -389,98 +380,13 @@ bet_load(str8 path)
 }
 
 bool32
-bet_ctx_handle_node_res(struct bet_ctx *ctx, u8 node_index, enum bet_res res)
+bet_ctx_handle_node_res(struct bet *bet, struct bet_ctx *ctx, u8 node_index, enum bet_res res)
 {
-	u8 current_running = bet_queue_peek(&ctx->running_queue);
-	if(res != BET_RES_RUNNING) {
-		ctx->bet_node_ctx[node_index].run_count++;
+	if(res == BET_RES_RUNNING && ctx->current == 0) {
+		sys_printf("Store current: %d", node_index);
+		struct bet_node *node = bet_get_node(bet, node_index);
+		ctx->i                = node->i;
+		ctx->current          = node_index;
 	}
-
-	if(current_running != node_index) {
-		if(res == BET_RES_RUNNING && node_index > 1) {
-			bet_enqueue(&ctx->running_queue, node_index);
-		}
-	}
-
 	return true;
-}
-
-bool32
-bet_queue_is_full(struct bet_queue *queue)
-{
-	return queue->count == MAX_BET_CHILDREN;
-}
-
-bool32
-bet_queue_is_empty(struct bet_queue *queue)
-{
-	return queue->count == 0;
-}
-
-void
-bet_enqueue_init(struct bet_queue *queue)
-{
-	if(!bet_queue_is_empty(queue)) {
-		for(int i = 0; i < queue->count; i++) {
-			int index          = (queue->head + i) % MAX_BET_CHILDREN;
-			queue->data[index] = 0;
-		}
-	}
-	queue->head  = 0;
-	queue->tail  = 0;
-	queue->count = 0;
-}
-
-bool32
-bet_enqueue(struct bet_queue *queue, u8 value)
-{
-	assert(!bet_queue_is_full(queue));
-
-	queue->data[queue->tail] = value;                                // Add the value at the tail
-	queue->tail              = (queue->tail + 1) % MAX_BET_CHILDREN; // Circular increment of tail
-	queue->count++;                                                  // Increase the size of the queue
-	// bet_queue_print(queue);
-	return true;
-}
-
-u8
-bet_dequeue(struct bet_queue *queue)
-{
-	if(bet_queue_is_empty(queue)) {
-		return 0;
-	}
-
-	u8 value                 = queue->data[queue->head];             // Get the value at the head
-	queue->data[queue->head] = 0;                                    // clear the value
-	queue->head              = (queue->head + 1) % MAX_BET_CHILDREN; // Circular increment of head
-	queue->count--;                                                  // Decrease the size of the queue
-	// bet_queue_print(queue);
-	return value;
-}
-
-u8
-bet_queue_peek(struct bet_queue *queue)
-{
-	if(bet_queue_is_empty(queue)) {
-		return 0;
-	}
-
-	u8 value = queue->data[queue->head]; // Peek the value at the head
-	return value;
-}
-
-// Print the queue for debugging purposes
-void
-bet_queue_print(struct bet_queue *queue)
-{
-	if(bet_queue_is_empty(queue)) {
-		sys_printf("Queue is empty");
-		return;
-	}
-
-	sys_printf("Queue contents: ");
-	for(int i = 0; i < queue->count; i++) {
-		int index = (queue->head + i) % MAX_BET_CHILDREN;
-		sys_printf("%d ", queue->data[index]);
-	}
 }

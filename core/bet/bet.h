@@ -2,6 +2,8 @@
 
 #include "mem.h"
 #include "sys-types.h"
+#include "bet-helpers.h"
+
 #define MAX_BET_NODES      100
 #define MAX_BET_CHILDREN   10
 #define MAX_BET_NODE_PROPS 3
@@ -101,6 +103,8 @@ struct bet_prop {
 struct bet_node {
 	enum bet_node_type type;
 	i32 sub_type;
+	u8 parent;
+	u8 i;
 	u8 children_count;
 	u8 children[MAX_BET_CHILDREN];
 	u8 prop_count;
@@ -117,20 +121,12 @@ struct bet_node_ctx {
 	u8 run_count;
 };
 
-struct bet_queue {
-	u8 data[MAX_BET_NODES];
-	u8 head;
-	u8 tail;
-	u8 count;
-};
-
-struct bet_stack {
-	u8 data[MAX_BET_NODES];
-	u8 count;
-};
-
 struct bet_ctx {
-	struct bet_queue running_queue;
+	u8 current;
+	u8 running_index;
+	u8 i;
+	enum bet_res res;
+
 	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };

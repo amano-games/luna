@@ -9,6 +9,7 @@
 #include "mem.c"
 #include "mem-arena.c"
 #include "core/bet/bet.c"
+#include "core/bet/bet-helpers.c"
 #include "core/rndm.c"
 #include "str.h"
 #include "str.c"
