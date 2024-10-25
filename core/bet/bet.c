@@ -95,16 +95,19 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			return res;
 		}
 
+		// Tick the current node
 		struct bet_node *current = bet_get_node(bet, node_index);
 		res                      = bet_tick_node(bet, ctx, node_index, userdata);
 
-		// Running node, store it and save it for next frame
+		// If running return inmediatly, tick_node takes care of storing the first running node
 		if(res == BET_RES_RUNNING) {
 			return res;
 		} else {
+			// If not running clear the saved node
 			ctx->current = 0;
 		}
 
+		// When the node is not running loop back to parents and check siblings when neccesary
 		for(;;) {
 			struct bet_node *current = bet_get_node(bet, node_index);
 			usize parent_index       = current->parent;
@@ -115,14 +118,15 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				return res;
 			}
 
-			struct bet_node *parent = bet_get_node(bet, parent_index);
-			bool32 is_last_child    = true;
+			struct bet_node *parent     = bet_get_node(bet, parent_index);
+			bool32 should_check_sibling = false;
 			if(parent->type == BET_NODE_COMP) {
 				enum bet_comp_type type = parent->sub_type;
 				switch(type) {
 				case BET_COMP_SELECTOR:
 				case BET_COMP_SEQUENCE: {
-					is_last_child = current->i == parent->children_count - 1;
+					// Is not the last child of the parent
+					should_check_sibling = current->i < parent->children_count - 1;
 				} break;
 				default: {
 				} break;
@@ -130,9 +134,14 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			}
 			node_index = parent_index;
 
-			if(is_last_child) {
+			if(should_check_sibling) {
+				// Go up in the tree
+				// And set the current
+				// index that should be checked to the parent index
 				ctx->i = parent->i;
 			} else {
+				// Go up in the tree
+				// and check the next child
 				ctx->i = current->i + 1;
 				break;
 			}
