@@ -222,17 +222,21 @@ v2_lerp(v2 a, v2 b, f32 t)
 }
 
 static inline v2
-v2_move_towards(v2 a, v2 b, f32 delta)
+v2_move_towards(v2 a, v2 b, f32 delta, f32 direction)
 {
-	v2 ba   = v2_sub(b, a);
+	assert(direction == 1.0f || direction == -1.0f);
+	v2 ba   = v2_mul(v2_sub(b, a), direction);
 	f32 len = v2_len(ba);
 
 	if(len <= delta || len < EPSILON) {
 		return b;
 	} else {
-		f32 len_inv = 1.0f / len;
-		v2 norm     = {ba.x * len_inv, ba.y * len_inv};
-		v2 res      = v2_add(a, v2_mul(norm, delta));
+		f32 len_inv = 1.0f;
+		if(len > 0) {
+			len_inv = 1.0f / len;
+		}
+		v2 norm = {ba.x * len_inv, ba.y * len_inv};
+		v2 res  = v2_add(a, v2_mul(norm, delta));
 		return res;
 	}
 }
