@@ -93,8 +93,8 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, int r, v2 vel, f32 dt)
 	{
 		f32 limits_vel = brain->limits_speed;
 		// Move the limits at constant speed towards the new ones
-		cam->data.soft_limits.min = v2_move_towards(data.soft_limits.min, final.soft_limits.min, limits_vel * dt);
-		cam->data.soft_limits.max = v2_move_towards(data.soft_limits.max, final.soft_limits.max, limits_vel * dt);
+		cam->data.soft_limits.min = v2_move_towards(data.soft_limits.min, final.soft_limits.min, limits_vel * dt, 1.0);
+		cam->data.soft_limits.max = v2_move_towards(data.soft_limits.max, final.soft_limits.max, limits_vel * dt, 1.0);
 	}
 
 	if(brain->vel_t < 1.0f) {
