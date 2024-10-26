@@ -1,7 +1,5 @@
 #pragma once
 
-#include "arr.h"
-#include "sys-utils.h"
 #include "sys-assert.h"
 
 #define CUTE_C2_IMPLEMENTATION
@@ -156,6 +154,7 @@ v2 col_poly_centroid(struct col_poly *p);
 struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest);
 
 void col_point_to_line(v2 c, v2 a, v2 b, f32 *t, v2 *d);
+int col_point_to_aabb(f32 xa, f32 ya, f32 x1b, f32 y1b, f32 x2b, f32 y2b);
 // TODO: Move from col shape to destructured params
 int col_circle_to_circle(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br);
 int col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2);

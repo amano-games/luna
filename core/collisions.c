@@ -119,6 +119,12 @@ col_merge_circles(struct col_cir a, struct col_cir b)
 }
 
 int
+col_point_to_aabb(f32 xa, f32 ya, f32 x1b, f32 y1b, f32 x2b, f32 y2b)
+{
+	return xa > x1b && xa < x2b && ya > y1b && ya < y2b;
+}
+
+int
 col_circle_to_circle(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br)
 {
 	TRACE_START(__func__);
