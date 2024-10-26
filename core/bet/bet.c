@@ -115,10 +115,17 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			if(parent->type == BET_NODE_COMP) {
 				enum bet_comp_type type = parent->sub_type;
 				switch(type) {
-				case BET_COMP_SELECTOR:
+				case BET_COMP_SELECTOR: {
+					if(res != BET_RES_SUCCESS) {
+						// Is not the last child of the parent
+						should_check_sibling = current->i < parent->children_count - 1;
+					}
+				} break;
 				case BET_COMP_SEQUENCE: {
-					// Is not the last child of the parent
-					should_check_sibling = current->i < parent->children_count - 1;
+					if(res == BET_RES_SUCCESS) {
+						// Is not the last child of the parent
+						should_check_sibling = current->i < parent->children_count - 1;
+					}
 				} break;
 				default: {
 				} break;
