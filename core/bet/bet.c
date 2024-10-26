@@ -146,7 +146,9 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 enum bet_res
 bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
 {
-	sys_printf("tick: %d", (int)node_index);
+	if(ctx->debug) {
+		sys_printf("tick: %d", (int)node_index);
+	}
 	enum bet_res res      = BET_RES_NONE;
 	struct bet_node *node = bet_get_node(bet, node_index);
 
@@ -248,7 +250,9 @@ bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *us
 	assert(node->type == BET_NODE_ACTION);
 	enum bet_res res = BET_RES_NONE;
 	res              = ctx->action_do(bet, ctx, node, userdata);
-	sys_printf("  res: %s", BET_RES_STR[res]);
+	if(ctx->debug) {
+		sys_printf("  res: %s", BET_RES_STR[res]);
+	}
 	assert(res != BET_RES_NONE);
 
 	return res;
@@ -273,7 +277,9 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		} else if(res == BET_RES_FAILURE) {
 			res = BET_RES_SUCCESS;
 		}
-		sys_printf("  deco-invert: %s", BET_RES_STR[res]);
+		if(ctx->debug) {
+			sys_printf("  deco-invert: %s", BET_RES_STR[res]);
+		}
 	} break;
 	case BET_DECO_FAILURE: {
 		res = BET_RES_FAILURE;
@@ -294,7 +300,9 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 				res = BET_RES_RUNNING;
 			}
 		}
-		sys_printf("  deco-run-x: %d,%d -> %s", (i32)node_ctx->run_count, (i32)prop.f32, BET_RES_STR[res]);
+		if(ctx->debug) {
+			sys_printf("  deco-run-x: %d,%d -> %s", (i32)node_ctx->run_count, (i32)prop.f32, BET_RES_STR[res]);
+		}
 
 	} break;
 	case BET_DECO_REPEAT_UNTIL_SUCCESS: {
@@ -326,19 +334,27 @@ bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 
 	switch(type) {
 	case BET_COMP_SEQUENCE: {
-		sys_printf("-> %d", ctx->i);
+		if(ctx->debug) {
+			sys_printf("-> %d", ctx->i);
+		}
 		return bet_tick_sequence(bet, ctx, node_index, initial, userdata);
 	} break;
 	case BET_COMP_SELECTOR: {
-		sys_printf("? %d", ctx->i);
+		if(ctx->debug) {
+			sys_printf("? %d", ctx->i);
+		}
 		return bet_tick_selector(bet, ctx, node_index, initial, userdata);
 	} break;
 	case BET_COMP_RND: {
-		sys_printf("rnd");
+		if(ctx->debug) {
+			sys_printf("rnd");
+		}
 		return bet_tick_rnd(bet, ctx, node_index, userdata);
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
-		sys_printf("rnd weighted");
+		if(ctx->debug) {
+			sys_printf("rnd weighted");
+		}
 		return bet_tick_rnd_weighted(bet, ctx, node_index, userdata);
 	} break;
 	default: {
@@ -395,7 +411,9 @@ bool32
 bet_ctx_handle_node_res(struct bet *bet, struct bet_ctx *ctx, u8 node_index, enum bet_res res)
 {
 	if(res == BET_RES_RUNNING && ctx->current == 0) {
-		sys_printf("Store current: %d", node_index);
+		if(ctx->debug) {
+			sys_printf("Store current: %d", node_index);
+		}
 		struct bet_node *node = bet_get_node(bet, node_index);
 		ctx->i                = node->i;
 		ctx->current          = node_index;
