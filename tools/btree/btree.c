@@ -42,8 +42,11 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				}
 			} break;
 			case JSMN_PRIMITIVE: {
-				res.prop.type = BET_PROP_F32;
-				res.prop.f32  = json_parse_f32(json, value);
+				char *first = (char *)json.str + value->start;
+				if(*first != 'n') {
+					res.prop.type = BET_PROP_F32;
+					res.prop.f32  = json_parse_f32(json, value);
+				}
 			} break;
 			default: {
 				// NOT_IMPLEMENTED;
