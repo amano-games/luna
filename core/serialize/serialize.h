@@ -131,7 +131,7 @@ ser_safe_read(struct ser_reader *r, void *dst, int size)
 struct ser_value
 ser_read(struct ser_reader *r)
 {
-	struct ser_value res;
+	struct ser_value res = {0};
 	// read type
 	bool ok = ser_safe_read(r, &res.type, 1);
 	// read value
