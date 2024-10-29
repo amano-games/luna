@@ -20,7 +20,7 @@ json_load(const str8 path, struct alloc alloc, str8 *out)
 	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)size + 1);
 	if(!buf) {
 		sys_file_close(f);
-		log_error("JSON", "loading %s\n", path.str);
+		log_error("JSON", "loading %s", path.str);
 		return 0;
 	}
 	sys_file_r(f, buf, size);

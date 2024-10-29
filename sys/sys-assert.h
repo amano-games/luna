@@ -11,13 +11,9 @@
 	while(!(c)) __builtin_unreachable()
 #endif
 
-#ifdef TARGET_PLAYDATE
-#define FILE_AND_LINE ""
-#else
 #define FILE_AND_LINE__(A, B) A "|" #B
 #define FILE_AND_LINE_(A, B)  FILE_AND_LINE__(A, B)
 #define FILE_AND_LINE         FILE_AND_LINE_(__FILE__, __LINE__)
-#endif
 
 // TODO: move to log_panic
 #define NOT_IMPLEMENTED \
