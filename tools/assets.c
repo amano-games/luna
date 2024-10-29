@@ -30,6 +30,10 @@
 #define ANI_EXT ".lunass"
 #define AI_EXT  ".btree"
 
+#if !defined(SYS_LOG_LEVEL)
+#define SYS_LOG_LEVEL 0
+#endif
+
 void
 fcopy(const str8 in_path, const str8 out_path)
 {

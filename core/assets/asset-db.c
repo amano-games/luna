@@ -2,6 +2,7 @@
 
 #include "animation/animation.h"
 #include "arr.h"
+#include "bet/bet.h"
 #include "ht.h"
 #include "str.h"
 #include "sys-log.h"
@@ -244,7 +245,7 @@ asset_db_get_fnt(struct asset_db *db, struct asset_handle handle)
 }
 
 struct asset_bet_handle
-asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
+asset_db_load_bet(struct asset_db *db, str8 path, struct alloc alloc, struct alloc scratch)
 {
 	struct bet_table *table = &db->bets;
 	usize table_len         = arr_len(table->arr);
@@ -265,6 +266,7 @@ asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet)
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
+		struct bet bet = bet_load(path, alloc, scratch);
 		arr_push(table->arr, bet);
 		return (struct asset_bet_handle){.id = value};
 	}

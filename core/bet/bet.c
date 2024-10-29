@@ -1,6 +1,9 @@
 #include "bet.h"
+#include "arr.h"
 #include "mem.h"
 #include "rndm.h"
+#include "serialize/serialize.h"
+#include "str.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys-types.h"
@@ -14,25 +17,27 @@ enum bet_res bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_in
 enum bet_res bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
 
 void
-bet_init(struct bet *bet)
+bet_init(struct bet *bet, struct alloc alloc)
 {
-	mclr(bet, sizeof(struct bet));
-	bet->count = 1;
+	bet->nodes = arr_ini(1, sizeof(*bet->nodes), alloc);
+	bet->alloc = alloc;
+	arr_push(bet->nodes, (struct bet_node){0});
 }
 
 i32
 bet_push_node(struct bet *bet, struct bet_node node)
 {
 	assert(bet != NULL);
-	bet->nodes[bet->count++] = node;
-	return bet->count - 1;
+	assert(arr_len(bet->nodes) + 1 < MAX_BET_NODES);
+	arr_push_packed(bet->nodes, node, bet->alloc);
+	return arr_len(bet->nodes) - 1;
 }
 
 struct bet_node *
 bet_get_node(struct bet *bet, usize node_index)
 {
 	assert(bet != NULL);
-	assert(node_index > 0 && node_index < bet->count);
+	assert(node_index > 0 && node_index < arr_len(bet->nodes));
 	return bet->nodes + node_index;
 }
 
@@ -78,7 +83,7 @@ enum bet_res
 bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 {
 	enum bet_res res = BET_RES_NONE;
-	if(bet->count == 0) { return res; }
+	if(arr_len(bet->nodes) == 0) { return res; }
 
 	usize node_index = MAX(ctx->current, 1);
 
@@ -170,6 +175,7 @@ bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 		res = bet_tick_deco(bet, ctx, node_index, userdata);
 	} break;
 	default: {
+		log_error("Bet", "node type not supported type: %d node_index: %d", node->type, (int)node_index);
 		NOT_IMPLEMENTED;
 	} break;
 	}
@@ -239,11 +245,11 @@ bet_tick_rnd_weighted(struct bet *bet, struct bet_ctx *ctx, usize node_index, vo
 
 	struct rndm_weighted_choice choices[MAX_BET_CHILDREN] = {0};
 	struct bet_prop weights                               = node->props[0];
-	assert(weights.type == BET_PROP_I32_ARR);
+	assert(weights.type == BET_PROP_U8_ARR);
 
 	for(usize i = 0; i < node->children_count; ++i) {
 		choices[i].key   = i;
-		choices[i].value = weights.i32_arr[i];
+		choices[i].value = weights.u8_arr[i];
 	}
 	usize rnd         = rndm_weighted_choice_i32(choices, node->children_count);
 	usize child_index = node->children[rnd];
@@ -400,18 +406,40 @@ bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch)
 }
 
 struct bet
-bet_load(str8 path)
+bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
-	struct bet bet = {0};
-	void *f        = sys_file_open_r(path);
 	log_info("Bet", "Load bet %s", path.str);
+	struct bet res = {0};
+	void *f        = sys_file_open_r(path);
 	if(f == NULL) {
 		log_error("Bet", "failed to open bet file: %s", path.str);
-		return bet;
+		return res;
 	}
-	sys_file_r(f, &bet, sizeof(struct bet));
+
+	sys_file_seek_end(f, 0);
+	usize size = sys_file_tell(f);
+	sys_file_seek_set(f, 0);
+	char *data = scratch.allocf(scratch.ctx, size);
+
+	if(!data) {
+		sys_file_close(f);
+		log_error("BET", "loading %s", path.str);
+		return res;
+	}
+
+	sys_file_r(f, data, size);
 	sys_file_close(f);
-	return bet;
+
+	struct ser_reader r = {
+		.data = data,
+		.len  = size,
+	};
+	struct ser_value arr = ser_read(&r);
+	// ser_print_value(&r, arr, 0);
+	bet_init(&res, alloc);
+	bet_read(&r, arr, &res, MAX_BET_NODES);
+
+	return res;
 }
 
 bool32
@@ -426,4 +454,178 @@ bet_ctx_handle_node_res(struct bet *bet, struct bet_ctx *ctx, u8 node_index, enu
 		ctx->current          = node_index;
 	}
 	return true;
+}
+
+void
+bet_prop_write(struct ser_writer *w, struct bet_prop prop)
+{
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("type"));
+	ser_write_i32(w, prop.type);
+	ser_write_string(w, str8_lit("value"));
+	switch(prop.type) {
+	case BET_PROP_NONE: {
+	} break;
+	case BET_PROP_F32: {
+		ser_write_f32(w, prop.f32);
+	} break;
+	case BET_PROP_I32: {
+		ser_write_i32(w, prop.i32);
+	} break;
+	case BET_PROP_U8_ARR: {
+		ser_write_array(w);
+		for(usize i = 0; i < ARRLEN(prop.u8_arr); i++) {
+			ser_write_u8(w, prop.u8_arr[i]);
+		}
+		ser_write_end(w);
+	} break;
+	case BET_PROP_BOOL32: {
+		ser_write_i32(w, prop.bool32);
+	} break;
+	}
+	ser_write_end(w);
+}
+
+void
+bet_node_write(struct ser_writer *w, struct bet_node n)
+{
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("type"));
+	ser_write_i32(w, n.type);
+	ser_write_string(w, str8_lit("sub_type"));
+	ser_write_i32(w, n.sub_type);
+	ser_write_string(w, str8_lit("parent"));
+	ser_write_u8(w, n.parent);
+	ser_write_string(w, str8_lit("i"));
+	ser_write_u8(w, n.i);
+
+	ser_write_string(w, str8_lit("children_count"));
+	ser_write_u8(w, n.children_count);
+	ser_write_string(w, str8_lit("children"));
+	ser_write_array(w);
+	for(usize i = 0; i < n.children_count; ++i) {
+		ser_write_u8(w, n.children[i]);
+	}
+	ser_write_end(w);
+
+	ser_write_string(w, str8_lit("prop_count"));
+	ser_write_u8(w, n.prop_count);
+	ser_write_string(w, str8_lit("props"));
+	ser_write_array(w);
+	for(usize i = 0; i < n.prop_count; ++i) {
+		bet_prop_write(w, n.props[i]);
+	}
+	ser_write_end(w);
+
+	ser_write_string(w, str8_lit("name"));
+	ser_write_string(w, str8_cstr(n.name));
+	ser_write_end(w);
+}
+
+void
+bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count)
+{
+	ser_write_array(w);
+	for(usize i = 0; i < count; i++) {
+		bet_node_write(w, nodes[i]);
+	}
+	ser_write_end(w);
+}
+
+struct bet_prop
+bet_prop_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct bet_prop res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("value"), 0)) {
+			switch(res.type) {
+			case BET_PROP_NONE: {
+			} break;
+			case BET_PROP_F32: {
+				res.f32 = value.f32;
+			} break;
+			case BET_PROP_I32: {
+				res.i32 = value.i32;
+			} break;
+			case BET_PROP_U8_ARR: {
+				struct ser_value item_val;
+				usize i = 0;
+				while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.u8_arr)) {
+					res.u8_arr[i] = item_val.u8;
+					i++;
+				}
+			} break;
+			case BET_PROP_BOOL32: {
+				res.i32 = value.i32;
+			} break;
+			}
+		}
+	}
+
+	return res;
+}
+
+struct bet_node
+bet_node_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct bet_node res = {0};
+	struct ser_value key, value;
+
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("sub_type"), 0)) {
+			res.sub_type = value.i32;
+		} else if(str8_match(key.str, str8_lit("parent"), 0)) {
+			res.parent = value.u8;
+		} else if(str8_match(key.str, str8_lit("i"), 0)) {
+			res.i = value.u8;
+		} else if(str8_match(key.str, str8_lit("children_count"), 0)) {
+			res.children_count = value.u8;
+		} else if(str8_match(key.str, str8_lit("children"), 0)) {
+			struct ser_value item_val;
+			usize i = 0;
+			while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.children)) {
+				res.children[i] = item_val.u8;
+				i++;
+			}
+		} else if(str8_match(key.str, str8_lit("prop_count"), 0)) {
+			res.prop_count = value.u8;
+		} else if(str8_match(key.str, str8_lit("props"), 0)) {
+			struct ser_value item_val;
+			int i = 0;
+			while(ser_iter_array(r, value, &item_val) && i < MAX_BET_CHILDREN) {
+				res.props[i] = bet_prop_read(r, item_val);
+				i++;
+			}
+		} else if(str8_match(key.str, str8_lit("name"), 0)) {
+			mcpy(res.name, value.str.str, value.str.size);
+		}
+	}
+
+	return res;
+}
+
+// reads up to `max_count` rects into the `rects` array and returns the number
+// of rects read — note: if you have a dynamic array as part of your base
+// library, it could be used here instead of the fixed `rects` array
+i32
+bet_read(
+	struct ser_reader *r,
+	struct ser_value arr,
+	struct bet *bet,
+	usize max_count)
+{
+	struct ser_value val;
+	usize i = 0;
+	while(ser_iter_array(r, arr, &val) && i < max_count) {
+		bet_push_node(bet, bet_node_read(r, val));
+		i++;
+	}
+	return i;
 }

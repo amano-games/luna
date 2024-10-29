@@ -1,13 +1,13 @@
 #pragma once
 
 #include "mem.h"
+#include "serialize/serialize.h"
 #include "sys-types.h"
-#include "bet-helpers.h"
 
-#define MAX_BET_NODES      100
+#define MAX_BET_NODES      40
 #define MAX_BET_CHILDREN   10
 #define MAX_BET_NODE_PROPS 3
-#define MAX_BET_NOTE       100
+#define MAX_BET_NOTE       64
 
 enum bet_node_type {
 	BET_NODE_NONE,
@@ -83,10 +83,10 @@ static char *BET_DECO_TYPE_STR[BET_DECO_NUM_COUNT] = {
 
 enum bet_prop_type {
 	BET_PROP_NONE,
+	BET_PROP_BOOL32,
 	BET_PROP_I32,
 	BET_PROP_F32,
-	BET_PROP_V2,
-	BET_PROP_I32_ARR,
+	BET_PROP_U8_ARR,
 };
 
 struct bet_prop {
@@ -95,26 +95,25 @@ struct bet_prop {
 		bool32 bool32;
 		i32 i32;
 		f32 f32;
-		v2 v2;
-		i32 i32_arr[MAX_BET_CHILDREN];
+		u8 u8_arr[4];
 	};
 };
 
 struct bet_node {
 	enum bet_node_type type;
-	i32 sub_type;
+	i16 sub_type;
 	u8 parent;
 	u8 i;
 	u8 children_count;
 	u8 children[MAX_BET_CHILDREN];
 	u8 prop_count;
 	struct bet_prop props[MAX_BET_NODE_PROPS];
-	char note[MAX_BET_NOTE];
+	char name[MAX_BET_NOTE];
 };
 
 struct bet {
-	usize count;
-	struct bet_node nodes[MAX_BET_NODES];
+	struct alloc alloc;
+	struct bet_node *nodes;
 };
 
 struct bet_node_ctx {
@@ -130,8 +129,7 @@ struct bet_ctx {
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
 
-void
-bet_init(struct bet *bet);
+void bet_init(struct bet *bet, struct alloc alloc);
 struct bet_node *bet_get_node(struct bet *bet, usize node_index);
 i32 bet_push_node(struct bet *bet, struct bet_node node);
 bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
@@ -142,4 +140,8 @@ enum bet_res bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_inde
 str8 bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch);
 
 // TODO: Move to assets
-struct bet bet_load(str8 path);
+struct bet bet_load(str8 path, struct alloc alloc, struct alloc scratch);
+
+void bet_node_write(struct ser_writer *w, struct bet_node n);
+void bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count);
+i32 bet_read(struct ser_reader *r, struct ser_value arr, struct bet *bet, usize max_count);

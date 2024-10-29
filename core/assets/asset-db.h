@@ -107,7 +107,7 @@ i32 asset_db_load_fnt(struct asset_db *db, str8 path, struct fnt *fnt);
 i32 asset_db_push_fnt(struct asset_db *db, str8 path, struct fnt fnt);
 struct fnt asset_db_get_fnt(struct asset_db *db, struct asset_handle handle);
 
-struct asset_bet_handle asset_db_push_bet(struct asset_db *db, str8 path, struct bet bet);
+struct asset_bet_handle asset_db_load_bet(struct asset_db *db, str8 path, struct alloc alloc, struct alloc scratch);
 struct asset_bet_handle asset_db_get_bet_handle(struct asset_db *db, struct asset_handle handle);
 struct bet *asset_db_get_bet_by_path(struct asset_db *db, struct asset_handle handle);
 struct bet *asset_db_get_bet_by_id(struct asset_db *db, struct asset_bet_handle handle);

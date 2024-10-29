@@ -1,16 +1,18 @@
 #include "btree.h"
 #include "arr.h"
+#include "bet/bet.h"
 #include "json.h"
 #include "mem-arena.h"
 #include "mem.h"
+#include "serialize/serialize.h"
 #include "str.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys-assert.h"
 #include "sys-types.h"
+#include "sys-utils.h"
 #include "sys.h"
 #include "tools/utils.h"
-#include <stdio.h>
 
 #define AI_FILE_EXT "bet"
 
@@ -34,11 +36,12 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 		if(json_eq(json, key, str8_lit("value")) == 0) {
 			switch(value->type) {
 			case JSMN_ARRAY: {
-				res.prop.type = BET_PROP_I32_ARR;
+				res.prop.type = BET_PROP_U8_ARR;
+				assert((usize)value->size <= ARRLEN(res.prop.u8_arr));
 				for(int j = 0; j < value->size; j++) {
 					jsmntok_t *num = &tokens[i + j + 2];
 					assert(num->type == JSMN_PRIMITIVE);
-					res.prop.i32_arr[j] = json_parse_i32(json, num);
+					res.prop.u8_arr[j] = (u8)json_parse_i32(json, num);
 				}
 			} break;
 			case JSMN_PRIMITIVE: {
@@ -134,12 +137,16 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				struct bet_node node = {
 					.type = BET_NODE_ACTION,
 				};
-				mcpy(node.note, json.str + value->start, value->end - value->start);
-				usize len      = cstr8_len((u8 *)node.note);
-				node.note[len] = '\0';
 
 				res.node_index = bet_push_node(bet, node);
 			}
+			struct bet_node *node = bet->nodes + res.node_index;
+
+			assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+			usize len = value->end - value->start;
+			mcpy(node->name, json.str + value->start, len);
+			node->name[len] = '\0';
+
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			struct bet_prop props[MAX_BET_NODE_PROPS] = {0};
 			assert(value->size <= MAX_BET_NODE_PROPS);
@@ -200,25 +207,30 @@ handle_json(str8 json, struct bet *bet, struct alloc scratch)
 int
 handle_btree(str8 in_path, str8 out_path)
 {
-	usize mem_size = MMEGABYTE(1);
+	usize scratch_mem_size = MMEGABYTE(1);
+	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
+	assert(scratch_mem_buffer != NULL);
+	struct marena scratch_marena = {0};
+	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
+	struct alloc scratch = marena_allocator(&scratch_marena);
+
+	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	assert(mem_buffer != NULL);
-	// sys_printf("processing %s ...", in_path.str);
+	struct marena marean = {0};
+	marena_init(&marean, mem_buffer, mem_size);
+	struct alloc alloc = marena_allocator(&marean);
 
-	struct marena marena = {0};
-	marena_init(&marena, mem_buffer, mem_size);
-
-	struct alloc alloc = marena_allocator(&marena);
-	str8 json          = {0};
-	json_load(in_path, alloc, &json);
+	str8 json = {0};
+	json_load(in_path, scratch, &json);
 
 	struct bet bet = {0};
-	bet_init(&bet);
+	bet_init(&bet, alloc);
 
-	handle_json(json, &bet, alloc);
+	handle_json(json, &bet, scratch);
 
-	for(usize i = 1; i < bet.count; ++i) {
-		str8 node_str = bet_node_serialize(&bet, i, alloc);
+	for(usize i = 1; i < arr_len(bet.nodes); ++i) {
+		str8 node_str = bet_node_serialize(&bet, i, scratch);
 		// sys_printf("%s", node_str.str);
 	}
 
@@ -232,15 +244,27 @@ handle_btree(str8 in_path, str8 out_path)
 		return -1;
 	}
 
-	if(sys_file_w(out_file, &bet, sizeof(struct bet)) != 1) {
-		log_error("ai-gen", "failed to write file %s", out_file_path.str);
-		return -1;
+	struct ser_writer w = {
+		.f = out_file,
+	};
+
+	ser_write_array(&w);
+	for(usize i = 1; i < arr_len(bet.nodes); ++i) {
+		bet_node_write(&w, bet.nodes[i]);
 	}
+	ser_write_end(&w);
+
+	// if(sys_file_w(out_file, &bet, sizeof(struct bet)) != 1) {
+	// 	log_error("ai-gen", "failed to write file %s", out_file_path.str);
+	// 	return -1;
+	// }
 
 	sys_file_close(out_file);
 
+	sys_free(scratch_mem_buffer);
 	sys_free(mem_buffer);
 	// sys_printf("%s -> %s\n", in_path.str, out_file_path.str);
 	log_info("ai-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+
 	return 1;
 }
