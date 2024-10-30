@@ -9,6 +9,7 @@
 
 #define STB_SPRINTF_IMPLEMENTATION
 #define STB_SPRINTF_STATIC
+#define STB_SPRINTF_NOUNALIGNED
 #include "stb_sprintf.h"
 
 typedef unsigned char uchar;
