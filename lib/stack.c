@@ -5,10 +5,7 @@
 void
 stack_u8_init(struct stack_u8 *stack)
 {
-	stack->count = 0;
-	for(usize i = 0; i < STACK_MAX_ITEMS; ++i) {
-		stack->data[i] = 0;
-	}
+	mclr(stack, sizeof(struct stack_u8));
 }
 
 bool32
