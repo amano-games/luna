@@ -27,7 +27,7 @@ cam_brain_init(
 	brain->limits_speed    = limits_speed;
 	brain->speed_scale     = speed_scale;
 
-	cam_set_pos_px(c, CAM_HALF_W, 720 - CAM_HALF_H);
+	cam_set_pos_px(c, tx, ty);
 	// cam_set_pos_px(c, CAM_HALF_W, ty);
 	int index = cam_brain_query_circle(brain, tx, ty, r);
 	cam_brain_set_data(brain, index);
