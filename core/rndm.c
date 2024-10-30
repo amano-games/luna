@@ -92,3 +92,16 @@ rndm_weighted_choice_i32(struct rndm_weighted_choice *choices, usize count)
 	BAD_PATH;
 	return 0;
 }
+
+void
+rndm_shuffle_arr_f32(f32 *arr, usize count)
+{
+	if(count > 1) {
+		for(usize i = 0; i < count - 1; i++) {
+			usize j = i + rndm_range_i32(0, count - i - 1);
+			f32 t   = arr[j];
+			arr[j]  = arr[i];
+			arr[i]  = t;
+		}
+	}
+}
