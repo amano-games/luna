@@ -349,6 +349,14 @@ sys_seconds(void)
 	return stm_sec(stm_since(0));
 }
 
+// TODO: Make sure it works
+u32
+sys_epoch(u32 milliseconds)
+{
+	u64 epoch = 1730405055;
+	return stm_sec(stm_since(epoch));
+}
+
 void
 sys_1bit_invert(bool32 i)
 {

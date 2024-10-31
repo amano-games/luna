@@ -27,6 +27,7 @@ static void (*PD_GRAPHICS_MARK_UPDATED_ROWS)(int a, int b);
 static float (*PD_SYSTEM_GET_CRANK_ANGLE)(void);
 static int (*PD_SYSTEM_IS_CRANK_DOCKED)(void);
 static float (*PD_SYSTEM_GET_ELAPSED_TIME)(void);
+static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
 
@@ -40,16 +41,17 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 	case kEventInit:
 		PD = pd;
 
-		PD_SYSTEM_LOG_TO_CONSOLE      = PD->system->logToConsole;
-		PD_SYSTEM_PARSE_STR           = PD->system->parseString;
-		PD_SYSTEM_REALLOC             = PD->system->realloc;
-		PD_GRAPHICS_MARK_UPDATED_ROWS = PD->graphics->markUpdatedRows;
-		PD_SYSTEM_GET_ELAPSED_TIME    = PD->system->getElapsedTime;
-		PD_SYSTEM_GET_BUTTON_STATE    = PD->system->getButtonState;
-		PD_SYSTEM_GET_CRANK_ANGLE     = PD->system->getCrankAngle;
-		PD_SYSTEM_IS_CRANK_DOCKED     = PD->system->isCrankDocked;
-		PD_FILE_READ                  = PD->file->read;
-		PD_FILE_WRITE                 = PD->file->write;
+		PD_SYSTEM_LOG_TO_CONSOLE          = PD->system->logToConsole;
+		PD_SYSTEM_PARSE_STR               = PD->system->parseString;
+		PD_SYSTEM_REALLOC                 = PD->system->realloc;
+		PD_GRAPHICS_MARK_UPDATED_ROWS     = PD->graphics->markUpdatedRows;
+		PD_SYSTEM_GET_ELAPSED_TIME        = PD->system->getElapsedTime;
+		PD_SYSTEM_GET_SECONDS_SINCE_EPOCH = PD->system->getSecondsSinceEpoch;
+		PD_SYSTEM_GET_BUTTON_STATE        = PD->system->getButtonState;
+		PD_SYSTEM_GET_CRANK_ANGLE         = PD->system->getCrankAngle;
+		PD_SYSTEM_IS_CRANK_DOCKED         = PD->system->isCrankDocked;
+		PD_FILE_READ                      = PD->file->read;
+		PD_FILE_WRITE                     = PD->file->write;
 
 		PD->system->setUpdateCallback(sys_pd_update, PD);
 		PD->sound->addSource(sys_pd_audio, NULL, 0);
@@ -146,6 +148,12 @@ f32
 sys_seconds(void)
 {
 	return PD_SYSTEM_GET_ELAPSED_TIME();
+}
+
+u32
+sys_epoch(u32 *milliseconds)
+{
+	return PD_SYSTEM_GET_SECONDS_SINCE_EPOCH(milliseconds);
 }
 
 void
