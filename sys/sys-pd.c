@@ -153,7 +153,7 @@ sys_seconds(void)
 u32
 sys_epoch(u32 *milliseconds)
 {
-	return PD_SYSTEM_GET_SECONDS_SINCE_EPOCH(milliseconds);
+	return PD_SYSTEM_GET_SECONDS_SINCE_EPOCH((unsigned int *)milliseconds);
 }
 
 void
