@@ -105,3 +105,13 @@ rndm_shuffle_arr_f32(f32 *arr, usize count)
 		}
 	}
 }
+
+v2
+rndm_point_in_rec(i32 x, i32 y, i32 w, i32 h)
+{
+	v2 res = {
+		.x = rndm_range_f32(x, x + w),
+		.y = rndm_range_f32(y, y + h),
+	};
+	return res;
+}
