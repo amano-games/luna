@@ -967,23 +967,23 @@ fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, 
 	}
 }
 
-i32
-fnt_length_px(struct fnt fnt, const str8 str)
+v2_i32
+fnt_size_px(struct fnt fnt, const str8 str)
 {
-	i32 l = 0;
+	i32 x = 0;
 	for(const u8 *c = str.str; *c != '\0'; c++) {
-		l += fnt.widths[(uint)*c];
+		x += fnt.widths[(uint)*c];
 	}
-	return l;
+	return (v2_i32){x, fnt.grid_h};
 }
 
-i32
-fnt_length_px_mono(struct fnt fnt, const str8 str, i32 spacing)
+v2_i32
+fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing)
 {
-	i32 l = 0;
+	i32 x = 0;
 	i32 s = spacing ? spacing : fnt.grid_w;
 	for(const u8 *c = str.str; *c != '\0'; c++) {
-		l += s;
+		x += s;
 	}
-	return l;
+	return (v2_i32){x, fnt.grid_h};
 }

@@ -124,5 +124,5 @@ struct gfx_ctx gfx_ctx_clipwh(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h);
 
 void fnt_draw_ascii(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode);
 void fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 spacing, i32 mode);
-i32 fnt_length_px(struct fnt fnt, const str8 str);
-i32 fnt_length_px_mono(struct fnt fnt, const str8 str, i32 spacing);
+v2_i32 fnt_size_px(struct fnt fnt, const str8 str);
+v2_i32 fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing);
