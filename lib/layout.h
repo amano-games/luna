@@ -40,7 +40,7 @@ struct ui_rec
 ui_cut_bottom(struct ui_rec *rect, i32 a)
 {
 	i32 maxy   = rect->maxy;
-	rect->maxy = min_i32(rect->miny, rect->maxy - a);
+	rect->maxy = max_i32(rect->miny, rect->maxy - a);
 	return (struct ui_rec){rect->minx, rect->maxy, rect->maxx, maxy};
 }
 
