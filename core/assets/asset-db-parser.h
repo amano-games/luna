@@ -30,12 +30,12 @@ struct animation_slice_res {
 struct asset_res {
 	usize token_count;
 	struct str8 path;
-	struct texture_info asset_info;
+	struct tex_info asset_info;
 };
 
 struct asset_info_res {
 	usize token_count;
-	struct texture_info asset_info;
+	struct tex_info asset_info;
 };
 
 struct assets_db_res {
