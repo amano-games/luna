@@ -31,12 +31,12 @@ extract_int_value(char *line, char *key, int *dest)
 }
 
 void
-pdxinfo_parse(struct pdxinfo *info, struct alloc *scratch)
+pdxinfo_parse(struct pdxinfo *info, struct alloc scratch)
 {
 	void *f = sys_file_open_r(str8_lit("pdxinfo"));
 	if(f != NULL) {
 		struct sys_file_stats stats = sys_file_stats(str8_lit("pdxinfo"));
-		char *buffer                = scratch->allocf(scratch->ctx, stats.size);
+		char *buffer                = scratch.allocf(scratch.ctx, stats.size);
 		sys_file_r(f, (void *)buffer, stats.size);
 
 		char *line = strtok(buffer, "\n");
