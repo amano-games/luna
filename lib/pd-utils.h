@@ -12,4 +12,4 @@ struct pdxinfo {
 	char image_path[100];
 };
 
-void pdxinfo_parse(struct pdxinfo *pdxinfo, struct alloc *scratch);
+void pdxinfo_parse(struct pdxinfo *pdxinfo, struct alloc scratch);
