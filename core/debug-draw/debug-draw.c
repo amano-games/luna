@@ -94,6 +94,12 @@ debug_draw_aabb(f32 x1, f32 y1, f32 x2, f32 y2)
 	debug_draw_rec(x1, y1, x2 - x1, y2 - y1);
 }
 
+void
+debug_draw_ui_rec(struct ui_rec rec)
+{
+	debug_draw_aabb(rec.minx, rec.miny, rec.maxx, rec.maxy);
+}
+
 // TODO: Re-do all of this
 void
 debug_draw_collider(struct col_shape *shape)
