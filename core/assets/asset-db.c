@@ -35,7 +35,7 @@ asset_db_init(
 
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
 	db->textures_info.arr = arr_ini(textures_count, sizeof(*db->textures_info.arr), alloc);
-	arr_push(db->textures_info.arr, (struct texture_info){0});
+	arr_push(db->textures_info.arr, (struct tex_info){0});
 
 	db->fonts.ht  = ht_new_u32(exp, alloc);
 	db->fonts.arr = arr_ini(fonts_count, sizeof(*db->fonts.arr), alloc);
@@ -98,7 +98,7 @@ asset_db_get_path(struct asset_db *db, struct asset_handle handle)
 }
 
 i32
-asset_db_push_asset_info(struct asset_db *db, str8 path, struct texture_info info)
+asset_db_push_asset_info(struct asset_db *db, str8 path, struct tex_info info)
 {
 	struct texture_info_table *table = &db->textures_info;
 	usize table_len                  = arr_len(table->arr);
@@ -124,12 +124,12 @@ asset_db_push_asset_info(struct asset_db *db, str8 path, struct texture_info inf
 	}
 }
 
-struct texture_info
+struct tex_info
 asset_db_get_asset_info(struct asset_db *db, struct asset_handle handle)
 {
 	struct texture_info_table *table = &db->textures_info;
 	u32 value                        = ht_get_u32(&table->ht, handle.path_hash);
-	struct texture_info res          = table->arr[value];
+	struct tex_info res              = table->arr[value];
 	return res;
 }
 
