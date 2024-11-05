@@ -191,11 +191,10 @@ v2_rot(v2 v, f32 a)
 static inline v2
 v2_from(f32 a, f32 mag)
 {
-	f32 angle = a;
-	v2 r      = {
-			 .x = cos_f32(angle) * mag,
-			 .y = sin_f32(angle) * mag,
-    };
+	v2 r = {
+		.x = cos_f32(a) * mag,
+		.y = sin_f32(a) * mag,
+	};
 	return r;
 }
 

@@ -1,5 +1,6 @@
 #include "rndm.h"
 #include "sys-log.h"
+#include "sys.h"
 #include "v2.h"
 
 struct rndm RNDM;
@@ -67,8 +68,8 @@ rndm_point_out_rec(i32 x, i32 y, i32 w, i32 h)
 v2
 rndm_point_out_cir(i32 x, i32 y, i32 r)
 {
-	f32 theta = rndm_range_f32(0.0f, 6.0f);
-	v2 res    = {cos_f32(theta) * r, sin_f32(theta) * r};
+	f32 angle = rndm_next_f32() * TURN_TO_RAD;
+	v2 res    = v2_from(angle, r);
 	res       = v2_add((v2){x, y}, res);
 	return res;
 }
