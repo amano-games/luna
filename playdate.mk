@@ -47,7 +47,7 @@ PD_DEFS        := -DTARGET_PLAYDATE=1
 SIM_DEFS       := -DTARGET_SIMULATOR=1
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -O2 -g3
+RELEASE_CFLAGS += -std=gnu11 -O2 -g3 -gdwarf-2
 RELEASE_CFLAGS += -falign-functions=16
 RELEASE_CFLAGS += -fomit-frame-pointer
 RELEASE_CFLAGS += -DNDEBUG

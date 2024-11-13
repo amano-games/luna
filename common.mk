@@ -11,6 +11,7 @@ DETECTED_OS := $(strip $(DETECTED_OS))
 $(info DETECTED_OS is "$(DETECTED_OS)")
 
 WARN_FLAGS += -Werror -Wall -Wextra -pedantic-errors
+WARN_FLAGS += -Wstrict-prototypes
 WARN_FLAGS += -Wdouble-promotion
 WARN_FLAGS += -Wno-unused-function
 WARN_FLAGS += -Wno-unused-but-set-variable
