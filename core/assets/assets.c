@@ -234,9 +234,39 @@ fnt_load(const str8 path, struct alloc alloc, struct alloc scratch)
 				assert(value->type == JSMN_PRIMITIVE);
 				fnt.grid_w = json_parse_i32(json, value);
 			}
-			if(json_eq(json, key, str8_lit("grid_height")) == 0) {
+			if(json_eq(json, key, str8_lit("cell_width")) == 0) {
 				assert(value->type == JSMN_PRIMITIVE);
-				fnt.grid_h = json_parse_i32(json, value);
+				fnt.cell_w = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("cell_height")) == 0) {
+				assert(value->type == JSMN_PRIMITIVE);
+				fnt.cell_h = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("tracking")) == 0) {
+				assert(value->type == JSMN_PRIMITIVE);
+				fnt.tracking = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("baseline")) == 0) {
+				assert(value->type == JSMN_PRIMITIVE);
+				fnt.metrics.baseline = json_parse_i32(json, value);
+			}
+			if(json_eq(json, key, str8_lit("kern_pairs")) == 0) {
+				assert(value->type == JSMN_OBJECT);
+				// TODO: hash map probing
+				fnt.kern_pairs = (u8 *)alloc.allocf(alloc.ctx, sizeof(u8) * U16_MAX);
+				for(i32 j = 0; j < value->size; j++) {
+					i32 object_token_size = 2;
+					i32 offset            = 2;
+					jsmntok_t *item_key   = &tokens[i + (j * object_token_size) + offset];
+					jsmntok_t *item_value = &tokens[i + (j * object_token_size) + offset + 1];
+					assert(item_key->type == JSMN_STRING);
+					assert(item_value->type == JSMN_PRIMITIVE);
+
+					char a                = (char)*(json.str + item_key->start);
+					char b                = (char)*(json.str + item_key->start + 1);
+					u16 index             = ((u16)a << 8) | b;
+					fnt.kern_pairs[index] = json_parse_i32(json, item_value);
+				}
 			}
 			if(json_eq(json, key, str8_lit("glyph_widths")) == 0) {
 				assert(value->type == JSMN_ARRAY);

@@ -928,15 +928,26 @@ fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mod
 	v2_i32 p         = (v2_i32){x, y};
 	struct tex_rec t = {0};
 	t.t              = fnt.t;
-	t.r.w            = fnt.grid_w;
-	t.r.h            = fnt.grid_h;
+	t.r.w            = fnt.cell_w;
+	t.r.h            = fnt.cell_h;
 	for(usize n = 0; n < str.size; n++) {
-		i32 ci = str.str[n];
-		assert(ci > 31);
-		t.r.x = (ci & 31) * fnt.grid_w;
-		t.r.y = ((ci >> 5) - 1) * fnt.grid_h;
+		i32 ci = str.str[n] - 32;
+		assert(ci >= 0);
+		t.r.x = (ci % fnt.grid_w) * fnt.cell_w;
+		t.r.y = (ci / fnt.grid_w) * fnt.cell_h;
 		gfx_spr(ctx, t, p.x, p.y, 0, mode);
-		p.x += fnt.widths[ci] || fnt.grid_w;
+		i32 move_x = fnt.widths[ci] ? fnt.widths[ci] : fnt.cell_w;
+		move_x += fnt.tracking;
+		if(fnt.kern_pairs != NULL) {
+			u16 kern_i = 0;
+			if(n < str.size - 1) {
+				kern_i = ((u16)str.str[n] << 8) | str.str[n + 1];
+			}
+			if(kern_i > 0) {
+				move_x += fnt.kern_pairs[kern_i];
+			}
+		}
+		p.x += move_x;
 	}
 }
 
@@ -952,16 +963,14 @@ fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, 
 	v2_i32 p = (v2_i32){x, y};
 	struct tex_rec t;
 	t.t   = fnt.t;
-	t.r.w = fnt.grid_w;
-	t.r.h = fnt.grid_h;
-	i32 s = spacing ? spacing : fnt.grid_w;
+	t.r.w = fnt.cell_w;
+	t.r.h = fnt.cell_h;
+	i32 s = spacing ? spacing : fnt.cell_w;
 	for(usize n = 0; n < str.size; n++) {
-		i32 ci = str.str[n];
-		assert(ci > 31);
-		// Extract the lower 5 bits, giving a number between 0 and 31.
-		t.r.x = (ci & 31) * fnt.grid_w;
-		// Extract the higher bits, corresponding to a "row" index in a 32 - column grid.
-		t.r.y = ((ci >> 5) - 1) * fnt.grid_h;
+		i32 ci = str.str[n] - 32;
+		assert(ci >= 0);
+		t.r.x = (ci % fnt.grid_w) * fnt.cell_w;
+		t.r.y = (ci / fnt.grid_w) * fnt.cell_h;
 		gfx_spr(ctx, t, p.x, p.y, 0, mode);
 		p.x += s;
 	}
@@ -974,16 +983,16 @@ fnt_size_px(struct fnt fnt, const str8 str)
 	for(const u8 *c = str.str; *c != '\0'; c++) {
 		x += fnt.widths[(uint)*c];
 	}
-	return (v2_i32){x, fnt.grid_h};
+	return (v2_i32){x, fnt.cell_h};
 }
 
 v2_i32
 fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing)
 {
 	i32 x = 0;
-	i32 s = spacing ? spacing : fnt.grid_w;
+	i32 s = spacing ? spacing : fnt.cell_w;
 	for(const u8 *c = str.str; *c != '\0'; c++) {
 		x += s;
 	}
-	return (v2_i32){x, fnt.grid_h};
+	return (v2_i32){x, fnt.cell_h};
 }
