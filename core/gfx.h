@@ -67,11 +67,23 @@ struct gfx_ctx {
 	i32 clip_y2;
 };
 
+struct fnt_metrics {
+	u8 baseline;
+	u8 x_height;
+	u8 cap_height;
+	u8 descent;
+};
+
 struct fnt {
 	struct tex t;
 	u8 *widths;
-	u16 grid_w;
-	u16 grid_h;
+	u8 *kern_pairs;
+	struct fnt_metrics metrics;
+	i8 tracking;
+	u16 grid_w; // Num of columns
+	u16 grid_h; // Num of rows
+	u16 cell_w; // Width of cell
+	u16 cell_h; // Height of cell
 };
 
 #define gfx_pattern_100()   gfx_pattern_bayer_4x4(16)
