@@ -78,8 +78,8 @@ handle_line(str8 line, struct fnt *fnt)
 {
 	str8 space_id = str8_lit("space");
 	if(str8_starts_with(line, space_id, 0)) {
-		str8 value     = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = space_id.size, .max = line.size}));
-		fnt->widths[0] = str8_to_i32(value);
+		str8 value           = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = space_id.size, .max = line.size}));
+		fnt->widths[(u8)' '] = str8_to_i32(value);
 	} else {
 		if(char_is_ascii(line.str[0]) && char_is_space(line.str[1])) {
 			str8 value     = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = 1, .max = line.size}));

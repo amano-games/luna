@@ -5,13 +5,33 @@
 #include "str.h"
 #include "sys-assert.h"
 
+i32
+fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b)
+{
+	i32 x = 0;
+	x += fnt.widths[a] ? fnt.widths[a] : fnt.cell_w;
+	x += fnt.tracking;
+	if(fnt.kern_pairs != NULL && b > 0) {
+		u16 kern_i = ((u16)a << 8) | b;
+		if(kern_i > 0) {
+			x += fnt.kern_pairs[kern_i];
+		}
+	}
+
+	return x;
+}
+
 v2_i32
 fnt_size_px(struct fnt fnt, const str8 str)
 {
 	i32 x = 0;
 	for(usize i = 0; i < str.size; i++) {
-		u8 *c = str.str + i;
-		x += fnt.widths[*c];
+		i32 ci  = str.str[i];
+		i32 cbi = -1;
+		if(i < str.size - 1) {
+			cbi = str.str[i + 1];
+		}
+		x += fnt_char_size_x_px(fnt, ci, cbi);
 	}
 	return (v2_i32){x, fnt.cell_h};
 }
@@ -21,7 +41,7 @@ fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing)
 {
 	i32 x = 0;
 	i32 s = spacing ? spacing : fnt.cell_w;
-	for(const u8 *c = str.str; *c != '\0'; c++) {
+	for(usize i = 0; i < str.size; i++) {
 		x += s;
 	}
 	return (v2_i32){x, fnt.cell_h};
