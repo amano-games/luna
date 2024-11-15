@@ -1,7 +1,10 @@
 #include "wav.h"
 #include "audio/adpcm.h"
+#include "mem-arena.h"
+#include "path.h"
 #include "str.h"
 #include "sys-assert.h"
+#include "sys.h"
 #include "tools/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +21,7 @@ adpcm_block_size_to_sample_count(int block_size, int num_chans, int bps)
 }
 
 int
-handle_wav(str8 in_file_path, str8 out_path)
+handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 {
 
 	FILE *in_file, *out_file;
@@ -193,9 +196,7 @@ handle_wav(str8 in_file_path, str8 out_path)
 		}
 	}
 
-	char out_file_path_buff[FILENAME_MAX];
-	str8 out_file_path = str8_array_fixed(out_file_path_buff);
-	change_extension((char *)out_path.str, (char *)out_file_path.str, SND_FILE_EXT);
+	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
 
 	if(!(out_file = fopen((char *)out_file_path.str, "wb"))) {
 		log_error("snd-gen", "can't open file \"%s\" for writing!", out_file_path.str);
@@ -229,8 +230,8 @@ handle_wav(str8 in_file_path, str8 out_path)
 			putc(*(out_buffer + i), out_file);
 		}
 		fclose(out_file);
-		free(in_buffer);
-		free(out_buffer);
+		sys_free(in_buffer);
+		sys_free(out_buffer);
 
 		log_info("snd-gen", "%s -> %s", in_file_path.str, out_file_path.str);
 

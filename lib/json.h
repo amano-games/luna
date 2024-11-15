@@ -45,9 +45,10 @@ json_eq(str8 json, jsmntok_t *tok, str8 b)
 static i32
 json_parse_i32(str8 json, jsmntok_t *tok)
 {
-	char *end = (char *)json.str + (tok->end - tok->start);
-	i32 num   = 0;
-	sys_parse_string((char *)json.str + tok->start, "%d", &num);
+	i32 num = str8_to_i32((str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
+	});
 
 	return num;
 }
@@ -55,7 +56,6 @@ json_parse_i32(str8 json, jsmntok_t *tok)
 static f32
 json_parse_f32(str8 json, jsmntok_t *tok)
 {
-	char *end = (char *)json.str + (tok->end - tok->start);
 	// TODO: Replace with sys_parse_string to use sscanf when it's not broken
 	f32 num = str8_to_f32((str8){
 		.str  = (u8 *)json.str + tok->start,

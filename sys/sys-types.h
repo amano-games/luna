@@ -92,6 +92,14 @@ typedef struct str8 {
 	u64 size;
 } str8;
 
+union rng_u64 {
+	struct {
+		u64 min;
+		u64 max;
+	};
+	u64 v[2];
+};
+
 static inline i32
 i16_sat(i32 x)
 {

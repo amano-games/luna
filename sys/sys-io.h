@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mem.h"
 #include "sys-types.h"
 
 enum {
@@ -27,6 +28,11 @@ struct sys_file_stats {
 
 typedef void *sys_file;
 
+struct sys_full_file_res {
+	void *data;
+	usize size;
+};
+
 void *sys_file_open(str8 path, i32 sys_file_mode);
 void *sys_file_open_r(str8 path);
 void *sys_file_open_w(str8 path);
@@ -41,3 +47,5 @@ i32 sys_file_seek_end(void *f, i32 pos);
 i32 sys_file_w(void *f, const void *buf, u32 bsize);
 i32 sys_file_r(void *f, void *buf, u32 bsize);
 struct sys_file_stats sys_file_stats(str8 path);
+
+struct sys_full_file_res sys_load_full_file(str8 path, struct alloc alloc);

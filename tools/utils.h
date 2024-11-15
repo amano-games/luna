@@ -56,21 +56,6 @@ get_basename(const char *path, char *output)
 	}
 }
 
-void
-change_extension(const char *in, char *out, const char *new_extension)
-{
-	const char *last_dot = strrchr(in, '.'); // Find the last occurrence of '.'
-	if(last_dot != NULL) {
-		size_t original_length = last_dot - in; // Length of the filename excluding the extension
-		if(original_length + 1 + strlen(new_extension) <= FILENAME_MAX) {
-			memcpy(out, in, original_length); // Copy the filename part
-			out[original_length] = '\0';      // Null terminate the copied part
-			strcat(out, ".");                 // Add a dot
-			strcat(out, new_extension);       // Add the new extension
-		}
-	}
-}
-
 static void
 little_endian_to_native(void *data, char *format)
 {

@@ -1,7 +1,7 @@
 #include "assets.h"
 #include "arr.h"
-#include "gfx.h"
-#include "json.h"
+#include "assets/fnt.h"
+#include "gfx/gfx.h"
 #include "mem-arena.h"
 #include "sys-log.h"
 #include "sys-assert.h"
@@ -189,98 +189,6 @@ asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
 	return -1;
 }
 
-struct fnt
-fnt_load(const str8 path, struct alloc alloc, struct alloc scratch)
-{
-
-	struct fnt fnt = {0};
-	char *txt;
-	fnt.widths = (u8 *)alloc.allocf(alloc.ctx, sizeof(u8) * 256);
-	if(!fnt.widths) {
-		log_error("Assets", "allocating font memory");
-		return fnt;
-	}
-	str8 tex_ext  = str8_lit(".tex");
-	str8 json_ext = str8_lit(".fnt");
-
-	// replace .fnt with .tex
-	str8 filename_tex = str8_cpy_push(scratch, path);
-	str8 filename_ext = {.str = &filename_tex.str[filename_tex.size - json_ext.size], .size = json_ext.size};
-
-	assert(str8_ends_with(path, json_ext, 0));
-	str8 json = {0};
-	log_info("Assets", "Load fnt info: %s", path.str);
-
-	bool32 loaded_json = json_load(path, scratch, &json);
-	str8_cpy(&tex_ext, &filename_ext);
-
-	log_info("Assets", "Load fnt tex: %s", filename_tex.str);
-
-	fnt.t = tex_load(filename_tex, alloc);
-
-	{
-		jsmn_parser parser;
-		jsmn_init(&parser);
-		i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
-		jsmn_init(&parser);
-		jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
-		i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-		assert(json_res == token_count);
-
-		for(i32 i = 1; i < token_count; i++) {
-			jsmntok_t *key   = &tokens[i];
-			jsmntok_t *value = &tokens[i + 1];
-			if(json_eq(json, key, str8_lit("grid_width")) == 0) {
-				assert(value->type == JSMN_PRIMITIVE);
-				fnt.grid_w = json_parse_i32(json, value);
-			}
-			if(json_eq(json, key, str8_lit("cell_width")) == 0) {
-				assert(value->type == JSMN_PRIMITIVE);
-				fnt.cell_w = json_parse_i32(json, value);
-			}
-			if(json_eq(json, key, str8_lit("cell_height")) == 0) {
-				assert(value->type == JSMN_PRIMITIVE);
-				fnt.cell_h = json_parse_i32(json, value);
-			}
-			if(json_eq(json, key, str8_lit("tracking")) == 0) {
-				assert(value->type == JSMN_PRIMITIVE);
-				fnt.tracking = json_parse_i32(json, value);
-			}
-			if(json_eq(json, key, str8_lit("baseline")) == 0) {
-				assert(value->type == JSMN_PRIMITIVE);
-				fnt.metrics.baseline = json_parse_i32(json, value);
-			}
-			if(json_eq(json, key, str8_lit("kern_pairs")) == 0) {
-				assert(value->type == JSMN_OBJECT);
-				// TODO: hash map probing
-				fnt.kern_pairs = (u8 *)alloc.allocf(alloc.ctx, sizeof(u8) * U16_MAX);
-				for(i32 j = 0; j < value->size; j++) {
-					i32 object_token_size = 2;
-					i32 offset            = 2;
-					jsmntok_t *item_key   = &tokens[i + (j * object_token_size) + offset];
-					jsmntok_t *item_value = &tokens[i + (j * object_token_size) + offset + 1];
-					assert(item_key->type == JSMN_STRING);
-					assert(item_value->type == JSMN_PRIMITIVE);
-
-					char a                = (char)*(json.str + item_key->start);
-					char b                = (char)*(json.str + item_key->start + 1);
-					u16 index             = ((u16)a << 8) | b;
-					fnt.kern_pairs[index] = json_parse_i32(json, item_value);
-				}
-			}
-			if(json_eq(json, key, str8_lit("glyph_widths")) == 0) {
-				assert(value->type == JSMN_ARRAY);
-				for(i32 j = 0; j < value->size; j++) {
-					jsmntok_t *item = &tokens[i + j + 2];
-					fnt.widths[j]   = json_parse_i32(json, item);
-				}
-			}
-		}
-	}
-
-	return fnt;
-}
-
 enum asset_type
 asset_path_get_type(str8 path)
 {
@@ -300,4 +208,46 @@ asset_path_get_type(str8 path)
 	}
 
 	return 0;
+}
+
+struct fnt
+assets_fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
+{
+	struct fnt res = {0};
+	str8 fnt_ext   = str8_lit(".fnt");
+
+	res.widths                      = arr_ini(FNT_CHAR_MAX, sizeof(*res.widths), alloc);
+	res.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*res.kern_pairs), alloc);
+	arr_header(res.widths)->len     = arr_cap(res.widths);
+	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
+
+	assert(str8_ends_with(path, fnt_ext, 0));
+	log_info("fnt", "Load fnt info: %s", path.str);
+	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
+	if(file_res.data == NULL) {
+		log_error("fnt", "Failed loading fnt info: %s", path.str);
+		return res;
+	}
+	char *data          = file_res.data;
+	usize size          = file_res.size;
+	struct ser_reader r = {
+		.data = data,
+		.len  = size,
+	};
+
+	fnt_read(&r, &res);
+
+	str8 base_name = str8_chop_last_dot(path);
+	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", (i32)base_name.size, base_name.str, res.cell_w, res.cell_h);
+
+	log_info("fnt", "Load tex: %s", tex_path.str);
+	res.t = tex_load(tex_path, alloc);
+	if(res.t.px == NULL) {
+		log_error("fnt", "Failed loading tex info: %s", path.str);
+		return res;
+	}
+
+	res.grid_w = res.t.w / res.cell_w;
+	res.grid_h = res.t.h / res.cell_h;
+	return res;
 }

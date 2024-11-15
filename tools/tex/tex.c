@@ -1,4 +1,7 @@
 #include "tex.h"
+#include "path.h"
+#include "str.h"
+#include "sys-io.h"
 #include "sys-log.h"
 #include "tools/utils.h"
 
@@ -6,13 +9,12 @@
 #include "stb_image.h"
 
 void
-handle_texture(const str8 in_path, const str8 out_path)
+handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch)
 {
 	int w, h, n;
 	uint32_t *data = (uint32_t *)stbi_load((char *)in_path.str, &w, &h, &n, 4);
 
-	char out_file_path[FILENAME_MAX];
-	change_extension((char *)out_path.str, out_file_path, "tex");
+	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit("tex"));
 
 	int width_aligned = (w + 31) - ((w + 31) % 32);
 
@@ -22,10 +24,10 @@ handle_texture(const str8 in_path, const str8 out_path)
 	size_t row_arr_i = 0;
 	size_t row_size  = 32;
 
-	FILE *file = fopen(out_file_path, "wb");
+	FILE *file = sys_file_open_w(out_file_path);
 
 	if(file == NULL) {
-		log_error("tex-gen", "Failed to open file %s", out_file_path);
+		log_error("tex-gen", "Failed to open file %s", out_file_path.str);
 		fclose(file);
 		return;
 	}
@@ -78,6 +80,6 @@ handle_texture(const str8 in_path, const str8 out_path)
 	}
 
 	fclose(file);
-	log_info("tex-gen", "%s -> %s\n", in_path.str, out_file_path);
+	log_info("tex-gen", "%s -> %s\n", in_path.str, out_file_path.str);
 	stbi_image_free(data);
 }

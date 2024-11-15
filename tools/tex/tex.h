@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mem.h"
 #include "sys-types.h"
 
 struct pixel {
@@ -13,4 +14,4 @@ struct img_header {
 	unsigned int w, h;
 };
 
-void handle_texture(const str8 in_path, const str8 out_path);
+void handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch);

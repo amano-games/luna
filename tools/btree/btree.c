@@ -4,6 +4,7 @@
 #include "json.h"
 #include "mem-arena.h"
 #include "mem.h"
+#include "path.h"
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-io.h"
@@ -205,14 +206,8 @@ handle_json(str8 json, struct bet *bet, struct alloc scratch)
 }
 
 int
-handle_btree(str8 in_path, str8 out_path)
+handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 {
-	usize scratch_mem_size = MMEGABYTE(1);
-	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
-	assert(scratch_mem_buffer != NULL);
-	struct marena scratch_marena = {0};
-	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
-	struct alloc scratch = marena_allocator(&scratch_marena);
 
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
@@ -234,9 +229,7 @@ handle_btree(str8 in_path, str8 out_path)
 		// sys_printf("%s", node_str.str);
 	}
 
-	char out_file_path_buff[FILENAME_MAX];
-	str8 out_file_path = str8_array_fixed(out_file_path_buff);
-	change_extension((char *)out_path.str, (char *)out_file_path.str, AI_FILE_EXT);
+	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
 
 	void *out_file;
 	if(!(out_file = sys_file_open_w(out_file_path))) {
@@ -261,7 +254,6 @@ handle_btree(str8 in_path, str8 out_path)
 
 	sys_file_close(out_file);
 
-	sys_free(scratch_mem_buffer);
 	sys_free(mem_buffer);
 	// sys_printf("%s -> %s\n", in_path.str, out_file_path.str);
 	log_info("ai-gen", "%s -> %s\n", in_path.str, out_file_path.str);

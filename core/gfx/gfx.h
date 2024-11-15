@@ -67,25 +67,6 @@ struct gfx_ctx {
 	i32 clip_y2;
 };
 
-struct fnt_metrics {
-	u8 baseline;
-	u8 x_height;
-	u8 cap_height;
-	u8 descent;
-};
-
-struct fnt {
-	struct tex t;
-	u8 *widths;
-	u8 *kern_pairs;
-	struct fnt_metrics metrics;
-	i8 tracking;
-	u16 grid_w; // Num of columns
-	u16 grid_h; // Num of rows
-	u16 cell_w; // Width of cell
-	u16 cell_h; // Height of cell
-};
-
 #define gfx_pattern_100()   gfx_pattern_bayer_4x4(16)
 #define gfx_pattern_75()    gfx_pattern_bayer_4x4(12)
 #define gfx_pattern_50()    gfx_pattern_bayer_4x4(8)
@@ -133,8 +114,3 @@ struct gfx_ctx gfx_ctx_clip_left(struct gfx_ctx ctx, i32 x1);
 struct gfx_ctx gfx_ctx_clip_right(struct gfx_ctx ctx, i32 x2);
 struct gfx_ctx gfx_ctx_clipr(struct gfx_ctx ctx, rec_i32 r);
 struct gfx_ctx gfx_ctx_clipwh(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h);
-
-void fnt_draw_ascii(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode);
-void fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 spacing, i32 mode);
-v2_i32 fnt_size_px(struct fnt fnt, const str8 str);
-v2_i32 fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing);

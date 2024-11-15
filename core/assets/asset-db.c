@@ -2,6 +2,7 @@
 
 #include "animation/animation.h"
 #include "arr.h"
+#include "assets/fnt.h"
 #include "bet/bet.h"
 #include "ht.h"
 #include "str.h"
