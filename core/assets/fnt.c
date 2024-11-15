@@ -78,6 +78,7 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 
 	ser_write_string(w, str8_lit("widths"));
 	ser_write_array(w);
+	// TODO: Store same as pairs, only the characters that have the width
 	for(usize i = 0; i < arr_len(fnt.widths); ++i) {
 		ser_write_u8(w, fnt.widths[i]);
 	}
