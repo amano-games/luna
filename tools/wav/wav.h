@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mem.h"
 #include "sys-types.h"
 
 #define WAVE_FORMAT_PCM        0x1
@@ -37,4 +38,4 @@ struct wav {
 	void *data;
 };
 
-int handle_wav(str8 in_path, str8 out_path);
+int handle_wav(str8 in_path, str8 out_path, struct alloc scratch);

@@ -13,4 +13,4 @@ struct node_res {
 	u8 node_index;
 };
 
-int handle_btree(str8 in_path, str8 out_path);
+int handle_btree(str8 in_path, str8 out_path, struct alloc scratch);

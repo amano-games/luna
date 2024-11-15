@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bet/bet.h"
-#include "gfx.h"
 #include "ht.h"
 #include "sys-types.h"
 

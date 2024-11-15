@@ -1,0 +1,126 @@
+#include "fnt.h"
+
+#include "arr.h"
+#include "serialize/serialize.h"
+#include "str.h"
+#include "sys-assert.h"
+
+v2_i32
+fnt_size_px(struct fnt fnt, const str8 str)
+{
+	i32 x = 0;
+	for(const u8 *c = str.str; *c != '\0'; c++) {
+		x += fnt.widths[(uint)*c];
+	}
+	return (v2_i32){x, fnt.cell_h};
+}
+
+v2_i32
+fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing)
+{
+	i32 x = 0;
+	i32 s = spacing ? spacing : fnt.cell_w;
+	for(const u8 *c = str.str; *c != '\0'; c++) {
+		x += s;
+	}
+	return (v2_i32){x, fnt.cell_h};
+}
+
+void
+fnt_write(struct fnt fnt, struct ser_writer *w)
+{
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("tracking"));
+	ser_write_i32(w, fnt.tracking);
+	ser_write_string(w, str8_lit("grid_w"));
+	ser_write_i32(w, fnt.grid_w);
+	ser_write_string(w, str8_lit("grid_h"));
+	ser_write_i32(w, fnt.grid_h);
+	ser_write_string(w, str8_lit("cell_w"));
+	ser_write_i32(w, fnt.cell_w);
+	ser_write_string(w, str8_lit("cell_h"));
+	ser_write_i32(w, fnt.cell_h);
+
+	ser_write_string(w, str8_lit("metrics"));
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("baseline"));
+	ser_write_i32(w, fnt.metrics.baseline);
+	ser_write_string(w, str8_lit("x_height"));
+	ser_write_i32(w, fnt.metrics.x_height);
+	ser_write_string(w, str8_lit("cap_height"));
+	ser_write_i32(w, fnt.metrics.cap_height);
+	ser_write_string(w, str8_lit("descent"));
+	ser_write_i32(w, fnt.metrics.descent);
+
+	ser_write_end(w);
+
+	ser_write_string(w, str8_lit("widths"));
+	ser_write_array(w);
+	for(usize i = 0; i < arr_len(fnt.widths); ++i) {
+		ser_write_u8(w, fnt.widths[i]);
+	}
+	ser_write_end(w);
+
+	ser_write_string(w, str8_lit("kern_pairs"));
+	ser_write_array(w);
+	for(usize i = 0; i < arr_len(fnt.kern_pairs); ++i) {
+		ser_write_u8(w, fnt.kern_pairs[i]);
+	}
+	ser_write_end(w);
+
+	ser_write_end(w);
+}
+
+i32
+fnt_read(struct ser_reader *r, struct fnt *fnt)
+{
+	struct ser_value obj = ser_read(r);
+	struct ser_value key, value;
+
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("tracking"), 0)) {
+			fnt->tracking = value.i32;
+		} else if(str8_match(key.str, str8_lit("grid_w"), 0)) {
+			fnt->grid_w = value.i32;
+		} else if(str8_match(key.str, str8_lit("grid_h"), 0)) {
+			fnt->grid_h = value.i32;
+		} else if(str8_match(key.str, str8_lit("cell_w"), 0)) {
+			fnt->cell_w = value.i32;
+		} else if(str8_match(key.str, str8_lit("cell_h"), 0)) {
+			fnt->cell_h = value.i32;
+		} else if(str8_match(key.str, str8_lit("metrics"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("baseline"), 0)) {
+					fnt->metrics.baseline = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("x_height"), 0)) {
+					fnt->metrics.x_height = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("cap_height"), 0)) {
+					fnt->metrics.cap_height = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("descent"), 0)) {
+					fnt->metrics.descent = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("widths"), 0)) {
+			struct ser_value item_val;
+			usize i = 0;
+			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
+				fnt->widths[i] = item_val.u8;
+				i++;
+			}
+		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
+			struct ser_value item_val;
+			usize i = 0;
+			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
+				fnt->kern_pairs[i] = item_val.u8;
+				i++;
+			}
+		}
+	}
+
+	return 1;
+}

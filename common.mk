@@ -19,7 +19,7 @@ WARN_FLAGS += -Wno-unused-variable
 WARN_FLAGS += -Wno-unused-parameter
 
 ASSETS_DIR := $(SRC_DIR)/assets
-ASSETS_BIN := bin/luna-assets
+ASSETS_BIN := bin/luna-asset-gen
 
 SHADER_BIN   := bin/sokol-shdc
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h

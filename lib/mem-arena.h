@@ -23,7 +23,7 @@ usize marena_size_rem(struct marena *m);
 
 // NOTE: Should this live outside?
 static void *
-marena_alloc_ctx(void *ctx, usize s)
+marena_alloc_func(void *ctx, usize s)
 {
 	struct marena *arena = (struct marena *)ctx;
 	void *mem            = marena_alloc(arena, s);
@@ -39,6 +39,6 @@ marena_alloc_ctx(void *ctx, usize s)
 struct alloc
 marena_allocator(struct marena *arena)
 {
-	struct alloc alloc = {marena_alloc_ctx, (void *)arena};
+	struct alloc alloc = {.allocf = marena_alloc_func, .ctx = (void *)arena};
 	return alloc;
 }

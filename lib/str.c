@@ -1,9 +1,7 @@
 #include "str.h"
+#include "sys-str.h"
 #include "sys-utils.h"
 #include "sys-assert.h"
-
-static inline str8 str8_postfix(str8 str, usize size);
-static inline str8 str8_skip(str8 str, usize amt);
 
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -50,6 +48,29 @@ char_is_digit(u8 c, u32 base)
 		}
 	}
 	return (result);
+}
+
+inline bool32
+char_is_ascii(u8 c)
+{
+	if((c & 0x80) == 0x00) return true;
+	return false;
+}
+
+inline bool32
+char_is_utf8(u8 c)
+{
+	if((c & 0x80) == 0x00) {
+		return true; // 1-byte ASCII (0xxxxxxx)
+	} else if((c & 0xE0) == 0xC0) {
+		return true; // 2-byte UTF-8 (110xxxxx)
+	} else if((c & 0xF0) == 0xE0) {
+		return true; // 3-byte UTF-8 (1110xxxx)
+	} else if((c & 0xF8) == 0xF0) {
+		return true; // 4-byte UTF-8 (11110xxx)
+	} else {
+		return false;
+	}
 }
 
 inline u8
@@ -212,45 +233,24 @@ str8_fmt_push(struct alloc alloc, char *fmt, ...)
 	return (result);
 }
 
-inline f32
-str8_to_f32(str8 str)
+str8
+str8_substr(str8 str, union rng_u64 range)
 {
-	f32 num   = 0.0;
-	f32 mul   = 1.0;
-	i32 dec   = 0;
-	usize len = str.size;
-
-	for(usize i = 0; i < len; i++) {
-		if(str.str[i] == '.') dec = 1;
-	}
-
-	for(int idx = len - 1; idx >= 0; idx--) {
-		if(str.str[idx] == '-')
-			num = -num;
-		else if(str.str[idx] == '.')
-			dec = 0;
-		else if(dec) {
-			num += str.str[idx] - '0';
-			num *= 0.1f;
-		} else {
-			num += (str.str[idx] - '0') * mul;
-			mul *= 10.0f;
-		}
-	}
-
-	return num;
-}
-
-static inline str8
-str8_postfix(str8 str, usize size)
-{
-	size     = MIN(size, str.size);
-	str.str  = (str.str + str.size) - size;
-	str.size = size;
+	range.min = MIN(range.min, str.size);
+	range.max = MIN(range.max, str.size);
+	str.str += range.min;
+	str.size = range.max - range.min;
 	return (str);
 }
 
-static inline str8
+str8
+str8_prefix(str8 str, usize size)
+{
+	str.size = MIN(size, str.size);
+	return (str);
+}
+
+str8
 str8_skip(str8 str, usize amt)
 {
 	amt = MIN(amt, str.size);
@@ -259,11 +259,57 @@ str8_skip(str8 str, usize amt)
 	return (str);
 }
 
+str8
+str8_postfix(str8 str, usize size)
+{
+	size     = MIN(size, str.size);
+	str.str  = (str.str + str.size) - size;
+	str.size = size;
+	return (str);
+}
+
+str8
+str8_chop(str8 str, usize amt)
+{
+	amt = MIN(amt, str.size);
+	str.size -= amt;
+	return (str);
+}
+
+str8
+str8_skip_chop_whitespace(str8 str)
+{
+	u8 *first = str.str;
+	u8 *opl   = first + str.size;
+	for(; first < opl; first += 1) {
+		if(!char_is_space(*first)) {
+			break;
+		}
+	}
+	for(; opl > first;) {
+		opl -= 1;
+		if(!char_is_space(*opl)) {
+			opl += 1;
+			break;
+		}
+	}
+	str8 result = str8_range(first, opl);
+	return (result);
+}
+
 bool32
 str8_ends_with(str8 str, str8 end, str_match_flags flags)
 {
 	str8 postfix    = str8_postfix(str, end.size);
 	bool32 is_match = str8_match(end, postfix, flags);
+	return is_match;
+}
+
+bool32
+str8_starts_with(str8 str, str8 start, str_match_flags flags)
+{
+	str_match_flags adjusted_flags = flags | str_match_flag_right_side_sloppy;
+	bool32 is_match                = str8_match(str, start, adjusted_flags);
 	return is_match;
 }
 
@@ -298,6 +344,137 @@ str8_find_needle(str8 str, usize start_pos, str8 needle, str_match_flags flags)
 	usize result = str.size;
 	if(p < stop_p) {
 		result = (usize)(p - str.str);
+	}
+	return (result);
+}
+
+union rng_u64
+rng_1u64(u64 min, u64 max)
+{
+	union rng_u64 r = {{min, max}};
+	if(r.min > r.max) { SWAP(u64, r.min, r.max); }
+	return r;
+}
+
+usize
+str8_find_needle_reverse(
+	str8 str,
+	usize start_pos,
+	str8 needle,
+	str_match_flags flags)
+{
+	u64 result = 0;
+	for(i64 i = str.size - start_pos - needle.size; i >= 0; --i) {
+		str8 haystack = str8_substr(str, rng_1u64(i, i + needle.size));
+		if(str8_match(haystack, needle, flags)) {
+			result = (u64)i + needle.size;
+			break;
+		}
+	}
+	return result;
+}
+
+i32
+str8_to_i32(str8 str)
+{
+	i32 res = 0;
+	sys_parse_string((char *)str.str, "%d", &res);
+	return res;
+}
+
+inline f32
+str8_to_f32(str8 str)
+{
+	f32 num   = 0.0;
+	f32 mul   = 1.0;
+	i32 dec   = 0;
+	usize len = str.size;
+
+	for(usize i = 0; i < len; i++) {
+		if(str.str[i] == '.') dec = 1;
+	}
+
+	for(int idx = len - 1; idx >= 0; idx--) {
+		if(str.str[idx] == '-')
+			num = -num;
+		else if(str.str[idx] == '.')
+			dec = 0;
+		else if(dec) {
+			num += str.str[idx] - '0';
+			num *= 0.1f;
+		} else {
+			num += (str.str[idx] - '0') * mul;
+			mul *= 10.0f;
+		}
+	}
+
+	return num;
+}
+
+str8
+str8_chop_last_slash(str8 str)
+{
+	if(str.size > 0) {
+		u8 *ptr = str.str + str.size - 1;
+		for(; ptr >= str.str; ptr -= 1) {
+			if(*ptr == '/' || *ptr == '\\') {
+				break;
+			}
+		}
+		if(ptr >= str.str) {
+			str.size = (usize)(ptr - str.str);
+		} else {
+			str.size = 0;
+		}
+	}
+	return (str);
+}
+
+str8
+str8_skip_last_slash(str8 str)
+{
+	if(str.size > 0) {
+		u8 *ptr = str.str + str.size - 1;
+		for(; ptr >= str.str; ptr -= 1) {
+			if(*ptr == '/' || *ptr == '\\') {
+				break;
+			}
+		}
+		if(ptr >= str.str) {
+			ptr += 1;
+			str.size = (usize)(str.str + str.size - ptr);
+			str.str  = ptr;
+		}
+	}
+	return (str);
+}
+
+str8
+str8_chop_last_dot(str8 str)
+{
+	str8 result = str;
+	usize p     = str.size;
+	for(; p > 0;) {
+		p -= 1;
+		if(str.str[p] == '.') {
+			result = str8_prefix(str, p);
+			break;
+		}
+	}
+	return (result);
+}
+
+str8
+str8_skip_last_dot(str8 str)
+{
+	str8 result = str;
+	usize p     = str.size;
+	for(; p > 0;) {
+		p -= 1;
+		if(str.str[p] == '.') {
+			result = str8_skip(str, p + 1);
+			break;
+		}
 	}
 	return (result);
 }

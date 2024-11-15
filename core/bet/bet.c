@@ -409,26 +409,15 @@ struct bet
 bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
 	log_info("Bet", "Load bet %s", path.str);
-	struct bet res = {0};
-	void *f        = sys_file_open_r(path);
-	if(f == NULL) {
+	struct bet res                    = {0};
+	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
+	char *data                        = file_res.data;
+	usize size                        = file_res.size;
+
+	if(data == NULL) {
 		log_error("Bet", "failed to open bet file: %s", path.str);
 		return res;
 	}
-
-	sys_file_seek_end(f, 0);
-	usize size = sys_file_tell(f);
-	sys_file_seek_set(f, 0);
-	char *data = scratch.allocf(scratch.ctx, size);
-
-	if(!data) {
-		sys_file_close(f);
-		log_error("BET", "loading %s", path.str);
-		return res;
-	}
-
-	sys_file_r(f, data, size);
-	sys_file_close(f);
 
 	struct ser_reader r = {
 		.data = data,

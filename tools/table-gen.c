@@ -6,7 +6,11 @@
 
 #include "../external/jsmn.h"
 #include "io.h"
+#include "mem-arena.h"
+#include "path.h"
+#include "str.h"
 #include "sys-utils.h"
+#include "sys.h"
 #include "utils.h"
 
 #define TABLE_EXT ".luntable"
@@ -71,11 +75,10 @@ jsoneq(const char *json, jsmntok_t *tok, const char *s)
 }
 
 int
-gen_table(const char *in_path)
+gen_table(const char *in_path, struct alloc scratch)
 {
-	char file_h_path[FILENAME_MAX];
 	char file_basename[FILENAME_MAX];
-	change_extension(in_path, file_h_path, "h");
+	str8 out_file_path = make_file_name_with_ext(scratch, str8_cstr((char *)in_path), str8_lit("h"));
 	get_basename(in_path, file_basename);
 
 	struct read_file_result res = read_file(in_path);
@@ -90,7 +93,7 @@ gen_table(const char *in_path)
 	}
 
 	printf("tokens: %d \n", r);
-	printf("%s -> %s \n\n", in_path, file_h_path);
+	printf("%s -> %s \n\n", in_path, out_file_path.str);
 
 	struct table table = {0};
 	/* Loop over all keys of the root object */
@@ -315,7 +318,7 @@ gen_table(const char *in_path)
 		}
 	}
 
-	write_file(file_h_path, file_h_content.len, file_h_content.text);
+	write_file((char *)out_file_path.str, file_h_content.len, file_h_content.text);
 
 	return EXIT_SUCCESS;
 }
@@ -323,6 +326,13 @@ gen_table(const char *in_path)
 void
 gen_tables_recursive(const char *in_dir)
 {
+	usize scratch_mem_size = MKILOBYTE(1);
+	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
+	assert(scratch_mem_buffer != NULL);
+	struct marena scratch_marena = {0};
+	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
+	struct alloc scratch = marena_allocator(&scratch_marena);
+
 	DIR *dir;
 	struct dirent *entry;
 	struct stat statbuf;
@@ -351,11 +361,12 @@ gen_tables_recursive(const char *in_dir)
 			}
 		} else {
 			if(strstr(entry->d_name, TABLE_EXT) != NULL) {
-				gen_table(in_path);
+				gen_table(in_path, scratch);
 			}
 		}
 	}
 	closedir(dir);
+	sys_free(scratch_mem_buffer);
 }
 
 int
