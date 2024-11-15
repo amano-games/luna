@@ -9,8 +9,9 @@ v2_i32
 fnt_size_px(struct fnt fnt, const str8 str)
 {
 	i32 x = 0;
-	for(const u8 *c = str.str; *c != '\0'; c++) {
-		x += fnt.widths[(uint)*c];
+	for(usize i = 0; i < str.size; i++) {
+		u8 *c = str.str + i;
+		x += fnt.widths[*c];
 	}
 	return (v2_i32){x, fnt.cell_h};
 }

@@ -10,17 +10,17 @@ fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mod
 	t.r.w            = fnt.cell_w;
 	t.r.h            = fnt.cell_h;
 	for(usize n = 0; n < str.size; n++) {
-		i32 ci = str.str[n] - 32;
-		assert(ci >= 0);
-		t.r.x = (ci % fnt.grid_w) * fnt.cell_w;
-		t.r.y = (ci / fnt.grid_w) * fnt.cell_h;
+		i32 ci = str.str[n];
+		assert(ci > 31);
+		t.r.x = ((ci - 32) % fnt.grid_w) * fnt.cell_w;
+		t.r.y = ((ci - 32) / fnt.grid_w) * fnt.cell_h;
 		gfx_spr(ctx, t, p.x, p.y, 0, mode);
 		i32 move_x = fnt.widths[ci] ? fnt.widths[ci] : fnt.cell_w;
 		move_x += fnt.tracking;
 		if(fnt.kern_pairs != NULL) {
 			u16 kern_i = 0;
 			if(n < str.size - 1) {
-				kern_i = ((u16)str.str[n] << 8) | str.str[n + 1];
+				kern_i = ((u16)ci << 8) | str.str[n + 1];
 			}
 			if(kern_i > 0) {
 				move_x += fnt.kern_pairs[kern_i];
@@ -46,10 +46,10 @@ fnt_draw_ascii_mono(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, 
 	t.r.h = fnt.cell_h;
 	i32 s = spacing ? spacing : fnt.cell_w;
 	for(usize n = 0; n < str.size; n++) {
-		i32 ci = str.str[n] - 32;
-		assert(ci >= 0);
-		t.r.x = (ci % fnt.grid_w) * fnt.cell_w;
-		t.r.y = (ci / fnt.grid_w) * fnt.cell_h;
+		i32 ci = str.str[n];
+		assert(ci > 31);
+		t.r.x = ((ci - 32) % fnt.grid_w) * fnt.cell_w;
+		t.r.y = ((ci - 32) / fnt.grid_w) * fnt.cell_h;
 		gfx_spr(ctx, t, p.x, p.y, 0, mode);
 		p.x += s;
 	}
