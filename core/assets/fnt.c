@@ -83,10 +83,22 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 	}
 	ser_write_end(w);
 
+	// Kern pairs are stored as an array of objects where the
+	// key is the pair characters
+	// and the value is the kerning value
 	ser_write_string(w, str8_lit("kern_pairs"));
 	ser_write_array(w);
 	for(usize i = 0; i < arr_len(fnt.kern_pairs); ++i) {
-		ser_write_u8(w, fnt.kern_pairs[i]);
+		if(fnt.kern_pairs[i] != 0) {
+			ser_write_object(w);
+			u16 index    = i;
+			u8 a         = (index >> 8) & 0xFF;
+			u8 b         = index & 0xFF;
+			char pair[3] = {a, b, '\0'};
+			ser_write_string(w, str8_cstr(pair));
+			ser_write_i32(w, fnt.kern_pairs[i]);
+			ser_write_end(w);
+		}
 	}
 	ser_write_end(w);
 
@@ -136,8 +148,17 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
 			struct ser_value item_val;
 			usize i = 0;
-			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
-				fnt->kern_pairs[i] = item_val.u8;
+			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->kern_pairs)) {
+				assert(item_val.type == SER_TYPE_OBJECT);
+				struct ser_value ker_key, ker_value;
+				while(ser_iter_object(r, item_val, &ker_key, &ker_value)) {
+					assert(ker_key.type == SER_TYPE_STRING);
+					assert(ker_value.type == SER_TYPE_I32);
+					u8 a                   = ker_key.str.str[0];
+					u8 b                   = ker_key.str.str[1];
+					u16 index              = ((u16)a << 8) | b;
+					fnt->kern_pairs[index] = ker_value.i32;
+				}
 				i++;
 			}
 		}
