@@ -26,6 +26,7 @@ struct fnt {
 	u8 *kern_pairs;
 };
 
+i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b);
 v2_i32 fnt_size_px(struct fnt fnt, const str8 str);
 v2_i32 fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing);
 
