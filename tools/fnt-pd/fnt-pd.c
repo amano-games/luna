@@ -83,7 +83,7 @@ handle_line(str8 line, struct fnt *fnt)
 	} else {
 		if(char_is_ascii(line.str[0]) && char_is_space(line.str[1])) {
 			str8 value     = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = 1, .max = line.size}));
-			u16 i          = line.str[0] - 32;
+			u16 i          = line.str[0];
 			fnt->widths[i] = str8_to_i32(value);
 		} else if(char_is_ascii(line.str[0]) && char_is_ascii(line.str[1])) {
 			str8 value         = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = 2, .max = line.size}));
