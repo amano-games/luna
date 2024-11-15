@@ -23,7 +23,7 @@ struct fnt {
 	u16 cell_h; // Height of cell
 	struct fnt_metrics metrics;
 	u8 *widths;
-	u8 *kern_pairs;
+	i8 *kern_pairs;
 };
 
 i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b);
