@@ -186,6 +186,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	fnt.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*fnt.kern_pairs), alloc);
 	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
 	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);
+	mclr(fnt.widths, sizeof(*fnt.widths) * arr_len(fnt.widths));
 	mclr(fnt.kern_pairs, sizeof(*fnt.kern_pairs) * arr_len(fnt.kern_pairs));
 
 	str8 metrics_id  = str8_lit("--metrics=");
