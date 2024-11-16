@@ -220,6 +220,8 @@ assets_fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	res.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*res.kern_pairs), alloc);
 	arr_header(res.widths)->len     = arr_cap(res.widths);
 	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
+	mclr(res.widths, sizeof(*res.widths) * arr_len(res.widths));
+	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * arr_len(res.kern_pairs));
 
 	assert(str8_ends_with(path, fnt_ext, 0));
 	log_info("fnt", "Load fnt info: %s", path.str);
