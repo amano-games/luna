@@ -26,9 +26,8 @@ struct fnt {
 	i8 *kern_pairs;
 };
 
-i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b);
-v2_i32 fnt_size_px(struct fnt fnt, const str8 str);
-v2_i32 fnt_size_px_mono(struct fnt fnt, const str8 str, i32 spacing);
+i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking);
+v2_i32 fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading);
 
 void fnt_write(struct fnt fnt, struct ser_writer *w);
 i32 fnt_read(struct ser_reader *r, struct fnt *fnt);

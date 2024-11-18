@@ -3,9 +3,16 @@
 #include "gfx/gfx-spr.h"
 
 void
-fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode)
+fnt_draw_str(
+	struct gfx_ctx ctx,
+	struct fnt fnt,
+	i32 x,
+	i32 y,
+	str8 str,
+	i32 tracking,
+	i32 leading,
+	i32 mode)
 {
-	i32 leading      = 1;
 	v2_i32 p         = (v2_i32){x, y};
 	struct tex_rec t = {0};
 	t.t              = fnt.t;
@@ -23,14 +30,8 @@ fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mod
 			t.r.x = ((ci - 32) % fnt.grid_w) * fnt.cell_w;
 			t.r.y = ((ci - 32) / fnt.grid_w) * fnt.cell_h;
 			gfx_spr(ctx, t, p.x, p.y, 0, mode);
-			i32 move_x = fnt_char_size_x_px(fnt, ci, cbi);
+			i32 move_x = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 			p.x += move_x;
 		}
 	}
-}
-
-void
-fnt_draw_ascii(struct gfx_ctx ctx, struct fnt fnt, i32 x, i32 y, str8 str, i32 mode)
-{
-	fnt_draw_str(ctx, fnt, x, y, str, mode);
 }

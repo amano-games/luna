@@ -7,12 +7,12 @@
 #include "sys-assert.h"
 
 i32
-fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b)
+fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 {
 	if(a < 32) return 0;
 	i32 x = 0;
 	x += fnt.widths[a] ? fnt.widths[a] : fnt.cell_w;
-	x += fnt.tracking;
+	x += fnt.tracking + tracking;
 	u16 kern_i         = ((u16)a << 8) | b;
 	i32 has_kern_pairs = (fnt.kern_pairs != NULL) && (b > 0);
 	x += has_kern_pairs * (kern_i > 0) * fnt.kern_pairs[kern_i];
@@ -21,18 +21,17 @@ fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b)
 }
 
 v2_i32
-fnt_size_px(struct fnt fnt, const str8 str)
+fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 {
-	i32 leading = 1;
-	i32 x       = 0;
-	i32 maxx    = 0;
-	i32 y       = fnt.cell_h + leading;
+	i32 x    = 0;
+	i32 maxx = 0;
+	i32 y    = fnt.cell_h + leading;
 	for(usize i = 0; i < str.size; i++) {
 		i32 ci         = str.str[i];
 		i32 cbi        = (i < str.size - 1) ? str.str[i + 1] : -1;
 		i32 is_newline = (ci == '\n');
 		maxx           = max_i32(maxx, x);
-		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi);
+		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 		x              = (1 - is_newline) * (x + move_x);
 		y += is_newline * (fnt.cell_h + leading);
 	}
