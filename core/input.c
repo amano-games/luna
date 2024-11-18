@@ -1,4 +1,7 @@
 #include "input.h"
+#include "str.h"
+#include "sys-log.h"
+#include "sys-utils.h"
 #include "trace.h"
 
 static struct inp INP;
@@ -12,7 +15,7 @@ inp_update(void)
 	INP.curr.btn          = sys_inp();
 	INP.curr.crank        = sys_crank();
 	INP.curr.crank_docked = sys_crank_docked();
-	sys_keys(INP.curr.keys);
+	sys_keys(INP.curr.keys, ARRLEN(INP.curr.keys));
 	TRACE_END();
 }
 
@@ -61,7 +64,8 @@ inp_just_pressed(int b)
 bool32
 inp_just_released(int b)
 {
-	return !inp_pressed(b) && inp_was_pressed(b);
+	bool32 res = !inp_pressed(b) && inp_was_pressed(b);
+	return res;
 }
 
 int
@@ -155,23 +159,28 @@ inp_crank_just_undocked(void)
 bool32
 inp_key_pressed(int key)
 {
-	return INP.curr.keys[key] == 1;
+	i32 upper = char_to_upper(key);
+	return INP.curr.keys[upper] == 1;
 }
 
 bool32
 inp_key_was_pressed(int key)
 {
-	return INP.prev.keys[key] == 1;
+	i32 upper = char_to_upper(key);
+	return INP.prev.keys[upper] == 1;
 }
 
 bool32
 inp_key_just_pressed(int key)
 {
-	return inp_key_pressed(key) && !inp_key_was_pressed(key);
+	i32 upper = char_to_upper(key);
+	return inp_key_pressed(upper) && !inp_key_was_pressed(upper);
 }
 
 bool32
 inp_key_just_released(int key)
 {
-	return !inp_key_pressed(key) && inp_key_was_pressed(key);
+	i32 upper  = char_to_upper(key);
+	bool32 res = !inp_key_pressed(upper) && inp_key_was_pressed(upper);
+	return res;
 }

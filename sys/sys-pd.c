@@ -1,5 +1,6 @@
 
 #include "mathfunc.h"
+#include "str.h"
 #include "sys-debug.h"
 #include "sys.h"
 #include "sys-types.h"
@@ -70,10 +71,10 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		sys_internal_resume();
 		break;
 	case kEventKeyPressed: {
-		PD_STATE.keyboard_keys[arg] = 1;
+		PD_STATE.keyboard_keys[char_to_upper(arg)] = 1;
 	} break;
 	case kEventKeyReleased: {
-		PD_STATE.keyboard_keys[arg] = 0;
+		PD_STATE.keyboard_keys[char_to_upper(arg)] = 0;
 	} break;
 
 	default: break;
@@ -127,7 +128,7 @@ sys_key(int key)
 }
 
 void
-sys_keys(u8 *dest)
+sys_keys(u8 *dest, usize count)
 {
 	mcpy(dest, PD_STATE.keyboard_keys, sizeof(PD_STATE.keyboard_keys));
 }

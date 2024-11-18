@@ -72,7 +72,7 @@ void
 queue_u8_print(struct queue_u8 *queue)
 {
 	if(queue_u8_is_empty(queue)) {
-		sys_printf("Queue", "empty");
+		sys_printf("Queue empty");
 		return;
 	}
 
