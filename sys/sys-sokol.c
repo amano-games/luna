@@ -1,4 +1,6 @@
 #include "sys-sokol.h"
+#include "gfx/gfx.h"
+#include "sys-utils.h"
 
 #if !defined(TARGET_WASM)
 #include <whereami.h>
@@ -30,12 +32,20 @@ struct sokol_state {
 	sg_pass_action pass_action;
 	f32 mouse_scroll_sensitivity;
 	u8 frame_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
+
+	u8 debug_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
+	struct tex debug_t;
+	struct gfx_ctx debug_ctx;
+
 	u8 keys[SYS_KEYS_LEN];
 	bool32 crank_docked;
 	f32 crank;
 };
 
 static struct sokol_state SOKOL_STATE;
+const u32 BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
+const u32 DEBUG_PAL[2] = {0xFFFFFF, 0xFF0000};
+static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 
 void
 event(const sapp_event *e)
@@ -101,6 +111,20 @@ init(void)
 {
 	SOKOL_STATE.crank_docked             = true;
 	SOKOL_STATE.mouse_scroll_sensitivity = 0.03f;
+
+	SOKOL_STATE.debug_t       = (struct tex){0};
+	SOKOL_STATE.debug_t.fmt   = TEX_FMT_OPAQUE;
+	SOKOL_STATE.debug_t.px    = (u32 *)SOKOL_STATE.debug_buffer;
+	SOKOL_STATE.debug_t.w     = SYS_DISPLAY_W;
+	SOKOL_STATE.debug_t.h     = SYS_DISPLAY_H;
+	SOKOL_STATE.debug_t.wword = SYS_DISPLAY_WWORDS;
+
+	SOKOL_STATE.debug_ctx         = (struct gfx_ctx){0};
+	SOKOL_STATE.debug_ctx.dst     = SOKOL_STATE.debug_t;
+	SOKOL_STATE.debug_ctx.clip_x2 = SOKOL_STATE.debug_t.w - 1;
+	SOKOL_STATE.debug_ctx.clip_y2 = SOKOL_STATE.debug_t.h - 1;
+	mset(&SOKOL_STATE.debug_ctx.pat, 0xFF, sizeof(struct gfx_pattern));
+
 	stm_setup();
 	sg_setup(&(sg_desc){
 		.environment = sglue_environment(),
@@ -126,13 +150,14 @@ init(void)
 		.mag_filter = SG_FILTER_NEAREST,
 	});
 
-	SOKOL_STATE.bind.fs.images[SLOT_tex] = sg_make_image(
-		&(sg_image_desc){
-			.width        = SYS_DISPLAY_W,
-			.height       = SYS_DISPLAY_H,
-			.pixel_format = SG_PIXELFORMAT_RGBA8,
-			.usage        = SG_USAGE_STREAM,
-		});
+	sg_image_desc img_desc = {
+		.width        = SYS_DISPLAY_W,
+		.height       = SYS_DISPLAY_H,
+		.pixel_format = SG_PIXELFORMAT_RGBA8,
+		.usage        = SG_USAGE_STREAM,
+	};
+
+	SOKOL_STATE.bind.fs.images[SLOT_tex] = sg_make_image(&img_desc);
 
 	// clang-format off
     const float vertices[] = {
@@ -182,35 +207,25 @@ init(void)
 void
 frame(void)
 {
-	const u32 pal[2] = {
-		0xA2A5A5,
-		0x0D0B11,
-	};
-	u32 *pixels_ptr[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
-	{
-		u32 *pixels = (u32 *)pixels_ptr;
-		for(i32 y = 0; y < SYS_DISPLAY_H; y++) {
-			// TODO: figure out dirty rows
-			// if(!SOKOL_STATE.update_row[y]) continue;
-			// SOKOL_STATE.update_row[y] = 0;
-			for(i32 x = 0; x < SYS_DISPLAY_W; x++) {
-				i32 i     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
-				i32 k     = x + y * SYS_DISPLAY_W;
-				i32 byt   = SOKOL_STATE.frame_buffer[i];
-				i32 bit   = !!(byt & 0x80 >> (x & 7));
-				pixels[k] = pal[!bit];
-			}
-		}
-		sg_update_image(
-			SOKOL_STATE.bind.fs.images[SLOT_tex],
-			&(sg_image_data){
-				.subimage[0][0] = {
-					.ptr  = pixels,
-					.size = SYS_DISPLAY_W * SYS_DISPLAY_H * 4},
-			});
-	}
+	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
+	u32 *debug_pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
+	usize size                                           = ARRLEN(pixels);
+	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)pixels, size, BW_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)debug_pixels, size, BW_PAL);
 
-	sg_begin_pass(&(sg_pass){.action = SOKOL_STATE.pass_action, .swapchain = sglue_swapchain()});
+	sg_update_image(
+		SOKOL_STATE.bind.fs.images[SLOT_tex],
+		&(sg_image_data){
+			.subimage[0][0] = {
+				.ptr  = pixels,
+				.size = size,
+			},
+		});
+
+	sg_begin_pass(&(sg_pass){
+		.action    = SOKOL_STATE.pass_action,
+		.swapchain = sglue_swapchain(),
+	});
 	sg_apply_pipeline(SOKOL_STATE.pip);
 	sg_apply_bindings(&SOKOL_STATE.bind);
 	sg_draw(0, 6, 1);
@@ -536,6 +551,23 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
+#if DEBUG
+
+	struct gfx_ctx ctx = SOKOL_STATE.debug_ctx;
+
+	for(int i = 0; i < count; ++i) {
+		struct debug_shape *shape = &shapes[i];
+		switch(shape->type) {
+		case DEBUG_LIN: {
+			struct debug_shape_lin lin = shape->lin;
+			gfx_lin(ctx, lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1);
+		} break;
+		default: {
+		} break;
+		}
+	}
+
+#endif
 }
 
 void
@@ -559,4 +591,19 @@ sys_audio_lock(void)
 void
 sys_audio_unlock(void)
 {
+}
+
+static inline void
+sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
+{
+	u32 *pixels = out;
+	for(i32 y = 0; y < SYS_DISPLAY_H; y++) {
+		for(i32 x = 0; x < SYS_DISPLAY_W; x++) {
+			i32 i     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
+			i32 k     = x + y * SYS_DISPLAY_W;
+			i32 byt   = SOKOL_STATE.frame_buffer[i];
+			i32 bit   = !!(byt & 0x80 >> (x & 7));
+			pixels[k] = pal[!bit];
+		}
+	}
 }

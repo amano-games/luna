@@ -334,10 +334,9 @@ sys_menu_clr(void)
 void
 sys_draw_debug_clear(void)
 {
-	LCDBitmap *ctx = PD->graphics->getDebugBitmap();
-	PD->graphics->pushContext(ctx);
-
-	PD->graphics->popContext();
+	// LCDBitmap *ctx = PD->graphics->getDebugBitmap();
+	// PD->graphics->pushContext(ctx);
+	// PD->graphics->popContext();
 }
 
 void
