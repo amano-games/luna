@@ -30,7 +30,7 @@ struct sokol_state {
 	sg_pass_action pass_action;
 	f32 mouse_scroll_sensitivity;
 	u8 frame_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
-	u8 keys[350];
+	u8 keys[SYS_KEYS_LEN];
 	bool32 crank_docked;
 	f32 crank;
 };
@@ -316,19 +316,16 @@ sys_inp(void)
 	return b;
 }
 
-// TODO: Translate playdate keys to SOKOL keys
-i32
+int
 sys_key(i32 key)
 {
-	u8 *keys = SOKOL_STATE.keys;
-	return keys[key];
+	return SOKOL_STATE.keys[key];
 }
 
 void
-sys_keys(u8 *dest)
+sys_keys(u8 *dest, usize size)
 {
 	mcpy(dest, SOKOL_STATE.keys, sizeof(SOKOL_STATE.keys));
-	// return SOKOL_STATE.keys;
 }
 
 f32
@@ -351,7 +348,7 @@ sys_seconds(void)
 
 // TODO: Make sure it works
 u32
-sys_epoch(u32 milliseconds)
+sys_epoch(u32 *milliseconds)
 {
 	u64 epoch = 1730405055;
 	return stm_sec(stm_since(epoch));
