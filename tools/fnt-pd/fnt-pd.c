@@ -14,8 +14,6 @@
 #include <jsmn.h>
 #include <tinydir.h>
 
-#define ASCII_MAX 128
-
 bool32
 fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 {
@@ -143,14 +141,17 @@ get_fnt_size(str8 in_path, struct alloc scratch)
 			str8 start     = fnt_file_name;
 			if(!str8_match(file_path, in_path, 0)) {
 				if(str8_starts_with(file_name, start, 0)) {
-					usize i      = str8_find_needle(file_name, 0, table_id, 0);
-					str8 info    = str8_chop_last_dot(str8_substr(file_name, (union rng_u64){.min = i + table_id.size, .max = file_name.size}));
-					usize dash_i = str8_find_needle(info, 0, str8_lit("-"), 0);
-					str8 w       = str8_substr(info, (union rng_u64){.min = 0, .max = dash_i});
-					str8 h       = str8_substr(info, (union rng_u64){.min = dash_i + 1, .max = info.size});
-					res.x        = str8_to_i32(w);
-					res.y        = str8_to_i32(h);
-					break;
+					usize i = str8_find_needle(file_name, 0, table_id, 0);
+					// Make sure that the table id is right after the name
+					if(i == start.size) {
+						str8 info    = str8_chop_last_dot(str8_substr(file_name, (union rng_u64){.min = i + table_id.size, .max = file_name.size}));
+						usize dash_i = str8_find_needle(info, 0, str8_lit("-"), 0);
+						str8 w       = str8_substr(info, (union rng_u64){.min = 0, .max = dash_i});
+						str8 h       = str8_substr(info, (union rng_u64){.min = dash_i + 1, .max = info.size});
+						res.x        = str8_to_i32(w);
+						res.y        = str8_to_i32(h);
+						break;
+					}
 				}
 			}
 		}
