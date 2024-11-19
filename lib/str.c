@@ -3,6 +3,13 @@
 #include "sys-utils.h"
 #include "sys-assert.h"
 
+// NOTE: linked list macro helpers
+// TODO: Move this, undestand it
+#define CheckNil(nil, p)                    ((p) == 0 || (p) == nil)
+#define SetNil(nil, p)                      ((p) = nil)
+#define SLLQueuePush_NZ(nil, f, l, n, next) (CheckNil(nil, f) ? ((f) = (l) = (n), SetNil(nil, (n)->next)) : ((l)->next = (n), (l) = (n), SetNil(nil, (n)->next)))
+#define SLLQueuePush(f, l, n)               SLLQueuePush_NZ(0, f, l, n, next)
+
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 u8 INTEGER_SYMBOL_REVERSE[128] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -477,4 +484,70 @@ str8_skip_last_dot(str8 str)
 		}
 	}
 	return (result);
+}
+
+struct str8_node *
+str8_list_push_node_set_string(struct str8_list *list, struct str8_node *node, str8 str)
+{
+	SLLQueuePush(list->first, list->last, node);
+	list->node_count += 1;
+	list->total_size += str.size;
+	node->str = str;
+	return (node);
+}
+
+struct str8_node *
+str8_list_push(struct alloc alloc, struct str8_list *list, str8 str)
+{
+	struct str8_node *node = alloc.allocf(alloc.ctx, sizeof(struct str8_node));
+	str8_list_push_node_set_string(list, node, str);
+	return (node);
+}
+
+struct str8_list
+str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags)
+{
+	struct str8_list list = {0};
+	bool32 keep_empties   = (flags & str_split_flag_keep_empties);
+
+	u8 *ptr = str.str;
+	u8 *opl = str.str + str.size;
+	for(; ptr < opl;) {
+		u8 *first = ptr;
+		for(; ptr < opl; ptr += 1) {
+			u8 c            = *ptr;
+			bool32 is_split = 0;
+			for(usize i = 0; i < split_char_count; i += 1) {
+				if(split_chars[i] == c) {
+					is_split = 1;
+					break;
+				}
+			}
+			if(is_split) {
+				break;
+			}
+		}
+
+		str8 string = str8_range(first, ptr);
+		if(keep_empties || string.size > 0) {
+			str8_list_push(alloc, &list, string);
+		}
+		ptr += 1;
+	}
+
+	return list;
+}
+
+struct str8_list
+str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags)
+{
+	struct str8_list list = str8_split(alloc, str, split_chars.str, split_chars.size, flags);
+	return list;
+}
+
+struct str8_list
+str8_split_path(struct alloc alloc, str8 str)
+{
+	struct str8_list res = str8_split(alloc, str, (u8 *)"/\\", 2, 0);
+	return res;
 }
