@@ -88,6 +88,11 @@ str8 str8_skip_last_dot(str8 str);
 i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
 
+// String Splitting
+struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags);
+struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
+struct str8_list str8_split_path(struct alloc alloc, str8 str);
+
 #define S_(x)   #x
 #define S(x)    S_(x)
 #define PBWIDTH 20

@@ -94,31 +94,12 @@ handle_line(str8 line, struct fnt *fnt)
 }
 
 void
-handle_lines(str8 str, struct fnt *fnt)
+handle_lines(str8 str, struct fnt *fnt, struct alloc scratch)
 {
-	str8 string = str;
-	u8 *ptr     = string.str;
-	u8 *opl     = string.str + string.size;
-	for(; ptr < opl;) {
-		u8 *first = ptr;
-		for(; ptr < opl; ptr += 1) {
-			u8 c            = *ptr;
-			bool32 is_split = 0;
-			if('\n' == c) {
-				is_split = 1;
-				break;
-			}
-			if(is_split) {
-				break;
-			}
-		}
+	struct str8_list list = str8_split_by_string_chars(scratch, str, str8_lit("\n"), 0);
 
-		// TODO: skip commented lines
-		str8 line = str8_range(first, ptr);
-		if(line.size > 0) {
-			handle_line(line, fnt);
-		}
-		ptr += 1;
+	for(struct str8_node *n = list.first; n != 0; n = n->next) {
+		handle_line(n->str, fnt);
 	}
 }
 
@@ -216,7 +197,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 		.size = data.size - tracking_f,
 	});
 
-	handle_lines(rest, &fnt);
+	handle_lines(rest, &fnt, scratch);
 
 	void *out_file;
 	str8 out_file_path = out_path;
