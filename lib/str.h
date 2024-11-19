@@ -44,7 +44,7 @@ u8 char_to_upper(u8 c);
 u8 char_to_correct_slash(u8 c);
 
 // C-String mesurement
-u64 cstr8_len(u8 *c);
+usize cstr8_len(u8 *c);
 
 // String Constructors
 #define str8_lit(S)         string8((u8 *)(S), sizeof(S) - 1)
