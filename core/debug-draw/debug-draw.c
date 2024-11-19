@@ -1,5 +1,6 @@
 #include "debug-draw.h"
 
+#include "arr.h"
 #include "v2.h"
 #include "sys-debug.h"
 
@@ -29,6 +30,12 @@ debug_draw_draw(v2_i32 cam_off)
 	debug_draw_clear();
 	TRACE_END();
 #endif
+}
+
+v2_i32
+debug_draw_get_offset(void)
+{
+	return DEBUG_STATE.draw_offset;
 }
 
 void

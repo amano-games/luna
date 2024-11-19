@@ -24,6 +24,7 @@ void *debug_mem_alloc(usize s);
 void debug_draw_init(void *mem, usize size);
 void debug_draw_draw(v2_i32 cam_off);
 void debug_draw_set_offset(i32 x, i32 y);
+v2_i32 debug_draw_get_offset(void);
 void debug_draw_clear(void);
 
 void debug_draw_line(f32 x1, f32 y1, f32 x2, f32 y2);
