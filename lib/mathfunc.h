@@ -4,6 +4,7 @@
 
 #include "sys-types.h"
 #include "sys-assert.h"
+#include "sys-utils.h"
 
 #define PI_FLOAT    3.1415927f
 #define PI2_FLOAT   6.2831853f
@@ -17,7 +18,6 @@
 static const i32 COS_TABLE[256];
 
 static inline u64
-
 max_u64(u64 a, u64 b)
 {
 	return (a > b ? a : b);
@@ -293,6 +293,14 @@ mod_euc_f32(f32 a, f32 b)
 	assert(b > 0);
 	f32 r = fmodf(a, b);
 	r     = r < 0 ? r + b : r;
+	return r;
+}
+
+static inline union rng_u64
+rng_u64(u64 min, u64 max)
+{
+	union rng_u64 r = {{min, max}};
+	if(r.min > r.max) { SWAP(u64, r.min, r.max); }
 	return r;
 }
 

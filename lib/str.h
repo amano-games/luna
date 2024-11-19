@@ -108,3 +108,5 @@ ascii_progress_bar(u8 percent)
 		sys_printf(" ");
 	}
 }
+
+struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize first_line_max_width, usize max_width, usize wrap_indent);
