@@ -1,4 +1,5 @@
 #include "str.h"
+#include "mathfunc.h"
 #include "sys-str.h"
 #include "sys-utils.h"
 #include "sys-assert.h"
@@ -107,7 +108,7 @@ char_to_correct_slash(u8 c)
 	return (c);
 }
 
-inline u64
+inline usize
 cstr8_len(u8 *c)
 {
 	u8 *p = c;
@@ -550,4 +551,61 @@ str8_split_path(struct alloc alloc, str8 str)
 {
 	struct str8_list res = str8_split(alloc, str, (u8 *)"/\\", 2, 0);
 	return res;
+}
+
+struct str8_list
+wrapped_lines_from_str(
+	struct alloc alloc,
+	str8 str,
+	usize first_line_max_width,
+	usize max_width,
+	usize wrap_indent)
+{
+	struct str8_list list      = {0};
+	union rng_u64 line_range   = rng_u64(0, 0);
+	usize wrapped_indent_level = 0;
+	static char *spaces        = "                                                                ";
+	for(usize idx = 0; idx <= str.size; idx += 1) {
+		u8 chr = idx < str.size ? str.str[idx] : 0;
+		if(chr == '\n') {
+			union rng_u64 candidate_line_range = line_range;
+			candidate_line_range.max           = idx;
+			// NOTE: when wrapping is interrupted with \n we emit a string without including \n
+			// because later tool_fprint_list inserts separator after each node
+			// except for last node, so don't strip last \n.
+			if(idx + 1 == str.size) {
+				candidate_line_range.max += 1;
+			}
+			str8 substr = str8_substr(str, candidate_line_range);
+			str8_list_push(alloc, &list, substr);
+			line_range = rng_u64(idx + 1, idx + 1);
+		} else if(char_is_space(chr) || chr == 0) {
+			union rng_u64 candidate_line_range = line_range;
+			candidate_line_range.max           = idx;
+			str8 substr                        = str8_substr(str, candidate_line_range);
+			usize width_this_line              = max_width - wrapped_indent_level;
+			if(list.node_count == 0) {
+				width_this_line = first_line_max_width;
+			}
+			if(substr.size > width_this_line) {
+				str8 line = str8_substr(str, line_range);
+				if(wrapped_indent_level > 0) {
+					line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, line.size, line.str);
+				}
+				str8_list_push(alloc, &list, line);
+				line_range           = rng_u64(line_range.max + 1, candidate_line_range.max);
+				wrapped_indent_level = MIN(64, wrap_indent);
+			} else {
+				line_range = candidate_line_range;
+			}
+		}
+	}
+	if(line_range.min < str.size && line_range.max > line_range.min) {
+		str8 line = str8_substr(str, line_range);
+		if(wrapped_indent_level > 0) {
+			line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, line.size, line.str);
+		}
+		str8_list_push(alloc, &list, line);
+	}
+	return list;
 }
