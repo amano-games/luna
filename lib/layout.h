@@ -19,6 +19,20 @@ struct ui_cut {
 	enum ui_cut_side side;
 };
 
+static inline struct ui_rec
+ui_rec_from_rec(i32 x, i32 y, i32 w, i32 h)
+{
+	return (struct ui_rec){x, y, x + w, y + h};
+}
+
+static inline struct ui_rec
+ui_rec_from_rec_pivot(i32 x, i32 y, i32 w, i32 h, v2 pivot)
+{
+	i32 nx = x - (w * pivot.x);
+	i32 ny = y - (h * pivot.y);
+	return (struct ui_rec){nx, ny, nx + w, ny + h};
+}
+
 static inline rec_i32
 ui_rec_to_rec_i32(struct ui_rec v)
 {
