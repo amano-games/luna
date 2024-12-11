@@ -26,11 +26,7 @@ cam_brain_init(
 	brain->lerp_speed      = lerp_speed;
 	brain->limits_speed    = limits_speed;
 	brain->speed_scale     = speed_scale;
-
-	cam_set_pos_px(c, tx, ty);
-	// cam_set_pos_px(c, CAM_HALF_W, ty);
-	int index = cam_brain_query_circle(brain, tx, ty, r);
-	cam_brain_set_data(brain, index);
+	cam_brain_set_pos(brain, tx, ty, r);
 }
 
 void
@@ -136,4 +132,13 @@ cam_brain_set_data(struct cam_brain *brain, usize index)
 	brain->c->data       = data;
 	brain->final         = data;
 	brain->data_t        = 0.0f;
+}
+
+void
+cam_brain_set_pos(struct cam_brain *brain, i32 x, i32 y, i32 r)
+{
+	struct cam *c = brain->c;
+	cam_set_pos_px(c, x, y);
+	int index = cam_brain_query_circle(brain, x, y, r);
+	cam_brain_set_data(brain, index);
 }
