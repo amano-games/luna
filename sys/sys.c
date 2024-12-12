@@ -126,7 +126,7 @@ sys_internal_update(void)
 			'0' + (ups_ft % 10),
 			'\0',
 		};
-		sys_blit_text(fps, 48, 29);
+		sys_blit_text(fps, 0, 29);
 		// sys_blit_text(ups, 0, 1);
 #else
 		app_draw();
