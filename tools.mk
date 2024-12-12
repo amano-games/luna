@@ -38,13 +38,13 @@ endif
 
 CFLAGS += $(CDEFS)
 
-all: $(BUILD_DIR) $(BUILD_DIR)/luna-table-gen $(BUILD_DIR)/luna-assets
+all: $(BUILD_DIR) $(BUILD_DIR)/luna-meta-gen $(BUILD_DIR)/luna-assets-gen
 
 # Create tools bin dir
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/luna-table-gen: $(SRC_DIR)/table-gen.c $(BUILD_DIR)
+$(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
 $(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(BUILD_DIR)
@@ -53,3 +53,6 @@ $(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(BUILD_DIR)
 # Clean tools bin
 clean:
 	rm -rf $(BUILD_DIR)
+
+luna-meta-gen: $(BUILD_DIR)/luna-meta-gen
+luna-assets-gen: $(BUILD_DIR)/luna-asset-gen
