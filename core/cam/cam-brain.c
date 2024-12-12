@@ -12,9 +12,9 @@ void
 cam_brain_init(
 	struct cam_brain *brain,
 	struct cam *c,
-	int tx,
-	int ty,
-	int r,
+	i32 tx,
+	i32 ty,
+	i32 r,
 	f32 drag_lerp_speed,
 	f32 lerp_speed,
 	f32 limits_speed,
@@ -30,10 +30,10 @@ cam_brain_init(
 }
 
 void
-cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, int r, v2 vel, f32 dt)
+cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, i32 r, v2 vel, f32 dt)
 {
-	int index_prev = brain->active_index;
-	int index      = cam_brain_query_circle(brain, tx, ty, r);
+	i32 index_prev = brain->active_index;
+	i32 index      = cam_brain_query_circle(brain, tx, ty, r);
 	if(index == -1) return;
 	struct cam_data data = brain->areas[index].data;
 	struct cam *cam      = brain->c;
@@ -100,10 +100,10 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, int r, v2 vel, f32 dt)
 	}
 }
 
-int
+i32
 cam_brain_query_circle(struct cam_brain *brain, f32 x, f32 y, f32 r)
 {
-	int res = -1;
+	i32 res = -1;
 	for(usize i = 0; i < ARRLEN(brain->areas); ++i) {
 		struct cam_area c_area = brain->areas[i];
 		struct col_aabb aabb   = c_area.aabb;
@@ -139,6 +139,6 @@ cam_brain_set_pos(struct cam_brain *brain, i32 x, i32 y, i32 r)
 {
 	struct cam *c = brain->c;
 	cam_set_pos_px(c, x, y);
-	int index = cam_brain_query_circle(brain, x, y, r);
+	i32 index = cam_brain_query_circle(brain, x, y, r);
 	cam_brain_set_data(brain, index);
 }
