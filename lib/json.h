@@ -63,3 +63,24 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 	});
 	return num;
 }
+
+static str8
+json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
+{
+	str8 src = (str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
+	};
+	str8 res = str8_cpy_push(alloc, src);
+	return res;
+}
+
+static void
+json_str8_cpy(str8 json, jsmntok_t *tok, str8 *dst)
+{
+	str8 src = (str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
+	};
+	str8_cpy(&src, dst);
+}

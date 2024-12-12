@@ -144,9 +144,12 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			struct bet_node *node = bet->nodes + res.node_index;
 
 			assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
-			usize len = value->end - value->start;
-			mcpy(node->name, json.str + value->start, len);
-			node->name[len] = '\0';
+
+			str8 dst = {
+				.str  = (u8 *)node->name,
+				.size = ARRLEN(node->name),
+			};
+			json_str8_cpy(json, value, &dst);
 
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			struct bet_prop props[MAX_BET_NODE_PROPS] = {0};
