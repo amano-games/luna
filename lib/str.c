@@ -1,6 +1,7 @@
 #include "str.h"
 #include "mathfunc.h"
 #include "sys-str.h"
+#include "sys-types.h"
 #include "sys-utils.h"
 #include "sys-assert.h"
 
@@ -562,6 +563,43 @@ str8_split_path(struct alloc alloc, str8 str)
 {
 	struct str8_list res = str8_split(alloc, str, (u8 *)"/\\", 2, 0);
 	return res;
+}
+
+str8
+str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params)
+{
+	struct str_join join = {0};
+	if(optional_params != 0) {
+		mcpy_struct(&join, optional_params);
+	}
+
+	u64 sep_count = 0;
+	if(list->node_count > 0) {
+		sep_count = list->node_count - 1;
+	}
+
+	str8 result;
+	result.size = join.pre.size + join.post.size + sep_count * join.sep.size + list->total_size;
+	u8 *ptr = result.str = alloc.allocf(alloc.ctx, result.size + 1 * sizeof(u8));
+
+	mcpy(ptr, join.pre.str, join.pre.size);
+	ptr += join.pre.size;
+	for(struct str8_node *node = list->first;
+		node != 0;
+		node = node->next) {
+		mcpy(ptr, node->str.str, node->str.size);
+		ptr += node->str.size;
+		if(node->next != 0) {
+			mcpy(ptr, join.sep.str, join.sep.size);
+			ptr += join.sep.size;
+		}
+	}
+	mcpy(ptr, join.post.str, join.post.size);
+	ptr += join.post.size;
+
+	*ptr = 0;
+
+	return (result);
 }
 
 struct str8_list

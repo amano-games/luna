@@ -18,6 +18,12 @@ struct str8_list {
 	u64 total_size;
 };
 
+struct str_join {
+	str8 pre;
+	str8 sep;
+	str8 post;
+};
+
 typedef u32 str_match_flags;
 enum {
 	str_match_flag_case_insensitive  = (1 << 0),
@@ -92,10 +98,11 @@ f32 str8_to_f32(str8 str);
 
 struct str8_node *str8_list_pushf(struct alloc alloc, struct str8_list *list, char *fmt, ...);
 
-// String Splitting
+// String Splitting & Joining
 struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags);
 struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
 struct str8_list str8_split_path(struct alloc alloc, str8 str);
+str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params);
 
 #define S_(x)   #x
 #define S(x)    S_(x)
