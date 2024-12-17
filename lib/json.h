@@ -2,7 +2,6 @@
 
 #include "jsmn.h"
 #include "sys-io.h"
-#include "sys-str.h"
 #include "sys-types.h"
 #include "str.h"
 
