@@ -61,6 +61,9 @@ typedef size_t usize;
 #define mmov            memmove
 #define mclr(DST, SIZE) mset(DST, 0, SIZE)
 
+#define mcpy_struct(d, s) mcpy((d), (s), sizeof(*(d)))
+#define mcpy_array(d, s) mcpy((d),(s), sizeof(d)))
+
 typedef struct v2_i32 {
 	i32 x, y;
 } v2_i32;
