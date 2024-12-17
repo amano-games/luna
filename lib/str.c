@@ -505,6 +505,17 @@ str8_list_push(struct alloc alloc, struct str8_list *list, str8 str)
 	return (node);
 }
 
+struct str8_node *
+str8_list_pushf(struct alloc alloc, struct str8_list *list, char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	str8 str                 = str8_fmtv_push(alloc, fmt, args);
+	struct str8_node *result = str8_list_push(alloc, list, str);
+	va_end(args);
+	return (result);
+}
+
 struct str8_list
 str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags)
 {

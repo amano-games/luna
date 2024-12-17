@@ -13,7 +13,6 @@
 #include "sys-types.h"
 #include "sys-utils.h"
 #include "sys.h"
-#include "tools/utils.h"
 
 #define AI_FILE_EXT "bet"
 
