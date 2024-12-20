@@ -179,13 +179,27 @@ v2_distance_sq(v2 a, v2 b)
 }
 
 static inline v2
-v2_rot(v2 v, f32 a)
+v2_rot_ang(v2 v, f32 a)
 {
-	f32 angle = a;
-	v2 r      = {
-			 .x = v.x * cos_f32(angle) - v.y * sin_f32(angle),
-			 .y = v.x * sin_f32(angle) + v.y * cos_f32(angle)};
+	f32 c = cos_f32(a);
+	f32 s = sin_f32(a);
+	v2 r  = {
+		 .x = v.x * c - v.y * s,
+		 .y = v.x * s + v.y * c,
+    };
 	return r;
+}
+
+static inline v2
+v2_rot(v2 v, rot2 rot)
+{
+	f32 c  = rot.c;
+	f32 s  = rot.s;
+	v2 res = {
+		.x = v.x * c - v.y * s,
+		.y = v.x * s + v.y * c,
+	};
+	return res;
 }
 
 static inline v2
