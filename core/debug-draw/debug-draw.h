@@ -29,7 +29,9 @@ void debug_draw_clear(void);
 
 void debug_draw_line(f32 x1, f32 y1, f32 x2, f32 y2);
 void debug_draw_cir(f32 x, f32 y, f32 r);
+void debug_draw_cir_fill(f32 x, f32 y, f32 r);
 void debug_draw_rec(f32 x, f32 y, f32 w, f32 h);
+void debug_draw_rec_fill(f32 x, f32 y, f32 w, f32 h);
 void debug_draw_aabb(f32 x1, f32 y1, f32 x2, f32 y2);
 void debug_draw_collider(struct col_shape *shape);
 void debug_draw_ui_rec(struct ui_rec rec);
