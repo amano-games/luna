@@ -71,12 +71,23 @@ debug_draw_line(f32 x1, f32 y1, f32 x2, f32 y2)
 }
 
 void
-debug_draw_cir(f32 x, f32 y, f32 r)
+debug_draw_cir(f32 x, f32 y, f32 d)
 {
 	struct debug_shape d_shape = {0};
 	d_shape.type               = DEBUG_CIR;
 	d_shape.cir.p              = v2_add_i32(v2_round((v2){x, y}), DEBUG_STATE.draw_offset);
-	d_shape.cir.r              = (int)r;
+	d_shape.cir.d              = (int)d;
+	debug_draw_push_shape(d_shape);
+}
+
+void
+debug_draw_cir_fill(f32 x, f32 y, f32 d)
+{
+	struct debug_shape d_shape = {0};
+	d_shape.cir.filled         = true;
+	d_shape.type               = DEBUG_CIR;
+	d_shape.cir.p              = v2_add_i32(v2_round((v2){x, y}), DEBUG_STATE.draw_offset);
+	d_shape.cir.d              = (int)d;
 	debug_draw_push_shape(d_shape);
 }
 
@@ -91,6 +102,23 @@ debug_draw_rec(f32 x, f32 y, f32 w, f32 h)
 
 	d_shape.rec.w = w;
 	d_shape.rec.h = h;
+
+	debug_draw_push_shape(d_shape);
+}
+
+void
+debug_draw_rec_fill(f32 x, f32 y, f32 w, f32 h)
+{
+	struct debug_shape d_shape = {0};
+	d_shape.type               = DEBUG_REC;
+
+	d_shape.rec.x = x + DEBUG_STATE.draw_offset.x;
+	d_shape.rec.y = y + DEBUG_STATE.draw_offset.y;
+
+	d_shape.rec.w = w;
+	d_shape.rec.h = h;
+
+	d_shape.rec.filled = true;
 
 	debug_draw_push_shape(d_shape);
 }

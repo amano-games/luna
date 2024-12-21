@@ -352,12 +352,17 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 		case DEBUG_CIR: {
 			struct debug_shape_cir cir = shape->cir;
 
-			int x = cir.p.x - cir.r;
-			int y = cir.p.y - cir.r;
-			int w = cir.r + cir.r;
+			i32 r = cir.d * 0.5;
+			int x = cir.p.x - r;
+			int y = cir.p.y - r;
+			int w = cir.d;
 			int h = w;
 
-			PD->graphics->drawEllipse(x, y, h, w, 1, 0, 0, kColorWhite);
+			if(cir.filled) {
+				PD->graphics->fillEllipse(x, y, w, h, 0, 0, kColorWhite);
+			} else {
+				PD->graphics->drawEllipse(x, y, w, h, 1, 0, 0, kColorWhite);
+			}
 		} break;
 		case DEBUG_REC: {
 			struct debug_shape_rec rec = shape->rec;
@@ -365,7 +370,11 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 			int y                      = rec.y;
 			int w                      = rec.w;
 			int h                      = rec.h;
-			PD->graphics->drawRect(x, y, w, h, kColorWhite);
+			if(rec.filled) {
+				PD->graphics->fillRect(x, y, w, h, kColorWhite);
+			} else {
+				PD->graphics->drawRect(x, y, w, h, kColorWhite);
+			}
 		} break;
 		case DEBUG_POLY: {
 			struct debug_shape_poly poly = shape->poly;

@@ -484,14 +484,24 @@ gfx_px(struct gfx_ctx ctx, i32 x, i32 y, i32 color)
 }
 
 void
-gfx_rec(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 r, enum prim_mode mode)
+gfx_rec(
+	struct gfx_ctx ctx,
+	i32 x,
+	i32 y,
+	i32 w,
+	i32 h,
+	enum prim_mode mode)
 {
-	v2_i32 verts[4] = {{x, y},
-		{x + w, y},
-		{x + w, y + h},
-		{x, y + h}};
+	i32 x2          = x + (w - 1);
+	i32 y2          = y + (h - 1);
+	v2_i32 verts[4] = {
+		{x, y},
+		{x2, y},
+		{x2, y2},
+		{x, y2},
+	};
 
-	gfx_poly(ctx, verts, 4, mode, r);
+	gfx_poly(ctx, verts, 4, mode, 1);
 }
 
 void
@@ -590,7 +600,12 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 }
 
 void
-gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
+gfx_cir_fill(
+	struct gfx_ctx ctx,
+	i32 px,
+	i32 py,
+	i32 d,
+	enum prim_mode mode)
 {
 	if(d <= 0) return;
 
@@ -740,7 +755,12 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 }
 
 void
-gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode)
+gfx_poly(
+	struct gfx_ctx ctx,
+	v2_i32 *verts,
+	i32 count,
+	i32 r,
+	enum prim_mode mode)
 {
 	for(i32 i = 0; i < count; ++i) {
 		v2_i32 a = verts[i];
