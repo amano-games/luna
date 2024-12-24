@@ -10,12 +10,13 @@ i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 {
 	if(a < 32) return 0;
-	i32 x = 0;
+	i32 x            = 0;
+	i32 is_last_char = (b == '\n') || (b == -1);
 	x += fnt.widths[a] ? fnt.widths[a] : fnt.cell_w;
-	x += fnt.tracking + tracking;
 	u16 kern_i         = ((u16)a << 8) | b;
 	i32 has_kern_pairs = (fnt.kern_pairs != NULL) && (b > 0);
 	x += has_kern_pairs * (kern_i > 0) * fnt.kern_pairs[kern_i];
+	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
 	return x;
 }
@@ -31,8 +32,9 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 		i32 cbi        = (i < str.size - 1) ? str.str[i + 1] : -1;
 		i32 is_newline = (ci == '\n');
 		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi, tracking);
-		x              = (1 - is_newline) * (x + move_x);
-		maxx           = max_i32(maxx, x);
+
+		x    = (1 - is_newline) * (x + move_x);
+		maxx = max_i32(maxx, x);
 		y += is_newline * (fnt.cell_h + leading);
 	}
 	return (v2_i32){maxx, y};
