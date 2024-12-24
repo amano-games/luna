@@ -30,9 +30,9 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 		i32 ci         = str.str[i];
 		i32 cbi        = (i < str.size - 1) ? str.str[i + 1] : -1;
 		i32 is_newline = (ci == '\n');
-		maxx           = max_i32(maxx, x);
 		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 		x              = (1 - is_newline) * (x + move_x);
+		maxx           = max_i32(maxx, x);
 		y += is_newline * (fnt.cell_h + leading);
 	}
 	return (v2_i32){maxx, y};
