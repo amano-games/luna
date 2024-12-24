@@ -6,6 +6,7 @@
 #include "sys-io.h"
 #include "mathfunc.h"
 #include "trace.h"
+#include "v2.h"
 
 struct span_blit {
 	u32 *dp;  // pixel
@@ -770,15 +771,6 @@ gfx_poly(
 	}
 }
 
-// Helper function to calculate the angle of a poi32 (x, y) relative to the center (cx, cy)
-static inline f32
-calculate_angle(i32 cx, i32 cy, i32 x, i32 y)
-{
-	f32 angle = atan2_f32(y - cy, x - cx);
-	if(angle < 0) angle += PI2_FLOAT; // Normalize angle to [0, 2*PI]
-	return angle;
-}
-
 // Function to check if an angle is within the given range
 static inline int
 is_angle_in_range(f32 angle, f32 start_angle, f32 end_angle)
@@ -802,7 +794,7 @@ gfx_arc_plot(
 	i32 thick,
 	enum prim_mode mode)
 {
-	f32 angle = calculate_angle(px, py, x, y);
+	f32 angle = v2_ang_rel((v2){px, py}, (v2){x, y});
 	if(is_angle_in_range(angle, sa, ea)) {
 		if(thick == 1) {
 			gfx_px(ctx, x, y, mode);

@@ -107,6 +107,23 @@ v2_len(v2 v)
 	return sqrt_f32(v2_len_sq(v));
 }
 
+static inline f32
+v2_ang(v2 v)
+{
+	f32 res = atan2_f32(v.y, v.x);
+	if(res < 0) res += PI2_FLOAT; // Normalize angle to [0, 2*PI]
+	return res;
+}
+
+// Helper function to calculate the angle of a poi32 (x, y) relative to the center (cx, cy)
+static inline f32
+v2_ang_rel(v2 c, v2 v)
+{
+	f32 res = atan2_f32(v.y - c.y, v.x - c.x);
+	if(res < 0) res += PI2_FLOAT; // Normalize angle to [0, 2*PI]
+	return res;
+}
+
 static inline v2
 v2_normalized(v2 a)
 {
@@ -263,4 +280,12 @@ v2_move_towards(v2 a, v2 b, f32 delta, f32 direction)
 		v2 res  = v2_add(a, v2_mul(norm, delta));
 		return res;
 	}
+}
+
+static inline f32
+v2_angle_between(v2 a, v2 b)
+{
+	f32 res = 0;
+	res     = acos_f32(v2_dot(a, b) / (v2_len(a) * v2_len(b)));
+	return res;
 }
