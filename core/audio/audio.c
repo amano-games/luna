@@ -181,6 +181,7 @@ mus_play(const struct asset_handle handle)
 void
 mus_play_by_path(const str8 path)
 {
+	log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){.path_hash = hash_string(path)};
 	mus_play(handle);
 }
