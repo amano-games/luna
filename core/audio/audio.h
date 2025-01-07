@@ -111,4 +111,5 @@ u32 snd_instance_play(struct snd s, f32 vol, f32 pitch); // returns an integer t
 void snd_instance_stop(u32 snd_id);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
-void mus_play(const str8 path);
+void mus_play(const struct asset_handle handle);
+void mus_play_by_path(const str8 path);
