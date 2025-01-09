@@ -176,7 +176,7 @@ mus_play(const struct asset_handle handle, f32 vol)
 		.priority = AUD_CMD_PRIORITY_MUS_PLAY,
 	};
 	cmd.c.mus_play.path_handle = handle;
-	cmd.c.mus_play.vol_q8      = (i32)(vol * 256.5f);
+	cmd.c.mus_play.vol_q8      = (i32)(vol * 255.0f);
 	aud_push_cmd(cmd);
 }
 
