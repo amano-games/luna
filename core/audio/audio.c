@@ -28,7 +28,6 @@ aud_do(i16 *lbuf, i16 *rbuf, i32 len)
 
 	for(usize n = 0; n < ARRLEN(AUDIO.mus_channel); n++) {
 		struct mus_channel *ch = &AUDIO.mus_channel[n];
-		ch->adpcm.vol_q8       = 64;
 		mus_channel_playback(ch, lbuf, rbuf, len);
 	}
 
