@@ -169,23 +169,25 @@ aud_cmd_queue_commit(void)
 }
 
 void
-mus_play(const struct asset_handle handle)
+mus_play(const struct asset_handle handle, f32 vol)
 {
 	struct aud_cmd cmd = {
 		.type     = AUD_CMD_MUS_PLAY,
 		.priority = AUD_CMD_PRIORITY_MUS_PLAY,
 	};
 	cmd.c.mus_play.path_handle = handle;
-	cmd.c.mus_play.vol_q8      = 128;
+	cmd.c.mus_play.vol_q8      = (i32)(vol * 256.5f);
 	aud_push_cmd(cmd);
 }
 
 void
-mus_play_by_path(const str8 path)
+mus_play_by_path(const str8 path, f32 vol)
 {
 	log_info("Audio", "play music %s", path.str);
-	struct asset_handle handle = (struct asset_handle){.path_hash = hash_string(path)};
-	mus_play(handle);
+	struct asset_handle handle = (struct asset_handle){
+		.path_hash = hash_string(path),
+	};
+	mus_play(handle, vol);
 }
 
 static void
