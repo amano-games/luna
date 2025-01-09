@@ -34,12 +34,14 @@ enum {
 
 struct asset_tex {
 	struct tex tex;
-	str8 file_name;
+	str8 path;
 };
 
 struct asset_snd {
 	struct snd snd;
-	// Add path handle (hash)
+	// TODO: Add path handle (hash)
+	// TODO: MOVE TO ASSET DB
+	str8 path;
 };
 
 struct assets {
@@ -60,16 +62,17 @@ struct alloc assets_allocator(struct assets *assets);
 
 void assets_init(void *mem, usize size);
 struct tex asset_tex(i32 id);
-i32 asset_tex_load(const str8 file_name, struct tex *tex);
-i32 asset_tex_load_id(i32 id, str8 file_name, struct tex *tex);
-i32 asset_tex_get_id(str8 file_name);
+i32 asset_tex_load(const str8 path, struct tex *tex);
+i32 asset_tex_load_id(i32 id, str8 path, struct tex *tex);
+i32 asset_tex_get_id(str8 path);
 
 i32 asset_tex_put(struct tex tex);
 struct tex asset_tex_put_id(i32 id, struct tex tex);
 
 struct snd asset_snd(i32 id);
-i32 asset_snd_load(const str8 file_name, struct snd *snd);
-i32 asset_snd_load_id(i32 id, str8 file_name, struct snd *snd);
+i32 asset_snd_load(const str8 path, struct snd *snd);
+i32 asset_snd_load_id(i32 id, str8 path, struct snd *snd);
+i32 asset_snd_get_id(str8 path);
 
 struct tex_rec asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h);
 

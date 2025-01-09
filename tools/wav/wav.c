@@ -212,7 +212,8 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 	usize data_size = num_samples * (bits_per_sample / 8);
 
 	if(format == WAVE_FORMAT_PCM) {
-		i16 *in_buffer = (i16 *)malloc(data_size + 1);
+		//TODO: Is this ok?
+		i16 *in_buffer = (i16 *)malloc(data_size + 2);
 		u8 *out_buffer = (u8 *)malloc(data_size / 2);
 		usize res      = fread(in_buffer, 1, data_size, in_file);
 		if(res != data_size) {
@@ -222,6 +223,9 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 		fclose(in_file);
 		usize length = data_size / 2;
 
+		// WARN: Don't know where I got that I needed make the size even,
+		// but this caused a buffer overflow because the in_buffer doesn't take that in to account
+		// https://github.com/superctr/adpcm/blob/7736b178f4fb722d594c6ebdfc1ddf1af2ec81f7/adpcm.c#L156
 		if(length & 1) length++; // make the size even
 		adpcm_encode(in_buffer, out_buffer, length);
 		length /= 2;
