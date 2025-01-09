@@ -1,32 +1,12 @@
 #include "asset-db-parser.h"
 
-#include "assets.h"
 #include "assets/asset-db.h"
 #include "str.h"
 #include "arr.h"
 #include "json.h"
-#include "assets.h"
 #include "str.h"
 #include "sys-log.h"
 #include "sys-utils.h"
-
-// TODO: Remove the path gen to remove the scratch allocator
-str8
-get_animation_json(str8 file_name, struct alloc alloc, struct alloc scratch)
-{
-	str8 path_name = str8_fmt_push(scratch, "%s%s", FILE_PATH_TEX, file_name.str);
-
-	str8 res       = {0};
-	bool32 success = json_load(path_name, alloc, &res);
-	if(!success) {
-		log_error("Animation DB", "failed to open db %s", path_name.str);
-		BAD_PATH
-	}
-
-	log_info("Animation", "animation db size: %d", (int)res.size);
-
-	return res;
-}
 
 struct animation_track_res
 handle_track(str8 json, jsmntok_t *tokens, i32 index)
@@ -237,11 +217,20 @@ handle_info(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 void
-asset_db_parse(struct asset_db *db, str8 file_name, struct alloc alloc, struct alloc scratch)
+asset_db_parse(
+	struct asset_db *db,
+	str8 path,
+	struct alloc alloc,
+	struct alloc scratch)
 {
-	log_info("Animation DB", "init: %s", file_name.str);
+	log_info("Animation DB", "init: %s", path.str);
 
-	str8 json = get_animation_json(file_name, scratch, scratch);
+	str8 json      = {0};
+	bool32 success = json_load(path, scratch, &json);
+	if(!success) {
+		log_error("Animation DB", "failed to open db %s", path.str);
+		BAD_PATH
+	}
 	jsmn_parser parser;
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);

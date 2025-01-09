@@ -172,7 +172,10 @@ aud_cmd_queue_commit(void)
 void
 mus_play(const struct asset_handle handle)
 {
-	struct aud_cmd cmd         = {.type = AUD_CMD_MUS_PLAY, .priority = AUD_CMD_PRIORITY_MUS_PLAY};
+	struct aud_cmd cmd = {
+		.type     = AUD_CMD_MUS_PLAY,
+		.priority = AUD_CMD_PRIORITY_MUS_PLAY,
+	};
 	cmd.c.mus_play.path_handle = handle;
 	cmd.c.mus_play.vol_q8      = 128;
 	aud_push_cmd(cmd);

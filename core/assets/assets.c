@@ -49,7 +49,7 @@ asset_tex_get_id(str8 file_name)
 {
 	for(i32 i = 0; i < ASSETS.next_tex_id; i++) {
 		struct asset_tex *at = &ASSETS.tex[i];
-		if(str8_match(at->file_name, file_name, 0)) {
+		if(str8_match(at->path, file_name, 0)) {
 			return i;
 		}
 	}
@@ -61,7 +61,7 @@ asset_tex_load(const str8 file_name, struct tex *tex)
 {
 	for(i32 i = 0; i < ASSETS.next_tex_id; i++) {
 		struct asset_tex *at = &ASSETS.tex[i];
-		if(str8_match(at->file_name, file_name, 0)) {
+		if(str8_match(at->path, file_name, 0)) {
 			if(tex) *tex = at->tex;
 			return i;
 		}
@@ -79,9 +79,9 @@ asset_tex_load(const str8 file_name, struct tex *tex)
 		return -1;
 	}
 
-	i32 id                   = ASSETS.next_tex_id++;
-	ASSETS.tex[id].file_name = file_name;
-	ASSETS.tex[id].tex       = t;
+	i32 id              = ASSETS.next_tex_id++;
+	ASSETS.tex[id].path = file_name;
+	ASSETS.tex[id].tex  = t;
 
 	if(tex) *tex = t;
 	return id;
@@ -96,9 +96,9 @@ asset_tex_load_id(i32 id, str8 file_name, struct tex *tex)
 
 	log_info("Assets", "Load tex %s (%s)", file_name.str, path_name.str);
 
-	struct tex t             = tex_load(path_name, ASSETS.alloc);
-	ASSETS.tex[id].file_name = str8_cpy_push(ASSETS.alloc, file_name);
-	ASSETS.tex[id].tex       = t;
+	struct tex t        = tex_load(path_name, ASSETS.alloc);
+	ASSETS.tex[id].path = str8_cpy_push(ASSETS.alloc, file_name);
+	ASSETS.tex[id].tex  = t;
 
 	if(t.px) {
 		if(tex) *tex = t;
@@ -146,27 +146,30 @@ asset_snd(i32 id)
 }
 
 i32
-asset_snd_load(const str8 file_name, struct snd *snd)
+asset_snd_load(const str8 path, struct snd *snd)
 {
-	// for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
-	// 	struct asset_snd *asset_snd = &ASSETS.snd[i];
-	// 	if(str8_match(asset_snd->file_name, file_name, 0)) {
-	// 		if(tex) *tex = at->tex;
-	// 		return i;
-	// 	}
-	// }
+	for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
+		struct asset_snd *asset_snd = &ASSETS.snd[i];
+		if(str8_match(asset_snd->path, path, 0)) {
+			if(snd) *snd = asset_snd->snd;
+			return i;
+		}
+	}
 
-	log_info("Assets", "Load snd %s", file_name.str);
+	log_info("Assets", "Load snd %s", path.str);
 
-	struct snd s = snd_load(file_name, ASSETS.alloc);
+	struct snd s = snd_load(path, ASSETS.alloc);
 
-	if(snd->buf == NULL) {
-		log_info("Assets", "Lod failed %s", file_name.str);
+	if(s.buf == NULL) {
+		log_info("Assets", "Lod failed %s", path.str);
 		return -1;
 	}
 
-	i32 id             = ASSETS.next_snd_id++;
-	ASSETS.snd[id].snd = s;
+	i32 id         = ASSETS.next_snd_id++;
+	ASSETS.snd[id] = (struct asset_snd){
+		.snd  = s,
+		.path = path,
+	};
 
 	if(snd) *snd = s;
 	return id;
@@ -187,6 +190,18 @@ asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
 	}
 
 	return -1;
+}
+
+i32
+asset_snd_get_id(str8 path)
+{
+	for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
+		struct asset_snd *at = &ASSETS.snd[i];
+		if(str8_match(at->path, path, 0)) {
+			return i;
+		}
+	}
+	return 0;
 }
 
 enum asset_type

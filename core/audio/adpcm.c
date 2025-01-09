@@ -113,7 +113,7 @@ adpcm_encode(i16 *buffer, u8 *out_buffer, usize len)
 
 	for(usize i = 0; i < len; i++) {
 		// we remove a few bits of accuracy to reduce some noise.
-		int step     = ((*buffer++) & -8) - history;
+		int step     = ((buffer[i]) & -8) - history;
 		adpcm_sample = (ABS(step) << 16) / (step_size << 14);
 		adpcm_sample = MIN(adpcm_sample, 7);
 		if(step < 0)
