@@ -22,7 +22,9 @@ enum {
 
 enum {
 	AUD_CMD_SND_PLAY,
-	AUD_CMD_SND_MODIFY,
+	AUD_CMD_SND_STOP,
+	AUD_CMD_SND_MODIFY_VOL,
+	AUD_CMD_SND_MODIFY_REPEAT_COUNT,
 	AUD_CMD_MUS_PLAY,
 	AUD_CMD_LOWPASS,
 };
@@ -44,8 +46,8 @@ struct aud_cmd_snd_play {
 
 struct aud_cmd_snd_modify {
 	u32 id;
-	bool16 stop;
 	u16 vol_q8;
+	u16 repeat_count;
 };
 
 struct aud_cmd_mus_play {
@@ -111,7 +113,9 @@ void aud_cmd_queue_commit(void);
 
 struct snd snd_load(const str8 path, struct alloc alloc);
 u32 snd_instance_play(struct snd s, f32 vol, f32 pitch, u16 repeat_count); // returns an integer to refer to an active snd instance
+bool32 snd_instance_is_playing(u32 snd_id);
 void snd_instance_stop(u32 snd_id);
+void snd_instance_set_repeat_count(u32 snd_id, u16 repeat_count);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
 void mus_play(const struct asset_handle handle, f32 vol);
