@@ -71,7 +71,7 @@ aud_cmds_flush(void)
 				break;
 			}
 		} break;
-		case AUD_CMD_SND_MODIFY: {
+		case AUD_CMD_SND_STOP: {
 			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
 			struct sfx_channel *sfx_channel = NULL;
 			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
@@ -84,10 +84,37 @@ aud_cmds_flush(void)
 
 			if(sfx_channel == NULL) break;
 
-			if(cmd->stop) {
-				sfx_channel_stop(sfx_channel);
+			sfx_channel_stop(sfx_channel);
+		case AUD_CMD_SND_MODIFY_VOL: {
+			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
+			struct sfx_channel *sfx_channel = NULL;
+			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
+				struct sfx_channel *curr = &AUDIO.sfx_channel[i];
+				if(curr->snd_id == cmd->id) {
+					sfx_channel = curr;
+					break;
+				}
 			}
+
+			if(sfx_channel == NULL) break;
+
 			sfx_channel->adpcm.vol_q8 = cmd->vol_q8;
+		} break;
+		case AUD_CMD_SND_MODIFY_REPEAT_COUNT: {
+			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
+			struct sfx_channel *sfx_channel = NULL;
+			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
+				struct sfx_channel *curr = &AUDIO.sfx_channel[i];
+				if(curr->snd_id == cmd->id) {
+					sfx_channel = curr;
+					break;
+				}
+			}
+
+			if(sfx_channel == NULL) break;
+
+			sfx_channel->repeat_count = cmd->repeat_count;
+		} break;
 		} break;
 		case AUD_CMD_MUS_PLAY: {
 			struct aud_cmd_mus_play *cmd = &aud_cmd.c.mus_play;
@@ -282,16 +309,24 @@ snd_instance_play(struct snd snd, f32 vol, f32 pitch, u16 repeat_count)
 void
 snd_instance_stop(u32 id)
 {
-	struct aud_cmd cmd    = {.type = AUD_CMD_SND_MODIFY};
-	cmd.c.snd_modify.id   = id;
-	cmd.c.snd_modify.stop = 1;
+	struct aud_cmd cmd  = {.type = AUD_CMD_SND_STOP};
+	cmd.c.snd_modify.id = id;
+	aud_push_cmd(cmd);
+}
+
+void
+snd_instance_set_repeat_count(u32 snd_id, u16 repeat_count)
+{
+	struct aud_cmd cmd            = {.type = AUD_CMD_SND_MODIFY_REPEAT_COUNT};
+	cmd.c.snd_modify.id           = snd_id;
+	cmd.c.snd_modify.repeat_count = repeat_count;
 	aud_push_cmd(cmd);
 }
 
 void
 snd_instance_set_vol(u32 snd_id, f32 vol)
 {
-	struct aud_cmd cmd      = {.type = AUD_CMD_SND_MODIFY};
+	struct aud_cmd cmd      = {.type = AUD_CMD_SND_MODIFY_VOL};
 	cmd.c.snd_modify.id     = snd_id;
 	cmd.c.snd_modify.vol_q8 = (i32)(vol * 256.5f);
 	aud_push_cmd(cmd);
@@ -310,13 +345,27 @@ sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i32 len)
 	assert(adpcm->pos_pitched < adpcm->len_pitched);
 
 	if(adpcm->pos_pitched == adpcm->len_pitched - 1) {
+		sc->count++;
 		if(sc->repeat_count == 0 || sc->count < sc->repeat_count) {
 			adpcm_reset_to_start(adpcm);
-			sc->count++;
 		} else {
 			sc->snd_id = 0;
 		}
 	}
+}
+
+bool32
+snd_instance_is_playing(u32 snd_id)
+{
+	if(snd_id == 0) return false;
+	for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
+		struct sfx_channel *curr = &AUDIO.sfx_channel[i];
+		if(curr->snd_id == snd_id) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static void
