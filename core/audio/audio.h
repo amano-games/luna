@@ -39,6 +39,7 @@ struct aud_cmd_snd_play {
 	u32 id;
 	u16 vol_q8;
 	u16 pitch_q8;
+	u16 repeat_count;
 };
 
 struct aud_cmd_snd_modify {
@@ -84,6 +85,8 @@ struct mus_channel {
 struct sfx_channel {
 	u32 snd_id;
 	struct adpcm adpcm;
+	u16 repeat_count;
+	u16 count;
 };
 
 struct aud {
@@ -107,7 +110,7 @@ void aud_set_lowpass(i32 lp); // 0 for off, otherwise increasing intensity
 void aud_cmd_queue_commit(void);
 
 struct snd snd_load(const str8 path, struct alloc alloc);
-u32 snd_instance_play(struct snd s, f32 vol, f32 pitch); // returns an integer to refer to an active snd instance
+u32 snd_instance_play(struct snd s, f32 vol, f32 pitch, u16 repeat_count); // returns an integer to refer to an active snd instance
 void snd_instance_stop(u32 snd_id);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
