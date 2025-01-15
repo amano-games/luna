@@ -26,7 +26,7 @@ aud_do(i16 *lbuf, i16 *rbuf, i32 len)
 {
 	aud_cmds_flush();
 
-	for(usize n = 0; n < ARRLEN(AUDIO.mus_channel); n++) {
+	for(usize n = 1; n < ARRLEN(AUDIO.mus_channel); n++) {
 		struct mus_channel *ch = &AUDIO.mus_channel[n];
 		mus_channel_playback(ch, lbuf, rbuf, len);
 	}
@@ -118,7 +118,8 @@ aud_cmds_flush(void)
 		} break;
 		case AUD_CMD_MUS_PLAY: {
 			struct aud_cmd_mus_play *cmd = &aud_cmd.c.mus_play;
-			struct mus_channel *mc       = &AUDIO.mus_channel[0];
+			assert(cmd->channel_id != AUD_MUS_CHANNEL_NONE);
+			struct mus_channel *mc = &AUDIO.mus_channel[cmd->channel_id];
 			mus_channel_stop(mc);
 			str8 path = asset_db_get_path(&ASSETS.db, cmd->path_handle);
 			if(path.size == 0) {
@@ -144,6 +145,11 @@ aud_cmds_flush(void)
 			mc->total_bytes_file = sizeof(u32) + ((num_samples + 1) >> 1);
 			adpcm_set_pitch(adpcm, 256);
 			adpcm_reset_to_start(adpcm);
+		} break;
+		case AUD_CMD_MUS_MODIFY_VOL: {
+			struct aud_cmd_mus_modify *cmd = &aud_cmd.c.mus_modify;
+			struct mus_channel *mc         = &AUDIO.mus_channel[cmd->channel_id];
+			mc->adpcm.vol_q8               = cmd->vol_q8;
 		} break;
 		case AUD_CMD_LOWPASS: {
 			struct aud_cmd_lowpass *cmd = &aud_cmd.c.lowpass;
@@ -198,25 +204,60 @@ aud_cmd_queue_commit(void)
 }
 
 void
-mus_play(const struct asset_handle handle, f32 vol)
+mus_play(
+	const struct asset_handle handle,
+	enum mus_channel_id channel_id,
+	f32 vol)
 {
+	assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct aud_cmd cmd = {
 		.type     = AUD_CMD_MUS_PLAY,
 		.priority = AUD_CMD_PRIORITY_MUS_PLAY,
 	};
+
 	cmd.c.mus_play.path_handle = handle;
+	cmd.c.mus_play.channel_id  = channel_id;
 	cmd.c.mus_play.vol_q8      = (i32)(vol * 255.0f);
 	aud_push_cmd(cmd);
 }
 
 void
-mus_play_by_path(const str8 path, f32 vol)
+mus_play_by_path(
+	const str8 path,
+	enum mus_channel_id channel_id,
+	f32 vol)
 {
+	assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){
 		.path_hash = hash_string(path),
 	};
-	mus_play(handle, vol);
+	mus_play(handle, channel_id, vol);
+}
+
+bool32
+mus_is_playing(enum mus_channel_id channel_id)
+{
+	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
+	return mc->stream != NULL;
+}
+
+void
+mus_stop(enum mus_channel_id channel_id)
+{
+	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
+	mus_channel_stop(mc);
+}
+
+void
+mus_set_vol(enum mus_channel_id channel_id, f32 vol)
+{
+	struct aud_cmd cmd          = {.type = AUD_CMD_MUS_MODIFY_VOL};
+	cmd.c.mus_modify.channel_id = channel_id;
+	cmd.c.mus_modify.vol_q8     = (i32)(vol * 255.0f);
+	aud_push_cmd(cmd);
 }
 
 static void

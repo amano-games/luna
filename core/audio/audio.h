@@ -9,24 +9,31 @@
 #define NUM_SND_CHANNEL   12
 #define NUM_AUD_CMD_QUEUE 128
 
-enum {
-	AUD_MUS_CHANNEL_0_LAYER_0,
-	AUD_MUS_CHANNEL_0_LAYER_1,
-	AUD_MUS_CHANNEL_0_LAYER_2,
-	AUD_MUS_CHANNEL_0_LAYER_3,
+enum mus_channel_id {
+	AUD_MUS_CHANNEL_NONE,
+
 	AUD_MUS_CHANNEL_1,
 	AUD_MUS_CHANNEL_2,
+	AUD_MUS_CHANNEL_3,
+	AUD_MUS_CHANNEL_4,
 
-	NUM_MUS_CHANNEL
+	AUD_MUS_CHANNEL_NUM_COUNT
 };
 
 enum {
+	AUD_CMD_NONE,
+
 	AUD_CMD_SND_PLAY,
 	AUD_CMD_SND_STOP,
 	AUD_CMD_SND_MODIFY_VOL,
 	AUD_CMD_SND_MODIFY_REPEAT_COUNT,
+
 	AUD_CMD_MUS_PLAY,
+	AUD_CMD_MUS_STOP,
+	AUD_CMD_MUS_MODIFY_VOL,
+
 	AUD_CMD_LOWPASS,
+
 };
 
 #define AUD_CMD_PRIORITY_MUS_PLAY 1
@@ -54,8 +61,11 @@ struct aud_cmd_mus_play {
 	struct asset_handle path_handle;
 	u8 channel_id;
 	u8 vol_q8;
-	u8 ticks_out;
-	u8 ticks_in;
+};
+
+struct aud_cmd_mus_modify {
+	u8 channel_id;
+	u8 vol_q8;
 };
 
 struct aud_cmd_lowpass {
@@ -69,7 +79,10 @@ struct aud_cmd {
 	union {
 		struct aud_cmd_snd_play snd_play;
 		struct aud_cmd_snd_modify snd_modify;
+
 		struct aud_cmd_mus_play mus_play;
+		struct aud_cmd_mus_modify mus_modify;
+
 		struct aud_cmd_lowpass lowpass;
 	} c;
 };
@@ -92,7 +105,7 @@ struct sfx_channel {
 };
 
 struct aud {
-	struct mus_channel mus_channel[NUM_MUS_CHANNEL];
+	struct mus_channel mus_channel[AUD_MUS_CHANNEL_NUM_COUNT];
 	struct sfx_channel sfx_channel[NUM_SND_CHANNEL];
 	u32 i_cmd_w_tmp; // write index, copied to i_cmd_w on commit
 	u32 i_cmd_w;     // visible to audio thread/context
@@ -118,5 +131,8 @@ void snd_instance_stop(u32 snd_id);
 void snd_instance_set_repeat_count(u32 snd_id, u16 repeat_count);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
-void mus_play(const struct asset_handle handle, f32 vol);
-void mus_play_by_path(const str8 path, f32 vol);
+void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol);
+void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol);
+bool32 mus_is_playing(enum mus_channel_id channel_id);
+void mus_set_vol(enum mus_channel_id channel_id, f32 vol);
+void mus_stop(enum mus_channel_id channel_id);
