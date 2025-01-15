@@ -254,6 +254,13 @@ acos_q16(i32 x)
 }
 
 static f32
+pow_f32(f32 v, f32 power)
+{
+	f32 r = powf(v, power);
+	return r;
+}
+
+static f32
 sin_f32(f32 x)
 {
 	f32 i = fmodf(x, PI2_FLOAT) / PI2_FLOAT;
