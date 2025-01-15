@@ -17,6 +17,7 @@ assets_init(void *mem, usize size)
 		marena_init(&ASSETS.marena, mem, size);
 		ASSETS.alloc       = (struct alloc){asset_allocf, (void *)&ASSETS};
 		ASSETS.next_tex_id = NUM_TEX_ID;
+		ASSETS.next_snd_id = NUM_SFX_ID;
 	}
 }
 
@@ -195,7 +196,7 @@ asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
 i32
 asset_snd_get_id(str8 path)
 {
-	for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
+	for(i32 i = 1; i < ASSETS.next_snd_id; i++) {
 		struct asset_snd *at = &ASSETS.snd[i];
 		if(str8_match(at->path, path, 0)) {
 			return i;
