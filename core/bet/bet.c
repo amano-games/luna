@@ -262,11 +262,13 @@ bet_tick_action(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *us
 	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_ACTION);
 	enum bet_res res = BET_RES_NONE;
-	res              = ctx->action_do(bet, ctx, node, userdata);
-	if(ctx->debug) {
-		sys_printf("  res: %s", BET_RES_STR[res]);
+	if(ctx->action_do != NULL) {
+		res = ctx->action_do(bet, ctx, node, userdata);
+		if(ctx->debug) {
+			sys_printf("  res: %s", BET_RES_STR[res]);
+		}
+		assert(res != BET_RES_NONE);
 	}
-	assert(res != BET_RES_NONE);
 
 	return res;
 }
