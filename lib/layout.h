@@ -94,6 +94,16 @@ ui_rect_cut(struct ui_cut ui_cut, i32 a)
 	}
 }
 
+struct v2_i32
+ui_rect_get_cntr(const struct ui_rec *rect)
+{
+	v2_i32 res = {
+		.x = rect->minx + ((rect->maxx - rect->minx) * 0.5),
+		.y = rect->miny + ((rect->maxy - rect->miny) * 0.5),
+	};
+	return res;
+}
+
 struct ui_rec
 ui_get_left(const struct ui_rec *rect, i32 a)
 {
