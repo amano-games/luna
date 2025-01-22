@@ -117,7 +117,8 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 
 			struct bet_node *parent     = bet_get_node(bet, parent_index);
 			bool32 should_check_sibling = false;
-			if(parent->type == BET_NODE_COMP) {
+			switch(parent->type) {
+			case BET_NODE_COMP: {
 				enum bet_comp_type type = parent->sub_type;
 				switch(type) {
 				case BET_COMP_SELECTOR: {
@@ -135,6 +136,30 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				default: {
 				} break;
 				}
+			} break;
+			case BET_NODE_DECO: {
+				enum bet_deco_type type = parent->sub_type;
+				switch(type) {
+				case BET_DECO_SUCCESS: {
+				} break;
+				case BET_DECO_FAILURE: {
+				} break;
+				case BET_DECO_REPEAT_X_TIMES: {
+				} break;
+				case BET_DECO_REPEAT_UNTIL_SUCCESS: {
+				} break;
+				case BET_DECO_REPEAT_UNTIL_FAILURE: {
+				} break;
+				case BET_DECO_INVERT: {
+				} break;
+				case BET_DECO_ONE_SHOT: {
+				} break;
+				default: {
+				} break;
+				}
+			} break;
+			default: {
+			} break;
 			}
 			node_index = parent_index;
 
@@ -156,7 +181,11 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 }
 
 enum bet_res
-bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
+bet_tick_node(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	void *userdata)
 {
 	if(ctx->debug) {
 		sys_printf("tick: %d", (int)node_index);
