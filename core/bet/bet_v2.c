@@ -55,6 +55,9 @@ bet_v2_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				continue;
 			} break;
 			case BET_NODE_ACTION: {
+				if(ctx->action_init != NULL) {
+					ctx->action_init(bet, ctx, curr_node, userdata);
+				}
 				continue;
 			} break;
 			default: {

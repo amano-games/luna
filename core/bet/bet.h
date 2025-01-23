@@ -127,6 +127,7 @@ struct bet_ctx {
 	bool32 debug;
 
 	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
+	void (*action_init)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
 
