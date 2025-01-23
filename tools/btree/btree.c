@@ -158,7 +158,9 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				jsmntok_t *item = &tokens[prop_index];
 				assert(item->type == JSMN_OBJECT);
 				struct prop_res prop_res = handle_prop(json, tokens, prop_index, bet, scratch);
-				bet_push_prop(bet, res.node_index, prop_res.prop);
+				if(prop_res.prop.type != BET_PROP_NONE) {
+					bet_push_prop(bet, res.node_index, prop_res.prop);
+				}
 				i += prop_res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("decorators")) == 0) {
