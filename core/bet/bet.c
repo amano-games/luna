@@ -653,3 +653,13 @@ bet_read(
 	}
 	return i;
 }
+
+f32
+bet_prop_f32_get(struct bet_prop prop, f32 fallback)
+{
+	f32 res = 0;
+	assert(prop.type == BET_PROP_F32 || prop.type == BET_PROP_NONE);
+	res = prop.type == BET_PROP_F32 ? prop.f32 : fallback;
+
+	return res;
+}
