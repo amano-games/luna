@@ -110,7 +110,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			usize parent_index       = current->parent;
 			// We arrived at root
 			if(parent_index == 0) {
-				ctx->i       = 0;
+				ctx->initial = 0;
 				ctx->current = 0;
 				return res;
 			}
@@ -166,13 +166,13 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			if(should_check_sibling) {
 				// Go up in the tree
 				// and check the next child
-				ctx->i = current->i + 1;
+				ctx->initial = current->i + 1;
 				break;
 			} else {
 				// Go up in the tree
 				// And set the current
 				// index that should be checked to the parent index
-				ctx->i = parent->i;
+				ctx->initial = parent->i;
 			}
 		}
 	}
@@ -367,25 +367,29 @@ bet_tick_deco(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *user
 }
 
 enum bet_res
-bet_tick_comp(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata)
+bet_tick_comp(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	void *userdata)
 {
 	struct bet_node *node = bet_get_node(bet, node_index);
 	assert(node->type == BET_NODE_COMP);
 	enum bet_res res        = BET_RES_NONE;
 	enum bet_comp_type type = node->sub_type;
-	usize initial           = ctx->i;
-	ctx->i                  = 0;
+	usize initial           = ctx->initial;
+	ctx->initial            = 0;
 
 	switch(type) {
 	case BET_COMP_SEQUENCE: {
 		if(ctx->debug) {
-			sys_printf("-> %d", ctx->i);
+			sys_printf("-> %d", ctx->initial);
 		}
 		return bet_tick_sequence(bet, ctx, node_index, initial, userdata);
 	} break;
 	case BET_COMP_SELECTOR: {
 		if(ctx->debug) {
-			sys_printf("? %d", ctx->i);
+			sys_printf("? %d", ctx->initial);
 		}
 		return bet_tick_selector(bet, ctx, node_index, initial, userdata);
 	} break;
@@ -470,7 +474,7 @@ bet_ctx_handle_node_res(struct bet *bet, struct bet_ctx *ctx, u8 node_index, enu
 			sys_printf("Store current: %d", node_index);
 		}
 		struct bet_node *node = bet_get_node(bet, node_index);
-		ctx->i                = node->i;
+		ctx->initial          = node->i;
 		ctx->current          = node_index;
 	}
 	return true;
