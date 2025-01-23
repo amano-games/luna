@@ -118,11 +118,12 @@ struct bet {
 
 struct bet_node_ctx {
 	u8 run_count;
+	i32 i;
 };
 
 struct bet_ctx {
 	u8 current;
-	u8 i;
+	u8 initial;
 	bool32 debug;
 
 	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
