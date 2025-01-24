@@ -292,7 +292,8 @@ bet_v2_on_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *u
 	case BET_DECO_REPEAT_RND_TIMES: {
 		i32 min           = bet_prop_f32_get(node->props[0], 0);
 		i32 max           = bet_prop_f32_get(node->props[1], 0);
-		node_ctx->run_max = rndm_range_f32(min, max);
+		i32 value         = rndm_range_i32(min, max);
+		node_ctx->run_max = value;
 	} break;
 	default: {
 	} break;

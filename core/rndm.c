@@ -33,7 +33,7 @@ f32
 rndm_range_f32(f32 min, f32 max)
 {
 	f32 t = rndm_next_f32();
-	return min + t * (max - min);
+	return min + t * (max - min + EPSILON);
 }
 
 v2
