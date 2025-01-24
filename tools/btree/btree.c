@@ -30,7 +30,7 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 	struct prop_res res = {0};
 	res.token_count     = jsmn_parse(&parser, (const char *)node_json.str, node_json.size, NULL, 0);
 
-	for(usize i = index + 1; i < index + res.token_count; i++) {
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("value")) == 0) {
@@ -50,6 +50,12 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 					res.prop.type = BET_PROP_F32;
 					res.prop.f32  = json_parse_f32(json, value);
 				}
+			} break;
+			case JSMN_STRING: {
+				res.prop.type = BET_PROP_STR;
+				assert((usize)value->size <= ARRLEN(res.prop.str));
+				str8 str = str8_cstr((char *)res.prop.str);
+				json_str8_cpy(json, value, &str);
 			} break;
 			default: {
 				// NOT_IMPLEMENTED;

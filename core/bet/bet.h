@@ -89,6 +89,7 @@ enum bet_prop_type {
 	BET_PROP_I32,
 	BET_PROP_F32,
 	BET_PROP_U8_ARR,
+	BET_PROP_STR,
 };
 
 struct bet_prop {
@@ -98,6 +99,7 @@ struct bet_prop {
 		i32 i32;
 		f32 f32;
 		u8 u8_arr[4];
+		u8 str[4];
 	};
 };
 
@@ -152,3 +154,4 @@ void bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count);
 i32 bet_read(struct ser_reader *r, struct ser_value arr, struct bet *bet, usize max_count);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
+i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
