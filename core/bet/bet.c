@@ -503,6 +503,10 @@ bet_prop_write(struct ser_writer *w, struct bet_prop prop)
 		}
 		ser_write_end(w);
 	} break;
+	case BET_PROP_STR: {
+		str8 str = str8_cstr((char *)prop.str);
+		ser_write_string(w, str);
+	} break;
 	case BET_PROP_BOOL32: {
 		ser_write_i32(w, prop.bool32);
 	} break;
@@ -583,6 +587,10 @@ bet_prop_read(struct ser_reader *r, struct ser_value obj)
 					i++;
 				}
 			} break;
+			case BET_PROP_STR: {
+				str8 dst = str8_cstr((char *)res.str);
+				str8_cpy(&value.str, &dst);
+			} break;
 			case BET_PROP_BOOL32: {
 				res.i32 = value.i32;
 			} break;
@@ -660,6 +668,16 @@ bet_prop_f32_get(struct bet_prop prop, f32 fallback)
 	f32 res = 0;
 	assert(prop.type == BET_PROP_F32 || prop.type == BET_PROP_NONE);
 	res = prop.type == BET_PROP_F32 ? prop.f32 : fallback;
+
+	return res;
+}
+
+i32
+bet_prop_i32_get(struct bet_prop prop, i32 fallback)
+{
+	i32 res = 0;
+	assert(prop.type == BET_PROP_I32 || prop.type == BET_PROP_NONE);
+	res = prop.type == BET_PROP_I32 ? prop.i32 : fallback;
 
 	return res;
 }
