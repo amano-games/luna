@@ -205,7 +205,7 @@ bet_v2_tick_deco(
 		if(*res == BET_RES_FAILURE) {
 			*res = BET_RES_FAILURE;
 		} else {
-			if(node_ctx->run_count <= node_ctx->run_max) {
+			if(node_ctx->run_count < node_ctx->run_max) {
 				*res = BET_RES_RUNNING;
 			} else {
 				*res = BET_RES_SUCCESS;
