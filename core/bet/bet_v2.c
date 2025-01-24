@@ -262,9 +262,11 @@ bet_v2_tick_comp(
 		// TODO: Parallel comp
 	case BET_COMP_RND: {
 		bet_v2_finish_comp(bet, ctx, node_index);
+		*res = BET_RES_NONE;
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
 		bet_v2_finish_comp(bet, ctx, node_index);
+		*res = BET_RES_NONE;
 	} break;
 	default: {
 	} break;
