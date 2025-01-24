@@ -43,6 +43,7 @@ enum bet_comp_type {
 	BET_COMP_NONE,
 	BET_COMP_SELECTOR,
 	BET_COMP_SEQUENCE,
+	BET_COMP_PARALLEL,
 	BET_COMP_RND,
 	BET_COMP_RND_WEIGHTED,
 
@@ -53,6 +54,7 @@ static char *BET_COMP_TYPE_STR[BET_COMP_NUM_COUNT] = {
 	[BET_COMP_NONE]         = "none",
 	[BET_COMP_SELECTOR]     = "selector",
 	[BET_COMP_SEQUENCE]     = "sequence",
+	[BET_COMP_PARALLEL]     = "parallel",
 	[BET_COMP_RND]          = "rnd",
 	[BET_COMP_RND_WEIGHTED] = "rnd weighted",
 };
@@ -123,7 +125,8 @@ struct bet {
 struct bet_node_ctx {
 	u8 run_count;
 	u8 run_max;
-	i32 i;
+	u8 res;
+	i8 i;
 };
 
 struct bet_ctx {
