@@ -47,6 +47,7 @@ bet_v2_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			case BET_NODE_COMP: {
 				// If rndm set i to random
 				bet_v2_on_comp_init(bet, ctx, curr_index, userdata);
+				// res = BET_RES_NONE;
 				continue;
 			} break;
 			case BET_NODE_DECO: {
@@ -262,11 +263,11 @@ bet_v2_tick_comp(
 		// TODO: Parallel comp
 	case BET_COMP_RND: {
 		bet_v2_finish_comp(bet, ctx, node_index);
-		*res = BET_RES_NONE;
+		// *res = BET_RES_NONE;
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
 		bet_v2_finish_comp(bet, ctx, node_index);
-		*res = BET_RES_NONE;
+		// *res = BET_RES_NONE;
 	} break;
 	default: {
 	} break;
