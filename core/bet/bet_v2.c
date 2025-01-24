@@ -199,15 +199,13 @@ bet_v2_tick_deco(
 		// TODO: When comp parallel is setup
 		NOT_IMPLEMENTED;
 	} break;
-	case BET_DECO_REPEAT_X_TIMES: {
-		struct bet_prop prop = node->props[0];
-		assert(prop.type == BET_PROP_F32);
-		i32 value = prop.f32;
+	case BET_DECO_REPEAT_X_TIMES:
+	case BET_DECO_REPEAT_RND_TIMES: {
 		// If the run count is less than the prop trap in running
 		if(*res == BET_RES_FAILURE) {
 			*res = BET_RES_FAILURE;
 		} else {
-			if(node_ctx->run_count < value) {
+			if(node_ctx->run_count < node_ctx->run_max) {
 				*res = BET_RES_RUNNING;
 			} else {
 				*res = BET_RES_SUCCESS;
@@ -283,6 +281,21 @@ bet_v2_on_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *u
 		struct bet_node *child         = bet_get_node(bet, child_index);
 		struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + child_index;
 		child_ctx->run_count           = 0;
+	}
+	enum bet_deco_type type = node->sub_type;
+
+	switch(type) {
+	case BET_DECO_REPEAT_X_TIMES: {
+		i32 value         = bet_prop_f32_get(node->props[0], 0);
+		node_ctx->run_max = value;
+	} break;
+	case BET_DECO_REPEAT_RND_TIMES: {
+		i32 min           = bet_prop_f32_get(node->props[0], 0);
+		i32 max           = bet_prop_f32_get(node->props[1], 0);
+		node_ctx->run_max = rndm_range_f32(min, max);
+	} break;
+	default: {
+	} break;
 	}
 }
 

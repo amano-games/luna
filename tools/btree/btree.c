@@ -118,6 +118,11 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 														.type     = BET_NODE_DECO,
 														.sub_type = BET_DECO_REPEAT_X_TIMES,
 													});
+			} else if(json_eq(json, value, str8_lit("Repeat RND times")) == 0) {
+				res.node_index = bet_push_node(bet, (struct bet_node){
+														.type     = BET_NODE_DECO,
+														.sub_type = BET_DECO_REPEAT_RND_TIMES,
+													});
 			} else if(json_eq(json, value, str8_lit("One shot")) == 0) {
 				res.node_index = bet_push_node(bet, (struct bet_node){
 														.type     = BET_NODE_DECO,

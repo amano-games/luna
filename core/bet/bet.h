@@ -64,6 +64,7 @@ enum bet_deco_type {
 	BET_DECO_SUCCESS,
 	BET_DECO_ONE_SHOT,
 	BET_DECO_REPEAT_X_TIMES,
+	BET_DECO_REPEAT_RND_TIMES,
 	BET_DECO_REPEAT_UNTIL_FAILURE,
 	BET_DECO_REPEAT_UNTIL_SUCCESS,
 
@@ -77,6 +78,7 @@ static char *BET_DECO_TYPE_STR[BET_DECO_NUM_COUNT] = {
 	[BET_DECO_SUCCESS]              = "success",
 	[BET_DECO_ONE_SHOT]             = "one shot",
 	[BET_DECO_REPEAT_X_TIMES]       = "repeat x times",
+	[BET_DECO_REPEAT_RND_TIMES]     = "repeat rnd times",
 	[BET_DECO_REPEAT_UNTIL_FAILURE] = "repeat until failure",
 	[BET_DECO_REPEAT_UNTIL_SUCCESS] = "repeat until success",
 };
@@ -118,6 +120,7 @@ struct bet {
 
 struct bet_node_ctx {
 	u8 run_count;
+	u8 run_max;
 	i32 i;
 };
 
