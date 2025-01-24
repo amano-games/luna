@@ -126,6 +126,7 @@ struct bet_node_ctx {
 	u8 run_count;
 	u8 run_max;
 	u8 res;
+	u8 has_run;
 	i8 i;
 };
 
