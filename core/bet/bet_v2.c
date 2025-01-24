@@ -47,6 +47,7 @@ bet_v2_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			case BET_NODE_COMP: {
 				// If rndm set i to random
 				bet_v2_on_comp_init(bet, ctx, curr_index, userdata);
+				res = BET_RES_NONE;
 				continue;
 			} break;
 			case BET_NODE_DECO: {
