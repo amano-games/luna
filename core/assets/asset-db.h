@@ -69,9 +69,14 @@ struct fnt_table {
 	struct fnt *arr;
 };
 
+struct asset_bet {
+	struct bet bet;
+	usize timestamp;
+};
+
 struct bet_table {
 	struct ht_u32 ht;
-	struct bet *arr;
+	struct asset_bet *arr;
 };
 
 // [id] = index and count
@@ -102,7 +107,6 @@ i32 asset_db_push_animation_slice(struct asset_db *db, str8 path, struct animati
 struct animation_slice asset_db_get_animation_slice(struct asset_db *db, struct asset_handle handle);
 
 // TODO: Maybe for fonts we don't need that a hash table, how many fonts do we have ? 10? wouldn't it be easier to use an array and a custom handle that it's the index of the array and we save one lookup
-i32 asset_db_load_fnt(struct asset_db *db, str8 path, struct fnt *fnt);
 i32 asset_db_push_fnt(struct asset_db *db, str8 path, struct fnt fnt);
 struct fnt asset_db_get_fnt(struct asset_db *db, struct asset_handle handle);
 
@@ -110,3 +114,6 @@ struct asset_bet_handle asset_db_load_bet(struct asset_db *db, str8 path, struct
 struct asset_bet_handle asset_db_get_bet_handle(struct asset_db *db, struct asset_handle handle);
 struct bet *asset_db_get_bet_by_path(struct asset_db *db, struct asset_handle handle);
 struct bet *asset_db_get_bet_by_id(struct asset_db *db, struct asset_bet_handle handle);
+
+usize asset_db_get_bet_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
+usize asset_db_get_bet_timestamp__by_id(struct asset_db *db, struct asset_bet_handle handle);

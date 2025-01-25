@@ -153,6 +153,9 @@ all: run
 build: $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
 build_sim: $(SIM_OUT) $(OBJS) $(ASSETS_OUT)
 build_pd: $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
+assets_clean:
+	rm -rf $(ASSETS_OUT)
+assets: $(ASSETS_OUT)
 
 release: clean $(SIM_OUT) $(ELF_OUT) $(OBJS) $(ASSETS_OUT) run
 

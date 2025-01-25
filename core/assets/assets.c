@@ -13,12 +13,10 @@ void
 assets_init(void *mem, usize size)
 {
 	log_info("Assets", "init");
-	{
-		marena_init(&ASSETS.marena, mem, size);
-		ASSETS.alloc       = (struct alloc){asset_allocf, (void *)&ASSETS};
-		ASSETS.next_tex_id = NUM_TEX_ID;
-		ASSETS.next_snd_id = NUM_SFX_ID;
-	}
+	marena_init(&ASSETS.marena, mem, size);
+	ASSETS.alloc       = (struct alloc){asset_allocf, (void *)&ASSETS};
+	ASSETS.next_tex_id = NUM_TEX_ID;
+	ASSETS.next_snd_id = NUM_SFX_ID;
 }
 
 void *
