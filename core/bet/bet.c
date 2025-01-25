@@ -1,13 +1,22 @@
 #include "bet.h"
 #include "arr.h"
 #include "mem.h"
-#include "serialize/serialize.h"
-#include "str.h"
-#include "sys-io.h"
-#include "sys-log.h"
+#include "rndm.h"
 #include "sys-types.h"
 #include "sys-assert.h"
-#include "sys-utils.h"
+
+void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
+void bet_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
+
+void bet_comp_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, i32 i, void *userdata);
+void bet_deco_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, i32 i, void *userdata);
+enum bet_res bet_action_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
+
+void bet_comp_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
+void bet_deco_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
+
+static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i);
+static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
 void
 bet_init(struct bet *bet, struct alloc alloc)
@@ -15,6 +24,492 @@ bet_init(struct bet *bet, struct alloc alloc)
 	bet->nodes = arr_ini(1, sizeof(*bet->nodes), alloc);
 	bet->alloc = alloc;
 	arr_push(bet->nodes, (struct bet_node){0});
+}
+
+void
+bet_ctx_init(struct bet_ctx *ctx)
+{
+	ctx->current           = 1;
+	ctx->bet_node_ctx[1].i = -1;
+}
+
+enum bet_res
+bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
+{
+	enum bet_res res = BET_RES_NONE;
+
+	// If the ctx is not initialized set the node_index to 1 as 0 is NULL
+
+	{
+		u8 curr_index                 = ctx->current;
+		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
+		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
+		if(ctx->debug) {
+			sys_printf("\ntick: [%d] %s -> %d", (int)curr_index, curr_node->name, (int)curr_ctx->i);
+		}
+	}
+
+	for(;;) {
+		u8 curr_index                 = ctx->current;
+		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
+		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
+		i32 i                         = curr_ctx->i++;
+
+		if(ctx->debug) {
+			sys_printf("loop: i:%2d res:%-10s [%d] %s ", (int)i, BET_RES_STR[res], (int)curr_index, curr_node->name);
+		}
+
+		// On Node enter
+		if(i == -1) {
+			switch(curr_node->type) {
+			case BET_NODE_COMP: {
+				// If rndm set i to random
+				bet_comp_init(bet, ctx, curr_index, userdata);
+				res = BET_RES_NONE;
+				continue;
+			} break;
+			case BET_NODE_DECO: {
+				// Reset children run_count
+				bet_deco_init(bet, ctx, curr_index, userdata);
+				continue;
+			} break;
+			case BET_NODE_ACTION: {
+				if(ctx->action_init != NULL) {
+					ctx->action_init(bet, ctx, curr_node, userdata);
+				}
+				continue;
+			} break;
+			default: {
+				BAD_PATH;
+			} break;
+			}
+		}
+
+		// Process the last node of parent
+		// End the comp and jump to the parent
+		// modify the res based on deco
+		// run the action
+		if(i == curr_node->children_count) {
+			// Finished the tree (reset ctx?)
+			if(!curr_node->parent) {
+				if(ctx->debug) {
+					sys_printf("root: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
+				}
+				bet_ctx_init(ctx);
+				return res;
+			}
+
+			switch(curr_node->type) {
+			case BET_NODE_COMP: {
+				bet_comp_end(bet, ctx, curr_index, &res, userdata);
+
+				if(res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
+					return res;
+				}
+			} break;
+			case BET_NODE_DECO: {
+				// Check if should be running
+				// Modify res
+				bet_deco_end(bet, ctx, curr_index, &res, userdata);
+				if(ctx->debug) {
+					sys_printf("deco: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
+				}
+				if(res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
+					return res;
+				}
+			} break;
+			case BET_NODE_ACTION: {
+				enum bet_res new_res = bet_action_tick(bet, ctx, curr_index, userdata);
+				if(ctx->debug) {
+					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
+				}
+				bool32 has_parallel_parent = false;
+				u8 parent_index            = curr_node->parent;
+				if(parent_index > 0) {
+					struct bet_node *parent_node    = bet_get_node(bet, parent_index);
+					struct bet_node_ctx *parent_ctx = ctx->bet_node_ctx + parent_index;
+					if(parent_node->type == BET_NODE_COMP && parent_node->sub_type == BET_COMP_PARALLEL) {
+						has_parallel_parent = true;
+					}
+				}
+
+				// If parallel parent and one of the nodes is
+				// running we want the parallel parent to continue running
+				// so it doesn't matter the new res
+				if(has_parallel_parent) {
+					if(res != BET_RES_RUNNING) {
+						res = new_res;
+					}
+				} else {
+					res = new_res;
+					if(res == BET_RES_RUNNING) {
+						curr_ctx->i = 0;
+						return res;
+					}
+				}
+			} break;
+			default: {
+				BAD_PATH;
+			} break;
+			}
+
+			// Go back to parent
+			ctx->current = curr_node->parent;
+			continue;
+		}
+
+		switch(curr_node->type) {
+		case BET_NODE_COMP: {
+			bet_comp_tick(bet, ctx, curr_index, &res, i, userdata);
+		} break;
+		case BET_NODE_DECO: {
+			bet_deco_tick(bet, ctx, curr_index, &res, i, userdata);
+		} break;
+		case BET_NODE_ACTION: {
+			// Push on next child node
+			bet_set_child(bet, ctx, curr_index, i);
+		} break;
+		default: {
+			BAD_PATH;
+		} break;
+		}
+	}
+
+	BAD_PATH;
+	return res;
+}
+
+void
+bet_deco_init(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	u8 node_index,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	for(usize i = 0; i < node->children_count; ++i) {
+		u8 child_index                 = node->children[i];
+		struct bet_node *child         = bet_get_node(bet, child_index);
+		struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + child_index;
+		child_ctx->run_count           = 0;
+	}
+	enum bet_deco_type type = node->sub_type;
+
+	switch(type) {
+	case BET_DECO_REPEAT_X_TIMES: {
+		i32 value         = bet_prop_f32_get(node->props[0], 0);
+		node_ctx->run_max = value;
+	} break;
+	case BET_DECO_REPEAT_RND_TIMES: {
+		i32 min           = bet_prop_f32_get(node->props[0], 0);
+		i32 max           = bet_prop_f32_get(node->props[1], 0);
+		i32 value         = rndm_range_i32(min, max);
+		node_ctx->run_max = value;
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void
+bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	for(usize i = 0; i < node->children_count; ++i) {
+		u8 child_index                 = node->children[i];
+		struct bet_node *child         = bet_get_node(bet, child_index);
+		struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + child_index;
+		child_ctx->run_count           = 0;
+	}
+
+	enum bet_comp_type type = node->sub_type;
+
+	switch(type) {
+	case BET_COMP_SEQUENCE: {
+	} break;
+	case BET_COMP_SELECTOR: {
+	} break;
+	case BET_COMP_PARALLEL: {
+	} break;
+	case BET_COMP_RND: {
+		usize rnd                    = rndm_range_i32(0, node->children_count - 1);
+		u8 child_index               = node->children[rnd];
+		ctx->current                 = child_index;
+		struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
+		new_ctx->i                   = -1;
+	} break;
+	case BET_COMP_RND_WEIGHTED: {
+		struct rndm_weighted_choice choices[MAX_BET_CHILDREN] = {0};
+		struct bet_prop weights                               = node->props[0];
+		assert(weights.type == BET_PROP_U8_ARR);
+
+		for(usize i = 0; i < node->children_count; ++i) {
+			choices[i].key   = i;
+			choices[i].value = weights.u8_arr[i];
+		}
+		usize rnd                    = rndm_weighted_choice_i32(choices, node->children_count);
+		usize child_index            = node->children[rnd];
+		ctx->current                 = child_index;
+		struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
+		new_ctx->i                   = -1;
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void
+bet_comp_tick(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	enum bet_res *res,
+	i32 i,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	assert(node->type == BET_NODE_COMP);
+	enum bet_comp_type type = node->sub_type;
+
+	switch(type) {
+	case BET_COMP_SEQUENCE: {
+		if(*res == BET_RES_SUCCESS || *res == BET_RES_NONE) {
+			bet_set_child(bet, ctx, node_index, i);
+		} else {
+			*res = BET_RES_FAILURE;
+			bet_finish_comp(bet, ctx, node_index);
+		}
+	} break;
+	case BET_COMP_SELECTOR: {
+		if(*res == BET_RES_SUCCESS) {
+			bet_finish_comp(bet, ctx, node_index);
+		} else {
+			bet_set_child(bet, ctx, node_index, i);
+		}
+	} break;
+	case BET_COMP_PARALLEL: {
+		if(*res == BET_RES_RUNNING) {
+			// don't let children override running
+		}
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_COMP_RND: {
+		bet_finish_comp(bet, ctx, node_index);
+		// *res = BET_RES_NONE;
+	} break;
+	case BET_COMP_RND_WEIGHTED: {
+		bet_finish_comp(bet, ctx, node_index);
+		// *res = BET_RES_NONE;
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void
+bet_deco_tick(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	enum bet_res *res,
+	i32 i,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	assert(node->type == BET_NODE_DECO);
+	assert(node->children_count == 1);
+	enum bet_deco_type type = node->sub_type;
+
+	switch(type) {
+	case BET_DECO_INVERT: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_FAILURE: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_SUCCESS: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_ONE_SHOT: {
+		if(node_ctx->has_run) {
+			u8 child_index                 = node->children[0];
+			struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + node_index;
+			*res                           = child_ctx->res;
+			bet_finish_comp(bet, ctx, node_index);
+		} else {
+			node_ctx->has_run = true;
+			bet_set_child(bet, ctx, node_index, i);
+		}
+	} break;
+	case BET_DECO_REPEAT_X_TIMES: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_REPEAT_RND_TIMES: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_REPEAT_UNTIL_SUCCESS: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	case BET_DECO_REPEAT_UNTIL_FAILURE: {
+		bet_set_child(bet, ctx, node_index, i);
+	} break;
+	default: {
+		NOT_IMPLEMENTED;
+	} break;
+	}
+}
+
+enum bet_res
+bet_action_tick(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	assert(node->type == BET_NODE_ACTION);
+	enum bet_res res = BET_RES_NONE;
+	if(ctx->action_do != NULL) {
+		res           = ctx->action_do(bet, ctx, node, userdata);
+		node_ctx->res = res;
+		assert(res != BET_RES_NONE);
+	}
+
+	return res;
+}
+
+void
+bet_comp_end(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	enum bet_res *res,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	assert(node->type == BET_NODE_COMP);
+	enum bet_comp_type type = node->sub_type;
+
+	switch(type) {
+	case BET_COMP_SEQUENCE: {
+	} break;
+	case BET_COMP_SELECTOR: {
+	} break;
+	case BET_COMP_PARALLEL: {
+		if(*res != BET_RES_RUNNING) {
+			// If all nodes finished running, check how many succed and
+			// if they are > then the threshold return success;
+			i32 acc = 0;
+			for(usize i = 0; i < node->children_count; ++i) {
+				u8 child_index                 = node->children[i];
+				struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + node_index;
+				if(child_ctx->res == BET_RES_SUCCESS) {
+					acc++;
+				}
+			}
+			i32 value = bet_prop_f32_get(node->props[0], 0);
+			if(acc >= value) {
+				*res = BET_RES_SUCCESS;
+			} else {
+				*res = BET_RES_FAILURE;
+			}
+		}
+	} break;
+	case BET_COMP_RND: {
+	} break;
+	case BET_COMP_RND_WEIGHTED: {
+	} break;
+	default: {
+	} break;
+	}
+}
+
+void
+bet_deco_end(
+	struct bet *bet,
+	struct bet_ctx *ctx,
+	usize node_index,
+	enum bet_res *res,
+	void *userdata)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	assert(node->type == BET_NODE_DECO);
+	assert(node->children_count == 1);
+	enum bet_deco_type type = node->sub_type;
+	node_ctx->run_count++;
+
+	switch(type) {
+	case BET_DECO_INVERT: {
+		if(*res == BET_RES_SUCCESS) {
+			*res = BET_RES_FAILURE;
+		} else if(*res == BET_RES_FAILURE) {
+			*res = BET_RES_SUCCESS;
+		} else {
+			BAD_PATH;
+		}
+	} break;
+	case BET_DECO_FAILURE: {
+		*res = BET_RES_FAILURE;
+	} break;
+	case BET_DECO_SUCCESS: {
+		*res = BET_RES_SUCCESS;
+	} break;
+	case BET_DECO_ONE_SHOT: {
+	} break;
+	case BET_DECO_REPEAT_X_TIMES:
+	case BET_DECO_REPEAT_RND_TIMES: {
+		// If the run count is less than the prop trap in running
+		if(*res == BET_RES_FAILURE) {
+			*res = BET_RES_FAILURE;
+		} else {
+			if(node_ctx->run_count < node_ctx->run_max) {
+				*res = BET_RES_RUNNING;
+			} else {
+				*res = BET_RES_SUCCESS;
+			}
+		}
+	} break;
+	case BET_DECO_REPEAT_UNTIL_SUCCESS: {
+		if(*res != BET_RES_SUCCESS) {
+			*res = BET_RES_RUNNING;
+		}
+	} break;
+	case BET_DECO_REPEAT_UNTIL_FAILURE: {
+		if(*res != BET_RES_FAILURE) {
+			*res = BET_RES_RUNNING;
+		}
+	} break;
+	default: {
+		NOT_IMPLEMENTED;
+	} break;
+	}
+}
+
+static inline void
+bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i)
+{
+	struct bet_node *node        = bet_get_node(bet, node_index);
+	usize child_index            = node->children[i];
+	ctx->current                 = child_index;
+	struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
+	new_ctx->i                   = -1;
+}
+
+static inline void
+bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
+{
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
+	node_ctx->i                   = node->children_count;
 }
 
 i32
@@ -70,241 +565,6 @@ bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 	assert(node->prop_count + 1 <= MAX_BET_NODE_PROPS);
 	node->props[node->prop_count++] = prop;
 	return true;
-}
-
-str8
-bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch)
-{
-#if 0
-	struct bet_node *node = bet_get_node(bet, node_index);
-	char *buffer          = scratch.allocf(scratch.ctx, sizeof(char) * 200);
-
-	switch(node->type) {
-	case BET_NODE_COMP: {
-		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d) child count: %d", BET_NODE_TYPE_STR[node->type], (int)node->type, BET_COMP_TYPE_STR[node->sub_type], node->sub_type, (int)node->children_count);
-	} break;
-	case BET_NODE_DECO: {
-		stbsp_sprintf(buffer, "node type: %s(%d) - %s(%d)", BET_NODE_TYPE_STR[node->type], (int)node->type, BET_DECO_TYPE_STR[node->sub_type], (int)node->sub_type);
-	} break;
-	case BET_NODE_ACTION: {
-		stbsp_sprintf(buffer, "node type: %s - %d: %s", BET_NODE_TYPE_STR[node->type], (int)node->sub_type, node->note);
-	} break;
-	default: {
-		NOT_IMPLEMENTED;
-	} break;
-	}
-	str8 res = str8_cstr(buffer);
-#endif
-	str8 res = {0};
-	return res;
-}
-
-struct bet
-bet_load(str8 path, struct alloc alloc, struct alloc scratch)
-{
-	log_info("Bet", "Load bet %s", path.str);
-	struct bet res                    = {0};
-	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
-	char *data                        = file_res.data;
-	usize size                        = file_res.size;
-
-	if(data == NULL) {
-		log_error("Bet", "failed to open bet file: %s", path.str);
-		return res;
-	}
-
-	struct ser_reader r = {
-		.data = data,
-		.len  = size,
-	};
-	struct ser_value arr = ser_read(&r);
-	// ser_print_value(&r, arr, 0);
-	bet_init(&res, alloc);
-	bet_read(&r, arr, &res, MAX_BET_NODES);
-
-	return res;
-}
-
-void
-bet_prop_write(struct ser_writer *w, struct bet_prop prop)
-{
-	ser_write_object(w);
-	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, prop.type);
-	ser_write_string(w, str8_lit("value"));
-	switch(prop.type) {
-	case BET_PROP_NONE: {
-	} break;
-	case BET_PROP_F32: {
-		ser_write_f32(w, prop.f32);
-	} break;
-	case BET_PROP_I32: {
-		ser_write_i32(w, prop.i32);
-	} break;
-	case BET_PROP_U8_ARR: {
-		ser_write_array(w);
-		for(usize i = 0; i < ARRLEN(prop.u8_arr); i++) {
-			ser_write_u8(w, prop.u8_arr[i]);
-		}
-		ser_write_end(w);
-	} break;
-	case BET_PROP_STR: {
-		str8 str = str8_cstr((char *)prop.str);
-		ser_write_string(w, str);
-	} break;
-	case BET_PROP_BOOL32: {
-		ser_write_i32(w, prop.bool32);
-	} break;
-	}
-	ser_write_end(w);
-}
-
-void
-bet_node_write(struct ser_writer *w, struct bet_node n)
-{
-	ser_write_object(w);
-	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, n.type);
-	ser_write_string(w, str8_lit("sub_type"));
-	ser_write_i32(w, n.sub_type);
-	ser_write_string(w, str8_lit("parent"));
-	ser_write_u8(w, n.parent);
-	ser_write_string(w, str8_lit("i"));
-	ser_write_u8(w, n.i);
-
-	ser_write_string(w, str8_lit("children_count"));
-	ser_write_u8(w, n.children_count);
-	ser_write_string(w, str8_lit("children"));
-	ser_write_array(w);
-	for(usize i = 0; i < n.children_count; ++i) {
-		ser_write_u8(w, n.children[i]);
-	}
-	ser_write_end(w);
-
-	ser_write_string(w, str8_lit("prop_count"));
-	ser_write_u8(w, n.prop_count);
-	ser_write_string(w, str8_lit("props"));
-	ser_write_array(w);
-	for(usize i = 0; i < n.prop_count; ++i) {
-		bet_prop_write(w, n.props[i]);
-	}
-	ser_write_end(w);
-
-	ser_write_string(w, str8_lit("name"));
-	ser_write_string(w, str8_cstr(n.name));
-	ser_write_end(w);
-}
-
-void
-bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count)
-{
-	ser_write_array(w);
-	for(usize i = 0; i < count; i++) {
-		bet_node_write(w, nodes[i]);
-	}
-	ser_write_end(w);
-}
-
-struct bet_prop
-bet_prop_read(struct ser_reader *r, struct ser_value obj)
-{
-	struct bet_prop res = {0};
-	struct ser_value key, value;
-	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("type"), 0)) {
-			res.type = value.i32;
-		} else if(str8_match(key.str, str8_lit("value"), 0)) {
-			switch(res.type) {
-			case BET_PROP_NONE: {
-			} break;
-			case BET_PROP_F32: {
-				res.f32 = value.f32;
-			} break;
-			case BET_PROP_I32: {
-				res.i32 = value.i32;
-			} break;
-			case BET_PROP_U8_ARR: {
-				struct ser_value item_val;
-				usize i = 0;
-				while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.u8_arr)) {
-					res.u8_arr[i] = item_val.u8;
-					i++;
-				}
-			} break;
-			case BET_PROP_STR: {
-				str8 dst = str8_cstr((char *)res.str);
-				str8_cpy(&value.str, &dst);
-			} break;
-			case BET_PROP_BOOL32: {
-				res.i32 = value.i32;
-			} break;
-			}
-		}
-	}
-
-	return res;
-}
-
-struct bet_node
-bet_node_read(struct ser_reader *r, struct ser_value obj)
-{
-	struct bet_node res = {0};
-	struct ser_value key, value;
-
-	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("type"), 0)) {
-			res.type = value.i32;
-		} else if(str8_match(key.str, str8_lit("sub_type"), 0)) {
-			res.sub_type = value.i32;
-		} else if(str8_match(key.str, str8_lit("parent"), 0)) {
-			res.parent = value.u8;
-		} else if(str8_match(key.str, str8_lit("i"), 0)) {
-			res.i = value.u8;
-		} else if(str8_match(key.str, str8_lit("children_count"), 0)) {
-			res.children_count = value.u8;
-		} else if(str8_match(key.str, str8_lit("children"), 0)) {
-			struct ser_value item_val;
-			usize i = 0;
-			while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.children)) {
-				res.children[i] = item_val.u8;
-				i++;
-			}
-		} else if(str8_match(key.str, str8_lit("prop_count"), 0)) {
-			res.prop_count = value.u8;
-		} else if(str8_match(key.str, str8_lit("props"), 0)) {
-			struct ser_value item_val;
-			int i = 0;
-			while(ser_iter_array(r, value, &item_val) && i < MAX_BET_CHILDREN) {
-				res.props[i] = bet_prop_read(r, item_val);
-				i++;
-			}
-		} else if(str8_match(key.str, str8_lit("name"), 0)) {
-			mcpy(res.name, value.str.str, value.str.size);
-		}
-	}
-
-	return res;
-}
-
-// reads up to `max_count` rects into the `rects` array and returns the number
-// of rects read — note: if you have a dynamic array as part of your base
-// library, it could be used here instead of the fixed `rects` array
-i32
-bet_read(
-	struct ser_reader *r,
-	struct ser_value arr,
-	struct bet *bet,
-	usize max_count)
-{
-	struct ser_value val;
-	usize i = 0;
-	while(ser_iter_array(r, arr, &val) && i < max_count) {
-		bet_push_node(bet, bet_node_read(r, val));
-		i++;
-	}
-	return i;
 }
 
 f32

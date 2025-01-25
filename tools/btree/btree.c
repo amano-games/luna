@@ -1,6 +1,7 @@
 #include "btree.h"
 #include "arr.h"
 #include "bet/bet.h"
+#include "bet/bet-ser.h"
 #include "json.h"
 #include "mem-arena.h"
 #include "mem.h"
@@ -243,11 +244,6 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	bet_init(&bet, alloc);
 
 	handle_json(json, &bet, scratch);
-
-	for(usize i = 1; i < arr_len(bet.nodes); ++i) {
-		str8 node_str = bet_node_serialize(&bet, i, scratch);
-		// sys_printf("%s", node_str.str);
-	}
 
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
 

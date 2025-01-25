@@ -4,8 +4,8 @@
 #include "arr.h"
 #include "assets/fnt.h"
 #include "bet/bet.h"
+#include "bet/bet-ser.h"
 #include "ht.h"
-#include "str.h"
 #include "sys-log.h"
 #include "trace.h"
 

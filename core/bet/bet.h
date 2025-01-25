@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mem.h"
-#include "serialize/serialize.h"
 #include "sys-types.h"
 
 #define MAX_BET_NODES      40
@@ -141,19 +140,14 @@ struct bet_ctx {
 };
 
 void bet_init(struct bet *bet, struct alloc alloc);
+void bet_ctx_init(struct bet_ctx *ctx);
+
+enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
+
 struct bet_node *bet_get_node(struct bet *bet, usize node_index);
 i32 bet_push_node(struct bet *bet, struct bet_node node);
 bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
 bool32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
-
-str8 bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch);
-
-// TODO: Move to assets
-struct bet bet_load(str8 path, struct alloc alloc, struct alloc scratch);
-
-void bet_node_write(struct ser_writer *w, struct bet_node n);
-void bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count);
-i32 bet_read(struct ser_reader *r, struct ser_value arr, struct bet *bet, usize max_count);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
 i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
