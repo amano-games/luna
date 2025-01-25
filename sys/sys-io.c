@@ -1,6 +1,10 @@
 #include "sys-io.h"
 #include "sys-log.h"
 
+// #if !defined(TARGET_PLAYDATE)
+// #include "external/cute_files.h"
+// #endif
+
 void *
 sys_file_open(str8 path, i32 sys_file_mode)
 {
@@ -42,3 +46,17 @@ sys_load_full_file(str8 path, struct alloc alloc)
 
 	return res;
 }
+
+// usize
+// sys_file_modified(str8 path)
+// {
+// 	usize res = 0;
+//
+// #if !defined(TARGET_PLAYDATE)
+// 	cf_time_t timestamp;
+// 	cf_get_file_time((char *)path.str, &timestamp);
+// 	res = timestamp.time;
+// #endif
+//
+// 	return res;
+// }

@@ -5,6 +5,8 @@
 #define MGIGABYTE(value) (MMEGABYTE(value) * 1024LL)
 #define MTERABYTE(value) (MGIGABYTE(value) * 1024LL)
 
+#undef MAX
+#undef MIN
 #define POW2(X)          ((X) * (X))
 #define ARRLEN(A)        (sizeof(A) / sizeof(A[0]))
 #define MAX(A, B)        ((A) >= (B) ? (A) : (B))

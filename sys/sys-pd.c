@@ -224,6 +224,19 @@ sys_file_stats(str8 path)
 	};
 }
 
+usize
+sys_file_modified(str8 path)
+{
+	struct sys_file_stats stats = sys_file_stats(path);
+	usize res                   = (usize)stats.m_year * 10000000000LL +
+		(usize)stats.m_month * 100000000 +
+		(usize)stats.m_day * 1000000 +
+		(usize)stats.m_hour * 10000 +
+		(usize)stats.m_minute * 100 +
+		(usize)stats.m_second;
+	return res;
+}
+
 void *
 sys_file_open_r(str8 path)
 {

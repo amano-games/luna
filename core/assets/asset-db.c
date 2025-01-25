@@ -44,7 +44,7 @@ asset_db_init(
 
 	db->bets.ht  = ht_new_u32(exp, alloc);
 	db->bets.arr = arr_ini(bets_count, sizeof(*db->bets.arr), alloc);
-	arr_push(db->bets.arr, (struct bet){0});
+	arr_push(db->bets.arr, (struct asset_bet){0});
 }
 
 struct asset_handle
@@ -246,7 +246,11 @@ asset_db_get_fnt(struct asset_db *db, struct asset_handle handle)
 }
 
 struct asset_bet_handle
-asset_db_load_bet(struct asset_db *db, str8 path, struct alloc alloc, struct alloc scratch)
+asset_db_load_bet(
+	struct asset_db *db,
+	str8 path,
+	struct alloc alloc,
+	struct alloc scratch)
 {
 	struct bet_table *table = &db->bets;
 	usize table_len         = arr_len(table->arr);
@@ -258,17 +262,19 @@ asset_db_load_bet(struct asset_db *db, str8 path, struct alloc alloc, struct all
 		return (struct asset_bet_handle){0};
 	}
 
-	u64 key        = hash_string(path);
-	u32 value      = ht_get_u32(&table->ht, key);
-	bool32 has_key = value != 0;
+	u64 key         = hash_string(path);
+	u32 value       = ht_get_u32(&table->ht, key);
+	bool32 has_key  = value != 0;
+	usize timestamp = sys_file_modified(path);
 
 	if(has_key) {
 		return (struct asset_bet_handle){.id = value};
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
-		struct bet bet = bet_load(path, alloc, scratch);
-		arr_push(table->arr, bet);
+		struct bet bet             = bet_load(path, alloc, scratch);
+		struct asset_bet asset_bet = {.bet = bet, .timestamp = timestamp};
+		arr_push(table->arr, asset_bet);
 		return (struct asset_bet_handle){.id = value};
 	}
 }
@@ -287,10 +293,10 @@ struct bet *
 asset_db_get_bet_by_path(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index       = ht_get_u32(&db->bets.ht, handle.path_hash);
-	struct bet *res = db->bets.arr + index;
+	i32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
+	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
-	return res;
+	return &res->bet;
 }
 
 struct bet *
@@ -298,8 +304,29 @@ asset_db_get_bet_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
 	TRACE_START(__func__);
 	assert(handle.id < arr_len(db->bets.arr));
-	i32 index       = handle.id;
-	struct bet *res = db->bets.arr + index;
+	i32 index             = handle.id;
+	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
-	return res;
+	return &res->bet;
+}
+
+usize
+asset_db_get_bet_timestamp_by_path(struct asset_db *db, struct asset_handle handle)
+{
+	TRACE_START(__func__);
+	i32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
+	struct asset_bet *res = db->bets.arr + index;
+	TRACE_END();
+	return res->timestamp;
+}
+
+usize
+asset_db_get_bet_timestamp__by_id(struct asset_db *db, struct asset_bet_handle handle)
+{
+	TRACE_START(__func__);
+	assert(handle.id < arr_len(db->bets.arr));
+	i32 index             = handle.id;
+	struct asset_bet *res = db->bets.arr + index;
+	TRACE_END();
+	return res->timestamp;
 }

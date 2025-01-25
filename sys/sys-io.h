@@ -49,3 +49,4 @@ i32 sys_file_r(void *f, void *buf, u32 bsize);
 struct sys_file_stats sys_file_stats(str8 path);
 
 struct sys_full_file_res sys_load_full_file(str8 path, struct alloc alloc);
+usize sys_file_modified(str8 path);
