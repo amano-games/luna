@@ -146,8 +146,6 @@ i32 bet_push_node(struct bet *bet, struct bet_node node);
 bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
 bool32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
 
-enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
-enum bet_res bet_tick_node(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
 str8 bet_node_serialize(struct bet *bet, usize node_index, struct alloc scratch);
 
 // TODO: Move to assets
