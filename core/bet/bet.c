@@ -18,6 +18,8 @@ void bet_deco_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum b
 static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i);
 static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
+static inline bool32 bet_node_has_parallel_parent(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
+
 void
 bet_init(struct bet *bet, struct alloc alloc)
 {
@@ -44,6 +46,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 		u8 curr_index                 = ctx->current;
 		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
 		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
+		res                           = curr_ctx->res;
 		if(ctx->debug) {
 			sys_printf("\ntick: [%d] %s -> %d", (int)curr_index, curr_node->name, (int)curr_ctx->i);
 		}
@@ -74,8 +77,10 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				continue;
 			} break;
 			case BET_NODE_ACTION: {
-				if(ctx->action_init != NULL) {
-					ctx->action_init(bet, ctx, curr_node, userdata);
+				if(curr_ctx->res != BET_RES_RUNNING) {
+					if(ctx->action_init != NULL) {
+						ctx->action_init(bet, ctx, curr_node, userdata);
+					}
 				}
 				continue;
 			} break;
@@ -125,20 +130,21 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				if(ctx->debug) {
 					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
 				}
-				bool32 has_parallel_parent = false;
-				u8 parent_index            = curr_node->parent;
-				if(parent_index > 0) {
-					struct bet_node *parent_node    = bet_get_node(bet, parent_index);
-					struct bet_node_ctx *parent_ctx = ctx->bet_node_ctx + parent_index;
-					if(parent_node->type == BET_NODE_COMP && parent_node->sub_type == BET_COMP_PARALLEL) {
-						has_parallel_parent = true;
-					}
-				}
+				// TODO: This only works for actions that are inmediatly
+				// children of the parallel node. If the node is child of a different comp node it will trap the tick here and not let the parent handle it.
+				// I think we need to traverse thre tree back up until root but if the response was RUNNING don't continue the comps and let us get to the root.
+				// And override the Running Index of the content based on deco or parallel nodes the running index
+				//
+				// Step 01: curr_index shouldn't modify the bet_ctx curr index
+				// Step 02: don't inmediatly return when a node is running, let us evaluate the tree upwards until root
+				// Step 03: handle comp or deco getting a running response, override the running_index depedenly
+				// Only on root return save the running index to the context
+				bool32 parent_is_parallel = bet_node_has_parallel_parent(bet, ctx, curr_index);
 
 				// If parallel parent and one of the nodes is
 				// running we want the parallel parent to continue running
 				// so it doesn't matter the new res
-				if(has_parallel_parent) {
+				if(parent_is_parallel) {
 					if(res != BET_RES_RUNNING) {
 						res = new_res;
 					}
@@ -583,6 +589,28 @@ bet_prop_i32_get(struct bet_prop prop, i32 fallback)
 	i32 res = 0;
 	assert(prop.type == BET_PROP_I32 || prop.type == BET_PROP_NONE);
 	res = prop.type == BET_PROP_I32 ? prop.i32 : fallback;
+
+	return res;
+}
+
+static inline bool32
+bet_node_has_parallel_parent(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
+{
+	bool32 res            = false;
+	struct bet_node *node = bet_get_node(bet, node_index);
+
+	bool32 has_parallel_parent = false;
+	u8 parent_index            = node->parent;
+
+	if(parent_index > 0) {
+		struct bet_node *parent_node    = bet_get_node(bet, parent_index);
+		struct bet_node_ctx *parent_ctx = ctx->bet_node_ctx + parent_index;
+		if(
+			parent_node->type == BET_NODE_COMP &&
+			parent_node->sub_type == BET_COMP_PARALLEL) {
+			return true;
+		}
+	}
 
 	return res;
 }
