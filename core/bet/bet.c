@@ -15,10 +15,11 @@ enum bet_res bet_action_tick(struct bet *bet, struct bet_ctx *ctx, usize node_in
 void bet_comp_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
 void bet_deco_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
 
+static inline void bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i);
 static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
-static inline bool32 bet_node_has_parallel_parent(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
+static inline bool32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
 void
 bet_init(struct bet *bet, struct alloc alloc)
@@ -77,10 +78,9 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				continue;
 			} break;
 			case BET_NODE_ACTION: {
-				if(curr_ctx->res != BET_RES_RUNNING) {
-					if(ctx->action_init != NULL) {
-						ctx->action_init(bet, ctx, curr_node, userdata);
-					}
+				if(curr_ctx->res == BET_RES_RUNNING) { BAD_PATH; }
+				if(ctx->action_init != NULL) {
+					ctx->action_init(bet, ctx, curr_node, userdata);
 				}
 				continue;
 			} break;
@@ -126,9 +126,12 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				}
 			} break;
 			case BET_NODE_ACTION: {
-				enum bet_res new_res = bet_action_tick(bet, ctx, curr_index, userdata);
+				enum bet_res action_res = bet_action_tick(bet, ctx, curr_index, userdata);
 				if(ctx->debug) {
-					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
+					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[action_res]);
+				}
+				if(action_res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
 				}
 				// TODO: This only works for actions that are inmediatly
 				// children of the parallel node. If the node is child of a different comp node it will trap the tick here and not let the parent handle it.
@@ -139,19 +142,18 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				// Step 02: don't inmediatly return when a node is running, let us evaluate the tree upwards until root
 				// Step 03: handle comp or deco getting a running response, override the running_index depedenly
 				// Only on root return save the running index to the context
-				bool32 parent_is_parallel = bet_node_has_parallel_parent(bet, ctx, curr_index);
+				bool32 parent_is_parallel = bet_node_parent_is_parallel(bet, ctx, curr_index);
 
 				// If parallel parent and one of the nodes is
 				// running we want the parallel parent to continue running
 				// so it doesn't matter the new res
 				if(parent_is_parallel) {
 					if(res != BET_RES_RUNNING) {
-						res = new_res;
+						res = action_res;
 					}
 				} else {
-					res = new_res;
+					res = action_res;
 					if(res == BET_RES_RUNNING) {
-						curr_ctx->i = 0;
 						return res;
 					}
 				}
@@ -242,11 +244,8 @@ bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdat
 	case BET_COMP_PARALLEL: {
 	} break;
 	case BET_COMP_RND: {
-		usize rnd                    = rndm_range_i32(0, node->children_count - 1);
-		u8 child_index               = node->children[rnd];
-		ctx->current                 = child_index;
-		struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
-		new_ctx->i                   = -1;
+		usize rnd = rndm_range_i32(0, node->children_count - 1);
+		bet_set_child(bet, ctx, node_index, rnd);
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
 		struct rndm_weighted_choice choices[MAX_BET_CHILDREN] = {0};
@@ -257,11 +256,8 @@ bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdat
 			choices[i].key   = i;
 			choices[i].value = weights.u8_arr[i];
 		}
-		usize rnd                    = rndm_weighted_choice_i32(choices, node->children_count);
-		usize child_index            = node->children[rnd];
-		ctx->current                 = child_index;
-		struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
-		new_ctx->i                   = -1;
+		usize rnd = rndm_weighted_choice_i32(choices, node->children_count);
+		bet_set_child(bet, ctx, node_index, rnd);
 	} break;
 	default: {
 	} break;
@@ -501,13 +497,22 @@ bet_deco_end(
 }
 
 static inline void
-bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i)
+bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 {
 	struct bet_node *node        = bet_get_node(bet, node_index);
-	usize child_index            = node->children[i];
-	ctx->current                 = child_index;
+	ctx->current                 = node_index;
 	struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
-	new_ctx->i                   = -1;
+	if(new_ctx->res != BET_RES_RUNNING) {
+		new_ctx->i = -1;
+	}
+}
+
+static inline void
+bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i)
+{
+	struct bet_node *node = bet_get_node(bet, node_index);
+	usize child_index     = node->children[i];
+	bet_set_index(bet, ctx, child_index);
 }
 
 static inline void
@@ -594,7 +599,7 @@ bet_prop_i32_get(struct bet_prop prop, i32 fallback)
 }
 
 static inline bool32
-bet_node_has_parallel_parent(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
+bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 {
 	bool32 res            = false;
 	struct bet_node *node = bet_get_node(bet, node_index);
