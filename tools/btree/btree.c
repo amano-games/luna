@@ -167,6 +167,18 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			};
 			json_str8_cpy(json, value, &dst);
 
+		} else if(json_eq(json, key, str8_lit("label")) == 0) {
+			usize len = value->end - value->start;
+			if(len > 0) {
+				struct bet_node *node = bet->nodes + res.node_index;
+				assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+
+				str8 dst = {
+					.str  = (u8 *)node->name,
+					.size = ARRLEN(node->name),
+				};
+				json_str8_cpy(json, value, &dst);
+			}
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			struct bet_prop props[MAX_BET_NODE_PROPS] = {0};
 			assert(value->size <= MAX_BET_NODE_PROPS);
