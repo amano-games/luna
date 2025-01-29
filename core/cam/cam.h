@@ -27,8 +27,14 @@ struct cam {
 
 	struct cam_data data;
 
-	v2 shake;
-	f32 shake_spd;
+	v2 offset;
+	// v2 shake;
+	// f32 shake_spd;
+
+	u16 shake_ticks;
+	u16 shake_ticks_max;
+	u16 shake_str_x;
+	u16 shake_str_y;
 };
 
 struct cam_area {
@@ -36,7 +42,8 @@ struct cam_area {
 	struct cam_data data;
 };
 
-void cam_screen_shake(struct cam *c, f32 x, f32 y);
 rec_i32 cam_rec_px(struct cam *c);
 void cam_set_pos_px(struct cam *c, int x, int y);
 void cam_update(struct cam *c, int tx, int ty, f32 dt);
+void cam_shake(struct cam *c, i32 ticks, i32 str);
+void cam_shake_xy(struct cam *c, i32 ticks, i32 str_x, i32 str_y);
