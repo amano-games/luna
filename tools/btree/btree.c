@@ -47,7 +47,10 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			} break;
 			case JSMN_PRIMITIVE: {
 				char *first = (char *)json.str + value->start;
-				if(*first != 'n') {
+				if(*first == 't' || *first == 'f') {
+					res.prop.type   = BET_PROP_BOOL32;
+					res.prop.bool32 = *first == 't' ? true : false;
+				} else if(*first != 'n') { // diff from null
 					res.prop.type = BET_PROP_F32;
 					res.prop.f32  = json_parse_f32(json, value);
 				}
