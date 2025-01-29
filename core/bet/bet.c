@@ -1,28 +1,25 @@
 #include "bet.h"
 #include "arr.h"
-#include "mathfunc.h"
 #include "mem.h"
 #include "rndm.h"
-#include "str.h"
 #include "sys-types.h"
 #include "sys-assert.h"
 
-void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, void *userdata);
+void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 void bet_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 
-void bet_comp_tick(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, enum bet_res *res, i32 i, void *userdata);
-void bet_deco_tick(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, enum bet_res *res, i32 i, void *userdata);
+void bet_comp_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, i32 i, void *userdata);
+void bet_deco_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, i32 i, void *userdata);
 enum bet_res bet_action_tick(struct bet *bet, struct bet_ctx *ctx, usize node_index, void *userdata);
 
 void bet_comp_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
 void bet_deco_end(struct bet *bet, struct bet_ctx *ctx, usize node_index, enum bet_res *res, void *userdata);
 
-static inline void bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, u8 value);
-static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, i32 i);
+static inline void bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
+static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i);
 static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
 static inline bool32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
-static inline str8 bet_node_get_subtype_str(struct bet *bet, u8 node_index);
 
 void
 bet_init(struct bet *bet, struct alloc alloc)
@@ -46,25 +43,24 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 
 	// If the ctx is not initialized set the node_index to 1 as 0 is NULL
 
-	u8 curr_index = ctx->current;
 	{
+		u8 curr_index                 = ctx->current;
 		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
-		str8 bet_node_id              = bet_node_get_subtype_str(bet, curr_index);
 		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
 		res                           = curr_ctx->res;
 		if(ctx->debug) {
-			sys_printf("\ntick: [%d] %s %s -> %d", (int)curr_index, bet_node_id.str, curr_node->name, (int)curr_ctx->i);
+			sys_printf("\ntick: [%d] %s -> %d", (int)curr_index, curr_node->name, (int)curr_ctx->i);
 		}
 	}
 
 	for(;;) {
+		u8 curr_index                 = ctx->current;
 		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
 		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
-		str8 bet_node_id              = bet_node_get_subtype_str(bet, curr_index);
 		i32 i                         = curr_ctx->i++;
 
 		if(ctx->debug) {
-			sys_printf("loop: i:%2d res:%-10s [%d] %s %s ", (int)i, BET_RES_STR[res], (int)curr_index, bet_node_id.str, curr_node->name);
+			sys_printf("loop: i:%2d res:%-10s [%d] %s ", (int)i, BET_RES_STR[res], (int)curr_index, curr_node->name);
 		}
 
 		// On Node enter
@@ -72,7 +68,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			switch(curr_node->type) {
 			case BET_NODE_COMP: {
 				// If rndm set i to random
-				bet_comp_init(bet, ctx, &curr_index, userdata);
+				bet_comp_init(bet, ctx, curr_index, userdata);
 				res = BET_RES_NONE;
 				continue;
 			} break;
@@ -111,6 +107,11 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			switch(curr_node->type) {
 			case BET_NODE_COMP: {
 				bet_comp_end(bet, ctx, curr_index, &res, userdata);
+
+				if(res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
+					return res;
+				}
 			} break;
 			case BET_NODE_DECO: {
 				// Check if should be running
@@ -119,11 +120,42 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				if(ctx->debug) {
 					sys_printf("deco: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
 				}
+				if(res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
+					return res;
+				}
 			} break;
 			case BET_NODE_ACTION: {
-				res = bet_action_tick(bet, ctx, curr_index, userdata);
+				enum bet_res action_res = bet_action_tick(bet, ctx, curr_index, userdata);
 				if(ctx->debug) {
-					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[res]);
+					sys_printf("action: [%d] %s -> %s", (int)curr_index, curr_node->name, BET_RES_STR[action_res]);
+				}
+				if(action_res == BET_RES_RUNNING) {
+					curr_ctx->i = 0;
+				}
+				// TODO: This only works for actions that are inmediatly
+				// children of the parallel node. If the node is child of a different comp node it will trap the tick here and not let the parent handle it.
+				// I think we need to traverse thre tree back up until root but if the response was RUNNING don't continue the comps and let us get to the root.
+				// And override the Running Index of the content based on deco or parallel nodes the running index
+				//
+				// Step 01: curr_index shouldn't modify the bet_ctx curr index
+				// Step 02: don't inmediatly return when a node is running, let us evaluate the tree upwards until root
+				// Step 03: handle comp or deco getting a running response, override the running_index depedenly
+				// Only on root return save the running index to the context
+				bool32 parent_is_parallel = bet_node_parent_is_parallel(bet, ctx, curr_index);
+
+				// If parallel parent and one of the nodes is
+				// running we want the parallel parent to continue running
+				// so it doesn't matter the new res
+				if(parent_is_parallel) {
+					if(res != BET_RES_RUNNING) {
+						res = action_res;
+					}
+				} else {
+					res = action_res;
+					if(res == BET_RES_RUNNING) {
+						return res;
+					}
 				}
 			} break;
 			default: {
@@ -131,35 +163,21 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			} break;
 			}
 
-			if(res == BET_RES_RUNNING) {
-				ctx->current = curr_index;
-				curr_ctx->i  = max_i32(0, curr_node->children_count - 1);
-				if(
-					curr_node->type == BET_NODE_COMP &&
-					curr_node->sub_type == BET_COMP_PARALLEL) {
-					curr_ctx->i = 0;
-				}
-			}
-
 			// Go back to parent
-			curr_index = curr_node->parent;
+			ctx->current = curr_node->parent;
 			continue;
 		}
 
 		switch(curr_node->type) {
 		case BET_NODE_COMP: {
-			bet_comp_tick(bet, ctx, &curr_index, &res, i, userdata);
-			if(curr_index == 0) {
-				return res;
-			}
+			bet_comp_tick(bet, ctx, curr_index, &res, i, userdata);
 		} break;
 		case BET_NODE_DECO: {
-			bet_deco_tick(bet, ctx, &curr_index, &res, i, userdata);
+			bet_deco_tick(bet, ctx, curr_index, &res, i, userdata);
 		} break;
 		case BET_NODE_ACTION: {
-			assert(i < 1);
 			// Push on next child node
-			bet_set_child(bet, ctx, &curr_index, i);
+			bet_set_child(bet, ctx, curr_index, i);
 		} break;
 		default: {
 			BAD_PATH;
@@ -205,14 +223,10 @@ bet_deco_init(
 }
 
 void
-bet_comp_init(
-	struct bet *bet,
-	struct bet_ctx *ctx,
-	u8 *node_index,
-	void *userdata)
+bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata)
 {
-	struct bet_node *node         = bet_get_node(bet, *node_index);
-	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + *node_index;
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
 	for(usize i = 0; i < node->children_count; ++i) {
 		u8 child_index                 = node->children[i];
 		struct bet_node *child         = bet_get_node(bet, child_index);
@@ -254,13 +268,13 @@ void
 bet_comp_tick(
 	struct bet *bet,
 	struct bet_ctx *ctx,
-	u8 *node_index,
+	usize node_index,
 	enum bet_res *res,
 	i32 i,
 	void *userdata)
 {
-	struct bet_node *node         = bet_get_node(bet, *node_index);
-	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + *node_index;
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
 	assert(node->type == BET_NODE_COMP);
 	enum bet_comp_type type = node->sub_type;
 
@@ -268,31 +282,31 @@ bet_comp_tick(
 	case BET_COMP_SEQUENCE: {
 		if(*res == BET_RES_SUCCESS || *res == BET_RES_NONE) {
 			bet_set_child(bet, ctx, node_index, i);
-		} else if(*res == BET_RES_FAILURE) {
-			bet_finish_comp(bet, ctx, *node_index);
-		} else if(*res == BET_RES_RUNNING) {
-			*node_index = node->parent;
-			node_ctx->i--;
+		} else {
+			*res = BET_RES_FAILURE;
+			bet_finish_comp(bet, ctx, node_index);
 		}
 	} break;
 	case BET_COMP_SELECTOR: {
 		if(*res == BET_RES_SUCCESS) {
-			bet_finish_comp(bet, ctx, *node_index);
-		} else if(*res == BET_RES_FAILURE || *res == BET_RES_NONE) {
+			bet_finish_comp(bet, ctx, node_index);
+		} else {
 			bet_set_child(bet, ctx, node_index, i);
-		} else if(*res == BET_RES_RUNNING) {
-			*node_index = node->parent;
-			node_ctx->i--;
 		}
 	} break;
 	case BET_COMP_PARALLEL: {
+		if(*res == BET_RES_RUNNING) {
+			// don't let children override running
+		}
 		bet_set_child(bet, ctx, node_index, i);
 	} break;
 	case BET_COMP_RND: {
-		bet_finish_comp(bet, ctx, *node_index);
+		bet_finish_comp(bet, ctx, node_index);
+		// *res = BET_RES_NONE;
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
-		bet_finish_comp(bet, ctx, *node_index);
+		bet_finish_comp(bet, ctx, node_index);
+		// *res = BET_RES_NONE;
 	} break;
 	default: {
 	} break;
@@ -303,13 +317,13 @@ void
 bet_deco_tick(
 	struct bet *bet,
 	struct bet_ctx *ctx,
-	u8 *node_index,
+	usize node_index,
 	enum bet_res *res,
 	i32 i,
 	void *userdata)
 {
-	struct bet_node *node         = bet_get_node(bet, *node_index);
-	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + *node_index;
+	struct bet_node *node         = bet_get_node(bet, node_index);
+	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
 	assert(node->type == BET_NODE_DECO);
 	assert(node->children_count == 1);
 	enum bet_deco_type type = node->sub_type;
@@ -327,9 +341,9 @@ bet_deco_tick(
 	case BET_DECO_ONE_SHOT: {
 		if(node_ctx->has_run) {
 			u8 child_index                 = node->children[0];
-			struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + *node_index;
+			struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + node_index;
 			*res                           = child_ctx->res;
-			bet_finish_comp(bet, ctx, *node_index);
+			bet_finish_comp(bet, ctx, node_index);
 		} else {
 			node_ctx->has_run = true;
 			bet_set_child(bet, ctx, node_index, i);
@@ -392,24 +406,19 @@ bet_comp_end(
 	case BET_COMP_SELECTOR: {
 	} break;
 	case BET_COMP_PARALLEL: {
-		u8 success_count = 0;
-		u8 running_count = 0;
-		for(usize i = 0; i < node->children_count; ++i) {
-			u8 child_index                 = node->children[i];
-			struct bet_node *child         = bet_get_node(bet, child_index);
-			struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + child_index;
-			if(child_ctx->res == BET_RES_RUNNING) {
-				// If any child was running return running
-				running_count++;
-			} else if(child_ctx->res == BET_RES_SUCCESS) {
-				success_count++;
+		if(*res != BET_RES_RUNNING) {
+			// If all nodes finished running, check how many succed and
+			// if they are > then the threshold return success;
+			i32 acc = 0;
+			for(usize i = 0; i < node->children_count; ++i) {
+				u8 child_index                 = node->children[i];
+				struct bet_node_ctx *child_ctx = ctx->bet_node_ctx + node_index;
+				if(child_ctx->res == BET_RES_SUCCESS) {
+					acc++;
+				}
 			}
-		}
-		if(running_count > 0) {
-			*res = BET_RES_RUNNING;
-		} else {
 			i32 value = bet_prop_f32_get(node->props[0], 0);
-			if(success_count >= value) {
+			if(acc >= value) {
 				*res = BET_RES_SUCCESS;
 			} else {
 				*res = BET_RES_FAILURE;
@@ -444,8 +453,10 @@ bet_deco_end(
 	case BET_DECO_INVERT: {
 		if(*res == BET_RES_SUCCESS) {
 			*res = BET_RES_FAILURE;
-		} else {
+		} else if(*res == BET_RES_FAILURE) {
 			*res = BET_RES_SUCCESS;
+		} else {
+			BAD_PATH;
 		}
 	} break;
 	case BET_DECO_FAILURE: {
@@ -461,7 +472,7 @@ bet_deco_end(
 		// If the run count is less than the prop trap in running
 		if(*res == BET_RES_FAILURE) {
 			*res = BET_RES_FAILURE;
-		} else if(*res == BET_RES_SUCCESS) {
+		} else {
 			if(node_ctx->run_count < node_ctx->run_max) {
 				*res = BET_RES_RUNNING;
 			} else {
@@ -486,22 +497,22 @@ bet_deco_end(
 }
 
 static inline void
-bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, u8 value)
+bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 {
-	*node_index                  = value;
-	struct bet_node *node        = bet_get_node(bet, *node_index);
-	struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + *node_index;
+	struct bet_node *node        = bet_get_node(bet, node_index);
+	ctx->current                 = node_index;
+	struct bet_node_ctx *new_ctx = ctx->bet_node_ctx + ctx->current;
 	if(new_ctx->res != BET_RES_RUNNING) {
 		new_ctx->i = -1;
 	}
 }
 
 static inline void
-bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 *node_index, i32 i)
+bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i)
 {
-	struct bet_node *node = bet_get_node(bet, *node_index);
-	u8 child_index        = node->children[i];
-	bet_set_index(bet, ctx, node_index, child_index);
+	struct bet_node *node = bet_get_node(bet, node_index);
+	usize child_index     = node->children[i];
+	bet_set_index(bet, ctx, child_index);
 }
 
 static inline void
@@ -606,27 +617,5 @@ bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 		}
 	}
 
-	return res;
-}
-
-static inline str8
-bet_node_get_subtype_str(struct bet *bet, u8 node_index)
-{
-	str8 res              = {0};
-	struct bet_node *node = bet_get_node(bet, node_index);
-	switch(node->type) {
-	case BET_NODE_COMP: {
-		return str8_cstr(BET_COMP_TYPE_STR[node->sub_type]);
-	} break;
-	case BET_NODE_DECO: {
-		return str8_cstr(BET_DECO_TYPE_STR[node->sub_type]);
-	} break;
-	case BET_NODE_ACTION: {
-		return str8_cstr(BET_NODE_TYPE_STR[node->type]);
-	} break;
-	default: {
-		BAD_PATH;
-	} break;
-	}
 	return res;
 }
