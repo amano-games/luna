@@ -598,6 +598,15 @@ bet_prop_i32_get(struct bet_prop prop, i32 fallback)
 	return res;
 }
 
+bool32
+bet_prop_bool32_get(struct bet_prop prop)
+{
+	bool32 res = false;
+	assert(prop.type == BET_PROP_BOOL32 || prop.type == BET_PROP_NONE);
+	res = prop.bool32;
+	return res;
+}
+
 static inline bool32
 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 {

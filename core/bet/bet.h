@@ -5,7 +5,7 @@
 
 #define MAX_BET_NODES      40
 #define MAX_BET_CHILDREN   10
-#define MAX_BET_NODE_PROPS 3
+#define MAX_BET_NODE_PROPS 4
 #define MAX_BET_NOTE       64
 
 enum bet_node_type {
@@ -151,3 +151,4 @@ bool32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
 i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
+bool32 bet_prop_bool32_get(struct bet_prop prop);
