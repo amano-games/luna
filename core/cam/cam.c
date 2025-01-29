@@ -1,20 +1,15 @@
 #include "cam/cam.h"
 #include "mathfunc.h"
+#include "rndm.h"
+#include "sys-log.h"
 #include "v2.h"
 
 static v2 cam_limit_position(v2 p, struct col_aabb limits);
 
-void
-cam_screen_shake(struct cam *c, f32 x, f32 y)
-{
-	c->shake.x += x;
-	c->shake.y += y;
-}
-
 rec_i32
 cam_rec_px(struct cam *c)
 {
-	v2_i32 p  = v2_round(c->p);
+	v2_i32 p  = v2_round(v2_add(c->p, c->offset));
 	rec_i32 r = {p.x - CAM_HALF_W, p.y - CAM_HALF_H, CAM_W, CAM_H};
 
 	r.x &= ~1; // avoid dither flickering -> snap camera pos
@@ -124,8 +119,27 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 
 	v2 limited_pos = cam_limit_position(cam_pos, hard_limits);
 	c->p           = limited_pos;
-	c->p.x += sin_f32(c->shake.x);
-	c->p.y += cos_f32(c->shake.y);
-	c->shake.x = max_f32(0, c->shake.x - c->shake_spd);
-	c->shake.y = max_f32(0, c->shake.y - c->shake_spd);
+
+	if(c->shake_ticks) {
+		i32 shake_x = (c->shake_str_x * c->shake_ticks + (c->shake_ticks_max >> 1)) / c->shake_ticks_max;
+		i32 shake_y = (c->shake_str_y * c->shake_ticks + (c->shake_ticks_max >> 1)) / c->shake_ticks_max;
+		c->shake_ticks--;
+		c->offset.x = rndm_range_i32(-shake_x, shake_x);
+		c->offset.y = rndm_range_i32(-shake_y, shake_y);
+	}
+}
+
+void
+cam_shake_xy(struct cam *c, i32 ticks, i32 str_x, i32 str_y)
+{
+	c->shake_ticks     = ticks;
+	c->shake_ticks_max = ticks;
+	c->shake_str_x     = str_x;
+	c->shake_str_y     = str_y;
+}
+
+void
+cam_shake(struct cam *c, i32 ticks, i32 str)
+{
+	cam_shake_xy(c, ticks, str, str);
 }
