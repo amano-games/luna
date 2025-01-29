@@ -5,11 +5,10 @@
 static v2 cam_limit_position(v2 p, struct col_aabb limits);
 
 void
-cam_screen_shake(struct cam *c, int ticks, int str)
+cam_screen_shake(struct cam *c, f32 x, f32 y)
 {
-	c->shake_ticks     = ticks;
-	c->shake_ticks_max = ticks;
-	c->shake_str       = str;
+	c->shake.x += x;
+	c->shake.y += y;
 }
 
 rec_i32
@@ -79,9 +78,8 @@ cam_limit_position(v2 p, struct col_aabb limits)
 void
 cam_update(struct cam *c, int tx, int ty, f32 dt)
 {
-	v2 cam_pos           = c->p;
-	struct cam_data data = c->data;
-	// TODO: grab from tiled or something
+	v2 cam_pos                  = c->p;
+	struct cam_data data        = c->data;
 	struct col_aabb hard_limits = data.hard_limits;
 	f32 smoothing_speed         = data.drag_vel;
 
@@ -126,4 +124,8 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 
 	v2 limited_pos = cam_limit_position(cam_pos, hard_limits);
 	c->p           = limited_pos;
+	c->p.x += sin_f32(c->shake.x);
+	c->p.y += cos_f32(c->shake.y);
+	c->shake.x = max_f32(0, c->shake.x - c->shake_spd);
+	c->shake.y = max_f32(0, c->shake.y - c->shake_spd);
 }
