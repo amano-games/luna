@@ -5,7 +5,7 @@
 
 #define MAX_BET_NODES      100
 #define MAX_BET_CHILDREN   10
-#define MAX_BET_NODE_PROPS 4
+#define MAX_BET_NODE_PROPS 5
 #define MAX_BET_NOTE       64
 
 enum bet_node_type {
