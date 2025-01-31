@@ -309,13 +309,25 @@ col_circle_to_circle_manifold(
 }
 
 void
-col_circle_to_aabb_manifold(struct col_cir a, struct col_aabb b, struct col_manifold *m)
+col_circle_to_aabb_manifold(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2, struct col_manifold *m)
 {
 	TRACE_START(__func__);
-	c2Circle c2a   = cir_to_c2cir(a);
-	c2AABB c2b     = aabb_to_c2aabb(b);
+	c2Circle c2a   = {.p = {x, y}, .r = r};
+	c2AABB c2b     = {.min = {x1, y1}, .max = {x2, y2}};
 	c2Manifold res = {0};
 	c2CircletoAABBManifold(c2a, c2b, &res);
+	TRACE_END();
+	c2manifold_to_manifold(&res, m);
+}
+void
+col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b, struct col_manifold *m)
+{
+	TRACE_START(__func__);
+	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
+	c2AABB c2b     = {.min = {x1b, y1b}, .max = {x2b, y2b}};
+	c2Manifold res = {0};
+
+	c2AABBtoAABBManifold(c2a, c2b, &res);
 	TRACE_END();
 	c2manifold_to_manifold(&res, m);
 }
