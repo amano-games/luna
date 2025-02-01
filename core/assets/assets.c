@@ -56,30 +56,27 @@ asset_tex_get_id(str8 file_name)
 }
 
 i32
-asset_tex_load(const str8 file_name, struct tex *tex)
+asset_tex_load(const str8 path, struct tex *tex)
 {
 	for(i32 i = 0; i < ASSETS.next_tex_id; i++) {
 		struct asset_tex *at = &ASSETS.tex[i];
-		if(str8_match(at->path, file_name, 0)) {
+		if(str8_match(at->path, path, 0)) {
 			if(tex) *tex = at->tex;
 			return i;
 		}
 	}
 
-	// TODO: use filepath arena for asset names
-	str8 path_name = str8_fmt_push(ASSETS.alloc, "%s%s", FILE_PATH_TEX, file_name.str);
+	log_info("Assets", "Load tex %s", path.str);
 
-	log_info("Assets", "Load tex %s (%s)", file_name.str, path_name.str);
-
-	struct tex t = tex_load(path_name, ASSETS.alloc);
+	struct tex t = tex_load(path, ASSETS.alloc);
 
 	if(t.px == NULL) {
-		log_info("Assets", "Lod failed %s (%s)", file_name.str, path_name.str);
+		log_info("Assets", "Lod failed %s", path.str);
 		return -1;
 	}
 
 	i32 id              = ASSETS.next_tex_id++;
-	ASSETS.tex[id].path = file_name;
+	ASSETS.tex[id].path = path;
 	ASSETS.tex[id].tex  = t;
 
 	if(tex) *tex = t;
@@ -87,16 +84,15 @@ asset_tex_load(const str8 file_name, struct tex *tex)
 }
 
 i32
-asset_tex_load_id(i32 id, str8 file_name, struct tex *tex)
+asset_tex_load_id(i32 id, str8 path, struct tex *tex)
 {
 	assert(0 <= id && id < NUM_TEX_ID_MAX);
 	// assert(ASSET_ALLOCATOR.ctx != NULL);
-	str8 path_name = str8_fmt_push(ASSETS.alloc, "%s%s", FILE_PATH_TEX, file_name.str);
 
-	log_info("Assets", "Load tex %s (%s)", file_name.str, path_name.str);
+	log_info("Assets", "Load tex %s", path.str);
 
-	struct tex t        = tex_load(path_name, ASSETS.alloc);
-	ASSETS.tex[id].path = str8_cpy_push(ASSETS.alloc, file_name);
+	struct tex t        = tex_load(path, ASSETS.alloc);
+	ASSETS.tex[id].path = str8_cpy_push(ASSETS.alloc, path);
 	ASSETS.tex[id].tex  = t;
 
 	if(t.px) {

@@ -1,5 +1,6 @@
 #include <tinydir.h>
 #include <jsmn.h>
+#include "whereami.c"
 
 #include "arr.h"
 #include "json.h"

@@ -1,10 +1,6 @@
 #include "sys-io.h"
 #include "sys-log.h"
 
-// #if !defined(TARGET_PLAYDATE)
-// #include "external/cute_files.h"
-// #endif
-
 void *
 sys_file_open(str8 path, i32 sys_file_mode)
 {

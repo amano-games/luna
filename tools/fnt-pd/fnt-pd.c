@@ -150,9 +150,9 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	assert(mem_buffer != NULL);
-	struct marena marean = {0};
-	marena_init(&marean, mem_buffer, mem_size);
-	struct alloc alloc = marena_allocator(&marean);
+	struct marena marena = {0};
+	marena_init(&marena, mem_buffer, mem_size);
+	struct alloc alloc = marena_allocator(&marena);
 
 	str8 data = {0};
 	fnt_pd_load(in_path, scratch, &data);

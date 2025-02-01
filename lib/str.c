@@ -1,16 +1,10 @@
 #include "str.h"
+#include "link_list.h"
 #include "mathfunc.h"
 #include "sys-str.h"
 #include "sys-types.h"
 #include "sys-utils.h"
 #include "sys-assert.h"
-
-// NOTE: linked list macro helpers
-// TODO: Move this, undestand it
-#define CheckNil(nil, p)                    ((p) == 0 || (p) == nil)
-#define SetNil(nil, p)                      ((p) = nil)
-#define SLLQueuePush_NZ(nil, f, l, n, next) (CheckNil(nil, f) ? ((f) = (l) = (n), SetNil(nil, (n)->next)) : ((l)->next = (n), (l) = (n), SetNil(nil, (n)->next)))
-#define SLLQueuePush(f, l, n)               SLLQueuePush_NZ(0, f, l, n, next)
 
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -507,6 +501,15 @@ str8_list_push(struct alloc alloc, struct str8_list *list, str8 str)
 }
 
 struct str8_node *
+str8_list_push_node(struct str8_list *list, struct str8_node *node)
+{
+	SLLQueuePush(list->first, list->last, node);
+	list->node_count += 1;
+	list->total_size += node->str.size;
+	return (node);
+}
+
+struct str8_node *
 str8_list_pushf(struct alloc alloc, struct str8_list *list, char *fmt, ...)
 {
 	va_list args;
@@ -515,6 +518,24 @@ str8_list_pushf(struct alloc alloc, struct str8_list *list, char *fmt, ...)
 	struct str8_node *result = str8_list_push(alloc, list, str);
 	va_end(args);
 	return (result);
+}
+
+void
+str8_list_concat_in_place(
+	struct str8_list *list,
+	struct str8_list *to_push)
+{
+	if(to_push->node_count != 0) {
+		if(list->last) {
+			list->node_count += to_push->node_count;
+			list->total_size += to_push->total_size;
+			list->last->next = to_push->first;
+			list->last       = to_push->last;
+		} else {
+			*list = *to_push;
+		}
+		mclr_struct(to_push);
+	}
 }
 
 struct str8_list
@@ -556,13 +577,6 @@ str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_s
 {
 	struct str8_list list = str8_split(alloc, str, split_chars.str, split_chars.size, flags);
 	return list;
-}
-
-struct str8_list
-str8_split_path(struct alloc alloc, str8 str)
-{
-	struct str8_list res = str8_split(alloc, str, (u8 *)"/\\", 2, 0);
-	return res;
 }
 
 str8

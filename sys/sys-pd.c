@@ -409,3 +409,10 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 	PD->graphics->popContext();
 #endif
 }
+
+str8
+sys_where(struct alloc alloc)
+{
+	str8 res = str8_lit("/");
+	return res;
+}

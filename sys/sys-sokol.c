@@ -1,11 +1,11 @@
 #include "sys-sokol.h"
-#include "gfx/gfx.h"
-#include "sys-utils.h"
-
 #if !defined(TARGET_WASM)
-#include <whereami.h>
+#include "whereami.h"
 #endif
 
+#include "gfx/gfx.h"
+#include "str.h"
+#include "sys-utils.h"
 #include "sys-assert.h"
 #include "sys-debug.h"
 #include "sys-input.h"
@@ -246,21 +246,22 @@ static const char *STEAM_RUNTIME_RELATIVE_PATH = "steam-runtime";
 sapp_desc
 sokol_main(i32 argc, char **argv)
 {
-
+	struct alloc alloc = {.allocf = sys_alloc};
+	struct str8 where  = sys_where(alloc);
 	if(!getenv("STEAM_RUNTIME")) {
-		struct exe_path exe_path = sys_sokol_where();
-		if(exe_path.path.size != 0) {
+		if(where.size != 0) {
 
-			i32 runtime_path_size = 1 + exe_path.path.size + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
+			str8 base_name        = str8_chop_last_slash(where);
+			i32 runtime_path_size = 1 + where.size + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
 			char *runtime_path    = (char *)malloc(runtime_path_size);
-			stbsp_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)exe_path.path.size, exe_path.path.str, STEAM_RUNTIME_RELATIVE_PATH);
+			stbsp_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)where.size, where.str, STEAM_RUNTIME_RELATIVE_PATH);
 
-			log_info("SYS", "dirname:  %.*s", (i32)exe_path.path.size, exe_path.path.str);
-			log_info("SYS", "basename:  %.*s", (i32)exe_path.dirname.size, exe_path.dirname.str);
+			log_info("SYS", "dirname:  %.*s", (i32)where.size, where.str);
+			log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
 			log_info("SYS", "STEAM_RUNTIME %s", runtime_path);
 
 			setenv("STEAM_RUNTIME", runtime_path, 1);
-			free(exe_path.path.str);
+			sys_free(where.str);
 		}
 	}
 
@@ -278,27 +279,23 @@ sokol_main(i32 argc, char **argv)
 	};
 }
 
-struct exe_path
-sys_sokol_where(void)
+str8
+sys_where(struct alloc alloc)
 {
-	struct exe_path res = {0};
-	i32 dirname_len     = 0;
-	str8 path           = {0};
+	i32 dirname_len = 0;
+	str8 res        = {0};
+
 #if !defined(TARGET_WASM)
-	path.size = wai_getExecutablePath(NULL, 0, &dirname_len);
+	res.size = wai_getExecutablePath(NULL, 0, &dirname_len);
 #endif
 
-	if(path.size > 0) {
-		path.str = (u8 *)malloc(path.size + 1);
+	if(res.size > 0) {
+		res.str = (u8 *)alloc.allocf(alloc.ctx, res.size + 1);
 #if !defined(TARGET_WASM)
-		wai_getExecutablePath((char *)path.str, path.size, &dirname_len);
+		wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
 #endif
-		path.str[path.size]   = '\0';
-		path.str[dirname_len] = '\0';
 
-		res.path         = path;
-		res.dirname.str  = path.str + dirname_len + 1;
-		res.dirname.size = path.size - dirname_len - 1;
+		res.str[res.size] = '\0';
 	}
 
 	return res;
@@ -591,6 +588,13 @@ sys_audio_lock(void)
 void
 sys_audio_unlock(void)
 {
+}
+
+usize
+sys_file_modified(str8 path)
+{
+	// NOT_IMPLEMENTED;
+	return 0;
 }
 
 static inline void

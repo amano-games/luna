@@ -8,8 +8,6 @@
 #include "mem.h"
 #include "mem-arena.h"
 
-#define FILE_PATH_TEX "assets/"
-
 enum {
 	TEX_ID_NONE,
 	TEX_ID_DISPLAY,

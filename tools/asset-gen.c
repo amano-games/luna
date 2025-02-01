@@ -4,6 +4,10 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include "whereami.c"
+
+#include "sys.h"
+#include "sys-cli.c"
 
 #include "mem-arena.h"
 #include "mem.h"
@@ -11,6 +15,7 @@
 #include "mem.c"
 #include "mem-arena.c"
 #include "core/bet/bet.c"
+#include "core/animation/animation-db.c"
 #include "core/bet/bet-ser.c"
 #include "core/rndm.c"
 #include "str.h"
@@ -23,11 +28,11 @@
 
 #include "./tex/tex.c"
 #include "./tex/tex.h"
-#include "sys-cli.c"
 
-#include "sys.h"
 #include "tools/btree/btree.h"
 #include "tools/btree/btree.c"
+#include "tools/tsj/tsj.h"
+#include "tools/tsj/tsj.c"
 #include "tools/fnt-pd/fnt-pd.c"
 #include "tools/fnt-pd/fnt-pd.h"
 #include "core/assets/fnt.c"
@@ -36,9 +41,10 @@
 #define IMG_EXT ".png"
 #define AUD_EXT ".wav"
 // #define RAW_EXT ".raw"
-#define ANI_EXT ".lunass"
-#define AI_EXT  ".btree"
-#define FNT_EXT ".fnt"
+#define ANI_EXT       ".lunass"
+#define AI_EXT        ".btree"
+#define FNT_EXT       ".fnt"
+#define ASSETS_DB_EXT ".tsj"
 
 #if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL 0
@@ -103,6 +109,8 @@ handle_asset_recursive(
 				i32 res = handle_btree(in_path, out_path, scratch);
 			} else if(strstr(file.name, FNT_EXT)) {
 				i32 res = handle_fnt_pd(in_path, out_path, scratch);
+			} else if(strstr(file.name, ASSETS_DB_EXT)) {
+				i32 res = handle_tsj(in_path, out_path, scratch);
 			} else {
 				fcopy(in_path, out_path);
 			}

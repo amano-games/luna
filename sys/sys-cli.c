@@ -1,7 +1,6 @@
 #include "sys-cli.h"
 
-#include <stdio.h>
-#include <whereami.h>
+#include "whereami.h"
 
 #include "sys-assert.h"
 #include "sys-io.h"
@@ -9,7 +8,7 @@
 #include "sys.h"
 
 #define SOKOL_LOG_IMPL
-#include "external/sokol/sokol_log.h"
+#include "sokol/sokol_log.h"
 
 void
 sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, u32 line_nr, const char *filename)
@@ -113,4 +112,21 @@ bool32
 sys_file_del(str8 path)
 {
 	return 0;
+}
+
+str8
+sys_where(struct alloc alloc)
+{
+	i32 dirname_len = 0;
+	str8 res        = {0};
+
+	res.size = wai_getExecutablePath(NULL, 0, &dirname_len);
+
+	if(res.size > 0) {
+		res.str = (u8 *)alloc.allocf(alloc.ctx, res.size + 1);
+		wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
+		res.str[res.size] = '\0';
+	}
+
+	return res;
 }
