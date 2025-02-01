@@ -40,6 +40,7 @@ struct animation_slice {
 struct tex_info {
 	u64 path_hash;
 	v2_i32 cell_size;
+	v2_i32 tex_size;
 };
 
 struct asset_path_table {

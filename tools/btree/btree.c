@@ -224,7 +224,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 }
 
 void
-handle_json(str8 json, struct bet *bet, struct alloc scratch)
+handle_btree_json(str8 json, struct bet *bet, struct alloc scratch)
 {
 	jsmn_parser parser;
 	jsmn_init(&parser);
@@ -258,7 +258,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	struct bet bet = {0};
 	bet_init(&bet, alloc);
 
-	handle_json(json, &bet, scratch);
+	handle_btree_json(json, &bet, scratch);
 
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
 
@@ -268,9 +268,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 		return -1;
 	}
 
-	struct ser_writer w = {
-		.f = out_file,
-	};
+	struct ser_writer w = {.f = out_file};
 
 	ser_write_array(&w);
 	for(usize i = 1; i < arr_len(bet.nodes); ++i) {

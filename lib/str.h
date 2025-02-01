@@ -11,6 +11,11 @@ struct str8_node {
 	str8 str;
 };
 
+struct str8_meta_node {
+	struct str8_meta_node *next;
+	struct str8_node *node;
+};
+
 struct str8_list {
 	struct str8_node *first;
 	struct str8_node *last;
@@ -96,12 +101,15 @@ f32 str8_to_f32(str8 str);
 
 // String List Construction Functions
 
+struct str8_node *str8_list_push_node(struct str8_list *list, struct str8_node *node);
+struct str8_node *str8_list_push(struct alloc alloc, struct str8_list *list, str8 str);
+
 struct str8_node *str8_list_pushf(struct alloc alloc, struct str8_list *list, char *fmt, ...);
+void str8_list_concat_in_place(struct str8_list *list, struct str8_list *to_push);
 
 // String Splitting & Joining
 struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags);
 struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
-struct str8_list str8_split_path(struct alloc alloc, str8 str);
 str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params);
 
 #define S_(x)   #x

@@ -9,7 +9,7 @@
 #include "sys-utils.h"
 
 struct animation_track_res
-handle_track(str8 json, jsmntok_t *tokens, i32 index)
+tsj_handle_track(str8 json, jsmntok_t *tokens, i32 index)
 {
 	jsmntok_t *root = &tokens[index];
 	str8 bank_json  = {
@@ -67,7 +67,7 @@ handle_animation_clip(str8 json, jsmntok_t *tokens, i32 index)
 				i32 track_index  = i + 2;
 				jsmntok_t *track = &tokens[track_index];
 				assert(track->type == JSMN_OBJECT);
-				struct animation_track_res track_res = handle_track(json, tokens, track_index);
+				struct animation_track_res track_res = tsj_handle_track(json, tokens, track_index);
 				data_res.item.tracks[j]              = track_res.item;
 				i += track_res.token_count;
 			}

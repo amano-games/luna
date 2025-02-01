@@ -60,6 +60,8 @@ typedef size_t usize;
 #define mcpy            memcpy
 #define mmov            memmove
 #define mclr(DST, SIZE) mset(DST, 0, SIZE)
+#define mclr_struct(s)  mclr((s), sizeof(*(s)))
+#define mclr_array(a)   mclr((a), sizeof(a))
 
 #define mcpy_struct(d, s) mcpy((d), (s), sizeof(*(d)))
 #define mcpy_array(d, s) mcpy((d),(s), sizeof(d)))
