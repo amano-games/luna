@@ -295,6 +295,14 @@ mod_euc_i32(i32 a, i32 b)
 }
 
 static f32
+rem_f32(f32 a, f32 b)
+{
+	assert(b > 0);
+	f32 r = fmodf(a, b);
+	return r;
+}
+
+static f32
 mod_euc_f32(f32 a, f32 b)
 {
 	assert(b > 0);
