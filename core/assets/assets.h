@@ -49,8 +49,7 @@ struct assets {
 	struct alloc alloc;
 };
 
-struct assets ASSETS;
-
+static struct assets ASSETS;
 struct alloc assets_allocator(struct assets *assets);
 
 void assets_init(void *mem, usize size);
