@@ -18,6 +18,12 @@
 static const i32 COS_TABLE[256];
 
 static inline u64
+min_u64(u64 a, u64 b)
+{
+	return (a < b ? a : b);
+}
+
+static inline u64
 max_u64(u64 a, u64 b)
 {
 	return (a > b ? a : b);
