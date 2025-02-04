@@ -106,6 +106,7 @@ void gfx_arc_thick(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i3
 void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode);
 
 struct gfx_ctx gfx_ctx_display(void);
+struct gfx_ctx gfx_ctx_default(struct tex dst);
 struct gfx_ctx gfx_ctx_unclip(struct gfx_ctx ctx);
 struct gfx_ctx gfx_ctx_clip(struct gfx_ctx ctx, i32 x1, i32 y1, i32 x2, i32 y2);
 struct gfx_ctx gfx_ctx_clip_top(struct gfx_ctx ctx, i32 y1);

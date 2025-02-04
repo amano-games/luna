@@ -80,6 +80,7 @@ u32 sys_epoch(u32 *milliseconds);
 
 void sys_1bit_invert(bool32 i);
 void *sys_1bit_buffer(void);
+void *sys_1bit_menu_buffer(void);
 
 void sys_accelerometer_set(bool32 enabled);
 void sys_accelerometer(f32 *x, f32 *y, f32 *z);
@@ -97,3 +98,4 @@ void sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)
 void sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);
 int sys_menu_value(int id);
 void sys_menu_clr(void);
+void sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset);

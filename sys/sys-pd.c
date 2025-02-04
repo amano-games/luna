@@ -14,6 +14,7 @@ struct pd_state {
 	PDButtons b;
 	bool32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
+	LCDBitmap *menu_bitmap;
 	PDMenuItem *menu_items[5];
 };
 
@@ -59,9 +60,31 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
+		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorBlack);
+		{
+			PD->graphics->pushContext(PD_STATE.menu_bitmap);
+			PD->graphics->fillEllipse(0, 0, 30, 30, 0, 0, kColorWhite);
+			PD->graphics->popContext();
+			int *width    = NULL;
+			int *height   = NULL;
+			int *rowbytes = NULL;
+			u8 **mask     = NULL;
+			u8 **data     = NULL;
+
+			PD->graphics->getBitmapData(
+				PD_STATE.menu_bitmap,
+				width,
+				height,
+				rowbytes,
+				mask,
+				data);
+			sys_printf("hey");
+		}
+
 		sys_internal_init();
 		break;
 	case kEventTerminate:
+		PD->graphics->freeBitmap(PD_STATE.menu_bitmap);
 		sys_internal_close();
 		break;
 	case kEventPause:
@@ -167,6 +190,25 @@ void *
 sys_1bit_buffer(void)
 {
 	return PD->graphics->getFrame();
+}
+
+void *
+sys_1bit_menu_buffer(void)
+{
+	int *width    = NULL;
+	int *height   = NULL;
+	int *rowbytes = NULL;
+	u8 **mask     = NULL;
+	u8 **data     = NULL;
+
+	PD->graphics->getBitmapData(
+		PD_STATE.menu_bitmap,
+		width,
+		height,
+		rowbytes,
+		mask,
+		data);
+	return data;
 }
 
 void *
@@ -415,4 +457,20 @@ sys_where(struct alloc alloc)
 {
 	str8 res = str8_lit("/");
 	return res;
+}
+
+void
+sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
+{
+
+	int wid, hei, byt;
+	u8 *p;
+	PD->graphics->getBitmapData(PD_STATE.menu_bitmap, &wid, &hei, &byt, NULL, &p);
+	int y2 = hei < h ? hei : h;
+	int b2 = byt < wbyte ? byt : wbyte;
+	for(int y = 0; y < y2; y++) {
+		for(int b = 0; b < b2; b++)
+			p[b + y * byt] = ((u8 *)px)[b + y * wbyte];
+	}
+	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
 }
