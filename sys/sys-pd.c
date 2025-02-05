@@ -462,7 +462,10 @@ sys_where(struct alloc alloc)
 void
 sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 {
-
+	if(px == NULL) {
+		PD->system->setMenuImage(NULL, x_offset);
+		return;
+	}
 	int wid, hei, byt;
 	u8 *p;
 	PD->graphics->getBitmapData(PD_STATE.menu_bitmap, &wid, &hei, &byt, NULL, &p);
