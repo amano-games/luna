@@ -60,7 +60,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
-		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorWhite);
+		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorBlack);
 
 		sys_internal_init();
 		break;
@@ -464,5 +464,5 @@ sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 		for(int b = 0; b < b2; b++)
 			p[b + y * byt] = ((u8 *)px)[b + y * wbyte];
 	}
-	PD->system->setMenuImage(PD_STATE.menu_bitmap, 0);
+	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
 }
