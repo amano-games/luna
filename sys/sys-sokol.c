@@ -611,3 +611,8 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 		}
 	}
 }
+
+void
+sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
+{
+}
