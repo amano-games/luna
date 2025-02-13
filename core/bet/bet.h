@@ -3,7 +3,7 @@
 #include "mem.h"
 #include "sys-types.h"
 
-#define MAX_BET_NODES      100
+#define MAX_BET_NODES      150
 #define MAX_BET_CHILDREN   10
 #define MAX_BET_NODE_PROPS 5
 #define MAX_BET_NOTE       64
