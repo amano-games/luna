@@ -32,8 +32,10 @@ bet_init(struct bet *bet, struct alloc alloc)
 void
 bet_ctx_init(struct bet_ctx *ctx)
 {
-	ctx->current           = 1;
-	ctx->bet_node_ctx[1].i = -1;
+	ctx->bet_node_ctx[ctx->current].i   = -1;
+	ctx->bet_node_ctx[ctx->current].res = BET_RES_NONE;
+	ctx->current                        = 1;
+	ctx->bet_node_ctx[1].i              = -1;
 }
 
 enum bet_res
