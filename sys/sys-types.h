@@ -64,7 +64,7 @@ typedef size_t usize;
 #define mclr_array(a)   mclr((a), sizeof(a))
 
 #define mcpy_struct(d, s) mcpy((d), (s), sizeof(*(d)))
-#define mcpy_array(d, s) mcpy((d),(s), sizeof(d)))
+#define mcpy_array(d, s)  mcpy((d), (s), sizeof(d))
 
 typedef struct v2_i32 {
 	i32 x, y;
