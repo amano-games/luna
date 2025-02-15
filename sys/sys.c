@@ -38,7 +38,7 @@ sys_internal_init(void)
 	SYS.last_time           = sys_seconds();
 	SYS.frame_buffer        = sys_1bit_buffer();
 
-	app_mem.permanent.size = MMEGABYTE(7);
+	app_mem.permanent.size = MMEGABYTE(8);
 	app_mem.transient.size = MMEGABYTE(2.5);
 	app_mem.debug.size     = 0;
 
