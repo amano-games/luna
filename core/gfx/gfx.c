@@ -765,182 +765,24 @@ gfx_poly(
 	}
 }
 
-// Function to check if an angle is within the given range
-static inline int
-is_angle_in_range(f32 angle, f32 start_angle, f32 end_angle)
-{
-	if(start_angle < end_angle) {
-		return (angle >= start_angle && angle <= end_angle);
-	} else {
-		return (angle >= start_angle || angle <= end_angle);
-	}
-}
-
-static inline void
-gfx_arc_plot(
-	struct gfx_ctx ctx,
-	i32 px,
-	i32 py,
-	i32 x,
-	i32 y,
-	f32 sa,
-	f32 ea,
-	i32 thick,
-	enum prim_mode mode)
-{
-	f32 angle = v2_ang_rel((v2){px, py}, (v2){x, y});
-	if(is_angle_in_range(angle, sa, ea)) {
-		if(thick == 1) {
-			tex_px(ctx.dst, x, y, mode);
-		} else {
-			gfx_cir_fill(ctx, x, y, thick, mode);
-		}
-	}
-}
-
+// https://github.com/olikraus/u8g2/issues/2243
+// https://motla.github.io/arc-algorithm/
 void
 gfx_arc(
 	struct gfx_ctx ctx,
-	i32 px,
-	i32 py,
-	f32 sa,
-	f32 ea,
-	i32 d,
-	enum prim_mode mode)
-{
-	if(d <= 0) return;
-	if(d == 1) {
-		tex_px(ctx.dst, px, py, mode);
-		return;
-	}
-	if(d == 2) {
-		gfx_rec_fill(ctx, px - 1, py - 1, 2, 2, mode);
-		return;
-	}
-
-	// Jesko's Method, shameless copy
-	// https://schwarzers.com/algorithms/
-	i32 r = d >> 1;
-	i32 x = r;
-	i32 y = 0;
-	i32 t = r >> 4;
-
-	do {
-		i32 x1 = max_i32(px - x, ctx.clip_x1);
-		i32 x2 = min_i32(px + x, ctx.clip_x2);
-		i32 x3 = max_i32(px - y, ctx.clip_x1);
-		i32 x4 = min_i32(px + y, ctx.clip_x2);
-		i32 y4 = py - x; // ordered in y
-		i32 y2 = py - y;
-		i32 y1 = py + y;
-		i32 y3 = py + x;
-
-		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_arc_plot(ctx, px, py, x3, y4, sa, ea, 1, mode);
-			gfx_arc_plot(ctx, px, py, x4, y4, sa, ea, 1, mode);
-		}
-		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			gfx_arc_plot(ctx, px, py, x1, y2, sa, ea, 1, mode);
-			gfx_arc_plot(ctx, px, py, x2, y2, sa, ea, 1, mode);
-		}
-		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			gfx_arc_plot(ctx, px, py, x1, y1, sa, ea, 1, mode);
-			gfx_arc_plot(ctx, px, py, x2, y1, sa, ea, 1, mode);
-		}
-		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_arc_plot(ctx, px, py, x3, y3, sa, ea, 1, mode);
-			gfx_arc_plot(ctx, px, py, x4, y3, sa, ea, 1, mode);
-		}
-
-		y++;
-		t += y;
-		i32 k = t - x;
-		if(0 <= k) {
-			t = k;
-			x--;
-		}
-	} while(y <= x);
-}
-
-void
-gfx_arc_thick(
-	struct gfx_ctx ctx,
-	i32 px,
-	i32 py,
-	f32 sa,
-	f32 ea,
-	i32 d,
-	i32 thick,
-	enum prim_mode mode)
-{
-	if(d <= 0) return;
-	if(d == 1) {
-		gfx_cir_fill(ctx, px, py, thick, mode);
-		return;
-	}
-	if(d == 2) {
-		gfx_rec_fill(ctx, px - 1, py - 1, 2, 2, mode);
-		return;
-	}
-
-	// Jesko's Method, shameless copy
-	// https://schwarzers.com/algorithms/
-	i32 r = d >> 1;
-	i32 x = r;
-	i32 y = 0;
-	i32 t = r >> 4;
-
-	do {
-		i32 x1 = max_i32(px - x, ctx.clip_x1);
-		i32 x2 = min_i32(px + x, ctx.clip_x2);
-		i32 x3 = max_i32(px - y, ctx.clip_x1);
-		i32 x4 = min_i32(px + y, ctx.clip_x2);
-		i32 y4 = py - x; // ordered in y
-		i32 y2 = py - y;
-		i32 y1 = py + y;
-		i32 y3 = py + x;
-
-		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_arc_plot(ctx, px, py, x3, y4, sa, ea, thick, mode);
-			gfx_arc_plot(ctx, px, py, x4, y4, sa, ea, thick, mode);
-		}
-		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			gfx_arc_plot(ctx, px, py, x1, y2, sa, ea, thick, mode);
-			gfx_arc_plot(ctx, px, py, x2, y2, sa, ea, thick, mode);
-		}
-		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			gfx_arc_plot(ctx, px, py, x1, y1, sa, ea, thick, mode);
-			gfx_arc_plot(ctx, px, py, x2, y1, sa, ea, thick, mode);
-		}
-		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_arc_plot(ctx, px, py, x3, y3, sa, ea, thick, mode);
-			gfx_arc_plot(ctx, px, py, x4, y3, sa, ea, thick, mode);
-		}
-
-		y++;
-		t += y;
-		i32 k = t - x;
-		if(0 <= k) {
-			t = k;
-			x--;
-		}
-	} while(y <= x);
-}
-
-void
-gfx_arc_2(
-	struct gfx_ctx ctx,
 	i32 x0,
 	i32 y0,
-	u8 start,
-	u8 end,
+	u8 start_ang,
+	u8 end_ang,
 	i32 rad,
 	enum prim_mode mode)
 {
-	u8 full     = (start == end);
-	u8 inverted = start > end;
-	u8 a_start  = inverted ? end : start;
-	u8 a_end    = inverted ? start : end;
+	u8 full     = (end_ang == start_ang);
+	u8 inverted = end_ang > start_ang;
+	u8 a_start  = inverted ? start_ang : end_ang;
+	u8 a_end    = inverted ? end_ang : start_ang;
+	// a_start     = a_start * -1; // Fix to make it clockwise
+	// a_end       = a_end * -1;   // Fix to make it clockwise
 
 	u32 ratio;
 	i32 x = 0;
@@ -975,7 +817,7 @@ gfx_arc_2(
 }
 
 void
-gfx_arc_thick_2(
+gfx_arc_thick(
 	struct gfx_ctx ctx,
 	i32 x0,
 	i32 y0,
@@ -987,6 +829,6 @@ gfx_arc_thick_2(
 {
 	// Draw arc for each radius
 	for(i32 r = rad; r <= (rad + thick); r++) {
-		gfx_arc_2(ctx, x0, y0, start, end, r, mode);
+		gfx_arc(ctx, x0, y0, start, end, r, mode);
 	}
 }
