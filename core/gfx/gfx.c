@@ -479,12 +479,6 @@ prim_blit_span_y(struct span_blit info)
 }
 
 void
-gfx_px(struct gfx_ctx ctx, i32 x, i32 y, i32 color)
-{
-	tex_px(ctx.dst, x, y, color);
-}
-
-void
 gfx_rec(
 	struct gfx_ctx ctx,
 	i32 x,
@@ -548,7 +542,7 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 {
 	if(d <= 0) return;
 	if(d == 1) {
-		gfx_px(ctx, px, py, mode);
+		tex_px(ctx.dst, px, py, mode);
 		return;
 	}
 	if(d == 2) {
@@ -574,20 +568,20 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 		i32 y3 = py + x;
 
 		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_px(ctx, x3, y4, mode);
-			gfx_px(ctx, x4, y4, mode);
+			tex_px(ctx.dst, x3, y4, mode);
+			tex_px(ctx.dst, x4, y4, mode);
 		}
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			gfx_px(ctx, x1, y2, mode);
-			gfx_px(ctx, x2, y2, mode);
+			tex_px(ctx.dst, x1, y2, mode);
+			tex_px(ctx.dst, x2, y2, mode);
 		}
 		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			gfx_px(ctx, x1, y1, mode);
-			gfx_px(ctx, x2, y1, mode);
+			tex_px(ctx.dst, x1, y1, mode);
+			tex_px(ctx.dst, x2, y1, mode);
 		}
 		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_px(ctx, x3, y3, mode);
-			gfx_px(ctx, x4, y3, mode);
+			tex_px(ctx.dst, x3, y3, mode);
+			tex_px(ctx.dst, x4, y3, mode);
 		}
 
 		y++;
@@ -797,7 +791,7 @@ gfx_arc_plot(
 	f32 angle = v2_ang_rel((v2){px, py}, (v2){x, y});
 	if(is_angle_in_range(angle, sa, ea)) {
 		if(thick == 1) {
-			gfx_px(ctx, x, y, mode);
+			tex_px(ctx.dst, x, y, mode);
 		} else {
 			gfx_cir_fill(ctx, x, y, thick, mode);
 		}
@@ -816,7 +810,7 @@ gfx_arc(
 {
 	if(d <= 0) return;
 	if(d == 1) {
-		gfx_px(ctx, px, py, mode);
+		tex_px(ctx.dst, px, py, mode);
 		return;
 	}
 	if(d == 2) {
@@ -931,4 +925,68 @@ gfx_arc_thick(
 			x--;
 		}
 	} while(y <= x);
+}
+
+void
+gfx_arc_2(
+	struct gfx_ctx ctx,
+	i32 x0,
+	i32 y0,
+	u8 start,
+	u8 end,
+	i32 rad,
+	enum prim_mode mode)
+{
+	u8 full     = (start == end);
+	u8 inverted = start > end;
+	u8 a_start  = inverted ? end : start;
+	u8 a_end    = inverted ? start : end;
+
+	u32 ratio;
+	i32 x = 0;
+	i32 y = rad;
+	i32 d = rad - 1;
+
+	// Trace arc radius with the Andres circle algorithm (process each pixel of a 1/8th circle of radius rad)
+	while(y >= x) {
+		// Get the percentage of 1/8th circle drawn with a fast approximation of arctan(x/y)
+		ratio = x * 255 / y;                                                // x/y [0..255]
+		ratio = ratio * (770195 - (ratio - 255) * (ratio + 941)) / 6137491; // arctan(x/y) [0..32] // Fill the pixels of the 8 sections of the circle, but only on the arc defined by the angles (start and end)
+		if(full || ((ratio >= a_start && ratio < a_end) ^ inverted)) tex_px(ctx.dst, x0 + y, y0 - x, mode);
+		if(full || (((ratio + a_end) > 63 && (ratio + a_start) <= 63) ^ inverted)) tex_px(ctx.dst, x0 + x, y0 - y, mode);
+		if(full || (((ratio + 64) >= a_start && (ratio + 64) < a_end) ^ inverted)) tex_px(ctx.dst, x0 - x, y0 - y, mode);
+		if(full || (((ratio + a_end) > 127 && (ratio + a_start) <= 127) ^ inverted)) tex_px(ctx.dst, x0 - y, y0 - x, mode);
+		if(full || (((ratio + 128) >= a_start && (ratio + 128) < a_end) ^ inverted)) tex_px(ctx.dst, x0 - y, y0 + x, mode);
+		if(full || (((ratio + a_end) > 191 && (ratio + a_start) <= 191) ^ inverted)) tex_px(ctx.dst, x0 - x, y0 + y, mode);
+		if(full || (((ratio + 192) >= a_start && (ratio + 192) < a_end) ^ inverted)) tex_px(ctx.dst, x0 + x, y0 + y, mode);
+		if(full || (((ratio + a_end) > 255 && (ratio + a_start) <= 255) ^ inverted)) tex_px(ctx.dst, x0 + y, y0 + x, mode);
+		if(d >= 2 * x) {
+			d = d - 2 * x - 1;
+			x = x + 1;
+		} else if(d < 2 * (rad - y)) {
+			d = d + 2 * y - 1;
+			y = y - 1;
+		} else {
+			d = d + 2 * (y - x - 1);
+			y = y - 1;
+			x = x + 1;
+		}
+	}
+}
+
+void
+gfx_arc_thick_2(
+	struct gfx_ctx ctx,
+	i32 x0,
+	i32 y0,
+	u8 start,
+	u8 end,
+	i32 rad,
+	i32 thick,
+	enum prim_mode mode)
+{
+	// Draw arc for each radius
+	for(i32 r = rad; r <= (rad + thick); r++) {
+		gfx_arc_2(ctx, x0, y0, start, end, r, mode);
+	}
 }
