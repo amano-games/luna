@@ -101,12 +101,9 @@ void gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode
 void gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2);
 void gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, enum prim_mode mode);
 void gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 r, enum prim_mode mode);
-void gfx_arc(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, enum prim_mode mode);
-void gfx_arc_thick(struct gfx_ctx ctx, i32 px, i32 py, f32 sa, f32 ea, i32 d, i32 thick, enum prim_mode mode);
 void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode);
-
-void gfx_arc_2(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, enum prim_mode mode);
-void gfx_arc_thick_2(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, i32 thick, enum prim_mode mode);
+void gfx_arc(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, enum prim_mode mode);
+void gfx_arc_thick(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, i32 thick, enum prim_mode mode);
 
 struct gfx_ctx gfx_ctx_display(void);
 struct gfx_ctx gfx_ctx_default(struct tex dst);
