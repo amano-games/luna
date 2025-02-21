@@ -781,8 +781,6 @@ gfx_arc(
 	u8 inverted = end_ang > start_ang;
 	u8 a_start  = inverted ? start_ang : end_ang;
 	u8 a_end    = inverted ? end_ang : start_ang;
-	// a_start     = a_start * -1; // Fix to make it clockwise
-	// a_end       = a_end * -1;   // Fix to make it clockwise
 
 	u32 ratio;
 	i32 x = 0;
