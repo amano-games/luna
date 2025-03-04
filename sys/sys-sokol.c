@@ -1,4 +1,5 @@
 #include "sys-sokol.h"
+#include <stdio.h>
 #if !defined(TARGET_WASM)
 #include "whereami.h"
 #endif
@@ -512,6 +513,12 @@ bool32
 sys_file_del(str8 path)
 {
 	return 0;
+}
+
+bool32
+sys_file_rename(str8 from, str8 to)
+{
+	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
 void

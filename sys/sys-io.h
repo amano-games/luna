@@ -39,6 +39,7 @@ void *sys_file_open_w(str8 path);
 void *sys_file_open_a(str8 path);
 bool32 sys_file_close(void *f);
 bool32 sys_file_del(str8 path);
+bool32 sys_file_rename(str8 from, str8 to);
 bool32 sys_file_flush(void *f);
 i32 sys_file_tell(void *f);
 i32 sys_file_seek_set(void *f, i32 pos);
