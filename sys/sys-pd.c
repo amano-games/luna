@@ -291,6 +291,12 @@ sys_file_del(str8 path)
 }
 
 bool32
+sys_file_rename(str8 from, str8 to)
+{
+	return (PD->file->rename((char *)from.str, (char *)to.str) == 0);
+}
+
+bool32
 sys_file_flush(void *f)
 {
 	return (PD->file->flush(f) == 0);
