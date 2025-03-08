@@ -293,7 +293,12 @@ sys_file_del(str8 path)
 bool32
 sys_file_rename(str8 from, str8 to)
 {
-	return (PD->file->rename((char *)from.str, (char *)to.str) == 0);
+	i32 res = PD->file->rename((char *)from.str, (char *)to.str);
+	if(res == -1) {
+		log_error("io", "failed to rename %s -> %s: %s", from.str, to.str, PD->file->geterr());
+	}
+
+	return res == 0;
 }
 
 bool32
