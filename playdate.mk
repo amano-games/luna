@@ -48,7 +48,6 @@ SIM_DEFS       := -DTARGET_SIMULATOR=1
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g3 -gdwarf-2
-RELEASE_CFLAGS += -falign-functions=16
 RELEASE_CFLAGS += -fomit-frame-pointer
 RELEASE_CFLAGS += -DNDEBUG
 RELEASE_CFLAGS += $(WARN_FLAGS)
@@ -86,7 +85,8 @@ PD_CFLAGS      += -mword-relocations
 PD_CFLAGS      += -fdata-sections
 PD_CFLAGS      += -ffunction-sections
 PD_CFLAGS      += -fno-strict-aliasing
-PD_CFLAGS      += -fsingle-precision-constant 
+PD_CFLAGS      += -fsingle-precision-constant
+PD_CFLAGS      += -falign-functions=32
 PD_CFLAGS      += -fno-common
 PD_CFLAGS      += $(PD_DEFS)
 
