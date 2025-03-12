@@ -78,7 +78,6 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 {
 	assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
-	bool32 debug                  = track_type == ANIMATION_TRACK_SPRITE_MODE && ani->clip.count > 10;
 	usize track_index             = track_type - 1;
 	struct animation_track *track = &ani->clip.tracks[track_index];
 
