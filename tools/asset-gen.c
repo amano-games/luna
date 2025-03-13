@@ -36,15 +36,18 @@
 #include "tools/fnt-pd/fnt-pd.c"
 #include "tools/fnt-pd/fnt-pd.h"
 #include "core/assets/fnt.c"
+#include "tools/pinb/pinb.h"
+#include "tools/pinb/pinb.c"
 #include "sys-io.c"
 
 #define IMG_EXT ".png"
 #define AUD_EXT ".wav"
 // #define RAW_EXT ".raw"
-#define ANI_EXT       ".lunass"
-#define AI_EXT        ".btree"
-#define FNT_EXT       ".fnt"
-#define ASSETS_DB_EXT ".tsj"
+#define ANI_EXT           ".lunass"
+#define AI_EXT            ".btree"
+#define FNT_EXT           ".fnt"
+#define ASSETS_DB_EXT     ".tsj"
+#define PINBALL_TABLE_EXT ".tiledpinb"
 
 #if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL 0
@@ -111,6 +114,8 @@ handle_asset_recursive(
 				i32 res = handle_fnt_pd(in_path, out_path, scratch);
 			} else if(strstr(file.name, ASSETS_DB_EXT)) {
 				i32 res = handle_tsj(in_path, out_path, scratch);
+			} else if(strstr(file.name, PINBALL_TABLE_EXT)) {
+				i32 res = handle_pinball_table(in_path, out_path, scratch);
 			} else {
 				fcopy(in_path, out_path);
 			}
