@@ -1,5 +1,6 @@
 #pragma once
 
+#include "poly.h"
 #include "sys-assert.h"
 
 #define CUTE_C2_IMPLEMENTATION
@@ -63,15 +64,9 @@ struct col_capsule {
 	struct col_tangents tangents;
 };
 
-struct sub_poly {
-	int count;
-	v2 verts[COL_MAX_POLYGON_VERTS];
-	v2 norms[COL_MAX_POLYGON_VERTS];
-};
-
 struct col_poly {
 	usize count;
-	struct sub_poly sub_polys[COL_MAX_SUB_POLY];
+	struct poly sub_polys[COL_MAX_SUB_POLY];
 };
 
 struct col_shape {
@@ -115,13 +110,13 @@ aabb_to_c2aabb(struct col_aabb v)
 }
 
 static inline c2Poly
-poly_to_c2poly(struct sub_poly v)
+poly_to_c2poly(struct poly v)
 {
 	c2Poly r = {
 		.count = v.count,
 	};
 
-	for(int i = 0; i < v.count; ++i) {
+	for(usize i = 0; i < v.count; ++i) {
 		r.verts[i] = v2_to_c2v(v.verts[i]);
 		r.norms[i] = v2_to_c2v(v.norms[i]);
 	}
