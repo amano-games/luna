@@ -1,4 +1,5 @@
 #include "pinb.h"
+#include "collisions.h"
 #include "path.h"
 #include "str.h"
 #include "sys-log.h"
@@ -6,9 +7,29 @@
 #define CUTE_TILED_IMPLEMENTATION
 #include "external/cute_tiled.h"
 
+bool32
+pinb_obj_is_polygon(struct cute_tiled_object_t *obj)
+{
+	if(!obj) { return false; }
+	return obj->vert_count > 0 && obj->vert_type == 1;
+}
+
 usize
 pinb_layer_get_rigid_bodies(struct cute_tiled_layer_t *layer)
 {
+	cute_tiled_object_t *obj = layer->objects;
+
+	while(obj) {
+		if(pinb_obj_is_polygon(obj)) {
+			struct col_poly poly = {0};
+			f32 x, y;
+			for(int i = 0; i < obj->vert_count * 2; i += 2) {
+				x = obj->vertices[i];
+				y = obj->vertices[i + 1];
+			}
+		}
+	}
+
 	return 0;
 }
 

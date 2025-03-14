@@ -166,8 +166,8 @@ debug_draw_collider(struct col_shape *shape)
 		struct col_poly col = shape->poly;
 
 		for(usize i = 0; i < col.count; ++i) {
-			struct sub_poly sub_poly = col.sub_polys[i];
-			for(int j = 0; j < sub_poly.count; ++j) {
+			struct poly sub_poly = col.sub_polys[i];
+			for(usize j = 0; j < sub_poly.count; ++j) {
 				v2 a = sub_poly.verts[j];
 				v2 b = sub_poly.verts[(j + 1) % sub_poly.count];
 				debug_draw_line(a.x, a.y, b.x, b.y);

@@ -17,8 +17,8 @@ col_poly_init(struct col_poly *p)
 		assert(p->sub_polys[i].count <= COL_MAX_POLYGON_VERTS);
 		c2MakePoly(&c2p);
 
-		struct sub_poly *sub_poly = &p->sub_polys[i];
-		sub_poly->count           = c2p.count;
+		struct poly *sub_poly = &p->sub_polys[i];
+		sub_poly->count       = c2p.count;
 
 		for(int j = 0; j < c2p.count; ++j) {
 			sub_poly->verts[j] = c2v_to_v2(c2p.verts[j]);
@@ -47,8 +47,8 @@ col_poly_centroid(struct col_poly *p)
 	// TODO: memory allocate ?
 	v2 vertices[COL_MAX_POLYGON_VERTS * COL_MAX_SUB_POLY] = {0};
 	for(usize i = 0; i < p->count; ++i) {
-		struct sub_poly sub_poly = p->sub_polys[i];
-		for(int j = 0; j < sub_poly.count; ++j) {
+		struct poly sub_poly = p->sub_polys[i];
+		for(usize j = 0; j < sub_poly.count; ++j) {
 			vertices[vertex_count++] = sub_poly.verts[j];
 		}
 	}
@@ -353,8 +353,8 @@ col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_mani
 	c2Manifold c2m = {0};
 
 	for(usize i = 0; i < b.count; ++i) {
-		struct sub_poly sub_poly = b.sub_polys[i];
-		c2Poly c2b               = poly_to_c2poly(sub_poly);
+		struct poly sub_poly = b.sub_polys[i];
+		c2Poly c2b           = poly_to_c2poly(sub_poly);
 
 		c2CircletoPolyManifold(c2a, &c2b, NULL, &c2m);
 		if(c2m.count > 0) {
