@@ -146,7 +146,7 @@ debug_draw_collider(struct col_shape *shape)
 	} break;
 	case COL_TYPE_CIR: {
 		struct col_cir col = shape->cir;
-		debug_draw_cir(col.p.x, col.p.y, col.r);
+		debug_draw_cir(col.p.x, col.p.y, col.r * 2);
 	} break;
 	case COL_TYPE_CAPSULE: {
 		struct col_capsule col = shape->capsule;
