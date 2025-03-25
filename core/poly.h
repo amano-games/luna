@@ -107,3 +107,38 @@ poly_decomp(struct poly *poly)
 	// 	return [polygon];
 	// }
 }
+
+v2
+poly_centroid(v2 *verts, usize verts_count)
+{
+	v2 res          = {0};
+	f32 signed_area = 0.0;
+	f32 x0          = 0.0; // Current vertex X
+	f32 y0          = 0.0; // Current vertex Y
+	f32 x1          = 0.0; // Next vertex X
+	f32 y1          = 0.0; // Next vertex Y
+	f32 a           = 0.0; // Partial signed area
+
+	int lastdex = verts_count - 1;
+	v2 *prev    = &(verts[lastdex]);
+	v2 *next;
+
+	// For all vertices in a loop
+	for(usize i = 0; i < verts_count; ++i) {
+		next = &(verts[i]);
+		x0   = prev->x;
+		y0   = prev->y;
+		x1   = next->x;
+		y1   = next->y;
+		a    = x0 * y1 - x1 * y0;
+		signed_area += a;
+		res.x += (x0 + x1) * a;
+		res.y += (y0 + y1) * a;
+		prev = next;
+	}
+
+	signed_area *= 0.5f;
+	res.x /= (6.0f * signed_area);
+	res.y /= (6.0f * signed_area);
+	return res;
+}
