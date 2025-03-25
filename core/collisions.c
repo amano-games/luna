@@ -1,5 +1,6 @@
 #include "collisions.h"
 
+#include "poly.h"
 #include "sys-assert.h"
 #include "sys-types.h"
 
@@ -34,7 +35,6 @@ v2
 col_poly_centroid(struct col_poly *p)
 {
 	TRACE_START(__func__);
-	v2 centroid = {0.0, 0.0};
 
 	f32 signed_area = 0.0f;
 	f32 x0          = 0.0f; // current vertex X
@@ -53,39 +53,9 @@ col_poly_centroid(struct col_poly *p)
 		}
 	}
 
-	{
-		f32 signed_area = 0.0;
-		f32 x0          = 0.0; // Current vertex X
-		f32 y0          = 0.0; // Current vertex Y
-		f32 x1          = 0.0; // Next vertex X
-		f32 y1          = 0.0; // Next vertex Y
-		f32 a           = 0.0; // Partial signed area
-
-		int lastdex = vertex_count - 1;
-		v2 *prev    = &(vertices[lastdex]);
-		v2 *next;
-
-		// For all vertices in a loop
-		for(usize i = 0; i < vertex_count; ++i) {
-			next = &(vertices[i]);
-			x0   = prev->x;
-			y0   = prev->y;
-			x1   = next->x;
-			y1   = next->y;
-			a    = x0 * y1 - x1 * y0;
-			signed_area += a;
-			centroid.x += (x0 + x1) * a;
-			centroid.y += (y0 + y1) * a;
-			prev = next;
-		}
-
-		signed_area *= 0.5f;
-		centroid.x /= (6.0f * signed_area);
-		centroid.y /= (6.0f * signed_area);
-	}
-
+	v2 res = poly_centroid(vertices, vertex_count);
 	TRACE_END();
-	return centroid;
+	return res;
 }
 
 struct col_cir
