@@ -155,8 +155,8 @@ debug_draw_collider(struct col_shape *shape)
 		v2 b                   = col.b;
 		f32 rb                 = col.rb;
 
-		debug_draw_cir(a.x, a.y, ra);
-		debug_draw_cir(b.x, b.y, rb);
+		debug_draw_cir(a.x, a.y, ra * 2);
+		debug_draw_cir(b.x, b.y, rb * 2);
 		debug_draw_line(a.x, a.y, b.x, b.y);
 		debug_draw_line(col.tangents.a.a.x, col.tangents.a.a.y, col.tangents.a.b.x, col.tangents.a.b.y);
 		debug_draw_line(col.tangents.b.a.x, col.tangents.b.a.y, col.tangents.b.b.x, col.tangents.b.b.y);
