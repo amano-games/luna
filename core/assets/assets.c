@@ -66,15 +66,14 @@ asset_tex_load(const str8 path, struct tex *tex)
 		}
 	}
 
-	log_info("Assets", "Load tex %s", path.str);
-
 	struct tex t = tex_load(path, ASSETS.alloc);
 
 	if(t.px == NULL) {
-		log_info("Assets", "Lod failed %s", path.str);
+		log_warn("Assets", "Lod failed %s", path.str);
 		return -1;
 	}
 
+	log_info("Assets", "Load tex %s", path.str);
 	i32 id              = ASSETS.next_tex_id++;
 	ASSETS.tex[id].path = path;
 	ASSETS.tex[id].tex  = t;
