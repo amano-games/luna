@@ -37,7 +37,7 @@ i32
 handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	i32 res = 0;
-	return res;
+#if 0
 
 	cute_tiled_map_t *map = cute_tiled_load_map_from_file((char *)in_path.str, NULL);
 	assert(map);
@@ -56,5 +56,6 @@ handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(PINBALL_EXT));
 
 	log_info("pinb-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+#endif
 	return res;
 }
