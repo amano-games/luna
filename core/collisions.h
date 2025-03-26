@@ -143,6 +143,18 @@ c2manifold_to_manifold(c2Manifold *c2m, struct col_manifold *m)
 	m->contact_points[1] = c2v_to_v2(c2m->contact_points[1]);
 }
 
+static inline f32
+col_aabb_w(struct col_aabb aabb)
+{
+	return aabb.max.x - aabb.min.x;
+}
+
+static inline f32
+col_aabb_h(struct col_aabb aabb)
+{
+	return aabb.max.y - aabb.min.y;
+}
+
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
 v2 col_poly_centroid(struct col_poly *p);
