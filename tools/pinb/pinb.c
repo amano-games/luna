@@ -37,6 +37,7 @@ i32
 handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	i32 res = 0;
+	return res;
 
 	cute_tiled_map_t *map = cute_tiled_load_map_from_file((char *)in_path.str, NULL);
 	assert(map);
@@ -46,7 +47,7 @@ handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 		sys_printf("layer: %s", layer->name.ptr);
 		str8 layer_type = str8_cstr((char *)layer->type.ptr);
 		if(str8_match(str8_lit("objectgroup"), layer_type, 0)) {
-			sys_printf("found object group layer", layer->name.ptr);
+			sys_printf("found object group layer %s", layer->name.ptr);
 		}
 		layer = layer->next;
 	}
