@@ -4,6 +4,7 @@
 #include "sys-io.h"
 #include "sys-types.h"
 #include "str.h"
+#include "sys-assert.h"
 
 bool32
 json_load(const str8 path, struct alloc alloc, str8 *out)
@@ -82,4 +83,29 @@ json_str8_cpy(str8 json, jsmntok_t *tok, str8 *dst)
 		.size = tok->end - tok->start,
 	};
 	str8_cpy(&src, dst);
+}
+
+static inline str8
+json_str8(str8 json, jsmntok_t *tok)
+{
+	str8 res = (str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
+	};
+	return res;
+}
+
+static inline usize
+json_obj_count(str8 json, const jsmntok_t *tok)
+{
+	assert(tok->type == JSMN_OBJECT);
+	usize res = 0;
+	jsmn_parser parser;
+	jsmn_init(&parser);
+	str8 obj = {
+		.str  = json.str + tok->start,
+		.size = tok->end - tok->start,
+	};
+	res = jsmn_parse(&parser, (const char *)obj.str, obj.size, NULL, 0);
+	return res;
 }
