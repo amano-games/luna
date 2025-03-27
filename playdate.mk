@@ -30,8 +30,8 @@ endif
 
 SIM_OUT      := $(BUILD_DIR)/pdex.${DYLIB_EXT}
 
-WATCH_SRC    := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
-WATCH_SRC    += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
+WATCH_SRC    := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h ! -path "$(ASSETS_DIR)/*")
+WATCH_SRC    += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h ! -path "$(ASSETS_DIR)/*")
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external $(SDK_SRC_DIR)
 EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
