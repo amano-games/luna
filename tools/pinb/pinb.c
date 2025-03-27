@@ -1,8 +1,5 @@
 #include "pinb.h"
 #include "collisions.h"
-#include "path.h"
-#include "str.h"
-#include "sys-log.h"
 
 #define CUTE_TILED_IMPLEMENTATION
 #include "external/cute_tiled.h"
