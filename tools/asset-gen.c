@@ -117,7 +117,7 @@ handle_asset_recursive(
 			} else if(strstr(file.name, PINBALL_TABLE_EXT)) {
 				i32 res = handle_pinball_table(in_path, out_path, scratch);
 			} else {
-				fcopy(in_path, out_path);
+				// fcopy(in_path, out_path);
 			}
 			marena_reset_to(marena, p);
 		}
