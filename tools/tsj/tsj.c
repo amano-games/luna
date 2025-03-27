@@ -45,13 +45,7 @@ tsj_handle_track(str8 json,
 	struct tsj_track_res res = {0};
 	jsmntok_t *root          = &tokens[index];
 	assert(root->type == JSMN_OBJECT);
-	str8 json_root = {
-		.str  = json.str + root->start,
-		.size = root->end - root->start,
-	};
-	jsmn_parser parser;
-	jsmn_init(&parser);
-	res.token_count = jsmn_parse(&parser, (const char *)json_root.str, json_root.size, NULL, 0);
+	res.token_count = json_obj_count(json, root);
 
 	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
@@ -235,6 +229,10 @@ tsj_handle_tile(
 				}
 				i += item_res.token_count;
 			}
+		} else if(json_eq(json, key, str8_lit("objectgroup")) == 0) {
+			usize skip_count = json_obj_count(json, value);
+			i += skip_count;
+		} else {
 		}
 	}
 
