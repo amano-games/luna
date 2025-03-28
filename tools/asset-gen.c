@@ -38,6 +38,8 @@
 #include "core/assets/fnt.c"
 #include "tools/pinb/pinb.h"
 #include "tools/pinb/pinb.c"
+#include "physics/physics.c"
+#include "collisions.c"
 #include "sys-io.c"
 
 #define IMG_EXT ".png"
@@ -47,7 +49,7 @@
 #define AI_EXT            ".btree"
 #define FNT_EXT           ".fnt"
 #define ASSETS_DB_EXT     ".tsj"
-#define PINBALL_TABLE_EXT ".tiledpinb"
+#define PINBALL_TABLE_EXT ".pinbjson"
 
 #if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL 0
