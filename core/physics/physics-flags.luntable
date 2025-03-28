@@ -1,0 +1,11 @@
+{
+  "name": "body_flag",
+  "prefix": "BODY_FLAG_",
+  "columns": ["id", "label", "bitmask"],
+  "elements": [
+    "DISABLED",
+    "GRAVITY",
+    "STATIC",
+  ]
+}
+
