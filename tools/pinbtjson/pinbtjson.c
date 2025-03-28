@@ -1,57 +1,12 @@
-#include "pinb.h"
+#include "pinbtjson.h"
 #include "arr.h"
 #include "json.h"
 #include "mem-arena.h"
 #include "path.h"
-#include "physics/physics.h"
-#include "sys.h"
+#include "pinb/pinb-ser.h"
+#include "serialize/serialize.h"
 #include "sys-assert.h"
-
-#define PINB_EXT "pinb"
-
-struct pinb_response_impulse {
-	f32 magnitude;
-};
-
-struct pinb_plunger {
-	f32 y_initial;
-	f32 charge_force_min;
-	f32 charge_force_max;
-	f32 release_force_min;
-	f32 release_force_max;
-};
-
-struct pinb_entity {
-	i32 id;
-	i32 x;
-	i32 y;
-	i32 type;
-	struct body body;
-	struct pinb_plunger plunger;
-	struct pinb_response_impulse impulse;
-};
-
-struct pinb_table {
-	usize version;
-	usize entities_count;
-	struct pinb_entity *entities;
-};
-
-struct pinb_entity_res {
-	struct pinb_entity entity;
-	usize token_count;
-};
-
-struct pinb_rigid_body_res {
-	struct body body;
-	usize token_count;
-};
-
-struct pinb_col_shape_res {
-	struct col_shape shapes[10];
-	usize shape_count;
-	usize token_count;
-};
+#include "sys.h"
 
 struct pinb_col_shape_res
 handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
@@ -166,7 +121,9 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index)
 	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
-		if(json_eq(json, key, str8_lit("id")) == 0) {
+		if(json.str[key->start] == '_') {
+			++i;
+		} else if(json_eq(json, key, str8_lit("id")) == 0) {
 			res.entity.id = json_parse_i32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("type")) == 0) {
@@ -182,6 +139,10 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index)
 			struct pinb_rigid_body_res item_res = handle_rigid_body(json, tokens, i + 1);
 			res.entity.body                     = item_res.body;
 			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("plunger")) == 0) {
+			// TODO: Parse plunger
+			assert(value->type == JSMN_OBJECT);
+			i += json_obj_count(json, value);
 		}
 	}
 	return res;
@@ -228,9 +189,9 @@ handle_pinbjson(str8 json, struct alloc scratch)
 }
 
 i32
-handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
+pinbtjson_handle(str8 in_path, str8 out_path)
 {
-	usize mem_size = MKILOBYTE(100);
+	usize mem_size = MMEGABYTE(10);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	assert(mem_buffer != NULL);
 	struct marena marena = {0};
@@ -238,10 +199,10 @@ handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 	struct alloc alloc = marena_allocator(&marena);
 
 	str8 json = {0};
-	json_load(in_path, scratch, &json);
-	struct pinb_table table = handle_pinbjson(json, scratch);
+	json_load(in_path, alloc, &json);
+	struct pinb_table table = handle_pinbjson(json, alloc);
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(PINB_EXT));
+	str8 out_file_path = make_file_name_with_ext(alloc, out_path, str8_lit(PINB_EXT));
 
 	void *out_file;
 	if(!(out_file = sys_file_open_w(out_file_path))) {
@@ -249,6 +210,8 @@ handle_pinball_table(str8 in_path, str8 out_path, struct alloc scratch)
 		return -1;
 	}
 
+	struct ser_writer w = {.f = out_file};
+	pinb_write(&w, table);
 	sys_file_close(out_file);
 	sys_free(mem_buffer);
 	log_info("pinb-gen", "%s -> %s\n", in_path.str, out_file_path.str);

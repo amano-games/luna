@@ -29,16 +29,18 @@
 #include "./tex/tex.c"
 #include "./tex/tex.h"
 
+#include "physics/physics.c"
+#include "physics/body-ser.c"
 #include "tools/btree/btree.h"
 #include "tools/btree/btree.c"
 #include "tools/tsj/tsj.h"
 #include "tools/tsj/tsj.c"
 #include "tools/fnt-pd/fnt-pd.c"
 #include "tools/fnt-pd/fnt-pd.h"
+#include "tools/pinbtjson/pinbtjson.h"
+#include "tools/pinbtjson/pinbtjson.c"
+#include "pinb/pinb-ser.c"
 #include "core/assets/fnt.c"
-#include "tools/pinb/pinb.h"
-#include "tools/pinb/pinb.c"
-#include "physics/physics.c"
 #include "collisions.c"
 #include "sys-io.c"
 
@@ -117,7 +119,7 @@ handle_asset_recursive(
 			} else if(strstr(file.name, ASSETS_DB_EXT)) {
 				i32 res = handle_tsj(in_path, out_path, scratch);
 			} else if(strstr(file.name, PINBALL_TABLE_EXT)) {
-				i32 res = handle_pinball_table(in_path, out_path, scratch);
+				i32 res = pinbtjson_handle(in_path, out_path);
 			} else {
 				// fcopy(in_path, out_path);
 			}
