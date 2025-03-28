@@ -20,6 +20,7 @@ struct pinb_entity {
 	i32 x;
 	i32 y;
 	i32 type;
+	str8 img;
 	struct body body;
 	struct pinb_plunger plunger;
 	struct pinb_response_impulse impulse;
