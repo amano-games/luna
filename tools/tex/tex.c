@@ -14,7 +14,7 @@ handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch)
 	int w, h, n;
 	uint32_t *data = (uint32_t *)stbi_load((char *)in_path.str, &w, &h, &n, 4);
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit("tex"));
+	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 
 	int width_aligned = (w + 31) - ((w + 31) % 32);
 

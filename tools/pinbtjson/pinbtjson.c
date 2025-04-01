@@ -7,6 +7,7 @@
 #include "serialize/serialize.h"
 #include "sys-assert.h"
 #include "sys.h"
+#include "tools/tex/tex.h"
 
 struct pinb_col_shape_res
 handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
@@ -18,7 +19,7 @@ handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
-		if(json_eq(json, key, str8_lit("polygon")) == 0) {
+		if(json_eq(json, key, str8_lit("poly")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			i++;
 			res.shape_count          = 1;
@@ -50,8 +51,6 @@ handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 			for(usize j = item_index + 1; j < item_index + (value->size * 2); j++) {
 				jsmntok_t *item_key   = &tokens[j];
 				jsmntok_t *item_value = &tokens[j + 1];
-				str8 i_key            = json_str8(json, item_key);
-				str8 i_value          = json_str8(json, item_value);
 				if(json_eq(json, item_key, str8_lit("x")) == 0) {
 					res.shapes[0].cir.p.x = json_parse_f32(json, item_value);
 					++j;
@@ -111,7 +110,7 @@ handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinb_entity_res
-handle_entity(str8 json, jsmntok_t *tokens, i32 index)
+handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinb_entity_res res = {0};
 	jsmntok_t *root            = &tokens[index];
@@ -135,6 +134,35 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index)
 		} else if(json_eq(json, key, str8_lit("y")) == 0) {
 			res.entity.y = json_parse_i32(json, value);
 			++i;
+		} else if(json_eq(json, key, str8_lit("spr")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *path_key       = &tokens[++i];
+			jsmntok_t *path_value     = &tokens[++i];
+			jsmntok_t *flip_key       = &tokens[++i];
+			jsmntok_t *flip_value     = &tokens[++i];
+			jsmntok_t *offset_key     = &tokens[++i];
+			jsmntok_t *offset_value   = &tokens[++i];
+			jsmntok_t *offset_x_value = &tokens[++i];
+			jsmntok_t *offset_y_value = &tokens[++i];
+
+			assert(path_key->type == JSMN_STRING);
+			assert(path_value->type == JSMN_STRING);
+			assert(flip_key->type == JSMN_STRING);
+			assert(flip_value->type == JSMN_PRIMITIVE);
+			assert(offset_key->type == JSMN_STRING);
+			assert(offset_value->type == JSMN_ARRAY);
+			assert(offset_x_value->type == JSMN_PRIMITIVE);
+			assert(offset_y_value->type == JSMN_PRIMITIVE);
+			assert(json_eq(json, path_key, str8_lit("path")) == 0);
+			assert(json_eq(json, offset_key, str8_lit("offset")) == 0);
+
+			str8 path               = json_str8(json, path_value);
+			res.entity.spr.path     = make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
+			res.entity.spr.flip     = json_parse_i32(json, flip_value);
+			res.entity.spr.offset.x = json_parse_f32(json, offset_x_value);
+			res.entity.spr.offset.y = json_parse_f32(json, offset_y_value);
+
 		} else if(json_eq(json, key, str8_lit("rigid_body")) == 0) {
 			struct pinb_rigid_body_res item_res = handle_rigid_body(json, tokens, i + 1);
 			res.entity.body                     = item_res.body;
@@ -145,11 +173,12 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index)
 			i += json_obj_count(json, value);
 		}
 	}
+
 	return res;
 }
 
 struct pinb_table
-handle_pinbjson(str8 json, struct alloc scratch)
+handle_pinbjson(str8 json, struct alloc alloc, struct alloc scratch)
 {
 	struct pinb_table res = {0};
 
@@ -171,7 +200,7 @@ handle_pinbjson(str8 json, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("entities_count")) == 0) {
 			assert(value->type == JSMN_PRIMITIVE);
 			res.entities_count = json_parse_i32(json, value);
-			res.entities       = arr_ini(res.entities_count, sizeof(*res.entities), scratch);
+			res.entities       = arr_ini(res.entities_count, sizeof(*res.entities), alloc);
 			++i;
 		} else if(json_eq(json, key, str8_lit("entities")) == 0) {
 			assert(value->type == JSMN_ARRAY);
@@ -179,7 +208,7 @@ handle_pinbjson(str8 json, struct alloc scratch)
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
 				assert(item->type == JSMN_OBJECT);
-				struct pinb_entity_res item_res = handle_entity(json, tokens, item_index);
+				struct pinb_entity_res item_res = handle_entity(json, tokens, item_index, alloc);
 				arr_push(res.entities, item_res.entity);
 				i += item_res.token_count;
 			}
@@ -191,16 +220,23 @@ handle_pinbjson(str8 json, struct alloc scratch)
 i32
 pinbtjson_handle(str8 in_path, str8 out_path)
 {
-	usize mem_size = MMEGABYTE(10);
+	usize mem_size = MMEGABYTE(1);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 
+	usize scratch_mem_size = MMEGABYTE(10);
+	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
+	assert(scratch_mem_buffer != NULL);
+	struct marena scratch_marena = {0};
+	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
+	struct alloc scratch = marena_allocator(&scratch_marena);
+
 	str8 json = {0};
 	json_load(in_path, alloc, &json);
-	struct pinb_table table = handle_pinbjson(json, alloc);
+	struct pinb_table table = handle_pinbjson(json, alloc, scratch);
 
 	str8 out_file_path = make_file_name_with_ext(alloc, out_path, str8_lit(PINB_EXT));
 
@@ -214,6 +250,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	pinb_write(&w, table);
 	sys_file_close(out_file);
 	sys_free(mem_buffer);
+	sys_free(scratch_mem_buffer);
 	log_info("pinb-gen", "%s -> %s\n", in_path.str, out_file_path.str);
 
 	return 1;

@@ -69,6 +69,7 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 static str8
 json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
 {
+	assert(tok->type == JSMN_STRING);
 	str8 src = (str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -80,6 +81,7 @@ json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
 static void
 json_str8_cpy(str8 json, jsmntok_t *tok, str8 *dst)
 {
+	assert(tok->type == JSMN_STRING);
 	str8 src = (str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -90,6 +92,7 @@ json_str8_cpy(str8 json, jsmntok_t *tok, str8 *dst)
 static inline str8
 json_str8(str8 json, jsmntok_t *tok)
 {
+	assert(tok->type == JSMN_STRING);
 	str8 res = (str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
