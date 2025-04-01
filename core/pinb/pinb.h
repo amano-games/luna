@@ -15,12 +15,18 @@ struct pinb_plunger {
 	f32 release_force_max;
 };
 
+struct pinb_spr {
+	str8 path;
+	i32 flip;
+	v2 offset;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
 	i32 y;
 	i32 type;
-	str8 img;
+	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
 	struct pinb_response_impulse impulse;

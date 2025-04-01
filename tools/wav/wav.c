@@ -1,6 +1,5 @@
 #include "wav.h"
 #include "audio/adpcm.h"
-#include "mem-arena.h"
 #include "path.h"
 #include "str.h"
 #include "sys-assert.h"

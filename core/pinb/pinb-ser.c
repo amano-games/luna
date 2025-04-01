@@ -1,6 +1,7 @@
 #include "pinb-ser.h"
 #include "arr.h"
 #include "physics/body-ser.h"
+#include "serialize/serialize.h"
 #include "str.h"
 
 void
@@ -15,6 +16,22 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_i32(w, entity.y);
 	ser_write_string(w, str8_lit("type"));
 	ser_write_i32(w, entity.type);
+	if(entity.spr.path.size > 0) {
+		ser_write_string(w, str8_lit("spr"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("path"));
+		ser_write_string(w, entity.spr.path);
+		ser_write_string(w, str8_lit("flip"));
+		ser_write_i32(w, entity.spr.flip);
+		ser_write_string(w, str8_lit("offset"));
+		ser_write_array(w);
+		ser_write_f32(w, entity.spr.offset.x);
+		ser_write_f32(w, entity.spr.offset.y);
+		ser_write_end(w);
+
+		ser_write_end(w);
+	}
 	if(entity.body.shape.type != COL_TYPE_NONE) {
 		ser_write_string(w, str8_lit("body"));
 		body_write(w, entity.body);
@@ -64,6 +81,28 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("type"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value spr_key, spr_value;
+			while(ser_iter_object(r, value, &spr_key, &spr_value)) {
+				assert(spr_key.type == SER_TYPE_STRING);
+				if(str8_match(spr_key.str, str8_lit("path"), 0)) {
+					assert(spr_value.type == SER_TYPE_STRING);
+					res.spr.path = spr_value.str;
+				} else if(str8_match(spr_key.str, str8_lit("flip"), 0)) {
+					assert(spr_value.type == SER_TYPE_I32);
+					res.spr.flip = spr_value.i32;
+				} else if(str8_match(spr_key.str, str8_lit("offset"), 0)) {
+					assert(spr_value.type == SER_TYPE_ARRAY);
+					struct ser_value offset_value;
+					ser_iter_array(r, spr_value, &offset_value);
+					assert(offset_value.type == SER_TYPE_F32);
+					res.spr.offset.x = offset_value.f32;
+					ser_iter_array(r, spr_value, &offset_value);
+					assert(offset_value.type == SER_TYPE_F32);
+					res.spr.offset.y = offset_value.f32;
+				}
+			}
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			res.body = body_read(r, value);
