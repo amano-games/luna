@@ -385,7 +385,16 @@ str8_to_i32(str8 str)
 	return res;
 }
 
-inline f32
+bool32
+str8_to_bool32(str8 str)
+{
+	if(str.size == 0) return false;
+	if(str.str[0] == 't') return true;
+	if(str.str[0] == 'T') return true;
+	return false;
+}
+
+f32
 str8_to_f32(str8 str)
 {
 	f32 num   = 0.0;

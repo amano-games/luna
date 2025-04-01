@@ -167,6 +167,22 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 			struct pinb_rigid_body_res item_res = handle_rigid_body(json, tokens, i + 1);
 			res.entity.body                     = item_res.body;
 			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("reactive_impulse")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *mag_key    = &tokens[++i];
+			jsmntok_t *mag_value  = &tokens[++i];
+			jsmntok_t *norm_key   = &tokens[++i];
+			jsmntok_t *norm_value = &tokens[++i];
+
+			assert(mag_key->type == JSMN_STRING);
+			assert(mag_value->type == JSMN_PRIMITIVE);
+			assert(norm_key->type == JSMN_STRING);
+			assert(norm_value->type == JSMN_PRIMITIVE);
+
+			res.entity.reactive_impulse.magnitude = json_parse_f32(json, mag_value);
+			res.entity.reactive_impulse.normalize = json_parse_bool32(json, norm_value);
+
 		} else if(json_eq(json, key, str8_lit("plunger")) == 0) {
 			// TODO: Parse plunger
 			assert(value->type == JSMN_OBJECT);
