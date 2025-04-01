@@ -83,10 +83,10 @@ handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 			res.body.flags = json_parse_i32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("angular_damping")) == 0) {
-			res.body.ang_damping = 1.0f - json_parse_f32(json, value);
+			res.body.ang_damping = json_parse_f32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("linear_damping")) == 0) {
-			res.body.linear_damping = 1.0f - json_parse_f32(json, value);
+			res.body.linear_damping = json_parse_f32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("dynamic_friction")) == 0) {
 			res.body.dynamic_friction = json_parse_f32(json, value);
@@ -124,9 +124,6 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 			++i;
 		} else if(json_eq(json, key, str8_lit("id")) == 0) {
 			res.entity.id = json_parse_i32(json, value);
-			++i;
-		} else if(json_eq(json, key, str8_lit("type")) == 0) {
-			res.entity.type = json_parse_i32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("x")) == 0) {
 			res.entity.x = json_parse_i32(json, value);
@@ -176,17 +173,44 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 			jsmntok_t *norm_value = &tokens[++i];
 
 			assert(mag_key->type == JSMN_STRING);
+			assert(json_eq(json, mag_key, str8_lit("magnitude")) == 0);
 			assert(mag_value->type == JSMN_PRIMITIVE);
 			assert(norm_key->type == JSMN_STRING);
+			assert(json_eq(json, norm_key, str8_lit("normalize")) == 0);
 			assert(norm_value->type == JSMN_PRIMITIVE);
 
 			res.entity.reactive_impulse.magnitude = json_parse_f32(json, mag_value);
 			res.entity.reactive_impulse.normalize = json_parse_bool32(json, norm_value);
 
 		} else if(json_eq(json, key, str8_lit("plunger")) == 0) {
-			// TODO: Parse plunger
 			assert(value->type == JSMN_OBJECT);
-			i += json_obj_count(json, value);
+			++i;
+			jsmntok_t *charge_force_max_key    = &tokens[++i];
+			jsmntok_t *charge_force_max_value  = &tokens[++i];
+			jsmntok_t *charge_force_min_key    = &tokens[++i];
+			jsmntok_t *charge_force_min_value  = &tokens[++i];
+			jsmntok_t *release_force_max_key   = &tokens[++i];
+			jsmntok_t *release_force_max_value = &tokens[++i];
+			jsmntok_t *release_force_min_key   = &tokens[++i];
+			jsmntok_t *release_force_min_value = &tokens[++i];
+
+			assert(charge_force_max_key->type == JSMN_STRING);
+			assert(json_eq(json, charge_force_max_key, str8_lit("charge_force_max")) == 0);
+			assert(charge_force_max_value->type == JSMN_PRIMITIVE);
+			assert(charge_force_min_key->type == JSMN_STRING);
+			assert(json_eq(json, charge_force_min_key, str8_lit("charge_force_min")) == 0);
+			assert(charge_force_min_value->type == JSMN_PRIMITIVE);
+			assert(release_force_max_key->type == JSMN_STRING);
+			assert(json_eq(json, release_force_max_key, str8_lit("release_force_max")) == 0);
+			assert(release_force_max_value->type == JSMN_PRIMITIVE);
+			assert(release_force_min_key->type == JSMN_STRING);
+			assert(json_eq(json, release_force_min_key, str8_lit("release_force_min")) == 0);
+			assert(release_force_min_value->type == JSMN_PRIMITIVE);
+
+			res.entity.plunger.charge_force_max  = json_parse_f32(json, charge_force_max_value);
+			res.entity.plunger.charge_force_min  = json_parse_f32(json, charge_force_min_value);
+			res.entity.plunger.release_force_max = json_parse_f32(json, release_force_max_value);
+			res.entity.plunger.release_force_min = json_parse_f32(json, release_force_min_value);
 		}
 	}
 

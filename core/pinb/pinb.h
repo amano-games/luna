@@ -26,7 +26,6 @@ struct pinb_entity {
 	i32 id;
 	i32 x;
 	i32 y;
-	i32 type;
 	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
