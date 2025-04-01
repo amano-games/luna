@@ -46,12 +46,24 @@ static i32
 json_parse_i32(str8 json, jsmntok_t *tok)
 {
 	assert(tok->type == JSMN_PRIMITIVE);
-	i32 num = str8_to_i32((str8){
+	i32 res = str8_to_i32((str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
 	});
 
-	return num;
+	return res;
+}
+
+static bool32
+json_parse_bool32(str8 json, jsmntok_t *tok)
+{
+	assert(tok->type == JSMN_PRIMITIVE);
+	i32 res = str8_to_bool32((str8){
+		.str  = (u8 *)json.str + tok->start,
+		.size = tok->end - tok->start,
+	});
+
+	return res;
 }
 
 static f32
@@ -59,11 +71,11 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 {
 	// TODO: Replace with sys_parse_string to use sscanf when it's not broken
 	assert(tok->type == JSMN_PRIMITIVE);
-	f32 num = str8_to_f32((str8){
+	f32 res = str8_to_f32((str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
 	});
-	return num;
+	return res;
 }
 
 static str8

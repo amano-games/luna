@@ -3,8 +3,9 @@
 #include "physics/physics.h"
 #include "sys-types.h"
 
-struct pinb_response_impulse {
+struct pinb_reactive_impulse {
 	f32 magnitude;
+	bool32 normalize;
 };
 
 struct pinb_plunger {
@@ -29,7 +30,7 @@ struct pinb_entity {
 	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
-	struct pinb_response_impulse impulse;
+	struct pinb_reactive_impulse reactive_impulse;
 };
 
 struct pinb_table {
