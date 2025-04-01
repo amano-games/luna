@@ -14,8 +14,6 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_i32(w, entity.x);
 	ser_write_string(w, str8_lit("y"));
 	ser_write_i32(w, entity.y);
-	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, entity.type);
 	if(entity.spr.path.size > 0) {
 		ser_write_string(w, str8_lit("spr"));
 		ser_write_object(w);
@@ -43,6 +41,24 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_f32(w, entity.reactive_impulse.magnitude);
 		ser_write_string(w, str8_lit("normalize"));
 		ser_write_i32(w, entity.reactive_impulse.normalize);
+		ser_write_end(w);
+	}
+	if(entity.plunger.charge_force_max != 0) {
+		ser_write_string(w, str8_lit("plunger"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("charge_force_min"));
+		ser_write_f32(w, entity.plunger.charge_force_min);
+
+		ser_write_string(w, str8_lit("charge_force_max"));
+		ser_write_f32(w, entity.plunger.charge_force_max);
+
+		ser_write_string(w, str8_lit("release_force_min"));
+		ser_write_f32(w, entity.plunger.release_force_min);
+
+		ser_write_string(w, str8_lit("release_force_max"));
+		ser_write_f32(w, entity.plunger.release_force_max);
+
 		ser_write_end(w);
 	}
 	ser_write_end(w);
@@ -87,9 +103,6 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("y"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			res.y = value.i32;
-		} else if(str8_match(key.str, str8_lit("type"), 0)) {
-			assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
 		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value spr_key, spr_value;
@@ -123,6 +136,25 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 				} else if(str8_match(reactive_impulse_key.str, str8_lit("normalize"), 0)) {
 					assert(reactive_impulse_value.type == SER_TYPE_I32);
 					res.reactive_impulse.normalize = reactive_impulse_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("plunger"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value plunger_key, plunger_value;
+			while(ser_iter_object(r, value, &plunger_key, &plunger_value)) {
+				assert(plunger_key.type == SER_TYPE_STRING);
+				if(str8_match(plunger_key.str, str8_lit("charge_force_min"), 0)) {
+					assert(plunger_value.type == SER_TYPE_F32);
+					res.plunger.charge_force_min = plunger_value.f32;
+				} else if(str8_match(plunger_key.str, str8_lit("charge_force_max"), 0)) {
+					assert(plunger_value.type == SER_TYPE_F32);
+					res.plunger.charge_force_max = plunger_value.f32;
+				} else if(str8_match(plunger_key.str, str8_lit("release_force_min"), 0)) {
+					assert(plunger_value.type == SER_TYPE_F32);
+					res.plunger.release_force_min = plunger_value.f32;
+				} else if(str8_match(plunger_key.str, str8_lit("release_force_max"), 0)) {
+					assert(plunger_value.type == SER_TYPE_F32);
+					res.plunger.release_force_max = plunger_value.f32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
