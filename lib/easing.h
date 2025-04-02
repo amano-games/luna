@@ -1,143 +1,146 @@
 #pragma once
 
+#include "easing-type.h"
 #include "mathfunc.h"
 
-static inline f32 ease_in_sine(f32 t);
-static inline f32 ease_out_sine(f32 t);
-static inline f32 ease_in_out_sine(f32 t);
-static inline f32 ease_in_quad(f32 t);
-static inline f32 ease_out_quad(f32 t);
-static inline f32 ease_in_out_quad(f32 t);
-static inline f32 ease_in_cubic(f32 t);
-static inline f32 ease_out_cubic(f32 t);
-static inline f32 ease_in_out_cubic(f32 t);
-static inline f32 ease_in_quart(f32 t);
-static inline f32 ease_out_quart(f32 t);
-static inline f32 ease_in_out_quart(f32 t);
-static inline f32 ease_in_quint(f32 t);
-static inline f32 ease_out_quint(f32 t);
-static inline f32 ease_in_out_quint(f32 t);
-static inline f32 ease_in_expo(f32 t);
-static inline f32 ease_out_expo(f32 t);
-static inline f32 ease_in_out_expo(f32 t);
-static inline f32 ease_in_circ(f32 t);
-static inline f32 ease_out_circ(f32 t);
-static inline f32 ease_in_out_circ(f32 t);
-static inline f32 ease_in_back(f32 t);
-static inline f32 ease_out_back(f32 t);
-static inline f32 ease_in_out_back(f32 t);
-static inline f32 ease_in_elastic(f32 t);
-static inline f32 ease_out_elastic(f32 t);
-static inline f32 ease_in_out_elastic(f32 t);
-static inline f32 ease_in_bounce(f32 t);
-static inline f32 ease_out_bounce(f32 t);
-static inline f32 ease_in_out_bounce(f32 t);
+static inline f32 ease_sine_in(f32 t);
+static inline f32 ease_sine_out(f32 t);
+static inline f32 ease_sine_in_out(f32 t);
+static inline f32 ease_quad_in(f32 t);
+static inline f32 ease_quad_out(f32 t);
+static inline f32 ease_quad_in_out(f32 t);
+static inline f32 ease_cubic_in(f32 t);
+static inline f32 ease_cubic_out(f32 t);
+static inline f32 ease_cubic_in_out(f32 t);
+static inline f32 ease_quart_in(f32 t);
+static inline f32 ease_quart_out(f32 t);
+static inline f32 ease_quart_in_out(f32 t);
+static inline f32 ease_quint_in(f32 t);
+static inline f32 ease_quint_out(f32 t);
+static inline f32 ease_quint_in_out(f32 t);
+static inline f32 ease_expo_in(f32 t);
+static inline f32 ease_expo_out(f32 t);
+static inline f32 ease_expo_in_out(f32 t);
+static inline f32 ease_circ_in(f32 t);
+static inline f32 ease_circ_out(f32 t);
+static inline f32 ease_circ_in_out(f32 t);
+static inline f32 ease_back_in(f32 t);
+static inline f32 ease_back_out(f32 t);
+static inline f32 ease_back_in_out(f32 t);
+static inline f32 ease_elastic_in(f32 t);
+static inline f32 ease_elastic_out(f32 t);
+static inline f32 ease_elastic_in_out(f32 t);
+static inline f32 ease_bounce_in(f32 t);
+static inline f32 ease_bounce_out(f32 t);
+static inline f32 ease_bounce_in_out(f32 t);
+
+static inline f32 ease(f32 t, enum ease_type type);
 
 static inline f32
-ease_in_sine(f32 t)
+ease_sine_in(f32 t)
 {
 	return 1.0f - cos_f32((t * PI_FLOAT) / 2.0f);
 }
 
 static inline f32
-ease_out_sine(f32 t)
+ease_sine_out(f32 t)
 {
 	return sin_f32((t * PI_FLOAT) / 2.0f);
 }
 
 static inline f32
-ease_in_out_sine(f32 t)
+ease_sine_in_out(f32 t)
 {
 	return -(cos_f32(PI_FLOAT * t) - 1.0f) / 2.0f;
 }
 
 static inline f32
-ease_in_quad(f32 t)
+ease_quad_in(f32 t)
 {
 	return 1.0f - (1.0f - t) * (1.0f - t);
 }
 
 static inline f32
-ease_out_quad(f32 t)
+ease_quad_out(f32 t)
 {
 	return 1.0f - (1.0f - t) * (1.0f - t);
 }
 
 static inline f32
-ease_in_out_quad(f32 t)
+ease_quad_in_out(f32 t)
 {
 	return t < 0.5f ? 2.0f * t * t : 1.0f - pow_f32(-2.0f * t + 2.0f, 2.0f) / 2.0f;
 }
 
 static inline f32
-ease_in_cubic(f32 t)
+ease_cubic_in(f32 t)
 {
 	return t * t * t;
 }
 
 static inline f32
-ease_out_cubic(f32 t)
+ease_cubic_out(f32 t)
 {
 	return 1.0f - pow_f32(1.0f - t, 3.0f);
 }
 
 static inline f32
-ease_in_out_cubic(f32 t)
+ease_cubic_in_out(f32 t)
 {
 	return t < 0.5f ? 4.0f * t * t * t : 1.0f - pow_f32(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 }
 
 static inline f32
-ease_in_quart(f32 t)
+ease_quart_in(f32 t)
 {
 	return t * t * t * t;
 }
 
 static inline f32
-ease_out_quart(f32 t)
+ease_quart_out(f32 t)
 {
 	return 1.0f - pow_f32(1.0f - t, 4.0f);
 }
 
 static inline f32
-ease_in_out_quart(f32 t)
+ease_quart_in_out(f32 t)
 {
 	return t < 0.5f ? 8.0f * t * t * t * t : 1.0f - pow_f32(-2.0f * t + 2.0f, 4.0f) / 2.0f;
 }
 
 static inline f32
-ease_in_quint(f32 t)
+ease_quint_in(f32 t)
 {
 	return t * t * t * t * t;
 }
 
 static inline f32
-ease_out_quint(f32 t)
+ease_quint_out(f32 t)
 {
 	return 1.0f - pow_f32(1.0f - t, 5.0f);
 }
 
 static inline f32
-ease_in_out_quint(f32 t)
+ease_quint_in_out(f32 t)
 {
 	return t < 0.5f ? 16.0f * t * t * t * t * t : 1.0f - pow_f32(-2.0f * t + 2.0f, 5.0f) / 2.0f;
 }
 
 static inline f32
-ease_in_expo(f32 t)
+ease_expo_in(f32 t)
 {
 	return t == 0 ? 0 : pow_f32(2.0f, 10.0f * t - 10.0f);
 }
 
 static inline f32
-ease_out_expo(f32 t)
+ease_expo_out(f32 t)
 {
 	f32 p = pow_f32(2.0f, -10.0f * t);
 	return t == 1.0f ? 1.0f : 1.0f - p;
 }
 
 static inline f32
-ease_in_out_expo(f32 t)
+ease_expo_in_out(f32 t)
 {
 	return t == 0
 		? 0
@@ -148,19 +151,19 @@ ease_in_out_expo(f32 t)
 }
 
 static inline f32
-ease_in_circ(f32 t)
+ease_circ_in(f32 t)
 {
 	return 1.0f - sqrtf(1.0f - pow_f32(t, 2.0f));
 }
 
 static inline f32
-ease_out_circ(f32 t)
+ease_circ_out(f32 t)
 {
 	return sqrtf(1.0f - pow_f32(t - 1, 2.0f));
 }
 
 static inline f32
-ease_in_out_circ(f32 t)
+ease_circ_in_out(f32 t)
 {
 	return t < 0.5f
 		? (1.0f - sqrtf(1.0f - pow_f32(2.0f * t, 2.0f))) / 2.0f
@@ -168,7 +171,7 @@ ease_in_out_circ(f32 t)
 }
 
 static inline f32
-ease_in_back(f32 t)
+ease_back_in(f32 t)
 {
 	f32 c1 = 1.70158f;
 	f32 c3 = c1 + 1.0f;
@@ -177,7 +180,7 @@ ease_in_back(f32 t)
 }
 
 static inline f32
-ease_out_back(f32 t)
+ease_back_out(f32 t)
 {
 	f32 c1 = 1.70158f;
 	f32 c3 = c1 + 1.0f;
@@ -186,7 +189,7 @@ ease_out_back(f32 t)
 }
 
 static inline f32
-ease_in_out_back(f32 t)
+ease_back_in_out(f32 t)
 {
 	f32 c1 = 1.70158f;
 	f32 c2 = c1 * 1.525f;
@@ -197,7 +200,7 @@ ease_in_out_back(f32 t)
 }
 
 static inline f32
-ease_in_elastic(f32 t)
+ease_elastic_in(f32 t)
 {
 	f32 c4 = (2.0f * PI_FLOAT) / 3;
 
@@ -209,7 +212,7 @@ ease_in_elastic(f32 t)
 }
 
 static inline f32
-ease_out_elastic(f32 t)
+ease_elastic_out(f32 t)
 {
 	f32 c4 = (2.0f * PI_FLOAT) / 3;
 
@@ -221,7 +224,7 @@ ease_out_elastic(f32 t)
 }
 
 static inline f32
-ease_in_out_elastic(f32 t)
+ease_elastic_in_out(f32 t)
 {
 	f32 c5 = (2.0f * PI_FLOAT) / 4.5f;
 
@@ -235,13 +238,13 @@ ease_in_out_elastic(f32 t)
 }
 
 static inline f32
-ease_in_bounce(f32 t)
+ease_bounce_in(f32 t)
 {
-	return 1.0f - ease_out_bounce(1.0f - t);
+	return 1.0f - ease_bounce_out(1.0f - t);
 }
 
 static inline f32
-ease_out_bounce(f32 t)
+ease_bounce_out(f32 t)
 {
 	f32 n1 = 7.5625f;
 	f32 d1 = 2.75f;
@@ -261,9 +264,110 @@ ease_out_bounce(f32 t)
 }
 
 static inline f32
-ease_in_out_bounce(f32 t)
+ease_bounce_in_out(f32 t)
 {
 	return t < 0.5f
-		? (1.0f - ease_out_bounce(1.0f - 2.0f * t)) / 2.0f
-		: (1.0f + ease_out_bounce(2.0f * t - 1.0f)) / 2.0f;
+		? (1.0f - ease_bounce_out(1.0f - 2.0f * t)) / 2.0f
+		: (1.0f + ease_bounce_out(2.0f * t - 1.0f)) / 2.0f;
+}
+
+static inline f32
+ease(f32 t, enum ease_type type)
+{
+	switch(type) {
+	case EASE_TYPE_SINE_IN: {
+		return ease_sine_in(t);
+	} break;
+	case EASE_TYPE_SINE_OUT: {
+		return ease_sine_out(t);
+	} break;
+	case EASE_TYPE_SINE_IN_OUT: {
+		return ease_sine_in_out(t);
+	} break;
+	case EASE_TYPE_QUAD_IN: {
+		return ease_quad_in(t);
+	} break;
+	case EASE_TYPE_QUAD_OUT: {
+		return ease_quad_out(t);
+	} break;
+	case EASE_TYPE_QUAD_IN_OUT: {
+		return ease_quad_in_out(t);
+	} break;
+	case EASE_TYPE_CUBIC_IN: {
+		return ease_cubic_in(t);
+	} break;
+	case EASE_TYPE_CUBIC_OUT: {
+		return ease_cubic_out(t);
+	} break;
+	case EASE_TYPE_CUBIC_IN_OUT: {
+		return ease_cubic_in_out(t);
+	} break;
+	case EASE_TYPE_QUART_IN: {
+		return ease_quart_in(t);
+	} break;
+	case EASE_TYPE_QUART_OUT: {
+		return ease_quart_out(t);
+	} break;
+	case EASE_TYPE_QUART_IN_OUT: {
+		return ease_quart_in_out(t);
+	} break;
+	case EASE_TYPE_QUINT_IN: {
+		return ease_quint_in(t);
+	} break;
+	case EASE_TYPE_QUINT_OUT: {
+		return ease_quint_out(t);
+	} break;
+	case EASE_TYPE_QUINT_IN_OUT: {
+		return ease_quint_in_out(t);
+	} break;
+	case EASE_TYPE_EXPO_IN: {
+		return ease_expo_in(t);
+	} break;
+	case EASE_TYPE_EXPO_OUT: {
+		return ease_expo_out(t);
+	} break;
+	case EASE_TYPE_EXPO_IN_OUT: {
+		return ease_expo_in_out(t);
+	} break;
+	case EASE_TYPE_CIRC_IN: {
+		return ease_circ_in(t);
+	} break;
+	case EASE_TYPE_CIRC_OUT: {
+		return ease_circ_out(t);
+	} break;
+	case EASE_TYPE_CIRC_IN_OUT: {
+		return ease_circ_in_out(t);
+	} break;
+	case EASE_TYPE_BACK_IN: {
+		return ease_back_in(t);
+	} break;
+	case EASE_TYPE_BACK_OUT: {
+		return ease_back_out(t);
+	} break;
+	case EASE_TYPE_BACK_IN_OUT: {
+		return ease_back_in_out(t);
+	} break;
+	case EASE_TYPE_ELASTIC_IN: {
+		return ease_elastic_in(t);
+	} break;
+	case EASE_TYPE_ELASTIC_OUT: {
+		return ease_elastic_out(t);
+	} break;
+	case EASE_TYPE_ELASTIC_IN_OUT: {
+		return ease_elastic_in_out(t);
+	} break;
+	case EASE_TYPE_BOUNCE_IN: {
+		return ease_bounce_in(t);
+	} break;
+	case EASE_TYPE_BOUNCE_OUT: {
+		return ease_bounce_out(t);
+	} break;
+	case EASE_TYPE_BOUNCE_IN_OUT: {
+		return ease_bounce_in_out(t);
+	} break;
+	default: {
+		BAD_PATH;
+	} break;
+	}
+	return t;
 }
