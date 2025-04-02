@@ -366,8 +366,7 @@ ease(f32 t, enum ease_type type)
 		return ease_bounce_in_out(t);
 	} break;
 	default: {
-		BAD_PATH;
+		return t;
 	} break;
 	}
-	return t;
 }
