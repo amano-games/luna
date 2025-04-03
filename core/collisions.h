@@ -61,6 +61,7 @@ struct col_capsule {
 			struct col_cir a, b;
 		};
 	};
+	f32 d;
 	struct col_tangents tangents;
 };
 
