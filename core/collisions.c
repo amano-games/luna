@@ -152,10 +152,10 @@ col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest
 		closest_p = tal < tbl ? ta : tb;
 	}
 
-	col_point_to_line(closest_p, capsule.a, capsule.b, t, closest);
+	col_point_to_line(closest_p, capsule.a.p, capsule.b.p, t, closest);
 	struct col_cir circle = {
 		.p = {closest->x, closest->y},
-		.r = lerp(capsule.ra, capsule.rb, *t),
+		.r = lerp(capsule.a.r, capsule.b.r, *t),
 	};
 
 	TRACE_END();

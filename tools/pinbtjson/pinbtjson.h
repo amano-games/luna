@@ -19,6 +19,11 @@ struct pinb_col_shape_res {
 	usize token_count;
 };
 
+struct pinb_col_cir_res {
+	struct col_cir cir;
+	usize token_count;
+};
+
 #define PINB_EXT "pinb"
 
 i32 pinbtjson_handle(str8 in_path, str8 out_path);

@@ -55,12 +55,12 @@ struct col_tangents {
 };
 
 struct col_capsule {
-	v2 a;
-	v2 b;
-	f32 ra;
-	f32 rb;
-	// Distance between ends
-	f32 d;
+	union {
+		struct col_cir cirs[2];
+		struct {
+			struct col_cir a, b;
+		};
+	};
 	struct col_tangents tangents;
 };
 
