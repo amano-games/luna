@@ -53,10 +53,11 @@ capsule_get_tangents(f32 ax, f32 ay, f32 bx, f32 by, f32 ra, f32 rb, f32 len)
 }
 
 void
-capsule_upd(struct col_capsule *capsule, f32 len, rot2 rot)
+capsule_upd(struct col_capsule *capsule, rot2 rot)
 {
-	v2 a = capsule->a.p;
-	v2 b = capsule->b.p;
+	f32 len = capsule->d;
+	v2 a    = capsule->a.p;
+	v2 b    = capsule->b.p;
 	// f32 len           = v2_len(v2_sub(b, a));
 	capsule->b.p      = capsule_get_end(a.x, a.y, len, rot);
 	capsule->tangents = capsule_get_tangents(a.x, a.y, capsule->b.p.x, capsule->b.p.y, capsule->a.r, capsule->b.r, len);
