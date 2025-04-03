@@ -192,6 +192,7 @@ v2_normal(v2 a)
 static inline u32
 v2_distance_sq(v2 a, v2 b)
 {
+	// WARN: should be b-a
 	return v2_len_sq(v2_sub(a, b));
 }
 

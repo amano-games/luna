@@ -22,6 +22,10 @@ struct pinb_spr {
 	v2 offset;
 };
 
+struct pinb_flipper {
+	i32 flip_type;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -30,6 +34,7 @@ struct pinb_entity {
 	struct body body;
 	struct pinb_plunger plunger;
 	struct pinb_reactive_impulse reactive_impulse;
+	struct pinb_flipper flipper;
 };
 
 struct pinb_table {

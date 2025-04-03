@@ -150,10 +150,10 @@ debug_draw_collider(struct col_shape *shape)
 	} break;
 	case COL_TYPE_CAPSULE: {
 		struct col_capsule col = shape->capsule;
-		v2 a                   = col.a;
-		f32 ra                 = col.ra;
-		v2 b                   = col.b;
-		f32 rb                 = col.rb;
+		v2 a                   = col.a.p;
+		f32 ra                 = col.a.r;
+		v2 b                   = col.b.p;
+		f32 rb                 = col.b.r;
 
 		debug_draw_cir(a.x, a.y, ra * 2);
 		debug_draw_cir(b.x, b.y, rb * 2);

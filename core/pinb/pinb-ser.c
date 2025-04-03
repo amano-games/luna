@@ -61,6 +61,15 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 		ser_write_end(w);
 	}
+	if(entity.flipper.flip_type != 0) {
+		ser_write_string(w, str8_lit("flipper"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("flip_type"));
+		ser_write_i32(w, entity.flipper.flip_type);
+
+		ser_write_end(w);
+	}
 	ser_write_end(w);
 }
 
@@ -160,6 +169,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			res.body = body_read(r, value);
+		} else if(str8_match(key.str, str8_lit("flipper"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value flipper_key, flipper_value;
+			while(ser_iter_object(r, value, &flipper_key, &flipper_value)) {
+				assert(flipper_key.type == SER_TYPE_STRING);
+				if(str8_match(flipper_key.str, str8_lit("flip_type"), 0)) {
+					res.flipper.flip_type = flipper_value.i32;
+				}
+			}
 		}
 	}
 	return res;

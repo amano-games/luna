@@ -1,6 +1,9 @@
 #include "body-ser.h"
 #include "str.h"
 
+static inline void col_cir_write(struct ser_writer *w, struct col_cir cir);
+static inline struct col_cir col_cir_read(struct ser_reader *r, struct ser_value value);
+
 void
 body_write(struct ser_writer *w, struct body body)
 {
@@ -42,11 +45,7 @@ body_write(struct ser_writer *w, struct body body)
 	} break;
 	case COL_TYPE_CIR: {
 		ser_write_string(w, str8_lit("cir"));
-		ser_write_array(w);
-		ser_write_f32(w, body.shape.cir.p.x);
-		ser_write_f32(w, body.shape.cir.p.y);
-		ser_write_f32(w, body.shape.cir.r);
-		ser_write_end(w);
+		col_cir_write(w, body.shape.cir);
 	} break;
 	case COL_TYPE_POLY: {
 		ser_write_string(w, str8_lit("poly"));
@@ -61,6 +60,13 @@ body_write(struct ser_writer *w, struct body body)
 			ser_write_f32(w, body.shape.poly.sub_polys[0].verts[i].y);
 		}
 		ser_write_end(w);
+		ser_write_end(w);
+	} break;
+	case COL_TYPE_CAPSULE: {
+		ser_write_string(w, str8_lit("capsule"));
+		ser_write_array(w);
+		col_cir_write(w, body.shape.capsule.cirs[0]);
+		col_cir_write(w, body.shape.capsule.cirs[1]);
 		ser_write_end(w);
 	} break;
 	default: {
@@ -130,16 +136,7 @@ body_read(struct ser_reader *r, struct ser_value obj)
 				} else if(str8_match(shape_key.str, str8_lit("cir"), 0)) {
 					assert(shape_value.type == SER_TYPE_ARRAY);
 					res.shape.type = COL_TYPE_CIR;
-					struct ser_value val;
-					assert(ser_iter_array(r, shape_value, &val));
-					assert(val.type == SER_TYPE_F32);
-					res.shape.cir.p.x = val.f32;
-					assert(ser_iter_array(r, shape_value, &val));
-					assert(val.type == SER_TYPE_F32);
-					res.shape.cir.p.y = val.f32;
-					assert(ser_iter_array(r, shape_value, &val));
-					assert(val.type == SER_TYPE_F32);
-					res.shape.cir.r = val.f32;
+					res.shape.cir  = col_cir_read(r, shape_value);
 				} else if(str8_match(shape_key.str, str8_lit("poly"), 0)) {
 					assert(shape_value.type == SER_TYPE_OBJECT);
 					res.shape.type       = COL_TYPE_POLY;
@@ -165,10 +162,48 @@ body_read(struct ser_reader *r, struct ser_value obj)
 							assert(res.shape.poly.sub_polys[0].count == i);
 						}
 					}
+				} else if(str8_match(shape_key.str, str8_lit("capsule"), 0)) {
+					assert(shape_value.type == SER_TYPE_ARRAY);
+					res.shape.type       = COL_TYPE_CAPSULE;
+					struct ser_value val = {0};
+					assert(ser_iter_array(r, shape_value, &val));
+					res.shape.capsule.cirs[0] = col_cir_read(r, val);
+					assert(ser_iter_array(r, shape_value, &val));
+					res.shape.capsule.cirs[1] = col_cir_read(r, val);
 				}
 			}
 		}
 	}
+
+	return res;
+}
+
+static inline void
+col_cir_write(struct ser_writer *w, struct col_cir cir)
+{
+	ser_write_array(w);
+	ser_write_f32(w, cir.p.x);
+	ser_write_f32(w, cir.p.y);
+	ser_write_f32(w, cir.r);
+	ser_write_end(w);
+}
+
+static inline struct col_cir
+col_cir_read(struct ser_reader *r, struct ser_value value)
+{
+	assert(value.type == SER_TYPE_ARRAY);
+	struct col_cir res = {0};
+
+	struct ser_value val;
+	assert(ser_iter_array(r, value, &val));
+	assert(val.type == SER_TYPE_F32);
+	res.p.x = val.f32;
+	assert(ser_iter_array(r, value, &val));
+	assert(val.type == SER_TYPE_F32);
+	res.p.y = val.f32;
+	assert(ser_iter_array(r, value, &val));
+	assert(val.type == SER_TYPE_F32);
+	res.r = val.f32;
 
 	return res;
 }

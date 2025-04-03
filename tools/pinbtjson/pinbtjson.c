@@ -9,6 +9,29 @@
 #include "sys.h"
 #include "tools/tex/tex.h"
 
+struct pinb_col_cir_res
+handle_col_cir(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinb_col_cir_res res = {0};
+	jsmntok_t *root             = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i++) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("x")) == 0) {
+			res.cir.p.x = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("y")) == 0) {
+			res.cir.p.y = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("r")) == 0) {
+			res.cir.r = json_parse_f32(json, value);
+		}
+	}
+
+	return res;
+}
+
 struct pinb_col_shape_res
 handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 {
@@ -43,26 +66,22 @@ handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 			res.shapes[0].aabb.max.x = json_parse_f32(json, tokens + ++i);
 			res.shapes[0].aabb.max.y = json_parse_f32(json, tokens + ++i);
 		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
-			assert(value->type == JSMN_OBJECT);
-			assert(value->size == 3);
-			usize item_index   = i + 1;
+			i++;
+			struct pinb_col_cir_res item_res = handle_col_cir(json, tokens, i);
+			res.shapes[0].type               = COL_TYPE_CIR;
+			res.shapes[0].cir                = item_res.cir;
+			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("capsule")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			i += 2;
 			res.shape_count    = 1;
-			res.shapes[0].type = COL_TYPE_CIR;
-			for(usize j = item_index + 1; j < item_index + (value->size * 2); j++) {
-				jsmntok_t *item_key   = &tokens[j];
-				jsmntok_t *item_value = &tokens[j + 1];
-				if(json_eq(json, item_key, str8_lit("x")) == 0) {
-					res.shapes[0].cir.p.x = json_parse_f32(json, item_value);
-					++j;
-				} else if(json_eq(json, item_key, str8_lit("y")) == 0) {
-					res.shapes[0].cir.p.y = json_parse_f32(json, item_value);
-					++j;
-				} else if(json_eq(json, item_key, str8_lit("r")) == 0) {
-					res.shapes[0].cir.r = json_parse_f32(json, item_value);
-					++j;
-				}
+			res.shapes[0].type = COL_TYPE_CAPSULE;
+			for(i32 j = 0; j < value->size; j++) {
+				jsmntok_t *item                  = tokens + i;
+				struct pinb_col_cir_res item_res = handle_col_cir(json, tokens, i);
+				res.shapes[0].capsule.cirs[j]    = item_res.cir;
+				i += item_res.token_count;
 			}
-			i += 2 + value->size;
 		}
 	}
 
@@ -211,6 +230,17 @@ handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 			res.entity.plunger.charge_force_min  = json_parse_f32(json, charge_force_min_value);
 			res.entity.plunger.release_force_max = json_parse_f32(json, release_force_max_value);
 			res.entity.plunger.release_force_min = json_parse_f32(json, release_force_min_value);
+		} else if(json_eq(json, key, str8_lit("flipper")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *flip_type_key   = &tokens[++i];
+			jsmntok_t *flip_type_value = &tokens[++i];
+
+			assert(flip_type_key->type == JSMN_STRING);
+			assert(json_eq(json, flip_type_key, str8_lit("flip_type")) == 0);
+			assert(flip_type_value->type == JSMN_PRIMITIVE);
+
+			res.entity.flipper.flip_type = json_parse_i32(json, flip_type_value);
 		}
 	}
 
