@@ -88,6 +88,36 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 		ser_write_end(w);
 	}
+
+	if(entity.sfx_sequence.clips_len > 0) {
+		ser_write_string(w, str8_lit("sfx_sequence"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("type"));
+		ser_write_i32(w, entity.sfx_sequence.type);
+		ser_write_string(w, str8_lit("reset_time"));
+		ser_write_f32(w, entity.sfx_sequence.reset_time);
+		ser_write_string(w, str8_lit("vol_min"));
+		ser_write_f32(w, entity.sfx_sequence.vol_min);
+		ser_write_string(w, str8_lit("vol_max"));
+		ser_write_f32(w, entity.sfx_sequence.vol_max);
+		ser_write_string(w, str8_lit("pitch_min"));
+		ser_write_f32(w, entity.sfx_sequence.pitch_min);
+		ser_write_string(w, str8_lit("pitch_max"));
+		ser_write_f32(w, entity.sfx_sequence.pitch_max);
+		ser_write_string(w, str8_lit("clips_len"));
+		ser_write_i32(w, entity.sfx_sequence.clips_len);
+
+		ser_write_string(w, str8_lit("clips"));
+		ser_write_array(w);
+		for(usize i = 0; i < entity.sfx_sequence.clips_len; ++i) {
+			ser_write_string(w, entity.sfx_sequence.clips[i]);
+		}
+		ser_write_end(w);
+
+		ser_write_end(w);
+	}
+
 	ser_write_end(w);
 }
 
@@ -272,6 +302,34 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 				assert(gravity_key.type == SER_TYPE_STRING);
 				if(str8_match(gravity_key.str, str8_lit("value"), 0)) {
 					res.gravity.value = gravity_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("sfx_sequence"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("type"), 0)) {
+					res.sfx_sequence.type = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("reset_time"), 0)) {
+					res.sfx_sequence.reset_time = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("vol_min"), 0)) {
+					res.sfx_sequence.vol_min = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("vol_max"), 0)) {
+					res.sfx_sequence.vol_max = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("pitch_min"), 0)) {
+					res.sfx_sequence.pitch_min = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("pitch_max"), 0)) {
+					res.sfx_sequence.pitch_max = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("clips_len"), 0)) {
+					res.sfx_sequence.clips_len = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("clips"), 0)) {
+					assert(item_value.type == SER_TYPE_ARRAY);
+					struct ser_value clip_value;
+					usize i = 0;
+					while(ser_iter_array(r, item_value, &clip_value)) {
+						res.sfx_sequence.clips[i++] = clip_value.str;
+					}
 				}
 			}
 		}

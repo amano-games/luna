@@ -11,7 +11,6 @@
 #define CHUNK_HEADER_FMT "4L"
 #define WAVE_HEADER_FMT  "SSLLSSSSLS"
 #define RAW_FILE_EXT     "raw"
-#define SND_FILE_EXT     "snd"
 
 int
 adpcm_block_size_to_sample_count(int block_size, int num_chans, int bps)

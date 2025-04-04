@@ -35,6 +35,17 @@ struct pinb_gravity {
 	f32 value;
 };
 
+struct pinb_sfx_sequence {
+	i32 type;
+	f32 reset_time;
+	f32 vol_min;
+	f32 vol_max;
+	f32 pitch_min;
+	f32 pitch_max;
+	usize clips_len;
+	str8 clips[10];
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -46,6 +57,7 @@ struct pinb_entity {
 	struct pinb_reactive_sprite_offset reactive_sprite_offset;
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
+	struct pinb_sfx_sequence sfx_sequence;
 };
 
 struct pinb_physics_props {
