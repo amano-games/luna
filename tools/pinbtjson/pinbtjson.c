@@ -307,6 +307,23 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 			assert(gravity_value->type == JSMN_PRIMITIVE);
 
 			res.entity.gravity.value = json_parse_f32(json, gravity_value);
+		} else if(json_eq(json, key, str8_lit("animator")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *play_on_start_key       = &tokens[++i];
+			jsmntok_t *play_on_start_value     = &tokens[++i];
+			jsmntok_t *initial_animation_key   = &tokens[++i];
+			jsmntok_t *initial_animation_value = &tokens[++i];
+
+			assert(play_on_start_key->type == JSMN_STRING);
+			assert(json_eq(json, play_on_start_key, str8_lit("play_on_start")) == 0);
+			assert(play_on_start_value->type == JSMN_PRIMITIVE);
+			assert(initial_animation_key->type == JSMN_STRING);
+			assert(json_eq(json, initial_animation_key, str8_lit("initial_animation")) == 0);
+			assert(initial_animation_value->type == JSMN_PRIMITIVE);
+
+			res.entity.animator.play_on_start     = json_parse_bool32(json, play_on_start_value);
+			res.entity.animator.initial_animation = json_parse_i32(json, initial_animation_value);
 		} else if(json_eq(json, key, str8_lit("sfx_sequence")) == 0) {
 			assert(value->type == JSMN_OBJECT);
 			struct pinb_sfx_sequence_res item_res = pinbjson_handle_sfx_sequence(json, tokens, i + 1, alloc);
