@@ -196,6 +196,24 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 			res.entity.reactive_impulse.magnitude = json_parse_f32(json, mag_value);
 			res.entity.reactive_impulse.normalize = json_parse_bool32(json, norm_value);
 
+		} else if(json_eq(json, key, str8_lit("reactive_sprite_offset")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *delay_key   = &tokens[++i];
+			jsmntok_t *delay_value = &tokens[++i];
+			jsmntok_t *mag_key     = &tokens[++i];
+			jsmntok_t *mag_value   = &tokens[++i];
+
+			assert(delay_key->type == JSMN_STRING);
+			assert(json_eq(json, delay_key, str8_lit("delay")) == 0);
+			assert(delay_value->type == JSMN_PRIMITIVE);
+			assert(mag_key->type == JSMN_STRING);
+			assert(json_eq(json, mag_key, str8_lit("magnitude")) == 0);
+			assert(mag_value->type == JSMN_PRIMITIVE);
+
+			res.entity.reactive_sprite_offset.delay     = json_parse_f32(json, delay_value);
+			res.entity.reactive_sprite_offset.magnitude = json_parse_f32(json, mag_value);
+
 		} else if(json_eq(json, key, str8_lit("plunger")) == 0) {
 			assert(value->type == JSMN_OBJECT);
 			++i;
