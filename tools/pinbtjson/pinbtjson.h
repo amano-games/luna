@@ -24,6 +24,16 @@ struct pinb_col_cir_res {
 	usize token_count;
 };
 
+struct pinb_flipper_manager_res {
+	struct pinb_flipper_manager flipper_manager;
+	usize token_count;
+};
+
+struct pinb_table_props_res {
+	struct pinb_table_props props;
+	usize token_count;
+};
+
 #define PINB_EXT "pinb"
 
 i32 pinbtjson_handle(str8 in_path, str8 out_path);

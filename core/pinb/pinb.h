@@ -37,8 +37,24 @@ struct pinb_entity {
 	struct pinb_flipper flipper;
 };
 
+struct pinb_flipper_manager {
+	f32 flip_velocity;
+	f32 rotation_max_turns;
+	f32 rotation_min_turns;
+	f32 release_velocity;
+	i32 velocity_easing_function;
+	f32 velocity_radius_max;
+	f32 velocity_radius_min;
+	f32 velocity_scale;
+};
+
+struct pinb_table_props {
+	struct pinb_flipper_manager flipper_manager;
+};
+
 struct pinb_table {
 	usize version;
+	struct pinb_table_props props;
 	usize entities_count;
 	struct pinb_entity *entities;
 };
