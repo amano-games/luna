@@ -8,6 +8,11 @@ struct pinb_reactive_impulse {
 	bool32 normalize;
 };
 
+struct pinb_reactive_sprite_offset {
+	f32 delay;
+	f32 magnitude;
+};
+
 struct pinb_plunger {
 	f32 y_initial;
 	f32 charge_force_min;
@@ -38,6 +43,7 @@ struct pinb_entity {
 	struct body body;
 	struct pinb_plunger plunger;
 	struct pinb_reactive_impulse reactive_impulse;
+	struct pinb_reactive_sprite_offset reactive_sprite_offset;
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
 };
