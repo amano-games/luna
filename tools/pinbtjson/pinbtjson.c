@@ -242,11 +242,11 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 	return res;
 }
 
-struct pinb_flipper_manager_res
-pinbjson_handle_flipper_manager(str8 json, jsmntok_t *tokens, i32 index)
+struct pinb_flippers_props_res
+pinbjson_handle_flippers_props(str8 json, jsmntok_t *tokens, i32 index)
 {
-	struct pinb_flipper_manager_res res = {0};
-	jsmntok_t *root                     = &tokens[index];
+	struct pinb_flippers_props_res res = {0};
+	jsmntok_t *root                    = &tokens[index];
 	assert(root->type == JSMN_OBJECT);
 	res.token_count = json_obj_count(json, root);
 	for(usize i = index + 1; i < index + res.token_count; i += 2) {
@@ -255,21 +255,21 @@ pinbjson_handle_flipper_manager(str8 json, jsmntok_t *tokens, i32 index)
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
 		if(json_eq(json, key, str8_lit("flip_velocity")) == 0) {
-			res.flipper_manager.flip_velocity = json_parse_f32(json, value);
+			res.props.flip_velocity = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("release_velocity")) == 0) {
-			res.flipper_manager.release_velocity = json_parse_f32(json, value);
+			res.props.release_velocity = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("rotation_max_degrees")) == 0) {
-			res.flipper_manager.rotation_max_turns = json_parse_f32(json, value) * DEG_TO_TURN;
+			res.props.rotation_max_turns = json_parse_f32(json, value) * DEG_TO_TURN;
 		} else if(json_eq(json, key, str8_lit("rotation_min_degrees")) == 0) {
-			res.flipper_manager.rotation_min_turns = json_parse_f32(json, value) * DEG_TO_TURN;
+			res.props.rotation_min_turns = json_parse_f32(json, value) * DEG_TO_TURN;
 		} else if(json_eq(json, key, str8_lit("velocity_easing_function")) == 0) {
-			res.flipper_manager.velocity_easing_function = json_parse_f32(json, value);
+			res.props.velocity_easing_function = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("velocity_radius_max")) == 0) {
-			res.flipper_manager.velocity_radius_max = json_parse_f32(json, value);
+			res.props.velocity_radius_max = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("velocity_radius_min")) == 0) {
-			res.flipper_manager.velocity_radius_min = json_parse_f32(json, value);
+			res.props.velocity_radius_min = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("velocity_scale")) == 0) {
-			res.flipper_manager.velocity_scale = json_parse_f32(json, value);
+			res.props.velocity_scale = json_parse_f32(json, value);
 		}
 	}
 	return res;
@@ -287,9 +287,9 @@ pinbjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index)
 		jsmntok_t *value = tokens + i + 1;
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
-		if(json_eq(json, key, str8_lit("flipper_manager")) == 0) {
-			struct pinb_flipper_manager_res item_res = pinbjson_handle_flipper_manager(json, tokens, i + 1);
-			res.props.flipper_manager                = item_res.flipper_manager;
+		if(json_eq(json, key, str8_lit("flippers_props")) == 0) {
+			struct pinb_flippers_props_res item_res = pinbjson_handle_flippers_props(json, tokens, i + 1);
+			res.props.flippers_props                = item_res.props;
 			i += item_res.token_count;
 		}
 	}
