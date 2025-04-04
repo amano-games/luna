@@ -26,6 +26,10 @@ struct pinb_flipper {
 	i32 flip_type;
 };
 
+struct pinb_gravity {
+	f32 value;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -35,6 +39,7 @@ struct pinb_entity {
 	struct pinb_plunger plunger;
 	struct pinb_reactive_impulse reactive_impulse;
 	struct pinb_flipper flipper;
+	struct pinb_gravity gravity;
 };
 
 struct pinb_physics_props {

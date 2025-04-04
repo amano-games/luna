@@ -104,7 +104,7 @@ body_integrate_linear(struct body *body, f32 max_translation, f32 dt, f32 dt_inv
 {
 	// TODO: check null ?
 	// TODO: move to step context?
-	f32 damping                    = body->linear_damping;
+	f32 damping                    = 1.0f - body->linear_damping;
 	f32 max_linear_speed           = max_translation * dt_inv;
 	float max_linear_speed_squared = max_linear_speed * max_linear_speed;
 
@@ -130,7 +130,7 @@ body_integrate_angular(struct body *body, f32 max_rotation, f32 dt, f32 dt_inv)
 
 	f32 max_ang_speed         = max_rotation * dt_inv;
 	f32 max_ang_speed_squared = max_ang_speed * max_ang_speed;
-	f32 damping               = body->ang_damping;
+	f32 damping               = 1.0f - body->ang_damping;
 
 	f32 acc = body->torque * body->inertia_inv;
 	body->ang_vel_delta += acc * dt;
