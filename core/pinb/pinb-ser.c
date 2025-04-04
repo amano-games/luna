@@ -70,6 +70,15 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 		ser_write_end(w);
 	}
+	if(entity.gravity.value != 0) {
+		ser_write_string(w, str8_lit("gravity"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("value"));
+		ser_write_f32(w, entity.gravity.value);
+
+		ser_write_end(w);
+	}
 	ser_write_end(w);
 }
 
@@ -232,6 +241,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 				assert(flipper_key.type == SER_TYPE_STRING);
 				if(str8_match(flipper_key.str, str8_lit("flip_type"), 0)) {
 					res.flipper.flip_type = flipper_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value gravity_key, gravity_value;
+			while(ser_iter_object(r, value, &gravity_key, &gravity_value)) {
+				assert(gravity_key.type == SER_TYPE_STRING);
+				if(str8_match(gravity_key.str, str8_lit("value"), 0)) {
+					res.gravity.value = gravity_value.f32;
 				}
 			}
 		}

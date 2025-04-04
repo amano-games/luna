@@ -236,6 +236,17 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 			assert(flip_type_value->type == JSMN_PRIMITIVE);
 
 			res.entity.flipper.flip_type = json_parse_i32(json, flip_type_value);
+		} else if(json_eq(json, key, str8_lit("gravity")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			++i;
+			jsmntok_t *gravity_key   = &tokens[++i];
+			jsmntok_t *gravity_value = &tokens[++i];
+
+			assert(gravity_key->type == JSMN_STRING);
+			assert(json_eq(json, gravity_key, str8_lit("value")) == 0);
+			assert(gravity_value->type == JSMN_PRIMITIVE);
+
+			res.entity.gravity.value = json_parse_f32(json, gravity_value);
 		}
 	}
 
