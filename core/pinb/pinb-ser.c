@@ -74,6 +74,23 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 }
 
 void
+pinb_physics_props_write(struct ser_writer *w, struct pinb_physics_props props)
+{
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("steps"));
+	ser_write_i32(w, props.steps);
+	ser_write_string(w, str8_lit("max_translation"));
+	ser_write_f32(w, props.max_translation);
+	ser_write_string(w, str8_lit("max_rotation"));
+	ser_write_f32(w, props.max_rotation);
+	ser_write_string(w, str8_lit("penetration_correction"));
+	ser_write_f32(w, props.penetration_correction);
+	ser_write_string(w, str8_lit("penetration_allowance"));
+	ser_write_f32(w, props.penetration_allowance);
+	ser_write_end(w);
+}
+
+void
 pinb_flippers_props_write(struct ser_writer *w, struct pinb_flippers_props props)
 {
 	ser_write_object(w);
@@ -101,6 +118,8 @@ pinb_table_props_write(struct ser_writer *w, struct pinb_table_props props)
 {
 	ser_write_object(w);
 
+	ser_write_string(w, str8_lit("physics_props"));
+	pinb_physics_props_write(w, props.physics_props);
 	ser_write_string(w, str8_lit("flippers_props"));
 	pinb_flippers_props_write(w, props.flippers_props);
 	ser_write_end(w);
@@ -220,6 +239,29 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
+struct pinb_physics_props
+pinb_physics_props_read(struct ser_reader *r, struct ser_value obj)
+{
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct pinb_physics_props res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("steps"), 0)) {
+			res.steps = value.i32;
+		} else if(str8_match(key.str, str8_lit("max_translation"), 0)) {
+			res.max_translation = value.f32;
+		} else if(str8_match(key.str, str8_lit("max_rotation"), 0)) {
+			res.max_rotation = value.f32;
+		} else if(str8_match(key.str, str8_lit("penetration_correction"), 0)) {
+			res.penetration_correction = value.f32;
+		} else if(str8_match(key.str, str8_lit("penetration_allowance"), 0)) {
+			res.penetration_allowance = value.f32;
+		}
+	}
+	return res;
+}
+
 struct pinb_flippers_props
 pinb_flippers_props_read(struct ser_reader *r, struct ser_value obj)
 {
@@ -257,7 +299,9 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
+		if(str8_match(key.str, str8_lit("physics_props"), 0)) {
+			res.physics_props = pinb_physics_props_read(r, value);
+		} else if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
 			res.flippers_props = pinb_flippers_props_read(r, value);
 		}
 	}
