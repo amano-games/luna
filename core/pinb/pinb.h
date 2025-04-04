@@ -27,6 +27,11 @@ struct pinb_spr {
 	v2 offset;
 };
 
+struct pinb_animator {
+	bool32 play_on_start;
+	i32 initial_animation;
+};
+
 struct pinb_flipper {
 	i32 flip_type;
 };
@@ -58,6 +63,7 @@ struct pinb_entity {
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
 	struct pinb_sfx_sequence sfx_sequence;
+	struct pinb_animator animator;
 };
 
 struct pinb_physics_props {
