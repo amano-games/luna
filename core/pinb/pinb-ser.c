@@ -73,6 +73,39 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_end(w);
 }
 
+void
+pinb_flipper_manager_write(struct ser_writer *w, struct pinb_flipper_manager flipper_manager)
+{
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("flip_velocity"));
+	ser_write_f32(w, flipper_manager.flip_velocity);
+	ser_write_string(w, str8_lit("rotation_max_degrees"));
+	ser_write_f32(w, flipper_manager.rotation_max_turns);
+	ser_write_string(w, str8_lit("rotation_min_degrees"));
+	ser_write_f32(w, flipper_manager.rotation_min_turns);
+	ser_write_string(w, str8_lit("release_velocity"));
+	ser_write_f32(w, flipper_manager.release_velocity);
+	ser_write_string(w, str8_lit("velocity_easing_function"));
+	ser_write_i32(w, flipper_manager.velocity_easing_function);
+	ser_write_string(w, str8_lit("velocity_radius_max"));
+	ser_write_f32(w, flipper_manager.velocity_radius_max);
+	ser_write_string(w, str8_lit("velocity_radius_min"));
+	ser_write_f32(w, flipper_manager.velocity_radius_min);
+	ser_write_string(w, str8_lit("velocity_scale"));
+	ser_write_f32(w, flipper_manager.velocity_scale);
+	ser_write_end(w);
+}
+
+void
+pinb_table_props_write(struct ser_writer *w, struct pinb_table_props props)
+{
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("flipper_manager"));
+	pinb_flipper_manager_write(w, props.flipper_manager);
+	ser_write_end(w);
+}
+
 i32
 pinb_write(struct ser_writer *w, struct pinb_table pinb)
 {
@@ -81,8 +114,12 @@ pinb_write(struct ser_writer *w, struct pinb_table pinb)
 
 	ser_write_string(w, str8_lit("version"));
 	ser_write_i32(w, pinb.version);
+
 	ser_write_string(w, str8_lit("entities_count"));
 	ser_write_i32(w, pinb.entities_count);
+
+	ser_write_string(w, str8_lit("props"));
+	pinb_table_props_write(w, pinb.props);
 
 	ser_write_string(w, str8_lit("entities"));
 	ser_write_array(w);
@@ -183,6 +220,50 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
+struct pinb_flipper_manager
+pinb_flipper_manager_read(struct ser_reader *r, struct ser_value obj)
+{
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct pinb_flipper_manager res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("flip_velocity"), 0)) {
+			res.flip_velocity = value.f32;
+		} else if(str8_match(key.str, str8_lit("rotation_max_degrees"), 0)) {
+			res.rotation_max_turns = value.f32;
+		} else if(str8_match(key.str, str8_lit("rotation_min_degrees"), 0)) {
+			res.rotation_min_turns = value.f32;
+		} else if(str8_match(key.str, str8_lit("release_velocity"), 0)) {
+			res.release_velocity = value.f32;
+		} else if(str8_match(key.str, str8_lit("velocity_easing_function"), 0)) {
+			res.velocity_easing_function = value.i32;
+		} else if(str8_match(key.str, str8_lit("velocity_radius_max"), 0)) {
+			res.velocity_radius_max = value.f32;
+		} else if(str8_match(key.str, str8_lit("velocity_radius_min"), 0)) {
+			res.velocity_radius_min = value.f32;
+		} else if(str8_match(key.str, str8_lit("velocity_scale"), 0)) {
+			res.velocity_scale = value.f32;
+		}
+	}
+	return res;
+}
+
+struct pinb_table_props
+pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
+{
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct pinb_table_props res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("flipper_manager"), 0)) {
+			res.flipper_manager = pinb_flipper_manager_read(r, value);
+		}
+	}
+	return res;
+}
+
 i32
 pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, struct alloc alloc)
 {
@@ -194,6 +275,9 @@ pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, 
 			assert(value.type == SER_TYPE_I32);
 			assert(value.i32 > 0);
 			table->version = value.i32;
+		} else if(str8_match(key.str, str8_lit("props"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			table->props = pinb_table_props_read(r, value);
 		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			table->entities_count = value.i32;
