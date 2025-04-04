@@ -9,6 +9,7 @@
 #include "sys-assert.h"
 #include "sys.h"
 #include "tools/tex/tex.h"
+#include "tools/wav/wav.h"
 
 struct pinb_col_cir_res
 pinbjson_handle_col_cir(str8 json, jsmntok_t *tokens, i32 index)
@@ -30,6 +31,47 @@ pinbjson_handle_col_cir(str8 json, jsmntok_t *tokens, i32 index)
 		}
 	}
 
+	return res;
+}
+
+struct pinb_sfx_sequence_res
+pinbjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinb_sfx_sequence_res res = {0};
+	jsmntok_t *root                  = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("type")) == 0) {
+			res.sfx_sequence.type = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("vol_min")) == 0) {
+			res.sfx_sequence.vol_min = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("vol_max")) == 0) {
+			res.sfx_sequence.vol_max = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("pitch_min")) == 0) {
+			res.sfx_sequence.pitch_min = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("pitch_max")) == 0) {
+			res.sfx_sequence.pitch_max = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("reset_time")) == 0) {
+			res.sfx_sequence.reset_time = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			assert((usize)value->size < ARRLEN(res.sfx_sequence.clips));
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + 2;
+				jsmntok_t *item = tokens + item_index;
+				assert(item->type == JSMN_STRING);
+				str8 wav_path                                        = json_str8(json, item);
+				str8 snd_path                                        = make_file_name_with_ext(alloc, wav_path, str8_lit(SND_FILE_EXT));
+				res.sfx_sequence.clips[res.sfx_sequence.clips_len++] = snd_path;
+				i++;
+			}
+		}
+	}
 	return res;
 }
 
@@ -265,6 +307,12 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 			assert(gravity_value->type == JSMN_PRIMITIVE);
 
 			res.entity.gravity.value = json_parse_f32(json, gravity_value);
+		} else if(json_eq(json, key, str8_lit("sfx_sequence")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinb_sfx_sequence_res item_res = pinbjson_handle_sfx_sequence(json, tokens, i + 1, alloc);
+			res.entity.sfx_sequence               = item_res.sfx_sequence;
+			i += item_res.token_count;
+			i++;
 		}
 	}
 

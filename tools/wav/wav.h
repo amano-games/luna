@@ -3,6 +3,7 @@
 #include "mem.h"
 #include "sys-types.h"
 
+#define SND_FILE_EXT           "snd"
 #define WAVE_FORMAT_PCM        0x1
 #define WAVE_FORMAT_IMA_ADPCM  0x11
 #define WAVE_FORMAT_EXTENSIBLE 0xfffe
