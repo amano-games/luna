@@ -24,6 +24,11 @@ struct pinb_col_cir_res {
 	usize token_count;
 };
 
+struct pinb_physics_props_res {
+	struct pinb_physics_props props;
+	usize token_count;
+};
+
 struct pinb_flippers_props_res {
 	struct pinb_flippers_props props;
 	usize token_count;

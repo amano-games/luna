@@ -37,6 +37,14 @@ struct pinb_entity {
 	struct pinb_flipper flipper;
 };
 
+struct pinb_physics_props {
+	u8 steps;
+	f32 max_translation; // The maximum translation of a body per time step.
+	f32 max_rotation;    // The maximum rotation of a body per time step. This limit is very large and is used to prevent numerical errors
+	f32 penetration_correction;
+	f32 penetration_allowance;
+};
+
 struct pinb_flippers_props {
 	f32 flip_velocity;
 	f32 rotation_max_turns;
@@ -49,6 +57,7 @@ struct pinb_flippers_props {
 };
 
 struct pinb_table_props {
+	struct pinb_physics_props physics_props;
 	struct pinb_flippers_props flippers_props;
 };
 

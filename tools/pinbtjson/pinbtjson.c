@@ -242,6 +242,33 @@ pinbjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc all
 	return res;
 }
 
+struct pinb_physics_props_res
+pinbjson_handle_physics_props(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinb_physics_props_res res = {0};
+	jsmntok_t *root                   = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("steps")) == 0) {
+			res.props.steps = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("max_translation")) == 0) {
+			res.props.max_translation = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("max_rotation")) == 0) {
+			res.props.max_rotation = json_parse_f32(json, value) * PI_FLOAT;
+		} else if(json_eq(json, key, str8_lit("penetration_correction")) == 0) {
+			res.props.penetration_correction = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("penetration_allowance")) == 0) {
+			res.props.penetration_allowance = json_parse_f32(json, value);
+		}
+	}
+	return res;
+}
+
 struct pinb_flippers_props_res
 pinbjson_handle_flippers_props(str8 json, jsmntok_t *tokens, i32 index)
 {
@@ -282,12 +309,16 @@ pinbjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index)
 	jsmntok_t *root                 = &tokens[index];
 	assert(root->type == JSMN_OBJECT);
 	res.token_count = json_obj_count(json, root);
-	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
-		if(json_eq(json, key, str8_lit("flippers_props")) == 0) {
+		if(json_eq(json, key, str8_lit("physics_props")) == 0) {
+			struct pinb_physics_props_res item_res = pinbjson_handle_physics_props(json, tokens, i + 1);
+			res.props.physics_props                = item_res.props;
+			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("flippers_props")) == 0) {
 			struct pinb_flippers_props_res item_res = pinbjson_handle_flippers_props(json, tokens, i + 1);
 			res.props.flippers_props                = item_res.props;
 			i += item_res.token_count;
