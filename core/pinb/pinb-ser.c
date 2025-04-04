@@ -74,25 +74,25 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 }
 
 void
-pinb_flipper_manager_write(struct ser_writer *w, struct pinb_flipper_manager flipper_manager)
+pinb_flippers_props_write(struct ser_writer *w, struct pinb_flippers_props props)
 {
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("flip_velocity"));
-	ser_write_f32(w, flipper_manager.flip_velocity);
+	ser_write_f32(w, props.flip_velocity);
 	ser_write_string(w, str8_lit("rotation_max_degrees"));
-	ser_write_f32(w, flipper_manager.rotation_max_turns);
+	ser_write_f32(w, props.rotation_max_turns);
 	ser_write_string(w, str8_lit("rotation_min_degrees"));
-	ser_write_f32(w, flipper_manager.rotation_min_turns);
+	ser_write_f32(w, props.rotation_min_turns);
 	ser_write_string(w, str8_lit("release_velocity"));
-	ser_write_f32(w, flipper_manager.release_velocity);
+	ser_write_f32(w, props.release_velocity);
 	ser_write_string(w, str8_lit("velocity_easing_function"));
-	ser_write_i32(w, flipper_manager.velocity_easing_function);
+	ser_write_i32(w, props.velocity_easing_function);
 	ser_write_string(w, str8_lit("velocity_radius_max"));
-	ser_write_f32(w, flipper_manager.velocity_radius_max);
+	ser_write_f32(w, props.velocity_radius_max);
 	ser_write_string(w, str8_lit("velocity_radius_min"));
-	ser_write_f32(w, flipper_manager.velocity_radius_min);
+	ser_write_f32(w, props.velocity_radius_min);
 	ser_write_string(w, str8_lit("velocity_scale"));
-	ser_write_f32(w, flipper_manager.velocity_scale);
+	ser_write_f32(w, props.velocity_scale);
 	ser_write_end(w);
 }
 
@@ -101,8 +101,8 @@ pinb_table_props_write(struct ser_writer *w, struct pinb_table_props props)
 {
 	ser_write_object(w);
 
-	ser_write_string(w, str8_lit("flipper_manager"));
-	pinb_flipper_manager_write(w, props.flipper_manager);
+	ser_write_string(w, str8_lit("flippers_props"));
+	pinb_flippers_props_write(w, props.flippers_props);
 	ser_write_end(w);
 }
 
@@ -220,11 +220,11 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
-struct pinb_flipper_manager
-pinb_flipper_manager_read(struct ser_reader *r, struct ser_value obj)
+struct pinb_flippers_props
+pinb_flippers_props_read(struct ser_reader *r, struct ser_value obj)
 {
 	assert(obj.type == SER_TYPE_OBJECT);
-	struct pinb_flipper_manager res = {0};
+	struct pinb_flippers_props res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		assert(key.type == SER_TYPE_STRING);
@@ -257,8 +257,8 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("flipper_manager"), 0)) {
-			res.flipper_manager = pinb_flipper_manager_read(r, value);
+		if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
+			res.flippers_props = pinb_flippers_props_read(r, value);
 		}
 	}
 	return res;

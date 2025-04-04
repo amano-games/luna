@@ -24,8 +24,8 @@ struct pinb_col_cir_res {
 	usize token_count;
 };
 
-struct pinb_flipper_manager_res {
-	struct pinb_flipper_manager flipper_manager;
+struct pinb_flippers_props_res {
+	struct pinb_flippers_props props;
 	usize token_count;
 };
 
