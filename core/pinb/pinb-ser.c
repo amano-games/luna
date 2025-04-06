@@ -71,12 +71,29 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
-	if(entity.flipper.flip_type != 0) {
+	if(entity.flipper.velocity_scale != 0) {
 		ser_write_string(w, str8_lit("flipper"));
 		ser_write_object(w);
 
-		ser_write_string(w, str8_lit("flip_type"));
-		ser_write_i32(w, entity.flipper.flip_type);
+		ser_write_string(w, str8_lit("velocity_easing_function"));
+		ser_write_i32(w, entity.flipper.velocity_easing_function);
+		ser_write_string(w, str8_lit("velocity_radius_max"));
+		ser_write_f32(w, entity.flipper.velocity_radius_max);
+		ser_write_string(w, str8_lit("velocity_radius_min"));
+		ser_write_f32(w, entity.flipper.velocity_radius_min);
+		ser_write_string(w, str8_lit("velocity_scale"));
+		ser_write_f32(w, entity.flipper.velocity_scale);
+
+		ser_write_end(w);
+	}
+	if(entity.flip.type != 0) {
+		ser_write_string(w, str8_lit("flip"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("type"));
+		ser_write_i32(w, entity.flip.type);
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.flip.is_enabled);
 
 		ser_write_end(w);
 	}
@@ -164,14 +181,6 @@ pinb_flippers_props_write(struct ser_writer *w, struct pinb_flippers_props props
 	ser_write_f32(w, props.rotation_min_turns);
 	ser_write_string(w, str8_lit("release_velocity"));
 	ser_write_f32(w, props.release_velocity);
-	ser_write_string(w, str8_lit("velocity_easing_function"));
-	ser_write_i32(w, props.velocity_easing_function);
-	ser_write_string(w, str8_lit("velocity_radius_max"));
-	ser_write_f32(w, props.velocity_radius_max);
-	ser_write_string(w, str8_lit("velocity_radius_min"));
-	ser_write_f32(w, props.velocity_radius_min);
-	ser_write_string(w, str8_lit("velocity_scale"));
-	ser_write_f32(w, props.velocity_scale);
 	ser_write_end(w);
 }
 
@@ -305,8 +314,24 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 			struct ser_value flipper_key, flipper_value;
 			while(ser_iter_object(r, value, &flipper_key, &flipper_value)) {
 				assert(flipper_key.type == SER_TYPE_STRING);
-				if(str8_match(flipper_key.str, str8_lit("flip_type"), 0)) {
-					res.flipper.flip_type = flipper_value.i32;
+				if(str8_match(flipper_key.str, str8_lit("velocity_easing_function"), 0)) {
+					res.flipper.velocity_easing_function = flipper_value.i32;
+				} else if(str8_match(flipper_key.str, str8_lit("velocity_scale"), 0)) {
+					res.flipper.velocity_scale = flipper_value.f32;
+				} else if(str8_match(flipper_key.str, str8_lit("velocity_radius_min"), 0)) {
+					res.flipper.velocity_radius_min = flipper_value.f32;
+				} else if(str8_match(flipper_key.str, str8_lit("velocity_radius_max"), 0)) {
+					res.flipper.velocity_radius_max = flipper_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				if(str8_match(item_key.str, str8_lit("type"), 0)) {
+					res.flip.type = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("is_enabled"), 0)) {
+					res.flip.is_enabled = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
@@ -401,14 +426,6 @@ pinb_flippers_props_read(struct ser_reader *r, struct ser_value obj)
 			res.rotation_min_turns = value.f32;
 		} else if(str8_match(key.str, str8_lit("release_velocity"), 0)) {
 			res.release_velocity = value.f32;
-		} else if(str8_match(key.str, str8_lit("velocity_easing_function"), 0)) {
-			res.velocity_easing_function = value.i32;
-		} else if(str8_match(key.str, str8_lit("velocity_radius_max"), 0)) {
-			res.velocity_radius_max = value.f32;
-		} else if(str8_match(key.str, str8_lit("velocity_radius_min"), 0)) {
-			res.velocity_radius_min = value.f32;
-		} else if(str8_match(key.str, str8_lit("velocity_scale"), 0)) {
-			res.velocity_scale = value.f32;
 		}
 	}
 	return res;
