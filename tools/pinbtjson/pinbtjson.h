@@ -3,45 +3,31 @@
 #include "sys-types.h"
 #include "pinb/pinb.h"
 
-struct pinb_entity_res {
-	struct pinb_entity entity;
-	usize token_count;
+struct pinb_col_shapes {
+	usize count;
+	struct col_shape items[10];
 };
 
-struct pinb_rigid_body_res {
-	struct body body;
+struct pinbtjson_res {
 	usize token_count;
-};
-
-struct pinb_col_shape_res {
-	struct col_shape shapes[10];
-	usize shape_count;
-	usize token_count;
-};
-
-struct pinb_col_cir_res {
-	struct col_cir cir;
-	usize token_count;
-};
-
-struct pinb_sfx_sequence_res {
-	struct pinb_sfx_sequence sfx_sequence;
-	usize token_count;
-};
-
-struct pinb_physics_props_res {
-	struct pinb_physics_props props;
-	usize token_count;
-};
-
-struct pinb_flippers_props_res {
-	struct pinb_flippers_props props;
-	usize token_count;
-};
-
-struct pinb_table_props_res {
-	struct pinb_table_props props;
-	usize token_count;
+	union {
+		struct pinb_entity entity;
+		struct body body;
+		struct col_cir cir;
+		struct pinb_flipper flipper;
+		struct pinb_sfx_sequence sfx_sequence;
+		struct pinb_physics_props physics_props;
+		struct pinb_flippers_props flipper_props;
+		struct pinb_table_props table_props;
+		struct pinb_col_shapes col_shapes;
+		struct pinb_spr spr;
+		struct pinb_flip flip;
+		struct pinb_plunger plunger;
+		struct pinb_reactive_impulse reactive_impulse;
+		struct pinb_reactive_sprite_offset reactive_sprite_offset;
+		struct pinb_animator animator;
+		struct pinb_gravity gravity;
+	};
 };
 
 #define PINB_EXT "pinb"

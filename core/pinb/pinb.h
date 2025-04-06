@@ -33,7 +33,29 @@ struct pinb_animator {
 };
 
 struct pinb_flipper {
-	i32 flip_type;
+	i32 velocity_easing_function;
+	f32 velocity_radius_max;
+	f32 velocity_radius_min;
+	f32 velocity_scale;
+};
+
+struct pinb_flip {
+	i32 type;
+	bool32 is_enabled;
+};
+
+struct pinb_switch {
+	bool32 is_enabled;
+};
+
+struct pinb_switch_list {
+	i32 next;
+	i32 prev;
+};
+
+struct pinb_sensor {
+	bool32 is_enabled;
+	struct col_shape col_shape;
 };
 
 struct pinb_gravity {
@@ -64,6 +86,7 @@ struct pinb_entity {
 	struct pinb_gravity gravity;
 	struct pinb_sfx_sequence sfx_sequence;
 	struct pinb_animator animator;
+	struct pinb_flip flip;
 };
 
 struct pinb_physics_props {
@@ -79,10 +102,6 @@ struct pinb_flippers_props {
 	f32 rotation_max_turns;
 	f32 rotation_min_turns;
 	f32 release_velocity;
-	i32 velocity_easing_function;
-	f32 velocity_radius_max;
-	f32 velocity_radius_min;
-	f32 velocity_scale;
 };
 
 struct pinb_table_props {
