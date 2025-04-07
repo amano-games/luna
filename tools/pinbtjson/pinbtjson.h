@@ -27,6 +27,9 @@ struct pinbtjson_res {
 		struct pinb_reactive_sprite_offset reactive_sprite_offset;
 		struct pinb_animator animator;
 		struct pinb_gravity gravity;
+		struct pinb_sensor sensor;
+		struct pinb_switch switch_value;
+		struct pinb_switch_list switch_list;
 	};
 };
 

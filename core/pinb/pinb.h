@@ -46,6 +46,9 @@ struct pinb_flip {
 
 struct pinb_switch {
 	bool32 is_enabled;
+	bool32 value;
+	i32 animation_on;
+	i32 animation_off;
 };
 
 struct pinb_switch_list {
@@ -55,7 +58,7 @@ struct pinb_switch_list {
 
 struct pinb_sensor {
 	bool32 is_enabled;
-	struct col_shape col_shape;
+	struct col_shape shape;
 };
 
 struct pinb_gravity {
@@ -87,6 +90,9 @@ struct pinb_entity {
 	struct pinb_sfx_sequence sfx_sequence;
 	struct pinb_animator animator;
 	struct pinb_flip flip;
+	struct pinb_sensor sensor;
+	struct pinb_switch switch_value;
+	struct pinb_switch_list switch_list;
 };
 
 struct pinb_physics_props {
@@ -113,5 +119,6 @@ struct pinb_table {
 	usize version;
 	struct pinb_table_props props;
 	usize entities_count;
+	usize entities_max_id;
 	struct pinb_entity *entities;
 };

@@ -320,8 +320,8 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 	assert(root->type == JSMN_OBJECT);
 	res.token_count = json_obj_count(json, root);
 	for(usize i = index + 1; i < index + res.token_count; i += 2) {
-		jsmntok_t *key   = &tokens[i];
-		jsmntok_t *value = &tokens[i + 1];
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("flags")) == 0) {
 			res.body.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("angular_damping")) == 0) {
@@ -337,10 +337,78 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 		} else if(json_eq(json, key, str8_lit("static_friction")) == 0) {
 			res.body.static_friction = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
-			++i;
-			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i);
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1);
 			res.body.shape                = item_res.col_shapes.items[0];
-			i += item_res.token_count;
+			i += item_res.token_count - 1;
+		}
+	}
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.sensor.is_enabled = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1);
+			res.sensor.shape              = item_res.col_shapes.items[0];
+			i += item_res.token_count - 1;
+		}
+	}
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_switch_value(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.switch_value.is_enabled = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("value")) == 0) {
+			res.switch_value.value = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("animation_on")) == 0) {
+			res.switch_value.animation_on = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("animation_off")) == 0) {
+			res.switch_value.animation_off = json_parse_i32(json, value);
+		}
+	}
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("next")) == 0) {
+			res.switch_list.next = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("prev")) == 0) {
+			res.switch_list.prev = json_parse_i32(json, value);
 		}
 	}
 	return res;
@@ -414,6 +482,21 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_sfx_sequence(json, tokens, i + 1, alloc);
 			res.entity.sfx_sequence       = item_res.sfx_sequence;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("sensor")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_sensor(json, tokens, i + 1, alloc);
+			res.entity.sensor             = item_res.sensor;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("switch_value")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_switch_value(json, tokens, i + 1, alloc);
+			res.entity.switch_value       = item_res.switch_value;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("switch_list")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_switch_list(json, tokens, i + 1, alloc);
+			res.entity.switch_list        = item_res.switch_list;
 			i += item_res.token_count - 1;
 		}
 	}
@@ -525,6 +608,10 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 			struct pinbtjson_res item_res = pinbtjson_handle_table_props(json, tokens, i + 1);
 			res.props                     = item_res.table_props;
 			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("entities_max_id")) == 0) {
+			assert(value->type == JSMN_PRIMITIVE);
+			res.entities_max_id = json_parse_i32(json, value);
+			++i;
 		} else if(json_eq(json, key, str8_lit("entities_count")) == 0) {
 			assert(value->type == JSMN_PRIMITIVE);
 			res.entities_count = json_parse_i32(json, value);

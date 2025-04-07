@@ -4,6 +4,10 @@
 #include "serialize/serialize.h"
 #include "str.h"
 
+struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
+
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 {
@@ -30,10 +34,12 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 		ser_write_end(w);
 	}
+
 	if(entity.body.shape.type != COL_TYPE_NONE) {
 		ser_write_string(w, str8_lit("body"));
 		body_write(w, entity.body);
 	}
+
 	if(entity.reactive_impulse.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_impulse"));
 		ser_write_object(w);
@@ -43,6 +49,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_i32(w, entity.reactive_impulse.normalize);
 		ser_write_end(w);
 	}
+
 	if(entity.reactive_sprite_offset.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_sprite_offset"));
 		ser_write_object(w);
@@ -149,6 +156,43 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.sensor.shape.type != COL_TYPE_NONE) {
+		ser_write_string(w, str8_lit("sensor"));
+
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.sensor.is_enabled);
+		ser_write_string(w, str8_lit("shape"));
+		col_shape_write(w, entity.sensor.shape);
+
+		ser_write_end(w);
+	}
+
+	if(entity.switch_value.is_enabled) {
+		ser_write_string(w, str8_lit("switch_value"));
+		ser_write_object(w);
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.switch_value.is_enabled);
+		ser_write_string(w, str8_lit("value"));
+		ser_write_i32(w, entity.switch_value.value);
+		ser_write_string(w, str8_lit("animation_on"));
+		ser_write_i32(w, entity.switch_value.animation_on);
+		ser_write_string(w, str8_lit("animation_off"));
+		ser_write_i32(w, entity.switch_value.animation_off);
+		ser_write_end(w);
+	}
+
+	if(entity.switch_list.next != 0 || entity.switch_list.next != 0) {
+		ser_write_string(w, str8_lit("switch_list"));
+		ser_write_object(w);
+		ser_write_string(w, str8_lit("next"));
+		ser_write_i32(w, entity.switch_list.next);
+		ser_write_string(w, str8_lit("prev"));
+		ser_write_i32(w, entity.switch_list.prev);
+		ser_write_end(w);
+	}
+
 	ser_write_end(w);
 }
 
@@ -207,6 +251,9 @@ pinb_write(struct ser_writer *w, struct pinb_table pinb)
 
 	ser_write_string(w, str8_lit("entities_count"));
 	ser_write_i32(w, pinb.entities_count);
+
+	ser_write_string(w, str8_lit("entities_max_id"));
+	ser_write_i32(w, pinb.entities_max_id);
 
 	ser_write_string(w, str8_lit("props"));
 	pinb_table_props_write(w, pinb.props);
@@ -309,6 +356,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			res.body = body_read(r, value);
+		} else if(str8_match(key.str, str8_lit("sensor"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			res.sensor = pinb_sensor_read(r, value);
+		} else if(str8_match(key.str, str8_lit("switch_value"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			res.switch_value = pinb_switch_value_read(r, value);
+		} else if(str8_match(key.str, str8_lit("switch_list"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			res.switch_list = pinb_switch_list_read(r, value);
 		} else if(str8_match(key.str, str8_lit("flipper"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value flipper_key, flipper_value;
@@ -466,6 +522,9 @@ pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, 
 			assert(value.type == SER_TYPE_I32);
 			table->entities_count = value.i32;
 			table->entities       = arr_ini(table->entities_count, sizeof(*table->entities), alloc);
+		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			table->entities_max_id = value.i32;
 		} else if(str8_match(key.str, str8_lit("entities"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			assert(table->entities_count > 0);
@@ -477,5 +536,67 @@ pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, 
 			}
 		}
 	}
+	return res;
+}
+
+struct pinb_sensor
+pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_sensor res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.is_enabled = value.i32;
+		} else if(str8_match(key.str, str8_lit("shape"), 0)) {
+			res.shape = col_shape_read(r, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinb_switch
+pinb_switch_value_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_switch res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.is_enabled = value.i32;
+		} else if(str8_match(key.str, str8_lit("value"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.value = value.i32;
+		} else if(str8_match(key.str, str8_lit("animation_on"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.animation_on = value.i32;
+		} else if(str8_match(key.str, str8_lit("animation_off"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.animation_off = value.i32;
+		}
+	}
+
+	return res;
+}
+
+struct pinb_switch_list
+pinb_switch_list_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_switch_list res = {0};
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("prev"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.prev = value.i32;
+		} else if(str8_match(key.str, str8_lit("next"), 0)) {
+			assert(value.type == SER_TYPE_I32);
+			res.next = value.i32;
+		}
+	}
+
 	return res;
 }
