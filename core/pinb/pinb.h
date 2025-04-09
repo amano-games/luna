@@ -98,6 +98,12 @@ struct pinb_actions {
 	struct pinb_action *items;
 };
 
+struct pinb_spinner {
+	f32 damping;
+	f32 spin_force;
+	f32 stop_threshold;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -105,6 +111,7 @@ struct pinb_entity {
 	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
+	struct pinb_spinner spinner;
 	struct pinb_reactive_impulse reactive_impulse;
 	struct pinb_reactive_sprite_offset reactive_sprite_offset;
 	struct pinb_reactive_animation reactive_animation;
