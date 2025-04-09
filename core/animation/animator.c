@@ -49,7 +49,7 @@ void
 animator_play_animation(struct animator *animator, usize index, f32 timestamp)
 {
 	TRACE_START(__func__);
-	assert(index != 0);
+	assert(index > 0);
 	assert(animator->clips_handle.path_hash != 0);
 	struct animation_slice slice = asset_db_get_animation_slice(&ASSETS.db, animator->clips_handle);
 	assert(index <= slice.size);

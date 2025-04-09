@@ -8,6 +8,7 @@ struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
@@ -173,6 +174,38 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 							}
 						}
 						ser_write_end(w);
+					}
+					ser_write_end(w);
+				}
+			}
+			ser_write_end(w);
+		}
+		ser_write_end(w);
+	}
+
+	if(entity.actions.len > 0) {
+		ser_write_string(w, str8_lit("actions"));
+		ser_write_object(w);
+		{
+			ser_write_string(w, str8_lit("len"));
+			ser_write_i32(w, entity.actions.len);
+			ser_write_string(w, str8_lit("items"));
+
+			ser_write_array(w);
+			{
+				for(usize i = 0; i < entity.actions.len; ++i) {
+					ser_write_object(w);
+					{
+						ser_write_string(w, str8_lit("action_type"));
+						ser_write_i32(w, entity.actions.items[i].action_type);
+						ser_write_string(w, str8_lit("action_ref"));
+						ser_write_i32(w, entity.actions.items[i].action_ref);
+						ser_write_string(w, str8_lit("action_arg"));
+						ser_write_i32(w, entity.actions.items[i].action_arg);
+						ser_write_string(w, str8_lit("event_type"));
+						ser_write_i32(w, entity.actions.items[i].event_type);
+						ser_write_string(w, str8_lit("event_condition"));
+						ser_write_i32(w, entity.actions.items[i].event_condition);
 					}
 					ser_write_end(w);
 				}
@@ -461,6 +494,21 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 					}
 				}
 			}
+		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("len"), 0)) {
+					res.actions.len   = item_value.i32;
+					res.actions.items = arr_ini(item_value.i32, sizeof(*res.sfx_sequences.items), alloc);
+				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
+					struct ser_value sequence_value;
+					while(ser_iter_array(r, item_value, &sequence_value)) {
+						arr_push(res.actions.items, pinb_action_read(r, sequence_value));
+					}
+				}
+			}
 		}
 	}
 	return res;
@@ -653,6 +701,29 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj)
 			while(ser_iter_array(r, value, &clip_value)) {
 				res.clips[i++] = clip_value.str;
 			}
+		}
+	}
+	return res;
+}
+
+struct pinb_action
+pinb_action_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_action res = {0};
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("action_type"), 0)) {
+			res.action_type = value.i32;
+		} else if(str8_match(key.str, str8_lit("action_ref"), 0)) {
+			res.action_ref = value.i32;
+		} else if(str8_match(key.str, str8_lit("action_arg"), 0)) {
+			res.action_arg = value.i32;
+		} else if(str8_match(key.str, str8_lit("event_type"), 0)) {
+			res.event_type = value.i32;
+		} else if(str8_match(key.str, str8_lit("event_condition"), 0)) {
+			res.event_condition = value.i32;
 		}
 	}
 	return res;
