@@ -15,7 +15,6 @@ struct pinbtjson_res {
 		struct body body;
 		struct col_cir cir;
 		struct pinb_flipper flipper;
-		struct pinb_sfx_sequence sfx_sequence;
 		struct pinb_physics_props physics_props;
 		struct pinb_flippers_props flipper_props;
 		struct pinb_table_props table_props;
@@ -25,11 +24,13 @@ struct pinbtjson_res {
 		struct pinb_plunger plunger;
 		struct pinb_reactive_impulse reactive_impulse;
 		struct pinb_reactive_sprite_offset reactive_sprite_offset;
+		struct pinb_reactive_animation reactive_animation;
 		struct pinb_animator animator;
 		struct pinb_gravity gravity;
 		struct pinb_sensor sensor;
 		struct pinb_switch switch_value;
 		struct pinb_switch_list switch_list;
+		struct pinb_sfx_sequence sfx_sequence;
 	};
 };
 

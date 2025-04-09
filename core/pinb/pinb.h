@@ -8,6 +8,10 @@ struct pinb_reactive_impulse {
 	bool32 normalize;
 };
 
+struct pinb_reactive_animation {
+	i32 animation_index;
+};
+
 struct pinb_reactive_sprite_offset {
 	f32 delay;
 	f32 magnitude;
@@ -76,6 +80,11 @@ struct pinb_sfx_sequence {
 	str8 clips[10];
 };
 
+struct pinb_sfx_sequences {
+	usize len;
+	struct pinb_sfx_sequence *items;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -85,14 +94,15 @@ struct pinb_entity {
 	struct pinb_plunger plunger;
 	struct pinb_reactive_impulse reactive_impulse;
 	struct pinb_reactive_sprite_offset reactive_sprite_offset;
+	struct pinb_reactive_animation reactive_animation;
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
-	struct pinb_sfx_sequence sfx_sequence;
 	struct pinb_animator animator;
 	struct pinb_flip flip;
 	struct pinb_sensor sensor;
 	struct pinb_switch switch_value;
 	struct pinb_switch_list switch_list;
+	struct pinb_sfx_sequences sfx_sequences;
 };
 
 struct pinb_physics_props {

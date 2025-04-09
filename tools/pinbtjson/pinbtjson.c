@@ -54,6 +54,25 @@ pinbtjson_handle_reactive_impulse(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_reactive_animation(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("animation_index")) == 0) {
+			res.reactive_animation.animation_index = json_parse_i32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_reactive_sprite_offset(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -215,14 +234,14 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 			assert(value->type == JSMN_ARRAY);
 			assert((usize)value->size < ARRLEN(res.sfx_sequence.clips));
 			for(usize j = 0; j < (usize)value->size; ++j) {
-				i32 item_index  = i + 2;
+				i32 item_index  = i + j + 2;
 				jsmntok_t *item = tokens + item_index;
 				assert(item->type == JSMN_STRING);
 				str8 wav_path                                        = json_str8(json, item);
 				str8 snd_path                                        = make_file_name_with_ext(alloc, wav_path, str8_lit(SND_FILE_EXT));
 				res.sfx_sequence.clips[res.sfx_sequence.clips_len++] = snd_path;
-				i++;
 			}
+			i += value->size;
 		}
 	}
 	return res;
@@ -453,6 +472,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			struct pinbtjson_res item_res     = pinbtjson_handle_reactive_sprite_offset(json, tokens, i + 1);
 			res.entity.reactive_sprite_offset = item_res.reactive_sprite_offset;
 			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("reactive_animation")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_reactive_animation(json, tokens, i + 1);
+			res.entity.reactive_animation = item_res.reactive_animation;
+			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("plunger")) == 0) {
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_plunger(json, tokens, i + 1);
@@ -478,11 +502,18 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			struct pinbtjson_res item_res = pinbtjson_handle_animator(json, tokens, i + 1);
 			res.entity.animator           = item_res.animator;
 			i += item_res.token_count - 1;
-		} else if(json_eq(json, key, str8_lit("sfx_sequence")) == 0) {
-			assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_sfx_sequence(json, tokens, i + 1, alloc);
-			res.entity.sfx_sequence       = item_res.sfx_sequence;
-			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("sfx_sequences")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.entity.sfx_sequences.len   = value->size;
+			res.entity.sfx_sequences.items = arr_ini(value->size, sizeof(*res.entity.sfx_sequences.items), alloc);
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + 2;
+				jsmntok_t *item = tokens + item_index;
+				assert(item->type == JSMN_OBJECT);
+				struct pinbtjson_res item_res     = pinbtjson_handle_sfx_sequence(json, tokens, item_index, alloc);
+				res.entity.sfx_sequences.items[j] = item_res.sfx_sequence;
+				i += item_res.token_count;
+			}
 		} else if(json_eq(json, key, str8_lit("sensor")) == 0) {
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_sensor(json, tokens, i + 1, alloc);
