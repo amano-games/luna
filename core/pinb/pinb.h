@@ -77,7 +77,7 @@ struct pinb_sfx_sequence {
 	f32 pitch_min;
 	f32 pitch_max;
 	usize clips_len;
-	str8 clips[10];
+	str8 *clips;
 };
 
 struct pinb_sfx_sequences {
