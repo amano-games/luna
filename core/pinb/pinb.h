@@ -85,6 +85,19 @@ struct pinb_sfx_sequences {
 	struct pinb_sfx_sequence *items;
 };
 
+struct pinb_action {
+	i32 event_type;
+	i32 event_condition; // NOTE: should be an array?
+	i32 action_type;
+	i32 action_ref;
+	i32 action_arg; // NOTE: Should be an array?
+};
+
+struct pinb_actions {
+	usize len;
+	struct pinb_action *items;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -103,6 +116,7 @@ struct pinb_entity {
 	struct pinb_switch switch_value;
 	struct pinb_switch_list switch_list;
 	struct pinb_sfx_sequences sfx_sequences;
+	struct pinb_actions actions;
 };
 
 struct pinb_physics_props {

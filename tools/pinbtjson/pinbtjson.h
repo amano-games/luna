@@ -31,6 +31,7 @@ struct pinbtjson_res {
 		struct pinb_switch switch_value;
 		struct pinb_switch_list switch_list;
 		struct pinb_sfx_sequence sfx_sequence;
+		struct pinb_action action;
 	};
 };
 
