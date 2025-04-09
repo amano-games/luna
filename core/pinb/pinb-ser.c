@@ -89,6 +89,22 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.spinner.spin_force != 0) {
+		ser_write_string(w, str8_lit("spinner"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("damping"));
+		ser_write_f32(w, entity.spinner.damping);
+
+		ser_write_string(w, str8_lit("spin_force"));
+		ser_write_f32(w, entity.spinner.spin_force);
+
+		ser_write_string(w, str8_lit("stop_threshold"));
+		ser_write_f32(w, entity.spinner.stop_threshold);
+
+		ser_write_end(w);
+	}
+
 	if(entity.flipper.velocity_scale != 0) {
 		ser_write_string(w, str8_lit("flipper"));
 		ser_write_object(w);
@@ -420,6 +436,22 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(plunger_key.str, str8_lit("release_force_max"), 0)) {
 					assert(plunger_value.type == SER_TYPE_F32);
 					res.plunger.release_force_max = plunger_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("spinner"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("damping"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.spinner.damping = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("spin_force"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.spinner.spin_force = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("stop_threshold"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.spinner.stop_threshold = item_value.f32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {

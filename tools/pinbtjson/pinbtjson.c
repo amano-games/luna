@@ -159,6 +159,29 @@ pinbtjson_handle_plunger(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_spinner(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("damping")) == 0) {
+			res.spinner.damping = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("spin_force")) == 0) {
+			res.spinner.spin_force = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("stop_threshold")) == 0) {
+			res.spinner.stop_threshold = json_parse_f32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_flipper(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -508,6 +531,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_plunger(json, tokens, i + 1);
 			res.entity.plunger            = item_res.plunger;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("spinner")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_spinner(json, tokens, i + 1);
+			res.entity.spinner            = item_res.spinner;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("flipper")) == 0) {
 			assert(value->type == JSMN_OBJECT);

@@ -22,6 +22,7 @@ struct pinbtjson_res {
 		struct pinb_spr spr;
 		struct pinb_flip flip;
 		struct pinb_plunger plunger;
+		struct pinb_spinner spinner;
 		struct pinb_reactive_impulse reactive_impulse;
 		struct pinb_reactive_sprite_offset reactive_sprite_offset;
 		struct pinb_reactive_animation reactive_animation;
