@@ -7,6 +7,7 @@
 struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj);
 
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
@@ -59,6 +60,15 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_f32(w, entity.reactive_sprite_offset.magnitude);
 		ser_write_end(w);
 	}
+
+	if(entity.reactive_animation.animation_index != 0) {
+		ser_write_string(w, str8_lit("reactive_animation"));
+		ser_write_object(w);
+		ser_write_string(w, str8_lit("animation_index"));
+		ser_write_i32(w, entity.reactive_animation.animation_index);
+		ser_write_end(w);
+	}
+
 	if(entity.plunger.charge_force_max != 0) {
 		ser_write_string(w, str8_lit("plunger"));
 		ser_write_object(w);
@@ -127,32 +137,48 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
-	if(entity.sfx_sequence.clips_len > 0) {
-		ser_write_string(w, str8_lit("sfx_sequence"));
+	if(entity.sfx_sequences.len > 0) {
+		ser_write_string(w, str8_lit("sfx_sequences"));
 		ser_write_object(w);
+		{
+			ser_write_string(w, str8_lit("len"));
+			ser_write_i32(w, entity.sfx_sequences.len);
+			ser_write_string(w, str8_lit("items"));
 
-		ser_write_string(w, str8_lit("type"));
-		ser_write_i32(w, entity.sfx_sequence.type);
-		ser_write_string(w, str8_lit("reset_time"));
-		ser_write_f32(w, entity.sfx_sequence.reset_time);
-		ser_write_string(w, str8_lit("vol_min"));
-		ser_write_f32(w, entity.sfx_sequence.vol_min);
-		ser_write_string(w, str8_lit("vol_max"));
-		ser_write_f32(w, entity.sfx_sequence.vol_max);
-		ser_write_string(w, str8_lit("pitch_min"));
-		ser_write_f32(w, entity.sfx_sequence.pitch_min);
-		ser_write_string(w, str8_lit("pitch_max"));
-		ser_write_f32(w, entity.sfx_sequence.pitch_max);
-		ser_write_string(w, str8_lit("clips_len"));
-		ser_write_i32(w, entity.sfx_sequence.clips_len);
+			ser_write_array(w);
+			{
+				for(usize i = 0; i < entity.sfx_sequences.len; ++i) {
+					ser_write_object(w);
+					{
+						ser_write_string(w, str8_lit("type"));
+						ser_write_i32(w, entity.sfx_sequences.items[i].type);
+						ser_write_string(w, str8_lit("reset_time"));
+						ser_write_f32(w, entity.sfx_sequences.items[i].reset_time);
+						ser_write_string(w, str8_lit("vol_min"));
+						ser_write_f32(w, entity.sfx_sequences.items[i].vol_min);
+						ser_write_string(w, str8_lit("vol_max"));
+						ser_write_f32(w, entity.sfx_sequences.items[i].vol_max);
+						ser_write_string(w, str8_lit("pitch_min"));
+						ser_write_f32(w, entity.sfx_sequences.items[i].pitch_min);
+						ser_write_string(w, str8_lit("pitch_max"));
+						ser_write_f32(w, entity.sfx_sequences.items[i].pitch_max);
+						ser_write_string(w, str8_lit("clips_len"));
+						ser_write_i32(w, entity.sfx_sequences.items[i].clips_len);
 
-		ser_write_string(w, str8_lit("clips"));
-		ser_write_array(w);
-		for(usize i = 0; i < entity.sfx_sequence.clips_len; ++i) {
-			ser_write_string(w, entity.sfx_sequence.clips[i]);
+						ser_write_string(w, str8_lit("clips"));
+						ser_write_array(w);
+						{
+							for(usize j = 0; j < entity.sfx_sequences.items[i].clips_len; ++j) {
+								ser_write_string(w, entity.sfx_sequences.items[i].clips[j]);
+							}
+						}
+						ser_write_end(w);
+					}
+					ser_write_end(w);
+				}
+			}
+			ser_write_end(w);
 		}
-		ser_write_end(w);
-
 		ser_write_end(w);
 	}
 
@@ -270,7 +296,7 @@ pinb_write(struct ser_writer *w, struct pinb_table pinb)
 }
 
 struct pinb_entity
-pinb_entity_read(struct ser_reader *r, struct ser_value obj)
+pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 {
 	assert(obj.type == SER_TYPE_OBJECT);
 	struct pinb_entity res = {0};
@@ -332,6 +358,16 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 				} else if(str8_match(item_key.str, str8_lit("delay"), 0)) {
 					assert(item_value.type == SER_TYPE_F32);
 					res.reactive_sprite_offset.delay = item_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("reactive_animation"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("animation_index"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.reactive_animation.animation_index = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("plunger"), 0)) {
@@ -410,31 +446,18 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj)
 					res.animator.initial_animation = item_value.i32;
 				}
 			}
-		} else if(str8_match(key.str, str8_lit("sfx_sequence"), 0)) {
+		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
 				assert(item_key.type == SER_TYPE_STRING);
-				if(str8_match(item_key.str, str8_lit("type"), 0)) {
-					res.sfx_sequence.type = item_value.i32;
-				} else if(str8_match(item_key.str, str8_lit("reset_time"), 0)) {
-					res.sfx_sequence.reset_time = item_value.f32;
-				} else if(str8_match(item_key.str, str8_lit("vol_min"), 0)) {
-					res.sfx_sequence.vol_min = item_value.f32;
-				} else if(str8_match(item_key.str, str8_lit("vol_max"), 0)) {
-					res.sfx_sequence.vol_max = item_value.f32;
-				} else if(str8_match(item_key.str, str8_lit("pitch_min"), 0)) {
-					res.sfx_sequence.pitch_min = item_value.f32;
-				} else if(str8_match(item_key.str, str8_lit("pitch_max"), 0)) {
-					res.sfx_sequence.pitch_max = item_value.f32;
-				} else if(str8_match(item_key.str, str8_lit("clips_len"), 0)) {
-					res.sfx_sequence.clips_len = item_value.i32;
-				} else if(str8_match(item_key.str, str8_lit("clips"), 0)) {
-					assert(item_value.type == SER_TYPE_ARRAY);
-					struct ser_value clip_value;
-					usize i = 0;
-					while(ser_iter_array(r, item_value, &clip_value)) {
-						res.sfx_sequence.clips[i++] = clip_value.str;
+				if(str8_match(item_key.str, str8_lit("len"), 0)) {
+					res.sfx_sequences.len   = item_value.i32;
+					res.sfx_sequences.items = arr_ini(item_value.i32, sizeof(*res.sfx_sequences.items), alloc);
+				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
+					struct ser_value sequence_value;
+					while(ser_iter_array(r, item_value, &sequence_value)) {
+						arr_push(res.sfx_sequences.items, pinb_sfx_sequence_read(r, sequence_value));
 					}
 				}
 			}
@@ -531,7 +554,7 @@ pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, 
 			struct ser_value val;
 			usize i = 0;
 			while(ser_iter_array(r, value, &val) && i < table->entities_count) {
-				arr_push(table->entities, pinb_entity_read(r, val));
+				arr_push(table->entities, pinb_entity_read(r, val, alloc));
 				i++;
 			}
 		}
@@ -598,5 +621,39 @@ pinb_switch_list_read(struct ser_reader *r, struct ser_value obj)
 		}
 	}
 
+	return res;
+}
+
+struct pinb_sfx_sequence
+pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_sfx_sequence res = {0};
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("reset_time"), 0)) {
+			res.reset_time = value.f32;
+		} else if(str8_match(key.str, str8_lit("vol_min"), 0)) {
+			res.vol_min = value.f32;
+		} else if(str8_match(key.str, str8_lit("vol_max"), 0)) {
+			res.vol_max = value.f32;
+		} else if(str8_match(key.str, str8_lit("pitch_min"), 0)) {
+			res.pitch_min = value.f32;
+		} else if(str8_match(key.str, str8_lit("pitch_max"), 0)) {
+			res.pitch_max = value.f32;
+		} else if(str8_match(key.str, str8_lit("clips_len"), 0)) {
+			res.clips_len = value.i32;
+		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
+			assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value clip_value;
+			usize i = 0;
+			while(ser_iter_array(r, value, &clip_value)) {
+				res.clips[i++] = clip_value.str;
+			}
+		}
+	}
 	return res;
 }
