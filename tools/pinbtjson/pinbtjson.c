@@ -255,7 +255,7 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 			res.sfx_sequence.reset_time = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
 			assert(value->type == JSMN_ARRAY);
-			assert((usize)value->size < ARRLEN(res.sfx_sequence.clips));
+			res.sfx_sequence.clips = arr_ini(value->size, sizeof(*res.sfx_sequence.clips), alloc);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + j + 2;
 				jsmntok_t *item = tokens + item_index;

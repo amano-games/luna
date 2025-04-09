@@ -7,7 +7,7 @@
 struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
-struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 
 void
@@ -522,7 +522,7 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					struct ser_value sequence_value;
 					while(ser_iter_array(r, item_value, &sequence_value)) {
-						arr_push(res.sfx_sequences.items, pinb_sfx_sequence_read(r, sequence_value));
+						arr_push(res.sfx_sequences.items, pinb_sfx_sequence_read(r, sequence_value, alloc));
 					}
 				}
 			}
@@ -705,7 +705,7 @@ pinb_switch_list_read(struct ser_reader *r, struct ser_value obj)
 }
 
 struct pinb_sfx_sequence
-pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj)
+pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 {
 	struct pinb_sfx_sequence res = {0};
 	assert(obj.type == SER_TYPE_OBJECT);
@@ -726,6 +726,7 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj)
 			res.pitch_max = value.f32;
 		} else if(str8_match(key.str, str8_lit("clips_len"), 0)) {
 			res.clips_len = value.i32;
+			res.clips     = arr_ini(res.clips_len, sizeof(*res.clips), alloc);
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value clip_value;
