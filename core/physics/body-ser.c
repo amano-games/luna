@@ -92,9 +92,8 @@ static inline struct col_cir
 col_cir_read(struct ser_reader *r, struct ser_value value)
 {
 	assert(value.type == SER_TYPE_ARRAY);
-	struct col_cir res = {0};
-
-	struct ser_value val;
+	struct col_cir res   = {0};
+	struct ser_value val = {0};
 	assert(ser_iter_array(r, value, &val));
 	assert(val.type == SER_TYPE_F32);
 	res.p.x = val.f32;
@@ -166,8 +165,8 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 		assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("aabb"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
-			res.type = COL_TYPE_AABB;
-			struct ser_value val;
+			res.type             = COL_TYPE_AABB;
+			struct ser_value val = {0};
 			assert(ser_iter_array(r, value, &val));
 			assert(val.type == SER_TYPE_F32);
 			res.aabb.min.x = val.f32;
