@@ -271,6 +271,39 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 }
 
 struct pinbtjson_res
+pinbtjson_handle_message(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("sequence_type")) == 0) {
+			res.message.sequence_type = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("sequence_reset_time")) == 0) {
+			res.message.sequence_reset_time = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("hide_time")) == 0) {
+			res.message.hide_time = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("text")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.message.text = arr_ini(value->size, sizeof(*res.message.text), alloc);
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + j + 2;
+				jsmntok_t *item = tokens + item_index;
+				assert(item->type == JSMN_STRING);
+				res.message.text[res.message.text_len++] = json_str8_cpy_push(json, item, alloc);
+			}
+			i += value->size;
+		}
+	}
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_action(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
@@ -567,6 +600,18 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 				assert(item->type == JSMN_OBJECT);
 				struct pinbtjson_res item_res     = pinbtjson_handle_sfx_sequence(json, tokens, item_index, alloc);
 				res.entity.sfx_sequences.items[j] = item_res.sfx_sequence;
+				i += item_res.token_count;
+			}
+		} else if(json_eq(json, key, str8_lit("messages")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.entity.messages.len   = value->size;
+			res.entity.messages.items = arr_ini(value->size, sizeof(*res.entity.messages.items), alloc);
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + 2;
+				jsmntok_t *item = tokens + item_index;
+				assert(item->type == JSMN_OBJECT);
+				struct pinbtjson_res item_res = pinbtjson_handle_message(json, tokens, item_index, alloc);
+				res.entity.messages.items[j]  = item_res.message;
 				i += item_res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("actions")) == 0) {

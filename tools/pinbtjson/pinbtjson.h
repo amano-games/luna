@@ -33,6 +33,7 @@ struct pinbtjson_res {
 		struct pinb_switch_list switch_list;
 		struct pinb_sfx_sequence sfx_sequence;
 		struct pinb_action action;
+		struct pinb_message message;
 	};
 };
 
