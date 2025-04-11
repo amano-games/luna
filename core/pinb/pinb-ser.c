@@ -8,6 +8,7 @@ struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_message pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 
 void
@@ -187,6 +188,45 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 						{
 							for(usize j = 0; j < entity.sfx_sequences.items[i].clips_len; ++j) {
 								ser_write_string(w, entity.sfx_sequences.items[i].clips[j]);
+							}
+						}
+						ser_write_end(w);
+					}
+					ser_write_end(w);
+				}
+			}
+			ser_write_end(w);
+		}
+		ser_write_end(w);
+	}
+
+	if(entity.messages.len > 0) {
+		ser_write_string(w, str8_lit("messages"));
+		ser_write_object(w);
+		{
+			ser_write_string(w, str8_lit("len"));
+			ser_write_i32(w, entity.messages.len);
+			ser_write_string(w, str8_lit("items"));
+
+			ser_write_array(w);
+			{
+				for(usize i = 0; i < entity.messages.len; ++i) {
+					ser_write_object(w);
+					{
+						ser_write_string(w, str8_lit("sequence_type"));
+						ser_write_i32(w, entity.messages.items[i].sequence_type);
+						ser_write_string(w, str8_lit("sequence_reset_time"));
+						ser_write_f32(w, entity.messages.items[i].sequence_reset_time);
+						ser_write_string(w, str8_lit("hide_time"));
+						ser_write_f32(w, entity.messages.items[i].hide_time);
+						ser_write_string(w, str8_lit("text_len"));
+						ser_write_i32(w, entity.messages.items[i].text_len);
+
+						ser_write_string(w, str8_lit("text"));
+						ser_write_array(w);
+						{
+							for(usize j = 0; j < entity.messages.items[i].text_len; ++j) {
+								ser_write_string(w, entity.messages.items[i].text[j]);
 							}
 						}
 						ser_write_end(w);
@@ -526,6 +566,21 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 					}
 				}
 			}
+		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("len"), 0)) {
+					res.messages.len   = item_value.i32;
+					res.messages.items = arr_ini(item_value.i32, sizeof(*res.messages.items), alloc);
+				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
+					struct ser_value sequence_value;
+					while(ser_iter_array(r, item_value, &sequence_value)) {
+						arr_push(res.messages.items, pinb_message_read(r, sequence_value, alloc));
+					}
+				}
+			}
 		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;
@@ -733,6 +788,35 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc 
 			usize i = 0;
 			while(ser_iter_array(r, value, &clip_value)) {
 				res.clips[i++] = clip_value.str;
+			}
+		}
+	}
+	return res;
+}
+
+struct pinb_message
+pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+{
+	struct pinb_message res = {0};
+	assert(obj.type == SER_TYPE_OBJECT);
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("sequence_type"), 0)) {
+			res.sequence_type = value.i32;
+		} else if(str8_match(key.str, str8_lit("sequence_reset_time"), 0)) {
+			res.sequence_reset_time = value.f32;
+		} else if(str8_match(key.str, str8_lit("hide_time"), 0)) {
+			res.hide_time = value.f32;
+		} else if(str8_match(key.str, str8_lit("text_len"), 0)) {
+			res.text_len = value.i32;
+			res.text     = arr_ini(res.text_len, sizeof(*res.text), alloc);
+		} else if(str8_match(key.str, str8_lit("text"), 0)) {
+			assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value clip_value;
+			usize i = 0;
+			while(ser_iter_array(r, value, &clip_value)) {
+				res.text[i++] = clip_value.str;
 			}
 		}
 	}

@@ -85,6 +85,19 @@ struct pinb_sfx_sequences {
 	struct pinb_sfx_sequence *items;
 };
 
+struct pinb_message {
+	i32 sequence_type;
+	f32 sequence_reset_time;
+	f32 hide_time;
+	usize text_len;
+	str8 *text;
+};
+
+struct pinb_messages {
+	usize len;
+	struct pinb_message *items;
+};
+
 struct pinb_action {
 	i32 event_type;
 	i32 event_condition; // NOTE: should be an array?
@@ -123,6 +136,7 @@ struct pinb_entity {
 	struct pinb_switch switch_value;
 	struct pinb_switch_list switch_list;
 	struct pinb_sfx_sequences sfx_sequences;
+	struct pinb_messages messages;
 	struct pinb_actions actions;
 };
 
