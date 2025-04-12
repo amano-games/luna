@@ -584,23 +584,26 @@ sys_audio_set_volume(f32 vol)
 f32
 sys_audio_get_volume(void)
 {
+	NOT_IMPLEMENTED;
 	return 1.0f;
 }
 
 void
 sys_audio_lock(void)
 {
+	NOT_IMPLEMENTED;
 }
 
 void
 sys_audio_unlock(void)
 {
+	NOT_IMPLEMENTED;
 }
 
 usize
 sys_file_modified(str8 path)
 {
-	// NOT_IMPLEMENTED;
+	NOT_IMPLEMENTED;
 	return 0;
 }
 
@@ -622,4 +625,12 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 void
 sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 {
+	NOT_IMPLEMENTED;
+}
+
+int
+sys_add_score(str8 board_id, u32 value)
+{
+	NOT_IMPLEMENTED;
+	return 0;
 }
