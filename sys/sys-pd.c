@@ -8,6 +8,7 @@
 #include "sys-io.h"
 #include "sys-input.h"
 #include "sys-assert.h"
+#include <pd_api/pd_api_scoreboards.h>
 
 PlaydateAPI *PD;
 struct pd_state {
@@ -32,9 +33,11 @@ static float (*PD_SYSTEM_GET_ELAPSED_TIME)(void);
 static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
+int (*PD_ADD_SCORE)(const char *board_id, uint32_t value, AddScoreCallback callback);
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
+void sys_add_score_callback(PDScore *score, const char *error_message);
 
 int
 eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
@@ -54,6 +57,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_SYSTEM_IS_CRANK_DOCKED         = PD->system->isCrankDocked;
 		PD_FILE_READ                      = PD->file->read;
 		PD_FILE_WRITE                     = PD->file->write;
+		PD_ADD_SCORE                      = PD->scoreboards->addScore;
 
 		PD->system->setUpdateCallback(sys_pd_update, PD);
 		PD->sound->addSource(sys_pd_audio, NULL, 0);
@@ -476,4 +480,19 @@ sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 			p[b + y * byt] = ((u8 *)px)[b + y * wbyte];
 	}
 	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
+}
+
+int
+sys_add_score(str8 board_id, u32 value)
+{
+	return PD_ADD_SCORE((const char *)board_id.str, value, sys_add_score_callback);
+}
+
+void
+sys_add_score_callback(PDScore *score, const char *error_message)
+{
+	if(error_message) {
+		log_error("sys-score", "%s", error_message);
+	}
+	sys_free(score);
 }
