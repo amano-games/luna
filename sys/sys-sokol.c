@@ -629,7 +629,14 @@ sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 }
 
 int
-sys_add_score(str8 board_id, u32 value)
+sys_score_add(str8 board_id, u32 value)
+{
+	NOT_IMPLEMENTED;
+	return 0;
+}
+
+int
+sys_scores_get(str8 board_id)
 {
 	NOT_IMPLEMENTED;
 	return 0;
