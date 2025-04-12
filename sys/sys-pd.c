@@ -493,6 +493,8 @@ sys_add_score_callback(PDScore *score, const char *error_message)
 {
 	if(error_message) {
 		log_error("sys-score", "%s", error_message);
+	} else {
+		log_info("sys_score", "submitted successfully %s", score->player);
 	}
 	sys_free(score);
 }
