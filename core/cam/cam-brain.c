@@ -8,6 +8,7 @@
 #include "mathfunc.h"
 #include "v2.h"
 
+// TODO: remove the automatic cam bran set pos
 void
 cam_brain_init(
 	struct cam_brain *brain,

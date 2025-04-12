@@ -663,7 +663,11 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 }
 
 i32
-pinb_read(struct ser_reader *r, struct ser_value obj, struct pinb_table *table, struct alloc alloc)
+pinb_read(
+	struct ser_reader *r,
+	struct ser_value obj,
+	struct pinb_table *table,
+	struct alloc alloc)
 {
 	i32 res = 0;
 	struct ser_value key, value;
