@@ -34,10 +34,16 @@ static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseco
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
 int (*PD_ADD_SCORE)(const char *board_id, uint32_t value, AddScoreCallback callback);
+void (*PD_FREE_SCORE)(PDScore *score);
+int (*PD_GET_SCORES)(const char *board_id, ScoresCallback callback);
+void (*PD_FREE_SCORES_LIST)(PDScoresList *scores_list);
+// int playdate-scoreboards-›getScores(const char *boardId, ScoresCallback callback)
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
+
 void sys_add_score_callback(PDScore *score, const char *error_message);
+void sys_get_scores_callback(PDScoresList *scores, const char *error_message);
 
 int
 eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
@@ -58,6 +64,9 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_FILE_READ                      = PD->file->read;
 		PD_FILE_WRITE                     = PD->file->write;
 		PD_ADD_SCORE                      = PD->scoreboards->addScore;
+		PD_FREE_SCORE                     = PD->scoreboards->freeScore;
+		PD_GET_SCORES                     = PD->scoreboards->getScores;
+		PD_FREE_SCORES_LIST               = PD->scoreboards->freeScoresList;
 
 		PD->system->setUpdateCallback(sys_pd_update, PD);
 		PD->sound->addSource(sys_pd_audio, NULL, 0);
@@ -483,7 +492,7 @@ sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 }
 
 int
-sys_add_score(str8 board_id, u32 value)
+sys_score_add(str8 board_id, u32 value)
 {
 	return PD_ADD_SCORE((const char *)board_id.str, value, sys_add_score_callback);
 }
@@ -496,5 +505,28 @@ sys_add_score_callback(PDScore *score, const char *error_message)
 	} else {
 		log_info("sys_score", "submitted successfully %s", score->player);
 	}
-	sys_free(score);
+	PD_FREE_SCORE(score);
+}
+
+int
+sys_scores_get(str8 board_id)
+{
+	return PD_GET_SCORES((const char *)board_id.str, sys_get_scores_callback);
+}
+
+void
+sys_get_scores_callback(PDScoresList *scores, const char *error_message)
+{
+	if(error_message) {
+		log_error("sys-score", "%s", error_message);
+	} else {
+		if(scores) {
+			log_info("sys_score", "Scores fore: %s is player included: %d", scores->boardID, (int)scores->playerIncluded);
+			for(usize i = 0; i < scores->count; ++i) {
+				PDScore *score = scores->scores + i;
+				log_info("sys_score", "%d ... %s ... %d", (int)score->rank, score->player, (int)score->value);
+			}
+		}
+	}
+	PD_FREE_SCORES_LIST(scores);
 }
