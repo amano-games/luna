@@ -444,6 +444,7 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 			i += item_res.token_count - 1;
 		}
 	}
+	body_init(&res.body);
 	return res;
 }
 
