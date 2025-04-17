@@ -3,6 +3,7 @@
 #include "physics/body-ser.h"
 #include "serialize/serialize.h"
 #include "str.h"
+#include "sys-log.h"
 
 struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);

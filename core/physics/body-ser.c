@@ -1,5 +1,6 @@
 #include "body-ser.h"
 #include "str.h"
+#include "sys-log.h"
 
 static inline void col_cir_write(struct ser_writer *w, struct col_cir cir);
 static inline struct col_cir col_cir_read(struct ser_reader *r, struct ser_value value);
@@ -109,16 +110,36 @@ col_cir_read(struct ser_reader *r, struct ser_value value)
 	assert(value.type == SER_TYPE_ARRAY);
 	struct col_cir res   = {0};
 	struct ser_value val = {0};
-	assert(ser_iter_array(r, value, &val));
+	ser_iter_array(r, value, &val);
 	assert(val.type == SER_TYPE_F32);
 	res.p.x = val.f32;
-	assert(ser_iter_array(r, value, &val));
+	ser_iter_array(r, value, &val);
 	assert(val.type == SER_TYPE_F32);
 	res.p.y = val.f32;
-	assert(ser_iter_array(r, value, &val));
+	ser_iter_array(r, value, &val);
 	assert(val.type == SER_TYPE_F32);
 	res.r = val.f32;
 
+	return res;
+}
+
+static inline struct col_aabb
+col_aabb_read(struct ser_reader *r, struct ser_value value)
+{
+	struct col_aabb res  = {0};
+	struct ser_value val = {0};
+	ser_iter_array(r, value, &val);
+	assert(val.type == SER_TYPE_F32);
+	res.min.x = val.f32;
+	ser_iter_array(r, value, &val);
+	assert(val.type == SER_TYPE_F32);
+	res.min.y = val.f32;
+	ser_iter_array(r, value, &val);
+	assert(val.type == SER_TYPE_F32);
+	res.max.x = val.f32;
+	ser_iter_array(r, value, &val);
+	assert(val.type == SER_TYPE_F32);
+	res.max.y = val.f32;
 	return res;
 }
 
@@ -191,20 +212,8 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 		assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("aabb"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
-			res.type             = COL_TYPE_AABB;
-			struct ser_value val = {0};
-			assert(ser_iter_array(r, value, &val));
-			assert(val.type == SER_TYPE_F32);
-			res.aabb.min.x = val.f32;
-			assert(ser_iter_array(r, value, &val));
-			assert(val.type == SER_TYPE_F32);
-			res.aabb.min.y = val.f32;
-			assert(ser_iter_array(r, value, &val));
-			assert(val.type == SER_TYPE_F32);
-			res.aabb.max.x = val.f32;
-			assert(ser_iter_array(r, value, &val));
-			assert(val.type == SER_TYPE_F32);
-			res.aabb.max.y = val.f32;
+			res.type = COL_TYPE_AABB;
+			res.aabb = col_aabb_read(r, value);
 		} else if(str8_match(key.str, str8_lit("cir"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			res.type = COL_TYPE_CIR;
@@ -227,7 +236,7 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 						assert(val.type == SER_TYPE_F32);
 						assert(i < ARRLEN(res.poly.sub_polys[0].verts));
 						res.poly.sub_polys[0].verts[i].x = val.f32;
-						assert(ser_iter_array(r, poly_value, &val));
+						ser_iter_array(r, poly_value, &val);
 						res.poly.sub_polys[0].verts[i].y = val.f32;
 						++i;
 					}
@@ -240,7 +249,7 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 						assert(val.type == SER_TYPE_F32);
 						assert(i < ARRLEN(res.poly.sub_polys[0].norms));
 						res.poly.sub_polys[0].norms[i].x = val.f32;
-						assert(ser_iter_array(r, poly_value, &val));
+						ser_iter_array(r, poly_value, &val);
 						res.poly.sub_polys[0].norms[i].y = val.f32;
 						++i;
 					}
@@ -251,9 +260,9 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 			assert(value.type == SER_TYPE_ARRAY);
 			res.type             = COL_TYPE_CAPSULE;
 			struct ser_value val = {0};
-			assert(ser_iter_array(r, value, &val));
+			ser_iter_array(r, value, &val);
 			res.capsule.cirs[0] = col_cir_read(r, val);
-			assert(ser_iter_array(r, value, &val));
+			ser_iter_array(r, value, &val);
 			res.capsule.cirs[1] = col_cir_read(r, val);
 		}
 	}
