@@ -138,6 +138,7 @@ struct pinb_entity {
 	struct pinb_sfx_sequences sfx_sequences;
 	struct pinb_messages messages;
 	struct pinb_actions actions;
+	struct v2_i32 score_fx_offset;
 };
 
 struct pinb_physics_props {

@@ -354,3 +354,10 @@ col_point_to_line(v2 c, v2 a, v2 b, f32 *const t, v2 *const d)
 	*d = v2_add(a, v2_mul(ab, *t));
 	TRACE_END();
 }
+
+struct col_aabb
+col_shape_get_bounding_box(struct col_shape shape)
+{
+	struct col_aabb res = {0};
+	return res;
+}

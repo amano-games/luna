@@ -591,6 +591,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			struct pinbtjson_res item_res = pinbtjson_handle_animator(json, tokens, i + 1);
 			res.entity.animator           = item_res.animator;
 			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("score_fx_offset")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.entity.score_fx_offset.x = json_parse_i32(json, tokens + i + 2);
+			res.entity.score_fx_offset.y = json_parse_i32(json, tokens + i + 3);
+			i += value->size;
 		} else if(json_eq(json, key, str8_lit("sfx_sequences")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			res.entity.sfx_sequences.len   = value->size;

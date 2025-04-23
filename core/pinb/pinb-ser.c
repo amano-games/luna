@@ -156,6 +156,16 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.score_fx_offset.x != 0 || entity.score_fx_offset.y != 0) {
+		ser_write_string(w, str8_lit("score_fx_offset"));
+		ser_write_array(w);
+
+		ser_write_i32(w, entity.score_fx_offset.x);
+		ser_write_i32(w, entity.score_fx_offset.y);
+
+		ser_write_end(w);
+	}
+
 	if(entity.sfx_sequences.len > 0) {
 		ser_write_string(w, str8_lit("sfx_sequences"));
 		ser_write_object(w);
@@ -552,6 +562,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 					res.animator.initial_animation = item_value.i32;
 				}
 			}
+		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
+			assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value item_value;
+			ser_iter_array(r, value, &item_value);
+			assert(item_value.type == SER_TYPE_I32);
+			res.score_fx_offset.x = item_value.i32;
+			ser_iter_array(r, value, &item_value);
+			assert(item_value.type == SER_TYPE_I32);
+			res.score_fx_offset.y = item_value.i32;
 		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;

@@ -96,6 +96,12 @@ abs_f32(f32 a)
 }
 
 static inline f32
+floor_f32(f32 a)
+{
+	return floorf(a);
+}
+
+static inline f32
 sqrt_f32(f32 x)
 {
 	f32 r = sqrtf(x);
