@@ -55,6 +55,8 @@ typedef size_t usize;
 #define I8_MIN  INT8_MIN
 #define U8_MAX  UINT8_MAX
 #define U8_MIN  0
+#define F32_MAX FLT_MAX
+#define F32_MIN FLT_MIN
 
 #define mset            memset
 #define mcpy            memcpy

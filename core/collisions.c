@@ -65,15 +65,12 @@ col_merge_circles(struct col_cir a, struct col_cir b)
 	struct col_cir res = {0};
 	v2 d               = v2_sub(b.p, a.p);
 	f32 dist2          = v2_dot(d, d);
+	f32 r_diff         = b.r - a.r;
 
-	if(sqrt_f32(b.r - a.r) >= dist2) {
+	if((r_diff * r_diff) >= dist2) {
 		// The shere with the larger radius encloses the other;
 		// just set s to be the larget of the two spheres
-		if(b.r >= a.r) {
-			res = b;
-		} else {
-			res = a;
-		}
+		res = (b.r >= a.r) ? b : a;
 	} else {
 		// Spheres partially overlapping or disjointed
 		f32 dist = sqrt_f32(dist2);
@@ -355,9 +352,78 @@ col_point_to_line(v2 c, v2 a, v2 b, f32 *const t, v2 *const d)
 	TRACE_END();
 }
 
+static inline struct col_aabb
+col_cir_get_bounding_box(struct col_cir col)
+{
+	struct col_aabb res = {
+		.min = {col.p.x - col.r, col.p.y - col.r},
+		.max = {col.p.x + col.r, col.p.y + col.r},
+	};
+	return res;
+}
+
+static inline struct col_aabb
+col_poly_get_bounding_box(struct col_poly col)
+{
+	struct col_aabb res = {
+		.min.x = F32_MAX,
+		.min.y = F32_MAX,
+		.max.x = F32_MIN,
+		.max.y = F32_MIN,
+	};
+
+	for(usize i = 0; i < col.count; ++i) {
+		struct poly poly = col.sub_polys[i];
+		for(usize j = 0; j < poly.count; ++j) {
+			v2 p      = poly.verts[j];
+			res.min.x = min_f32(res.min.x, p.x);
+			res.min.y = min_f32(res.min.y, p.y);
+			res.max.x = max_f32(res.max.x, p.x);
+			res.max.y = max_f32(res.max.y, p.y);
+		}
+	}
+
+	return res;
+}
+
+// TODO: accept a min/max angle of rotation so the boundig box is smaller
+static inline struct col_aabb
+col_capsule_get_bounding_box(struct col_capsule col)
+{
+	struct col_aabb res = {
+		.min.x = F32_MAX,
+		.min.y = F32_MAX,
+		.max.x = F32_MIN,
+		.max.y = F32_MIN,
+	};
+
+	struct col_cir cir = col_merge_circles(col.a, col.b);
+	res                = col_cir_get_bounding_box(cir);
+
+	return res;
+}
+
 struct col_aabb
 col_shape_get_bounding_box(struct col_shape shape)
 {
 	struct col_aabb res = {0};
+	switch(shape.type) {
+	case COL_TYPE_CIR: {
+		res = (struct col_aabb){
+			.min = {shape.cir.p.x - shape.cir.r, shape.cir.p.y - shape.cir.r},
+			.max = {shape.cir.p.x + shape.cir.r, shape.cir.p.y + shape.cir.r},
+		};
+	} break;
+	case COL_TYPE_AABB: {
+		res = shape.aabb;
+	} break;
+	case COL_TYPE_POLY: {
+		res = col_poly_get_bounding_box(shape.poly);
+	} break;
+	case COL_TYPE_CAPSULE: {
+		res = col_capsule_get_bounding_box(shape.capsule);
+	} break;
+	default: BAD_PATH;
+	}
 	return res;
 }
