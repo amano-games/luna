@@ -3,6 +3,7 @@
 #include "arr.h"
 #include "collisions.h"
 #include "mathfunc.h"
+#include "sys-log.h"
 
 static inline int ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape);
 
@@ -13,7 +14,6 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 	grid->items         = NULL;
 	grid->cell_size     = cell_size;
 	grid->cell_size_inv = cell_size_inv;
-	usize start         = 0;
 	usize count         = items_count;
 
 	i32 x1 = 0;
@@ -49,9 +49,8 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 
 	// Calculate how many bodies will be in each cell
 	for(usize i = 0; i < count; ++i) {
-		usize world_index    = start + i;
-		struct ss_item *item = items + i;
-		struct col_aabb aabb = col_shape_get_bounding_box(item->shape);
+		struct ss_item item  = items[i];
+		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);
 		i32 x2               = (i32)floor_f32(aabb.max.x * cell_size_inv);
@@ -61,7 +60,7 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 			for(int cy = y1; cy <= y2; ++cy) {
 				// NOTE: we could avoid the collision check and make this step faster
 				// But this would help get less items to check when queriing the grid
-				if(ss_grid_cell_col_with_shape(grid, cx, cy, item->shape)) {
+				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
 					handles_count++;
 					cell->count++;
@@ -94,9 +93,7 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 
 	// Store objects handles in array
 	for(usize i = 0; i < count; ++i) {
-		usize world_index   = start + i;
-		struct ss_item item = items[i];
-
+		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);

@@ -425,6 +425,7 @@ struct col_aabb
 col_shape_get_bounding_box(struct col_shape shape)
 {
 	struct col_aabb res = {0};
+	assert(shape.type != COL_TYPE_NONE);
 	switch(shape.type) {
 	case COL_TYPE_CIR: {
 		res = (struct col_aabb){
@@ -441,7 +442,9 @@ col_shape_get_bounding_box(struct col_shape shape)
 	case COL_TYPE_CAPSULE: {
 		res = col_capsule_get_bounding_box(shape.capsule);
 	} break;
-	default: BAD_PATH;
+	default: {
+		BAD_PATH;
+	}
 	}
 	return res;
 }
