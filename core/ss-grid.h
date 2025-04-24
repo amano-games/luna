@@ -5,15 +5,16 @@
 #include "sys-types.h"
 
 struct ss_cell {
-	i32 x;
-	i32 y;
-	u32 index;
-	u32 count;
-	u32 tick;
+	i16 x;
+	i16 y;
+	u16 index;
+	u16 count;
+	u16 tick;
 };
 
 // TODO: To avoid having to perform a hash table lookup to find out that a cell is in fact empty and is not in the table, a dense bit array with 1 bit per cell in the grid can be used s a quick pretest indicator of whether a cell is empty or not p. 288
 struct ss_grid {
+	u32 tick;
 	u32 cell_size;
 	f32 cell_size_inv;
 	u32 columns;
@@ -25,10 +26,10 @@ struct ss_grid {
 };
 
 struct ss_item {
-	usize index;
+	u16 index;
 	u32 id; // Use as generic ID for handles
 	struct col_shape shape;
 };
 
-void ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize cell_size, struct alloc alloc);
+void ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usize cell_size, struct alloc alloc);
 struct ss_cell *ss_grid_get(struct ss_grid *grid, i32 x, i32 y);
