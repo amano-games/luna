@@ -170,6 +170,7 @@ int col_circle_to_capsule(struct col_cir a, struct col_capsule b);
 int col_circle_to_poly(struct col_cir a, struct col_poly b);
 
 int col_aabb_to_aabb(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b);
+int col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b);
 struct col_toi col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb);
 
 void col_circle_to_circle_manifold(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br, struct col_manifold *m);

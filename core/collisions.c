@@ -216,6 +216,24 @@ col_aabb_to_aabb(
 	return r;
 }
 
+int
+col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
+{
+	TRACE_START(__func__);
+	c2AABB c2a = {.min = {x1a, y1a}, .max = {x2a, y2a}};
+	int r      = 0;
+	for(usize i = 0; i < b.count; ++i) {
+		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
+		r          = c2AABBtoPoly(c2a, &c2b, NULL);
+		if(r) {
+			break;
+		}
+	}
+
+	TRACE_END();
+	return r;
+}
+
 struct col_toi
 col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 {

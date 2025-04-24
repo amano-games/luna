@@ -4,15 +4,17 @@
 #include "collisions.h"
 #include "mathfunc.h"
 
+static inline int ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape);
+
 void
-ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize cell_size, struct alloc alloc)
+ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usize cell_size, struct alloc alloc)
 {
 	f32 cell_size_inv   = 1.0f / cell_size;
 	grid->items         = NULL;
 	grid->cell_size     = cell_size;
 	grid->cell_size_inv = cell_size_inv;
 	usize start         = 0;
-	usize count         = arr_len(items);
+	usize count         = items_count;
 
 	i32 x1 = 0;
 	i32 y1 = 0;
@@ -57,17 +59,21 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize cell_size, struct
 
 		for(int cx = x1; cx <= x2; ++cx) {
 			for(int cy = y1; cy <= y2; ++cy) {
-				struct ss_cell *cell = ss_grid_get(grid, cx, cy);
-				handles_count++;
-				cell->count++;
-				cell->x = cx;
-				cell->y = cy;
+				// NOTE: we could avoid the collision check and make this step faster
+				// But this would help get less items to check when queriing the grid
+				if(ss_grid_cell_col_with_shape(grid, cx, cy, item->shape)) {
+					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
+					handles_count++;
+					cell->count++;
+					cell->x = cx;
+					cell->y = cy;
+				}
 			}
 		}
 	}
 
 	grid->items = arr_ini(handles_count, sizeof(*grid->items), alloc);
-	log_info("SSGrid", "Grid items:%zu cell-size:%" PRIu32 " handles:%zu items:%zu", arr_len(items), grid->cell_size, arr_cap(grid->items), arr_len(items));
+	log_info("SSGrid", "Grid items:%zu cell-size:%" PRIu32 " handles:%zu", count, grid->cell_size, arr_cap(grid->items));
 	for(usize i = 0; i < arr_cap(grid->items); ++i) {
 		struct ss_item item = {0};
 		arr_push(grid->items, item);
@@ -77,8 +83,7 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize cell_size, struct
 	for(usize i = 1; i < arr_len(grid->cells); ++i) {
 		struct ss_cell *cell      = grid->cells + i;
 		struct ss_cell *prev_cell = grid->cells + (i - 1);
-
-		cell->index = prev_cell->index + prev_cell->count;
+		cell->index               = prev_cell->index + prev_cell->count;
 	}
 
 	// Reset count
@@ -100,15 +105,82 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize cell_size, struct
 
 		for(int cx = x1; cx <= x2; ++cx) {
 			for(int cy = y1; cy <= y2; ++cy) {
-				// sys_printf("%d,%d", cx, cy);
-				struct ss_cell *cell = ss_grid_get(grid, cx, cy);
-				usize item_index     = cell->index + cell->count;
-
-				assert(item_index < arr_len(grid->items));
-
-				grid->items[item_index] = item;
-				cell->count++;
+				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
+					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
+					usize item_index     = cell->index + cell->count;
+					assert(item_index < arr_len(grid->items));
+					grid->items[item_index] = item;
+					cell->count++;
+				}
 			}
 		}
 	}
+}
+
+static inline int
+ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape)
+{
+	int res                   = 0;
+	struct col_aabb cell_aabb = {
+		.min.x = x * grid->cell_size,
+		.min.y = y * grid->cell_size,
+		.max.x = (x + 1) * grid->cell_size,
+		.max.y = (y + 1) * grid->cell_size,
+	};
+	switch(shape.type) {
+	case COL_TYPE_CIR: {
+		res = col_circle_to_aabb(
+			shape.cir.p.x,
+			shape.cir.p.y,
+			shape.cir.r,
+			cell_aabb.min.x,
+			cell_aabb.min.y,
+			cell_aabb.max.x,
+			cell_aabb.max.y);
+	} break;
+	case COL_TYPE_AABB: {
+		res = col_aabb_to_aabb(
+			shape.aabb.min.x,
+			shape.aabb.min.y,
+			shape.aabb.max.x,
+			shape.aabb.max.y,
+			cell_aabb.min.x,
+			cell_aabb.min.y,
+			cell_aabb.max.x,
+			cell_aabb.max.y);
+	} break;
+	case COL_TYPE_POLY: {
+		res = col_aabb_to_poly(
+			cell_aabb.min.x,
+			cell_aabb.min.y,
+			cell_aabb.max.x,
+			cell_aabb.max.y,
+			shape.poly);
+	} break;
+	default: {
+		struct col_aabb aabb = col_shape_get_bounding_box(shape);
+		res                  = col_aabb_to_aabb(
+            aabb.min.x,
+            aabb.min.y,
+            aabb.max.x,
+            aabb.max.y,
+            cell_aabb.min.x,
+            cell_aabb.min.y,
+            cell_aabb.max.x,
+            cell_aabb.max.y);
+	} break;
+	}
+	return res;
+}
+
+struct ss_cell *
+ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
+{
+	i32 index = 0;
+	i32 mx    = x + grid->x_offset;
+	i32 my    = y + grid->y_offset;
+	index     = (mx * grid->columns) + y;
+	assert(index >= 0 && index < (i32)arr_len(grid->cells));
+	struct ss_cell *cell = grid->cells + index;
+	return cell;
 }
