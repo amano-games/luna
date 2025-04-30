@@ -8,7 +8,6 @@
 #include "sys-io.h"
 #include "sys-input.h"
 #include "sys-assert.h"
-#include <pd_api/pd_api_scoreboards.h>
 
 PlaydateAPI *PD;
 struct pd_state {
@@ -37,7 +36,6 @@ int (*PD_ADD_SCORE)(const char *board_id, uint32_t value, AddScoreCallback callb
 void (*PD_FREE_SCORE)(PDScore *score);
 int (*PD_GET_SCORES)(const char *board_id, ScoresCallback callback);
 void (*PD_FREE_SCORES_LIST)(PDScoresList *scores_list);
-// int playdate-scoreboards-›getScores(const char *boardId, ScoresCallback callback)
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
@@ -512,11 +510,13 @@ int
 sys_scores_get(str8 board_id)
 {
 	return PD_GET_SCORES((const char *)board_id.str, sys_get_scores_callback);
+	return 0;
 }
 
 void
 sys_get_scores_callback(PDScoresList *scores, const char *error_message)
 {
+
 	if(error_message) {
 		log_error("sys-score", "%s", error_message);
 	} else {
