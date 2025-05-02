@@ -18,6 +18,7 @@ enum sys_scores_res_type {
 
 	SYS_SCORE_RES_SCORES_GET,
 	SYS_SCORE_RES_SCORES_ADD,
+	SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET,
 
 	SYS_SCORE_RES_SCORES_NUM_COUNT,
 };
@@ -45,12 +46,17 @@ struct sys_scores_res_add {
 	struct sys_score score;
 };
 
+struct sys_scores_res_personal_best {
+	struct sys_score score;
+};
+
 struct sys_scores_res {
 	str8 error_message;
 	enum sys_scores_res_type type;
 	union {
 		struct sys_scores_res_get get;
 		struct sys_scores_res_add add;
+		struct sys_scores_res_personal_best personal_best;
 	};
 };
 
@@ -63,3 +69,4 @@ typedef void (*sys_scores_req_callback)(u32 id, struct sys_scores_res res, void 
 
 int sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata);
 int sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, struct alloc alloc);
+int sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, void *userdata);
