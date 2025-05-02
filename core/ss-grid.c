@@ -147,12 +147,13 @@ ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape
 			cell_aabb.max.y);
 	} break;
 	case COL_TYPE_POLY: {
-		res = col_aabb_to_poly(
-			cell_aabb.min.x,
-			cell_aabb.min.y,
-			cell_aabb.max.x,
-			cell_aabb.max.y,
-			shape.poly);
+		struct col_manifold m = {0};
+		res                   = col_aabb_to_poly(
+            cell_aabb.min.x,
+            cell_aabb.min.y,
+            cell_aabb.max.x,
+            cell_aabb.max.y,
+            shape.poly);
 	} break;
 	default: {
 		struct col_aabb aabb = col_shape_get_bounding_box(shape);
