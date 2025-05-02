@@ -3,6 +3,7 @@
 #include "sys-assert.h"
 #include "sys-types.h"
 #include "sys-utils.h"
+#include "v2.h"
 
 #define POLY_MAX_VERTS 8
 
@@ -141,4 +142,31 @@ poly_centroid(v2 *verts, usize verts_count)
 	res.x /= (6.0f * signed_area);
 	res.y /= (6.0f * signed_area);
 	return res;
+}
+
+bool32
+poly_is_convex(struct poly poly)
+{
+	if(poly.count < 3) return false;
+
+	int sign = 0;
+
+	for(usize i = 0; i < poly.count; ++i) {
+		v2 p0 = poly.verts[i];
+		v2 p1 = poly.verts[(i + 1) % poly.count];
+		v2 p2 = poly.verts[(i + 2) % poly.count];
+
+		f32 cp = v2_crs_v2(v2_sub(p1, p0), v2_sub(p2, p1));
+
+		if(cp != 0) {
+			i32 current_sign = (cp > 0) ? 1 : -1;
+			if(sign == 0) {
+				sign = current_sign;
+			} else if(sign != current_sign) {
+				return false;
+			}
+		}
+	}
+
+	return true;
 }

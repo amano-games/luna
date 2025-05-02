@@ -14,17 +14,11 @@ col_poly_init(struct col_poly *p)
 	TRACE_START(__func__);
 
 	for(usize i = 0; i < p->count; ++i) {
-		c2Poly c2p = poly_to_c2poly(p->sub_polys[i]);
-		assert(p->sub_polys[i].count <= COL_MAX_POLYGON_VERTS);
+		struct poly poly = p->sub_polys[i];
+		assert(poly.count <= COL_MAX_POLYGON_VERTS);
+		c2Poly c2p = poly_to_c2poly(poly);
 		c2MakePoly(&c2p);
-
-		struct poly *sub_poly = &p->sub_polys[i];
-		sub_poly->count       = c2p.count;
-
-		for(int j = 0; j < c2p.count; ++j) {
-			sub_poly->verts[j] = c2v_to_v2(c2p.verts[j]);
-			sub_poly->norms[j] = c2v_to_v2(c2p.norms[j]);
-		}
+		p->sub_polys[i] = c2poly_to_poly(c2p);
 	}
 
 	TRACE_END();

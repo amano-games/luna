@@ -124,6 +124,20 @@ poly_to_c2poly(struct poly v)
 	return r;
 }
 
+static inline struct poly
+c2poly_to_poly(struct c2Poly v)
+{
+	struct poly r = {
+		.count = v.count,
+	};
+
+	for(int i = 0; i < v.count; ++i) {
+		r.verts[i] = c2v_to_v2(v.verts[i]);
+		r.norms[i] = c2v_to_v2(v.norms[i]);
+	}
+	return r;
+}
+
 static inline void
 c2toi_to_toi(c2TOIResult *c2toi, struct col_toi *toi)
 {
@@ -154,6 +168,34 @@ static inline f32
 col_aabb_h(struct col_aabb aabb)
 {
 	return aabb.max.y - aabb.min.y;
+}
+
+static inline v2
+col_aabb_cntr(struct col_aabb aabb)
+{
+	f32 w = col_aabb_w(aabb);
+	f32 h = col_aabb_h(aabb);
+
+	v2 res = {
+		.x = aabb.min.x + (w * 0.5f),
+		.y = aabb.min.y + (h * 0.5f),
+	};
+	return res;
+}
+
+static inline rec_i32
+col_aabb_to_rec_i32(struct col_aabb aabb)
+{
+	f32 w = col_aabb_w(aabb);
+	f32 h = col_aabb_h(aabb);
+
+	rec_i32 res = {
+		.x = aabb.min.x,
+		.y = aabb.min.y,
+		.w = w,
+		.h = h,
+	};
+	return res;
 }
 
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
