@@ -220,3 +220,4 @@ void col_circle_to_aabb_manifold(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f3
 void col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m, f32 *t, v2 *closest);
 void col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_manifold *m);
 void col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b, struct col_manifold *m);
+void col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly p, struct col_manifold *m);

@@ -213,19 +213,23 @@ col_aabb_to_aabb(
 int
 col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
 {
+	// WARN: slow because we do the manifold
+	// https://github.com/RandyGaul/cute_headers/issues/404
 	TRACE_START(__func__);
-	c2AABB c2a = {.min = {x1a, y1a}, .max = {x2a, y2a}};
-	int r      = 0;
+	c2AABB c2a   = {.min = {x1a, y1a}, .max = {x2a, y2a}};
+	int res      = 0;
+	c2Manifold m = {0};
 	for(usize i = 0; i < b.count; ++i) {
 		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
-		r          = c2AABBtoPoly(c2a, &c2b, NULL);
-		if(r) {
+		c2AABBtoPolyManifold(c2a, &c2b, NULL, &m);
+		res = m.count > 0;
+		if(res) {
 			break;
 		}
 	}
 
 	TRACE_END();
-	return r;
+	return res;
 }
 
 struct col_toi
@@ -307,6 +311,24 @@ col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, 
 	c2Manifold res = {0};
 
 	c2AABBtoAABBManifold(c2a, c2b, &res);
+	TRACE_END();
+	c2manifold_to_manifold(&res, m);
+}
+
+void
+col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b, struct col_manifold *m)
+{
+	TRACE_START(__func__);
+	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
+	c2Manifold res = {0};
+	for(usize i = 0; i < b.count; ++i) {
+		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
+		c2AABBtoPolyManifold(c2a, &c2b, NULL, &res);
+		if(res.count > 0) {
+			break;
+		}
+	}
+
 	TRACE_END();
 	c2manifold_to_manifold(&res, m);
 }
