@@ -12,12 +12,34 @@
 
 PlaydateAPI *PD;
 
-struct pd_scores_req {
-	u32 id;
+#define PD_SCORES_ADD_MAX_RETRY 3
+
+enum pd_scores_req_type {
+	PD_SCORES_REQ_TYPE_NONE,
+	PD_SCORES_REQ_TYPE_GET,
+	PD_SCORES_REQ_TYPE_ADD,
+};
+
+struct pd_scores_req_get {
 	str8 board_id;
 	struct alloc alloc;
+};
+
+struct pd_scores_req_add {
+	usize attemps;
+	str8 board_id;
+	u32 value;
+};
+
+struct pd_scores_req {
+	u32 id;
+	enum pd_scores_req_type type;
 	enum sys_scores_req_state state;
 	sys_scores_req_callback callback;
+	union {
+		struct pd_scores_req_get get;
+		struct pd_scores_req_add add;
+	};
 	void *userdata;
 };
 
@@ -509,23 +531,6 @@ sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
 }
 
-int
-sys_score_add(str8 board_id, u32 value)
-{
-	return PD_ADD_SCORE((const char *)board_id.str, value, sys_add_score_callback);
-}
-
-void
-sys_add_score_callback(PDScore *score, const char *error_message)
-{
-	if(error_message) {
-		log_error("sys-score", "%s", error_message);
-	} else {
-		log_info("sys_score", "submitted successfully %s", score->player);
-	}
-	PD_FREE_SCORE(score);
-}
-
 void
 pd_scores_start_next(void)
 {
@@ -540,7 +545,87 @@ pd_scores_start_next(void)
 
 	struct pd_scores_req *req = state->reqs + state->start;
 	state->busy               = true;
-	PD_GET_SCORES((const char *)req->board_id.str, sys_get_scores_callback);
+	switch(req->type) {
+	case PD_SCORES_REQ_TYPE_GET: {
+		PD_GET_SCORES((const char *)req->get.board_id.str, sys_get_scores_callback);
+	} break;
+	case PD_SCORES_REQ_TYPE_ADD: {
+		PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, sys_add_score_callback);
+	} break;
+	default: {
+		BAD_PATH;
+	} break;
+	}
+}
+
+int
+sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
+{
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
+	if(next == state->start) {
+		BAD_PATH;
+		return -1; // Queue full
+	}
+
+	assert(state->start < ARRLEN(state->reqs));
+	assert(state->end < ARRLEN(state->reqs));
+	struct pd_scores_req *req = state->reqs + state->end;
+	req->type                 = PD_SCORES_REQ_TYPE_ADD;
+	req->userdata             = userdata;
+	req->callback             = callback;
+	req->id                   = state->end;
+	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
+	req->add.board_id         = board_id;
+	req->add.value            = value;
+	state->end                = next;
+
+	if(!state->busy) { pd_scores_start_next(); }
+
+	return 0;
+}
+
+void
+sys_add_score_callback(PDScore *score, const char *error_message)
+{
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	assert(state->start < ARRLEN(state->reqs));
+	assert(state->end < ARRLEN(state->reqs));
+	if(state->start == state->end) return; // nothing in queue
+
+	struct pd_scores_req *req = state->reqs + state->start;
+	assert(req->type == PD_SCORES_REQ_TYPE_ADD);
+	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
+
+	if(error_message) {
+		log_error("sys-score", "failed to submit score to board %s: %s", req->add.board_id.str, error_message);
+		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
+			req->add.attemps++;
+			pd_scores_start_next();
+			log_info("sys-score", "attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
+			return;
+		}
+		res.error_message = str8_cstr((char *)error_message);
+	} else {
+		log_info("sys-score", "submit score for board %s: %" PRIu32 "", req->add.board_id.str, score->value);
+		res.add = (struct sys_scores_res_add){
+			.score = (struct sys_score){
+				.rank   = score->rank,
+				.value  = score->value,
+				.player = str8_cstr(score->player),
+			},
+		};
+	}
+
+	if(req->callback) {
+		req->callback(req->id, res, req->userdata);
+	}
+
+	state->start = (state->start + 1) % ARRLEN(state->reqs);
+	state->busy  = false;
+
+	pd_scores_start_next();
+	PD_FREE_SCORE(score);
 }
 
 int
@@ -553,18 +638,20 @@ sys_scores_get(
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 	if(next == state->start) {
+		BAD_PATH;
 		return -1; // Queue full
 	}
 
 	assert(state->start < ARRLEN(state->reqs));
 	assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req = state->reqs + state->end;
+	req->type                 = PD_SCORES_REQ_TYPE_GET;
 	req->userdata             = userdata;
 	req->callback             = callback;
 	req->id                   = state->end;
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
-	req->board_id             = board_id;
-	req->alloc                = alloc;
+	req->get.alloc            = alloc;
+	req->get.board_id         = board_id;
 	state->end                = next;
 
 	if(!state->busy) { pd_scores_start_next(); }
@@ -581,24 +668,24 @@ sys_get_scores_callback(PDScoresList *scores, const char *error_message)
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
-	struct sys_scores_res res = {
-		.type = SYS_SCORE_RES_SCORES_GET,
-	};
+	assert(req->type == PD_SCORES_REQ_TYPE_GET);
+	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_GET};
 
 	if(error_message) {
-		log_error("sys-score", "%s", error_message);
+		log_error("sys-score", "failed to get scores for board %s: %s", req->get.board_id.str, error_message);
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		res.scores_get = (struct sys_scores_get_res){
-			.board_id        = req->board_id,
+		log_info("sys-score", "got scores for board %s: %d", req->get.board_id.str, scores->count);
+		res.get = (struct sys_scores_res_get){
+			.board_id        = req->get.board_id,
 			.last_updated    = scores->lastUpdated,
 			.player_included = scores->playerIncluded,
 		};
 
 		if(scores->count > 0) {
-			struct sys_score_arr *entries = &res.scores_get.entries;
-			if(req->alloc.allocf != NULL) {
-				entries->items = req->alloc.allocf(req->alloc.ctx, sizeof(*entries->items) * scores->count);
+			struct sys_score_arr *entries = &res.get.entries;
+			if(req->get.alloc.allocf != NULL) {
+				entries->items = req->get.alloc.allocf(req->get.alloc.ctx, sizeof(*entries->items) * scores->count);
 			}
 			if(entries->items == NULL) {
 				log_error("sys-score", "failed to allocate memory for %d scores", scores->count);
