@@ -81,6 +81,16 @@ debug_draw_cir(f32 x, f32 y, f32 d)
 }
 
 void
+debug_draw_poly(struct poly poly)
+{
+	for(usize i = 0; i < poly.count; ++i) {
+		v2 a = poly.verts[i];
+		v2 b = poly.verts[(i + 1) % poly.count];
+		debug_draw_line(a.x, a.y, b.x, b.y);
+	}
+}
+
+void
 debug_draw_cir_fill(f32 x, f32 y, f32 d)
 {
 	struct debug_shape d_shape = {0};
@@ -164,14 +174,9 @@ debug_draw_collider(struct col_shape *shape)
 	} break;
 	case COL_TYPE_POLY: {
 		struct col_poly col = shape->poly;
-
 		for(usize i = 0; i < col.count; ++i) {
 			struct poly sub_poly = col.sub_polys[i];
-			for(usize j = 0; j < sub_poly.count; ++j) {
-				v2 a = sub_poly.verts[j];
-				v2 b = sub_poly.verts[(j + 1) % sub_poly.count];
-				debug_draw_line(a.x, a.y, b.x, b.y);
-			}
+			debug_draw_poly(sub_poly);
 		}
 	} break;
 	default: {
