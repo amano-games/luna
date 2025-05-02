@@ -2,6 +2,7 @@
 #include "mathfunc.h"
 #include "str.h"
 #include "sys-debug.h"
+#include "sys-scoreboards.h"
 #include "sys.h"
 #include "sys-types.h"
 #include "sys-log.h"
@@ -10,12 +11,30 @@
 #include "sys-assert.h"
 
 PlaydateAPI *PD;
+
+struct pd_scores_req {
+	u32 id;
+	str8 board_id;
+	struct alloc alloc;
+	enum sys_scores_req_state state;
+	sys_scores_req_callback callback;
+	void *userdata;
+};
+
+struct pd_scores_state {
+	bool32 busy;
+	u8 start;
+	u8 end;
+	struct pd_scores_req reqs[10];
+};
+
 struct pd_state {
 	PDButtons b;
 	bool32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
 	LCDBitmap *menu_bitmap;
 	PDMenuItem *menu_items[5];
+	struct pd_scores_state scores_state;
 };
 
 static struct pd_state PD_STATE;
@@ -32,6 +51,7 @@ static float (*PD_SYSTEM_GET_ELAPSED_TIME)(void);
 static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
+
 int (*PD_ADD_SCORE)(const char *board_id, uint32_t value, AddScoreCallback callback);
 void (*PD_FREE_SCORE)(PDScore *score);
 int (*PD_GET_SCORES)(const char *board_id, ScoresCallback callback);
@@ -506,27 +526,102 @@ sys_add_score_callback(PDScore *score, const char *error_message)
 	PD_FREE_SCORE(score);
 }
 
-int
-sys_scores_get(str8 board_id)
+void
+pd_scores_start_next(void)
 {
-	return PD_GET_SCORES((const char *)board_id.str, sys_get_scores_callback);
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	assert(state->start < ARRLEN(state->reqs));
+	assert(state->end < ARRLEN(state->reqs));
+
+	if(state->start == state->end) {
+		state->busy = false;
+		return;
+	}
+
+	struct pd_scores_req *req = state->reqs + state->start;
+	state->busy               = true;
+	PD_GET_SCORES((const char *)req->board_id.str, sys_get_scores_callback);
+}
+
+int
+sys_scores_get(
+	str8 board_id,
+	sys_scores_req_callback callback,
+	void *userdata,
+	struct alloc alloc)
+{
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
+	if(next == state->start) {
+		return -1; // Queue full
+	}
+
+	assert(state->start < ARRLEN(state->reqs));
+	assert(state->end < ARRLEN(state->reqs));
+	struct pd_scores_req *req = state->reqs + state->end;
+	req->userdata             = userdata;
+	req->callback             = callback;
+	req->id                   = state->end;
+	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
+	req->board_id             = board_id;
+	req->alloc                = alloc;
+	state->end                = next;
+
+	if(!state->busy) { pd_scores_start_next(); }
+
 	return 0;
 }
 
 void
 sys_get_scores_callback(PDScoresList *scores, const char *error_message)
 {
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	assert(state->start < ARRLEN(state->reqs));
+	assert(state->end < ARRLEN(state->reqs));
+	if(state->start == state->end) return; // nothing in queue
+
+	struct pd_scores_req *req = state->reqs + state->start;
+	struct sys_scores_res res = {
+		.type = SYS_SCORE_RES_SCORES_GET,
+	};
 
 	if(error_message) {
 		log_error("sys-score", "%s", error_message);
+		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		if(scores) {
-			log_info("sys_score", "Scores fore: %s is player included: %d", scores->boardID, (int)scores->playerIncluded);
-			for(usize i = 0; i < scores->count; ++i) {
-				PDScore *score = scores->scores + i;
-				log_info("sys_score", "%d ... %s ... %d", (int)score->rank, score->player, (int)score->value);
+		res.scores_get = (struct sys_scores_get_res){
+			.board_id        = req->board_id,
+			.last_updated    = scores->lastUpdated,
+			.player_included = scores->playerIncluded,
+		};
+
+		if(scores->count > 0) {
+			struct sys_score_arr *entries = &res.scores_get.entries;
+			if(req->alloc.allocf != NULL) {
+				entries->items = req->alloc.allocf(req->alloc.ctx, sizeof(*entries->items) * scores->count);
+			}
+			if(entries->items == NULL) {
+				log_error("sys-score", "failed to allocate memory for %d scores", scores->count);
+			} else {
+				entries->cap = scores->count;
+				entries->len = scores->count;
+				for(usize i = 0; i < scores->count; ++i) {
+					entries->items[i] = (struct sys_score){
+						.value  = scores->scores[i].value,
+						.rank   = scores->scores[i].rank,
+						.player = str8_cstr(scores->scores[i].player),
+					};
+				}
 			}
 		}
 	}
+
+	if(req->callback) {
+		req->callback(req->id, res, req->userdata);
+	}
+
+	state->start = (state->start + 1) % ARRLEN(state->reqs);
+	state->busy  = false;
 	PD_FREE_SCORES_LIST(scores);
+	pd_scores_start_next();
 }

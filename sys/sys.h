@@ -99,6 +99,3 @@ void sys_menu_options_add(int id, const char *title, const char **options, int c
 int sys_menu_value(int id);
 void sys_menu_clr(void);
 void sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset);
-
-int sys_score_add(str8 board_id, u32 value);
-int sys_scores_get(str8 board_id);
