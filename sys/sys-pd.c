@@ -550,6 +550,7 @@ pd_scores_start_next(void)
 		PD_GET_SCORES((const char *)req->get.board_id.str, sys_get_scores_callback);
 	} break;
 	case PD_SCORES_REQ_TYPE_ADD: {
+		log_info("sys-scores", "adding score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 		PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, sys_add_score_callback);
 	} break;
 	default: {
@@ -561,6 +562,7 @@ pd_scores_start_next(void)
 int
 sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
 {
+	if(value == 0) { return -1; }
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 	if(next == state->start) {
@@ -578,7 +580,8 @@ sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
 	req->add.board_id         = board_id;
 	req->add.value            = value;
-	state->end                = next;
+	log_info("sys-scores", "queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
+	state->end = next;
 
 	if(!state->busy) { pd_scores_start_next(); }
 
