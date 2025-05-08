@@ -25,25 +25,25 @@ asset_db_init(
 	i32 exp               = 10;
 
 	db->animations.ht   = ht_new_u32(exp, alloc);
-	db->animations.data = arr_ini(clip_count, sizeof(*db->animations.data), alloc);
-	db->animations.arr  = arr_ini(slice_count, sizeof(*db->animations.arr), alloc);
+	db->animations.data = arr_ini(clip_count + 1, sizeof(*db->animations.data), alloc);
+	db->animations.arr  = arr_ini(slice_count + 1, sizeof(*db->animations.arr), alloc);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
 	db->assets_path.ht   = ht_new_u32(exp, alloc);
-	db->assets_path.arr  = arr_ini(paths_count, sizeof(*db->assets_path.arr), alloc);
+	db->assets_path.arr  = arr_ini(paths_count + 1, sizeof(*db->assets_path.arr), alloc);
 	db->assets_path.data = arr_ini(paths_data_size, sizeof(*db->assets_path.data), alloc);
 	arr_push(db->assets_path.arr, (str8){0});
 
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
-	db->textures_info.arr = arr_ini(textures_count, sizeof(*db->textures_info.arr), alloc);
+	db->textures_info.arr = arr_ini(textures_count + 1, sizeof(*db->textures_info.arr), alloc);
 	arr_push(db->textures_info.arr, (struct tex_info){0});
 
 	db->fonts.ht  = ht_new_u32(exp, alloc);
-	db->fonts.arr = arr_ini(fonts_count, sizeof(*db->fonts.arr), alloc);
+	db->fonts.arr = arr_ini(fonts_count + 1, sizeof(*db->fonts.arr), alloc);
 	arr_push(db->fonts.arr, (struct fnt){0});
 
 	db->bets.ht  = ht_new_u32(exp, alloc);
-	db->bets.arr = arr_ini(bets_count, sizeof(*db->bets.arr), alloc);
+	db->bets.arr = arr_ini(bets_count + 1, sizeof(*db->bets.arr), alloc);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 }
 
