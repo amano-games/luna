@@ -2,11 +2,9 @@
 #include "sys-log.h"
 #include "sys.h"
 #include "sys-intrin.h"
-#include "sys-assert.h"
 #include "sys-io.h"
 #include "mathfunc.h"
 #include "trace.h"
-#include "v2.h"
 
 struct span_blit {
 	u32 *dp;  // pixel
