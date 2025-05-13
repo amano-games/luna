@@ -84,3 +84,5 @@ Temporary Items
 *.sublime-workspace
 bin
 steam-runtime-release_latest.tar.xz
+node_modules/
+*.tiled-session
