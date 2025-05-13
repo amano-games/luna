@@ -1,0 +1,22 @@
+{
+  "name": "pinbjson",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "esbuild --watch index.ts --bundle --target=es2017 --outfile=index.js",
+    "build": "esbuild index.ts --bundle --target=es2017 --outfile=index.js",
+    "test": "tsc"
+  },
+  "author": "AFK",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "@mapeditor/tiled-api": "^1.11.0"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.1",
+    "pathe": "^1.1.2",
+    "prettier": "^3.5.3"
+  }
+}

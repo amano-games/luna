@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "ES2017",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceRoot": "./",
+    "rootDir": "./",
+    "sourceMap": true,
+    "types": ["@mapeditor/tiled-api"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler"
+  }
+}
