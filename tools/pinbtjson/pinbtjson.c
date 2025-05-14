@@ -5,6 +5,7 @@
 #include "mem-arena.h"
 #include "path.h"
 #include "pinb/pinb-ser.h"
+#include "poly.h"
 #include "serialize/serialize.h"
 #include "sys-assert.h"
 #include "sys.h"
@@ -359,7 +360,7 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 }
 
 struct pinbtjson_res
-pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
+pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -374,13 +375,23 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 			res.col_shapes.count               = 1;
 			res.col_shapes.items[0].type       = COL_TYPE_POLY;
 			res.col_shapes.items[0].poly.count = 1;
-			usize vert_count                   = value->size / 2;
-			assert(vert_count < ARRLEN(res.col_shapes.items[0].poly.sub_polys[0].verts));
-			for(usize j = 0; j < vert_count; ++j) {
-				res.col_shapes.items[0].poly.sub_polys[0].count++;
-				res.col_shapes.items[0].poly.sub_polys[0].verts[j].x = json_parse_f32(json, tokens + ++i);
-				res.col_shapes.items[0].poly.sub_polys[0].verts[j].y = json_parse_f32(json, tokens + ++i);
+			size vert_count                    = value->size / 2;
+			v2 *verts                          = arr_ini(vert_count, sizeof(*verts), scratch);
+			for(size j = 0; j < vert_count; ++j) {
+				verts[j].x = json_parse_f32(json, tokens + ++i);
+				verts[j].y = json_parse_f32(json, tokens + ++i);
 			}
+
+			if(!poly_is_convex(verts, vert_count)) {
+				struct mesh mesh = poly_triangulate(verts, vert_count, scratch);
+			}
+			assert(poly_is_convex(verts, vert_count));
+
+			for(size j = 0; j < (size)arr_len(vert_count); ++j) {
+				res.col_shapes.items[0].poly.sub_polys[0].count++;
+				res.col_shapes.items[0].poly.sub_polys[0].verts[j] = verts[j];
+			}
+
 		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			assert(value->size == 4);
@@ -415,7 +426,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
-pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
+pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -439,7 +450,7 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 		} else if(json_eq(json, key, str8_lit("static_friction")) == 0) {
 			res.body.static_friction = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, scratch);
 			res.body.shape                = item_res.col_shapes.items[0];
 			i += item_res.token_count - 1;
 		}
@@ -449,7 +460,7 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
-pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -463,7 +474,7 @@ pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
 			res.sensor.is_enabled = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, scratch);
 			res.sensor.shape              = item_res.col_shapes.items[0];
 			i += item_res.token_count - 1;
 		}
@@ -518,7 +529,7 @@ pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct all
 }
 
 struct pinbtjson_res
-pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -543,7 +554,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.entity.spr                = item_res.spr;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("rigid_body")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_rigid_body(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_rigid_body(json, tokens, i + 1, scratch);
 			res.entity.body               = item_res.body;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("reactive_impulse")) == 0) {
@@ -634,7 +645,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			}
 		} else if(json_eq(json, key, str8_lit("sensor")) == 0) {
 			assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_sensor(json, tokens, i + 1, alloc);
+			struct pinbtjson_res item_res = pinbtjson_handle_sensor(json, tokens, i + 1, alloc, scratch);
 			res.entity.sensor             = item_res.sensor;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("switch_value")) == 0) {
@@ -772,7 +783,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
 				assert(item->type == JSMN_OBJECT);
-				struct pinbtjson_res item_res = pinbtjson_handle_entity(json, tokens, item_index, alloc);
+				struct pinbtjson_res item_res = pinbtjson_handle_entity(json, tokens, item_index, alloc, scratch);
 				arr_push(res.entities, item_res.entity);
 				i += item_res.token_count;
 			}

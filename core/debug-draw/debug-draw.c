@@ -19,13 +19,11 @@ debug_draw_init(void *mem, usize size)
 }
 
 void
-debug_draw_draw(v2_i32 cam_off)
+debug_draw_draw(i32 x, i32 y)
 {
 #if !defined(TARGET_PLAYDATE) && defined(DEBUG)
 	TRACE_START(__func__);
-
-	debug_draw_set_offset(cam_off.x, cam_off.y);
-
+	debug_draw_set_offset(x, y);
 	sys_debug_draw(DEBUG_STATE.shapes, arr_len(DEBUG_STATE.shapes));
 	debug_draw_clear();
 	TRACE_END();
@@ -81,13 +79,24 @@ debug_draw_cir(f32 x, f32 y, f32 d)
 }
 
 void
-debug_draw_poly(struct poly poly)
+debug_draw_poly(struct v2 *verts, size count)
 {
-	for(usize i = 0; i < poly.count; ++i) {
-		v2 a = poly.verts[i];
-		v2 b = poly.verts[(i + 1) % poly.count];
+	for(size i = 0; i < count; ++i) {
+		v2 a = verts[i];
+		v2 b = verts[(i + 1) % count];
 		debug_draw_line(a.x, a.y, b.x, b.y);
 	}
+}
+
+void
+debug_draw_tri(f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc)
+{
+	v2 verts[3] = {
+		{xa, ya},
+		{xb, yb},
+		{xc, yc},
+	};
+	debug_draw_poly(verts, 3);
 }
 
 void
@@ -176,7 +185,7 @@ debug_draw_collider(struct col_shape *shape)
 		struct col_poly col = shape->poly;
 		for(usize i = 0; i < col.count; ++i) {
 			struct poly sub_poly = col.sub_polys[i];
-			debug_draw_poly(sub_poly);
+			debug_draw_poly(sub_poly.verts, sub_poly.count);
 		}
 	} break;
 	default: {

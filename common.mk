@@ -21,11 +21,11 @@ WARN_FLAGS += -Wno-unused-parameter
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen
 
-SHADER_BIN   := bin/sokol-shdc
+SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h
 
 $(ASSETS_BIN):
 	make -f $(LUNA_DIR)/tools.mk CC=$(CC) PREFIX= DESTDIR=
 
 $(SHADER_OBJS): $(LUNA_DIR)/shaders/sokol_shader.glsl
-	$(SHADER_BIN) --input $< --output $@ --slang glsl330:hlsl5:metal_macos:glsl300es
+	$(SHADER_BIN) --input $< --output $@ --slang glsl410:hlsl5:metal_macos:glsl300es

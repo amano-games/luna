@@ -27,14 +27,18 @@
 #include "sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
+#define SOKOL_APP_IMG_SLOT 0
+#define SOKOL_DBG_IMG_SLOT 1
+
 struct sokol_state {
 	sg_pipeline pip;
 	sg_bindings bind;
 	sg_pass_action pass_action;
+
 	f32 mouse_scroll_sensitivity;
 	u8 frame_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
-
 	u8 debug_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
+
 	struct tex debug_t;
 	struct gfx_ctx debug_ctx;
 
@@ -44,8 +48,8 @@ struct sokol_state {
 };
 
 static struct sokol_state SOKOL_STATE;
-const u32 BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
-const u32 DEBUG_PAL[2] = {0xFFFFFF, 0xFF0000};
+const u32 SOKOL_BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
+const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 
 void
@@ -140,12 +144,10 @@ init(void)
 
 	/* a pass action to framebuffer to black */
 	SOKOL_STATE.pass_action = (sg_pass_action){
-		.colors[0] = {
-			.load_action = SG_LOADACTION_CLEAR,
-			.clear_value = {0.25f, 0.5f, 0.75f, 1.0f}},
+		.colors[0] = {.load_action = SG_LOADACTION_CLEAR, .clear_value = {0.25f, 0.5f, 0.75f, 1.0f}},
 	};
 
-	SOKOL_STATE.bind.fs.samplers[SLOT_smp] = sg_make_sampler(&(sg_sampler_desc){
+	SOKOL_STATE.bind.samplers[0] = sg_make_sampler(&(sg_sampler_desc){
 		.label      = "sampler",
 		.min_filter = SG_FILTER_NEAREST,
 		.mag_filter = SG_FILTER_NEAREST,
@@ -158,7 +160,8 @@ init(void)
 		.usage        = SG_USAGE_STREAM,
 	};
 
-	SOKOL_STATE.bind.fs.images[SLOT_tex] = sg_make_image(&img_desc);
+	SOKOL_STATE.bind.images[SOKOL_APP_IMG_SLOT] = sg_make_image(&img_desc);
+	SOKOL_STATE.bind.images[SOKOL_DBG_IMG_SLOT] = sg_make_image(&img_desc);
 
 	// clang-format off
     const float vertices[] = {
@@ -189,19 +192,19 @@ init(void)
 	sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
 
 	SOKOL_STATE.pip = sg_make_pipeline(&(sg_pipeline_desc){
+		.label  = "pipeline",
 		.shader = shd,
 		// If the vertex layout doesn't have gaps, there is no need to provide strides and offsets.
 		.layout = {
 			.attrs = {
-				[ATTR_vs_pos].format       = SG_VERTEXFORMAT_FLOAT2,
-				[ATTR_vs_texcoord0].format = SG_VERTEXFORMAT_FLOAT2,
+				[ATTR_simple_pos].format       = SG_VERTEXFORMAT_FLOAT2,
+				[ATTR_simple_texcoord0].format = SG_VERTEXFORMAT_FLOAT2,
 			}},
-		.label      = "pipeline",
 		.index_type = SG_INDEXTYPE_UINT16,
 		.cull_mode  = SG_CULLMODE_NONE,
 	});
 
-	sapp_show_mouse(false);
+	sapp_show_mouse(true);
 	sys_internal_init();
 }
 
@@ -209,16 +212,25 @@ void
 frame(void)
 {
 	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
-	u32 *debug_pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
+	u32 *pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
 	usize size                                           = ARRLEN(pixels);
-	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)pixels, size, BW_PAL);
-	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)debug_pixels, size, BW_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)pixels, size, SOKOL_BW_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)pixels_debug, size, SOKOL_DEBUG_PAL);
 
 	sg_update_image(
-		SOKOL_STATE.bind.fs.images[SLOT_tex],
+		SOKOL_STATE.bind.images[SOKOL_APP_IMG_SLOT],
 		&(sg_image_data){
 			.subimage[0][0] = {
 				.ptr  = pixels,
+				.size = size,
+			},
+		});
+
+	sg_update_image(
+		SOKOL_STATE.bind.images[SOKOL_DBG_IMG_SLOT],
+		&(sg_image_data){
+			.subimage[0][0] = {
+				.ptr  = pixels_debug,
 				.size = size,
 			},
 		});
@@ -556,8 +568,8 @@ void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
 #if DEBUG
-
 	struct gfx_ctx ctx = SOKOL_STATE.debug_ctx;
+	tex_clr(ctx.dst, GFX_COL_BLACK);
 
 	for(int i = 0; i < count; ++i) {
 		struct debug_shape *shape = &shapes[i];
@@ -615,7 +627,7 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 		for(i32 x = 0; x < SYS_DISPLAY_W; x++) {
 			i32 i     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
 			i32 k     = x + y * SYS_DISPLAY_W;
-			i32 byt   = SOKOL_STATE.frame_buffer[i];
+			i32 byt   = in[i];
 			i32 bit   = !!(byt & 0x80 >> (x & 7));
 			pixels[k] = pal[!bit];
 		}
