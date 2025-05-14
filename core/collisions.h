@@ -1,7 +1,6 @@
 #pragma once
 
 #include "poly.h"
-#include "sys-assert.h"
 
 #define CUTE_C2_IMPLEMENTATION
 #include "cute_c2.h"
@@ -117,7 +116,7 @@ poly_to_c2poly(struct poly v)
 		.count = v.count,
 	};
 
-	for(usize i = 0; i < v.count; ++i) {
+	for(size i = 0; i < v.count; ++i) {
 		r.verts[i] = v2_to_c2v(v.verts[i]);
 		r.norms[i] = v2_to_c2v(v.norms[i]);
 	}
@@ -205,6 +204,7 @@ struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 
 struct col_aabb col_shape_get_bounding_box(struct col_shape shape);
 
 void col_point_to_line(v2 c, v2 a, v2 b, f32 *t, v2 *d);
+int col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc);
 int col_point_to_aabb(f32 xa, f32 ya, f32 x1b, f32 y1b, f32 x2b, f32 y2b);
 int col_circle_to_circle(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br);
 int col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2);

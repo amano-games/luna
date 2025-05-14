@@ -34,6 +34,7 @@ typedef uintptr_t uptr;
 typedef intptr_t iptr;
 
 typedef size_t usize;
+typedef ptrdiff_t size;
 
 #if defined(TARGET_PLAYDATE)
 #define ASM __asm volatile

@@ -6,6 +6,7 @@
 
 #include "trace.h"
 #include "mathfunc.h"
+#include "tri.h"
 #include "v2.h"
 
 void
@@ -40,9 +41,9 @@ col_poly_centroid(struct col_poly *p)
 	usize vertex_count = 0;
 	// TODO: memory allocate ?
 	v2 vertices[COL_MAX_POLYGON_VERTS * COL_MAX_SUB_POLY] = {0};
-	for(usize i = 0; i < p->count; ++i) {
+	for(size i = 0; i < (size)p->count; ++i) {
 		struct poly sub_poly = p->sub_polys[i];
-		for(usize j = 0; j < sub_poly.count; ++j) {
+		for(size j = 0; j < sub_poly.count; ++j) {
 			vertices[vertex_count++] = sub_poly.verts[j];
 		}
 	}
@@ -386,6 +387,21 @@ col_point_to_line(v2 c, v2 a, v2 b, f32 *const t, v2 *const d)
 	TRACE_END();
 }
 
+int
+col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc)
+{
+	v2 p  = {x, y};
+	v2 a  = {xa, ya};
+	v2 b  = {xb, yb};
+	v2 c  = {xc, yc};
+	f32 u = 0;
+	f32 v = 0;
+	f32 w = 0;
+	tri_barycentric(p, a, b, c, &u, &v, &w);
+
+	return v >= 0.0f && w >= 0.0f && (v + w) <= 1.0f;
+}
+
 static inline struct col_aabb
 col_cir_get_bounding_box(struct col_cir col)
 {
@@ -408,7 +424,7 @@ col_poly_get_bounding_box(struct col_poly col)
 
 	for(usize i = 0; i < col.count; ++i) {
 		struct poly poly = col.sub_polys[i];
-		for(usize j = 0; j < poly.count; ++j) {
+		for(size j = 0; j < poly.count; ++j) {
 			v2 p      = poly.verts[j];
 			res.min.x = min_f32(res.min.x, p.x);
 			res.min.y = min_f32(res.min.y, p.y);
