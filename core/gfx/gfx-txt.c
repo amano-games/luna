@@ -35,3 +35,23 @@ fnt_draw_str(
 		}
 	}
 }
+
+rec_i32
+fnt_draw_str_pivot(
+	struct gfx_ctx ctx,
+	struct fnt fnt,
+	str8 str,
+	i32 x,
+	i32 y,
+	v2 pivot,
+	enum spr_mode mode)
+{
+	if(fnt.t.px != NULL) {
+		v2_i32 text_size = fnt_size_px(fnt, str, 0, 0);
+		i32 txt_x        = x - (i32)(text_size.x * pivot.x);
+		i32 txt_y        = y - (i32)(text_size.y * pivot.y);
+		fnt_draw_str(ctx, fnt, txt_x, txt_y, str, 0, 0, mode);
+		return (rec_i32){txt_x, txt_y, text_size.x, text_size.y};
+	}
+	return (rec_i32){0};
+}

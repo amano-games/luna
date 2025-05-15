@@ -4,6 +4,12 @@
 #include "sys-types.h"
 #include "mathfunc.h"
 
+static inline bool32
+v2_eq(v2 a, v2 b)
+{
+	return a.x == b.x && a.y == b.y;
+}
+
 static inline v2
 v2_add(v2 a, v2 b)
 {

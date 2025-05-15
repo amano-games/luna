@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sys-assert.h"
 #include "sys-types.h"
 #include "tri.h"
 #include "v2.h"
@@ -15,45 +14,10 @@ struct poly {
 	v2 norms[POLY_MAX_VERTS];
 };
 
-struct tri {
-	v2 verts[3];
-};
-
 struct mesh {
 	size count;
-	struct tri *triangles;
+	struct poly *items;
 };
-
-// Get the area of a triangle spanned by the three given points. Note that the area will be negative if the points are not given in counter-clockwise order.
-static inline f32
-poly_triangle_area(v2 a, v2 b, v2 c)
-{
-	return (((b.x - a.x) * (c.y - a.y)) - ((c.x - a.x) * (b.y - a.y)));
-}
-
-static inline bool32
-poly_is_left(v2 a, v2 b, v2 c)
-{
-	return poly_triangle_area(a, b, c) > 0;
-}
-
-static inline bool32
-poly_is_left_on(v2 a, v2 b, v2 c)
-{
-	return poly_triangle_area(a, b, c) >= 0;
-}
-
-static inline bool32
-poly_is_rigth(v2 a, v2 b, v2 c)
-{
-	return poly_triangle_area(a, b, c) < 0;
-}
-
-static inline bool32
-poly_is_right_on(v2 a, v2 b, v2 c)
-{
-	return poly_triangle_area(a, b, c) <= 0;
-}
 
 // Get a vertex at position i. It does not matter if i is out of bounds, this function will just cycle.
 static inline v2
@@ -79,103 +43,6 @@ poly_reverse(v2 *verts, size count)
 		left++;
 		right--;
 	}
-}
-
-static inline bool32
-poly_line_segment_intersect(v2 p1, v2 p2, v2 q1, v2 q2)
-{
-	f32 dx = p2.x - p1.x;
-	f32 dy = p2.y - p1.y;
-	f32 da = q2.x - q1.x;
-	f32 db = q2.x - q1.y;
-
-	// Segments are parallel
-	if((da * dy - db * dx) == 0) {
-		return false;
-	}
-
-	f32 s = (dx * (q1.y - p1.y) + dy * (p1.x - q1.x)) / (da * dy - db * dx);
-	f32 t = (da * (p1.y - q1.y) + db * (q1.x - p1.x)) / (db * dx - da * dy);
-
-	return (s >= 0 && s <= 1 && t >= 0 && t <= 1);
-}
-
-static inline v2
-poly_get_intersection_point(v2 p1, v2 p2, v2 q1, v2 q2, f32 delta)
-{
-	delta       = delta || 0;
-	f32 a1      = p2.y - p1.y;
-	f32 b1      = p1.x - p2.x;
-	f32 c1      = (a1 * p1.x) + (b1 * p1.y);
-	f32 a2      = q2.y - q1.y;
-	f32 b2      = q1.x - q2.x;
-	f32 c2      = (a2 * q1.x) + (b2 * q1.y);
-	f32 det     = (a1 * b2) - (a2 * b1);
-	bool32 eq   = abs_f32(det) <= delta;
-	f32 det_inv = 1 / det;
-
-	if(!eq) {
-		return (v2){((b2 * c1) - (b1 * c2)) * det_inv, ((a1 * c2) - (a2 * c1)) * det_inv};
-	} else {
-		return (v2){0, 0};
-	}
-}
-
-bool32
-poly_make_ccw(v2 *verts, size count)
-{
-	size br = 0;
-	for(size i = 0; i < count; ++i) {
-		struct v2 *v = verts;
-		if(v[i].y < v[br].y || (v[i].y == v[br].y && v[i].x > v[br].x)) {
-			br = i;
-		}
-	}
-
-	if(!poly_is_left(poly_at(verts, count, br - 1), poly_at(verts, count, br), poly_at(verts, count, br + 1))) {
-		poly_reverse(verts, count);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-// Checks that the line segments of this polygon do not intersect each other.
-//  TODO: Should it check all segments with all others?
-bool32
-poly_is_simple(const v2 *verts, size count)
-{
-	for(size i = 0; i < count; ++i) {
-		for(size j = 0; j < i - 1; ++j) {
-			if(poly_line_segment_intersect(
-				   verts[i],
-				   verts[i + 1],
-				   verts[j],
-				   verts[j + 1])) {}
-			return false;
-		}
-	}
-
-	// Check the segment between the last and the first point to all others
-	for(size i = 1; i < count - 2; i++) {
-		if(poly_line_segment_intersect(verts[0], verts[count - 1], verts[i], verts[i + 1])) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-// Decomposes the polygon into one or more convex sub-Polygons.
-static inline void
-poly_decomp(const v2 *verts, size count, struct alloc alloc)
-{
-	// var edges = polygonGetCutEdges(polygon);
-	// if(edges.length > 0) {
-	// 	return polygonSlice(polygon, edges);
-	// } else {
-	// 	return [polygon];
-	// }
 }
 
 v2
@@ -240,13 +107,14 @@ poly_is_convex(const v2 *verts, size count)
 	return true;
 }
 
+// TODO: Use scratch alloc for the prev/next things
 static inline struct mesh
 poly_triangulate(v2 *verts, size count, struct alloc alloc)
 {
 	assert(count <= POLY_MAX_VERTS);
 	struct mesh res = {
-		.count     = 0,
-		.triangles = alloc.allocf(alloc.ctx, sizeof(*res.triangles)),
+		.count = 0,
+		.items = alloc.allocf(alloc.ctx, sizeof(*res.items)),
 	};
 	i32 prev[POLY_MAX_VERTS], next[POLY_MAX_VERTS];
 	for(size i = 0; i < count; ++i) {
@@ -288,8 +156,9 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc)
 		// If current vertex v[i] is an ear, delete it and visit the prev vertex
 		if(is_ear) {
 			// Triangle (v[i], v[prev[i]], v[next[i]]) is an ear
-			alloc.allocf(alloc.ctx, sizeof(*res.triangles));
-			res.triangles[res.count++] = (struct tri){
+			alloc.allocf(alloc.ctx, sizeof(*res.items));
+			res.items[res.count++] = (struct poly){
+				.count = 3,
 				.verts = {
 					[0] = verts[i],
 					[1] = verts[prev[i]],
@@ -309,5 +178,105 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc)
 			i = next[i];
 		}
 	}
+
+	alloc.allocf(alloc.ctx, sizeof(*res.items));
+	res.items[res.count++] = (struct poly){
+		.count = 3,
+		.verts = {
+			[0] = verts[i],
+			[1] = verts[prev[i]],
+			[2] = verts[next[i]],
+		},
+	};
+
+	return res;
+}
+
+// Hertel Mehlhorn
+// TODO: currently we allocate more polygons than what we need
+// We could maybe use the system of the poly_triangulate double link list thing to remove polys easier
+static inline struct mesh
+poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
+{
+	bool32 *merged = scratch.allocf(scratch.ctx, sizeof(*merged) * mesh.count);
+	mclr(merged, sizeof(*merged) * mesh.count);
+
+	struct mesh res = {
+		.items = alloc.allocf(alloc.ctx, sizeof(*res.items) * mesh.count),
+	};
+
+	for(size i = 0; i < mesh.count; i++) {
+		if(merged[i]) { continue; }
+
+		struct poly *a = mesh.items + i;
+		bool did_merge = false;
+
+		for(size j = i + 1; j < mesh.count; ++j) {
+			if(merged[j]) { continue; }
+
+			struct poly *b = mesh.items + j;
+
+			// Try to merge a and b if they share and edge
+			// Find the shared edge (reverse order in both)
+			for(size ai = 0; ai < a->count; ++ai) {
+				v2 a0 = a->verts[ai];
+				v2 a1 = a->verts[(ai + 1) % a->count];
+
+				for(size bi = 0; bi < b->count; ++bi) {
+					v2 b1 = b->verts[bi];
+					v2 b0 = b->verts[(bi + 1) % b->count];
+
+					// They share an edge
+					if((a0.x == b0.x && a0.y == b0.y) && (a1.x == b1.x && a1.y == b1.y)) {
+						// create new merged polygon
+						struct poly merged_poly = {0};
+
+						// Add a verts up to a0
+						{
+							size idx = (ai + 1) % a->count;
+							while(!v2_eq(a->verts[idx], a0)) {
+								merged_poly.verts[merged_poly.count++] = a->verts[idx];
+								idx                                    = (idx + 1) % a->count;
+							}
+						}
+
+						// Add verts from b (excluding shared edge b1→b0)
+						{
+							size idx = (bi + 1) % b->count;
+							while(!v2_eq(b->verts[idx], b1)) {
+								merged_poly.verts[merged_poly.count++] = b->verts[idx];
+								idx                                    = (idx + 1) % b->count;
+							}
+						}
+
+						assert(merged_poly.count > 2);
+
+						if(poly_is_convex(merged_poly.verts, merged_poly.count)) {
+							res.items[res.count++] = merged_poly;
+							merged[i] = merged[j] = true;
+							did_merge             = true;
+							break;
+						}
+					}
+				}
+				if(did_merge) { break; }
+			}
+		}
+
+		if(!did_merge) {
+			// keep triangle as is
+			res.items[res.count++] = *a;
+		}
+	}
+
+	return res;
+}
+
+// Decomposes the polygon into one or more convex sub-Polygons.
+static inline struct mesh
+poly_decomp(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
+{
+	struct mesh mesh = poly_triangulate(verts, count, scratch);
+	struct mesh res  = poly_decomp_hm(mesh, alloc, scratch);
 	return res;
 }

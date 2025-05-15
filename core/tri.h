@@ -36,6 +36,9 @@ tri_is_point_inside(v2 p, v2 a, v2 b, v2 c)
 static inline f32
 tri_signed_2d_area(v2 a, v2 b, v2 c)
 {
+	// (b - a) × (c - a) a as origin
+	// f32 res = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+	// (a - c) × (b - c) c as origin
 	f32 res = (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x);
 	return res;
 }

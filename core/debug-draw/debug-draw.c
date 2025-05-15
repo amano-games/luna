@@ -156,19 +156,19 @@ debug_draw_ui_rec(struct ui_rec rec)
 
 // TODO: Re-do all of this
 void
-debug_draw_collider(struct col_shape *shape)
+debug_draw_collider(struct col_shape shape)
 {
-	switch(shape->type) {
+	switch(shape.type) {
 	case COL_TYPE_AABB: {
-		struct col_aabb col = shape->aabb;
+		struct col_aabb col = shape.aabb;
 		debug_draw_aabb(col.min.x, col.min.y, col.max.x, col.max.y);
 	} break;
 	case COL_TYPE_CIR: {
-		struct col_cir col = shape->cir;
+		struct col_cir col = shape.cir;
 		debug_draw_cir(col.p.x, col.p.y, col.r * 2);
 	} break;
 	case COL_TYPE_CAPSULE: {
-		struct col_capsule col = shape->capsule;
+		struct col_capsule col = shape.capsule;
 		v2 a                   = col.a.p;
 		f32 ra                 = col.a.r;
 		v2 b                   = col.b.p;
@@ -182,7 +182,7 @@ debug_draw_collider(struct col_shape *shape)
 
 	} break;
 	case COL_TYPE_POLY: {
-		struct col_poly col = shape->poly;
+		struct col_poly col = shape.poly;
 		for(usize i = 0; i < col.count; ++i) {
 			struct poly sub_poly = col.sub_polys[i];
 			debug_draw_poly(sub_poly.verts, sub_poly.count);
