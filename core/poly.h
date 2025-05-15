@@ -261,17 +261,11 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc)
 
 	// keep removing verts until just a triangle left;
 	while(count > 3) {
-		bool32 is_ear  = true;
-		struct tri tri = {
-			.verts = {
-				verts[prev[i]],
-				verts[i],
-				verts[next[i]],
-			},
-		};
+		bool32 is_ear = true;
 
 		// An ear must be convex (here counterclockwise)
-		if(tri_is_ccw(verts[prev[i]], verts[i], verts[next[i]])) {
+		// NOTE: Not sure why is !ccw :(
+		if(!tri_is_ccw(verts[prev[i]], verts[i], verts[next[i]])) {
 			// Loop over all overtices not part of the tentative ear
 			i32 k = next[next[i]];
 			do {

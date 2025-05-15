@@ -574,6 +574,25 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 	for(int i = 0; i < count; ++i) {
 		struct debug_shape *shape = &shapes[i];
 		switch(shape->type) {
+		case DEBUG_CIR: {
+			struct debug_shape_cir cir = shape->cir;
+			if(cir.filled) {
+				gfx_cir_fill(ctx, cir.p.x, cir.p.y, cir.d, 1);
+			} else {
+				gfx_cir(ctx, cir.p.x, cir.p.y, cir.d, 1);
+			}
+		} break;
+		case DEBUG_REC: {
+			struct debug_shape_rec rec = shape->rec;
+			if(rec.filled) {
+				gfx_rec_fill(ctx, rec.x, rec.y, rec.w, rec.h, 1);
+			} else {
+				gfx_rec(ctx, rec.x, rec.y, rec.w, rec.h, 1);
+			}
+		} break;
+		case DEBUG_POLY: {
+			BAD_PATH;
+		} break;
 		case DEBUG_LIN: {
 			struct debug_shape_lin lin = shape->lin;
 			gfx_lin(ctx, lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1);
