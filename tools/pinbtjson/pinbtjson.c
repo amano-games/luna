@@ -383,7 +383,8 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 			}
 
 			if(!poly_is_convex(verts, vert_count)) {
-				struct mesh mesh = poly_triangulate(verts, vert_count, scratch);
+				struct mesh mesh  = poly_triangulate(verts, vert_count, scratch);
+				struct mesh mes_b = {0};
 			}
 			assert(poly_is_convex(verts, vert_count));
 
