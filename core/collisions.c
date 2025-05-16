@@ -1,6 +1,5 @@
 #include "collisions.h"
 
-#include "poly.h"
 #include "sys-assert.h"
 #include "sys-types.h"
 
@@ -40,7 +39,7 @@ aabb_to_c2aabb(struct col_aabb v)
 }
 
 static inline c2Poly
-poly_to_c2poly(struct poly v)
+poly_to_c2poly(struct col_poly v)
 {
 	c2Poly r = {
 		.count = v.count,
@@ -53,10 +52,10 @@ poly_to_c2poly(struct poly v)
 	return r;
 }
 
-static inline struct poly
+static inline struct col_poly
 c2poly_to_poly(struct c2Poly v)
 {
-	struct poly r = {
+	struct col_poly r = {
 		.count = v.count,
 	};
 
@@ -132,43 +131,11 @@ col_poly_init(struct col_poly *p)
 {
 	TRACE_START(__func__);
 
-	for(usize i = 0; i < p->count; ++i) {
-		struct poly poly = p->sub_polys[i];
-		assert(poly.count <= COL_MAX_POLYGON_VERTS);
-		c2Poly c2p = poly_to_c2poly(poly);
-		c2MakePoly(&c2p);
-		p->sub_polys[i] = c2poly_to_poly(c2p);
-	}
+	c2Poly c2p = poly_to_c2poly(*p);
+	c2MakePoly(&c2p);
+	*p = c2poly_to_poly(c2p);
 
 	TRACE_END();
-}
-
-// https://stackoverflow.com/questions/2792443/finding-the-centroid-of-a-polygon
-v2
-col_poly_centroid(struct col_poly *p)
-{
-	TRACE_START(__func__);
-
-	f32 signed_area = 0.0f;
-	f32 x0          = 0.0f; // current vertex X
-	f32 y0          = 0.0f; // current vertex Y
-	f32 x1          = 0.0f; // Next vertex X
-	f32 y1          = 0.0f; // next vertex Y
-	f32 a           = 0.0f; // partial signed area
-
-	usize vertex_count = 0;
-	// TODO: memory allocate ?
-	v2 vertices[COL_MAX_POLYGON_VERTS * COL_MAX_SUB_POLY] = {0};
-	for(size i = 0; i < (size)p->count; ++i) {
-		struct poly sub_poly = p->sub_polys[i];
-		for(size j = 0; j < sub_poly.count; ++j) {
-			vertices[vertex_count++] = sub_poly.verts[j];
-		}
-	}
-
-	v2 res = poly_centroid(vertices, vertex_count);
-	TRACE_END();
-	return res;
 }
 
 struct col_cir
@@ -296,17 +263,11 @@ col_circle_to_poly(struct col_cir a, struct col_poly b)
 {
 	TRACE_START(__func__);
 	c2Circle c2a = cir_to_c2cir(a);
-	int r        = 0;
-	for(usize i = 0; i < b.count; ++i) {
-		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
-		r          = c2CircletoPoly(c2a, &c2b, NULL);
-		if(r) {
-			break;
-		}
-	}
-
+	int res      = 0;
+	c2Poly c2b   = poly_to_c2poly(b);
+	res          = c2CircletoPoly(c2a, &c2b, NULL);
 	TRACE_END();
-	return r;
+	return res;
 }
 
 int
@@ -338,14 +299,9 @@ col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
 	c2AABB c2a   = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	int res      = 0;
 	c2Manifold m = {0};
-	for(usize i = 0; i < b.count; ++i) {
-		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
-		c2AABBtoPolyManifold(c2a, &c2b, NULL, &m);
-		res = m.count > 0;
-		if(res) {
-			break;
-		}
-	}
+	c2Poly c2b   = poly_to_c2poly(b);
+	c2AABBtoPolyManifold(c2a, &c2b, NULL, &m);
+	res = m.count > 0;
 
 	TRACE_END();
 	return res;
@@ -440,14 +396,8 @@ col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b,
 	TRACE_START(__func__);
 	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	c2Manifold res = {0};
-	for(usize i = 0; i < b.count; ++i) {
-		c2Poly c2b = poly_to_c2poly(b.sub_polys[i]);
-		c2AABBtoPolyManifold(c2a, &c2b, NULL, &res);
-		if(res.count > 0) {
-			break;
-		}
-	}
-
+	c2Poly c2b     = poly_to_c2poly(b);
+	c2AABBtoPolyManifold(c2a, &c2b, NULL, &res);
 	TRACE_END();
 	c2manifold_to_manifold(&res, m);
 }
@@ -471,16 +421,8 @@ col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_mani
 	TRACE_START(__func__);
 	c2Circle c2a   = cir_to_c2cir(a);
 	c2Manifold c2m = {0};
-
-	for(usize i = 0; i < b.count; ++i) {
-		struct poly sub_poly = b.sub_polys[i];
-		c2Poly c2b           = poly_to_c2poly(sub_poly);
-
-		c2CircletoPolyManifold(c2a, &c2b, NULL, &c2m);
-		if(c2m.count > 0) {
-			break;
-		}
-	}
+	c2Poly c2b     = poly_to_c2poly(b);
+	c2CircletoPolyManifold(c2a, &c2b, NULL, &c2m);
 	TRACE_END();
 	c2manifold_to_manifold(&c2m, m);
 }
@@ -531,7 +473,7 @@ col_cir_get_bounding_box(struct col_cir col)
 }
 
 static inline struct col_aabb
-col_poly_get_bounding_box(struct col_poly col)
+col_poly_get_bounding_box(struct col_poly poly)
 {
 	struct col_aabb res = {
 		.min.x = F32_MAX,
@@ -540,15 +482,12 @@ col_poly_get_bounding_box(struct col_poly col)
 		.max.y = F32_MIN,
 	};
 
-	for(usize i = 0; i < col.count; ++i) {
-		struct poly poly = col.sub_polys[i];
-		for(size j = 0; j < poly.count; ++j) {
-			v2 p      = poly.verts[j];
-			res.min.x = min_f32(res.min.x, p.x);
-			res.min.y = min_f32(res.min.y, p.y);
-			res.max.x = max_f32(res.max.x, p.x);
-			res.max.y = max_f32(res.max.y, p.y);
-		}
+	for(size j = 0; j < poly.count; ++j) {
+		v2 p      = poly.verts[j];
+		res.min.x = min_f32(res.min.x, p.x);
+		res.min.y = min_f32(res.min.y, p.y);
+		res.max.x = max_f32(res.max.x, p.x);
+		res.max.y = max_f32(res.max.y, p.y);
 	}
 
 	return res;

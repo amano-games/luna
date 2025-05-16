@@ -30,7 +30,7 @@ struct body {
 	f32 torque;
 	f32 ang_damping;
 
-	struct col_shape shape;
+	struct col_shapes shapes;
 };
 
 void body_init(struct body *body);

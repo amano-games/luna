@@ -360,7 +360,7 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 }
 
 struct pinbtjson_res
-pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc scratch)
+pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -372,25 +372,33 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 		if(json_eq(json, key, str8_lit("poly")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			i++;
-			res.col_shapes.count               = 1;
-			res.col_shapes.items[0].type       = COL_TYPE_POLY;
-			res.col_shapes.items[0].poly.count = 1;
-			size vert_count                    = value->size / 2;
-			v2 *verts                          = arr_ini(vert_count, sizeof(*verts), scratch);
+			size vert_count  = value->size / 2;
+			struct v2 *verts = arr_ini(vert_count, sizeof(*verts), scratch);
 			for(size j = 0; j < vert_count; ++j) {
 				verts[j].x = json_parse_f32(json, tokens + ++i);
 				verts[j].y = json_parse_f32(json, tokens + ++i);
 			}
-
-			if(!poly_is_convex(verts, vert_count)) {
-				struct mesh mesh  = poly_triangulate(verts, vert_count, scratch);
-				struct mesh mes_b = {0};
+			bool32 is_convex = poly_is_convex(verts, vert_count);
+			struct mesh mesh = {0};
+			if(is_convex) {
+				assert(vert_count < POLY_MAX_VERTS);
+				mesh.count          = 1;
+				mesh.items          = alloc.allocf(alloc.ctx, sizeof(*mesh.items));
+				mesh.items[0].count = vert_count;
+				for(size j = 0; j < vert_count; ++j) {
+					mesh.items[0].verts[j] = verts[j];
+				}
+			} else {
+				mesh = poly_decomp(verts, vert_count, scratch, scratch);
 			}
-			assert(poly_is_convex(verts, vert_count));
 
-			for(size j = 0; j < (size)arr_len(vert_count); ++j) {
-				res.col_shapes.items[0].poly.sub_polys[0].count++;
-				res.col_shapes.items[0].poly.sub_polys[0].verts[j] = verts[j];
+			res.col_shapes.count = mesh.count;
+			for(size j = 0; j < mesh.count; ++j) {
+				struct poly poly                   = mesh.items[j];
+				res.col_shapes.items[j].type       = COL_TYPE_POLY;
+				res.col_shapes.items[j].poly.count = poly.count;
+				mcpy_array(res.col_shapes.items[j].poly.verts, poly.verts);
+				assert(poly_is_convex(poly.verts, poly.count));
 			}
 
 		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
@@ -427,7 +435,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 }
 
 struct pinbtjson_res
-pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index, struct alloc scratch)
+pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -451,8 +459,9 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index, struct allo
 		} else if(json_eq(json, key, str8_lit("static_friction")) == 0) {
 			res.body.static_friction = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, scratch);
-			res.body.shape                = item_res.col_shapes.items[0];
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, alloc, scratch);
+			res.body.shapes.count         = item_res.col_shapes.count;
+			mcpy_array(res.body.shapes.items, item_res.col_shapes.items);
 			i += item_res.token_count - 1;
 		}
 	}
@@ -475,7 +484,7 @@ pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
 			res.sensor.is_enabled = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, scratch);
+			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, alloc, scratch);
 			res.sensor.shape              = item_res.col_shapes.items[0];
 			i += item_res.token_count - 1;
 		}
@@ -555,7 +564,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.entity.spr                = item_res.spr;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("rigid_body")) == 0) {
-			struct pinbtjson_res item_res = pinbtjson_handle_rigid_body(json, tokens, i + 1, scratch);
+			struct pinbtjson_res item_res = pinbtjson_handle_rigid_body(json, tokens, i + 1, alloc, scratch);
 			res.entity.body               = item_res.body;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("reactive_impulse")) == 0) {
