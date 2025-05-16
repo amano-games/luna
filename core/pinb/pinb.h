@@ -62,7 +62,7 @@ struct pinb_switch_list {
 
 struct pinb_sensor {
 	bool32 is_enabled;
-	struct col_shape shape;
+	struct col_shapes shapes;
 };
 
 struct pinb_gravity {
