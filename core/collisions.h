@@ -1,14 +1,12 @@
 #pragma once
 
-#include "poly.h"
-
 #define CUTE_C2_IMPLEMENTATION
 #include "cute_c2.h"
 
 #include "sys-types.h"
 
 #define COL_MAX_POLYGON_VERTS 8
-#define COL_MAX_SUB_POLY      10
+#define COL_SHAPES_MAX        10
 
 enum col_type {
 	COL_TYPE_NONE,
@@ -53,6 +51,12 @@ struct col_tangents {
 	struct col_line b;
 };
 
+struct col_poly {
+	size count;
+	v2 verts[COL_MAX_POLYGON_VERTS];
+	v2 norms[COL_MAX_POLYGON_VERTS];
+};
+
 struct col_capsule {
 	union {
 		struct col_cir cirs[2];
@@ -64,11 +68,6 @@ struct col_capsule {
 	struct col_tangents tangents;
 };
 
-struct col_poly {
-	usize count;
-	struct poly sub_polys[COL_MAX_SUB_POLY];
-};
-
 struct col_shape {
 	enum col_type type;
 	union {
@@ -77,6 +76,11 @@ struct col_shape {
 		struct col_capsule capsule;
 		struct col_poly poly;
 	};
+};
+
+struct col_shapes {
+	size count;
+	struct col_shape items[COL_SHAPES_MAX];
 };
 
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);

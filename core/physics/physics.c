@@ -8,21 +8,24 @@
 void
 body_init(struct body *body)
 {
-	switch(body->shape.type) {
-	case COL_TYPE_POLY: {
-		col_poly_init(&body->shape.poly);
-		body->p = col_poly_centroid(&body->shape.poly);
-	} break;
-	case COL_TYPE_CIR: {
-		f32 r         = body->shape.cir.r;
-		body->inertia = (0.5f * (r * r)) * body->mass;
-	} break;
-	case COL_TYPE_AABB:
-		break;
-	case COL_TYPE_CAPSULE:
-		break;
-	default:
-		BAD_PATH;
+	for(size i = 0; i < body->shapes.count; ++i) {
+		struct col_shape *shape = body->shapes.items + i;
+		switch(shape->type) {
+		case COL_TYPE_POLY: {
+			col_poly_init(&shape->poly);
+			body->p = col_poly_centroid(&shape->poly);
+		} break;
+		case COL_TYPE_CIR: {
+			f32 r         = shape->cir.r;
+			body->inertia = (0.5f * (r * r)) * body->mass;
+		} break;
+		case COL_TYPE_AABB:
+			break;
+		case COL_TYPE_CAPSULE:
+			break;
+		default:
+			BAD_PATH;
+		}
 	}
 
 	if(body->mass != 0.0f) {

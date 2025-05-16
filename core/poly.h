@@ -1,5 +1,6 @@
 #pragma once
 
+#include "arr.h"
 #include "sys-types.h"
 #include "tri.h"
 #include "v2.h"
@@ -11,7 +12,6 @@
 struct poly {
 	size count;
 	v2 verts[POLY_MAX_VERTS];
-	v2 norms[POLY_MAX_VERTS];
 };
 
 struct mesh {
@@ -45,6 +45,7 @@ poly_reverse(v2 *verts, size count)
 	}
 }
 
+// https://stackoverflow.com/questions/2792443/finding-the-centroid-of-a-polygon
 v2
 poly_centroid(v2 *verts, size verts_count)
 {
@@ -109,14 +110,15 @@ poly_is_convex(const v2 *verts, size count)
 
 // TODO: Use scratch alloc for the prev/next things
 static inline struct mesh
-poly_triangulate(v2 *verts, size count, struct alloc alloc)
+poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
 {
-	assert(count <= POLY_MAX_VERTS);
+
+	i32 *prev       = arr_ini(count, sizeof(*prev), scratch);
+	i32 *next       = arr_ini(count, sizeof(*next), scratch);
 	struct mesh res = {
 		.count = 0,
 		.items = alloc.allocf(alloc.ctx, sizeof(*res.items)),
 	};
-	i32 prev[POLY_MAX_VERTS], next[POLY_MAX_VERTS];
 	for(size i = 0; i < count; ++i) {
 		prev[i] = i - 1;
 		next[i] = i + 1;
@@ -276,7 +278,7 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 static inline struct mesh
 poly_decomp(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
 {
-	struct mesh mesh = poly_triangulate(verts, count, scratch);
+	struct mesh mesh = poly_triangulate(verts, count, scratch, scratch);
 	struct mesh res  = poly_decomp_hm(mesh, alloc, scratch);
 	return res;
 }

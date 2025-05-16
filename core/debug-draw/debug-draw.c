@@ -183,10 +183,7 @@ debug_draw_collider(struct col_shape shape)
 	} break;
 	case COL_TYPE_POLY: {
 		struct col_poly col = shape.poly;
-		for(usize i = 0; i < col.count; ++i) {
-			struct poly sub_poly = col.sub_polys[i];
-			debug_draw_poly(sub_poly.verts, sub_poly.count);
-		}
+		debug_draw_poly(col.verts, col.count);
 	} break;
 	default: {
 	} break;

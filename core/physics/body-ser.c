@@ -1,6 +1,8 @@
 #include "body-ser.h"
+#include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
+#include "sys-utils.h"
 
 static inline void col_cir_write(struct ser_writer *w, struct col_cir cir);
 static inline struct col_cir col_cir_read(struct ser_reader *r, struct ser_value value);
@@ -37,8 +39,12 @@ body_write(struct ser_writer *w, struct body body)
 	ser_write_string(w, str8_lit("ang_damping"));
 	ser_write_f32(w, body.ang_damping);
 
-	ser_write_string(w, str8_lit("shape"));
-	col_shape_write(w, body.shape);
+	ser_write_string(w, str8_lit("shapes"));
+	ser_write_array(w);
+	for(size i = 0; i < body.shapes.count; ++i) {
+		col_shape_write(w, body.shapes.items[i]);
+	}
+	ser_write_end(w);
 
 	ser_write_end(w);
 }
@@ -87,7 +93,11 @@ body_read(struct ser_reader *r, struct ser_value obj)
 			assert(value.type == SER_TYPE_F32);
 			res.ang_damping = value.f32;
 		} else if(str8_match(key.str, str8_lit("shape"), 0)) {
-			res.shape = col_shape_read(r, value);
+			assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value shape_value = {0};
+			while(ser_iter_array(r, value, &shape_value)) {
+				res.shapes.items[res.shapes.count++] = col_shape_read(r, shape_value);
+			}
 		}
 	}
 
@@ -166,23 +176,23 @@ col_shape_write(struct ser_writer *w, struct col_shape col_shape)
 		ser_write_string(w, str8_lit("poly"));
 		ser_write_object(w);
 		ser_write_string(w, str8_lit("count"));
-		ser_write_i32(w, col_shape.poly.sub_polys[0].count);
+		ser_write_i32(w, col_shape.poly.count);
 
 		ser_write_string(w, str8_lit("verts"));
 		ser_write_array(w);
 		assert(col_shape.poly.count == 1);
-		for(size i = 0; i < col_shape.poly.sub_polys[0].count; ++i) {
-			ser_write_f32(w, col_shape.poly.sub_polys[0].verts[i].x);
-			ser_write_f32(w, col_shape.poly.sub_polys[0].verts[i].y);
+		for(size i = 0; i < col_shape.poly.count; ++i) {
+			ser_write_f32(w, col_shape.poly.verts[i].x);
+			ser_write_f32(w, col_shape.poly.verts[i].y);
 		}
 		ser_write_end(w);
 
 		ser_write_string(w, str8_lit("norms"));
 		ser_write_array(w);
 		assert(col_shape.poly.count == 1);
-		for(size i = 0; i < col_shape.poly.sub_polys[0].count; ++i) {
-			ser_write_f32(w, col_shape.poly.sub_polys[0].norms[i].x);
-			ser_write_f32(w, col_shape.poly.sub_polys[0].norms[i].y);
+		for(size i = 0; i < col_shape.poly.count; ++i) {
+			ser_write_f32(w, col_shape.poly.norms[i].x);
+			ser_write_f32(w, col_shape.poly.norms[i].y);
 		}
 		ser_write_end(w);
 
@@ -220,40 +230,39 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 			res.cir  = col_cir_read(r, value);
 		} else if(str8_match(key.str, str8_lit("poly"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
-			res.type       = COL_TYPE_POLY;
-			res.poly.count = 1;
+			res.type = COL_TYPE_POLY;
 			struct ser_value poly_key, poly_value;
 			while(ser_iter_object(r, value, &poly_key, &poly_value)) {
 				assert(poly_key.type == SER_TYPE_STRING);
 				if(str8_match(poly_key.str, str8_lit("count"), 0)) {
 					assert(poly_value.type == SER_TYPE_I32);
-					res.poly.sub_polys[0].count = poly_value.i32;
+					res.poly.count = poly_value.i32;
 				} else if(str8_match(poly_key.str, str8_lit("verts"), 0)) {
 					assert(poly_value.type == SER_TYPE_ARRAY);
 					struct ser_value val;
 					size i = 0;
 					while(ser_iter_array(r, poly_value, &val)) {
 						assert(val.type == SER_TYPE_F32);
-						assert(i < (size)ARRLEN(res.poly.sub_polys[0].verts));
-						res.poly.sub_polys[0].verts[i].x = val.f32;
+						assert(i < (size)ARRLEN(res.poly.verts));
+						res.poly.verts[i].x = val.f32;
 						ser_iter_array(r, poly_value, &val);
-						res.poly.sub_polys[0].verts[i].y = val.f32;
+						res.poly.verts[i].y = val.f32;
 						++i;
 					}
-					assert(res.poly.sub_polys[0].count == i);
+					assert(res.poly.count == i);
 				} else if(str8_match(poly_key.str, str8_lit("norms"), 0)) {
 					assert(poly_value.type == SER_TYPE_ARRAY);
 					struct ser_value val;
 					size i = 0;
 					while(ser_iter_array(r, poly_value, &val)) {
 						assert(val.type == SER_TYPE_F32);
-						assert(i < (size)ARRLEN(res.poly.sub_polys[0].norms));
-						res.poly.sub_polys[0].norms[i].x = val.f32;
+						assert(i < (size)ARRLEN(res.poly.norms));
+						res.poly.norms[i].x = val.f32;
 						ser_iter_array(r, poly_value, &val);
-						res.poly.sub_polys[0].norms[i].y = val.f32;
+						res.poly.norms[i].y = val.f32;
 						++i;
 					}
-					assert(res.poly.sub_polys[0].count == i);
+					assert(res.poly.count == i);
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("capsule"), 0)) {
