@@ -485,7 +485,8 @@ pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.sensor.is_enabled = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
 			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, alloc, scratch);
-			res.sensor.shape              = item_res.col_shapes.items[0];
+			res.sensor.shapes.count       = item_res.col_shapes.count;
+			mcpy_array(res.sensor.shapes.items, item_res.col_shapes.items);
 			i += item_res.token_count - 1;
 		}
 	}
