@@ -92,7 +92,7 @@ body_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("ang_damping"), 0)) {
 			assert(value.type == SER_TYPE_F32);
 			res.ang_damping = value.f32;
-		} else if(str8_match(key.str, str8_lit("shape"), 0)) {
+		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value shape_value = {0};
 			while(ser_iter_array(r, value, &shape_value)) {
@@ -180,7 +180,6 @@ col_shape_write(struct ser_writer *w, struct col_shape col_shape)
 
 		ser_write_string(w, str8_lit("verts"));
 		ser_write_array(w);
-		assert(col_shape.poly.count == 1);
 		for(size i = 0; i < col_shape.poly.count; ++i) {
 			ser_write_f32(w, col_shape.poly.verts[i].x);
 			ser_write_f32(w, col_shape.poly.verts[i].y);
@@ -189,7 +188,6 @@ col_shape_write(struct ser_writer *w, struct col_shape col_shape)
 
 		ser_write_string(w, str8_lit("norms"));
 		ser_write_array(w);
-		assert(col_shape.poly.count == 1);
 		for(size i = 0; i < col_shape.poly.count; ++i) {
 			ser_write_f32(w, col_shape.poly.norms[i].x);
 			ser_write_f32(w, col_shape.poly.norms[i].y);

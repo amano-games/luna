@@ -414,6 +414,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
 			i++;
 			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
+			res.col_shapes.count          = 1;
 			res.col_shapes.items[0].type  = COL_TYPE_CIR;
 			res.col_shapes.items[0].cir   = item_res.cir;
 			i += item_res.token_count;

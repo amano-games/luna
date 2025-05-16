@@ -39,7 +39,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
-	if(entity.body.shape.type != COL_TYPE_NONE) {
+	if(entity.body.shapes.count > 0) {
 		ser_write_string(w, str8_lit("body"));
 		body_write(w, entity.body);
 	}
@@ -282,15 +282,20 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
-	if(entity.sensor.shape.type != COL_TYPE_NONE) {
+	if(entity.sensor.shapes.count > 0) {
 		ser_write_string(w, str8_lit("sensor"));
 
 		ser_write_object(w);
 
 		ser_write_string(w, str8_lit("is_enabled"));
 		ser_write_i32(w, entity.sensor.is_enabled);
-		ser_write_string(w, str8_lit("shape"));
-		col_shape_write(w, entity.sensor.shape);
+		ser_write_string(w, str8_lit("shapes"));
+
+		ser_write_array(w);
+		for(size i = 0; i < entity.sensor.shapes.count; ++i) {
+			col_shape_write(w, entity.sensor.shapes.items[i]);
+		}
+		ser_write_end(w);
 
 		ser_write_end(w);
 	}
@@ -731,8 +736,12 @@ pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			res.is_enabled = value.i32;
-		} else if(str8_match(key.str, str8_lit("shape"), 0)) {
-			res.shape = col_shape_read(r, value);
+		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
+			assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value shape_value = {0};
+			while(ser_iter_array(r, value, &shape_value)) {
+				res.shapes.items[res.shapes.count++] = col_shape_read(r, shape_value);
+			}
 		}
 	}
 

@@ -1,6 +1,7 @@
 #include "physics.h"
 
 #include "mathfunc.h"
+#include "poly.h"
 #include "sys-assert.h"
 #include "sys-types.h"
 #include "v2.h"
@@ -12,8 +13,7 @@ body_init(struct body *body)
 		struct col_shape *shape = body->shapes.items + i;
 		switch(shape->type) {
 		case COL_TYPE_POLY: {
-			col_poly_init(&shape->poly);
-			body->p = col_poly_centroid(&shape->poly);
+			body->p = poly_centroid(shape->poly.verts, shape->poly.count);
 		} break;
 		case COL_TYPE_CIR: {
 			f32 r         = shape->cir.r;
