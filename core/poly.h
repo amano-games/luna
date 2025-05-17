@@ -108,11 +108,76 @@ poly_is_convex(const v2 *verts, size count)
 	return true;
 }
 
-// TODO: Use scratch alloc for the prev/next things
+static inline bool32
+poly_make_ccw(v2 *verts, size count)
+{
+	size br = 0;
+
+	// find bottom right point
+	for(size i = 1; i < count; ++i) {
+		if(verts[i].y < verts[br].y || (verts[i].y == verts[br].y && verts[i].x > verts[br].x)) {
+			br = i;
+		}
+	}
+
+	// reverse poly if clockwise
+	if(!tri_is_ccw(
+		   poly_at(verts, count, br - 1), // A
+		   poly_at(verts, count, br),     // B
+		   poly_at(verts, count, br + 1)  // C
+		   )) {
+		poly_reverse(verts, count);
+		return true;
+	} else {
+		return false;
+	}
+}
+
+// Check if three points are collinear
+// Threshold angle to use when comparing the vectors. The function will return true if the angle between the resulting vectors is less than this value. Use zero for max precision.
+static inline bool32
+poly_collinear(v2 a, v2 b, v2 c, f32 threshold_ang)
+{
+	if(!threshold_ang) {
+		return tri_signed_2d_area(a, b, c) == 0;
+	} else {
+		v2 ab     = v2_sub(b, a);
+		v2 bc     = v2_sub(c, b);
+		f32 dot   = v2_dot(ab, bc);
+		f32 mag_a = v2_len(ab);
+		f32 mag_b = v2_len(bc);
+		f32 angle = acos_f32(dot / (mag_a * mag_b));
+		return angle < threshold_ang;
+	}
+}
+
+static inline size
+poly_remove_collinear_points(v2 *verts, size count, f32 precision)
+{
+	if(count <= 3) return count;
+
+	size res = 0;
+	for(size i = 0; i < count; ++i) {
+		v2 prev = poly_at(verts, count, (i + count - 1));
+		v2 curr = poly_at(verts, count, i);
+		v2 next = poly_at(verts, count, (i + 1));
+
+		if(!poly_collinear(prev, curr, next, precision)) {
+			verts[res++] = curr;
+		}
+	}
+
+	// Ensure we still have a valid polygon
+	if(res < 3) return count;
+
+	return res;
+}
+
 static inline struct mesh
 poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
 {
-
+	poly_make_ccw(verts, count);
+	// Linked list
 	i32 *prev       = arr_ini(count, sizeof(*prev), scratch);
 	i32 *next       = arr_ini(count, sizeof(*next), scratch);
 	struct mesh res = {
@@ -134,8 +199,7 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch
 		bool32 is_ear = true;
 
 		// An ear must be convex (here counterclockwise)
-		// NOTE: Not sure why is !ccw :(
-		if(!tri_is_ccw(verts[prev[i]], verts[i], verts[next[i]])) {
+		if(tri_is_ccw(verts[prev[i]], verts[i], verts[next[i]])) {
 			// Loop over all overtices not part of the tentative ear
 			i32 k = next[next[i]];
 			do {
