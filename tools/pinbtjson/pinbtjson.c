@@ -8,6 +8,7 @@
 #include "poly.h"
 #include "serialize/serialize.h"
 #include "sys-assert.h"
+#include "sys-log.h"
 #include "sys.h"
 #include "tools/tex/tex.h"
 #include "tools/wav/wav.h"
@@ -378,10 +379,18 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				verts[j].x = json_parse_f32(json, tokens + ++i);
 				verts[j].y = json_parse_f32(json, tokens + ++i);
 			}
+			size vert_count_n = poly_remove_collinear_points(verts, vert_count, 0);
+			if(vert_count_n != vert_count) {
+				log_info("pinb-gen", "Removed points from polygon from %d -> %d", (int)vert_count, (int)vert_count_n);
+			}
+			vert_count       = vert_count_n;
 			bool32 is_convex = poly_is_convex(verts, vert_count);
 			struct mesh mesh = {0};
 			if(is_convex) {
-				assert(vert_count < POLY_MAX_VERTS);
+				if(vert_count > POLY_MAX_VERTS) {
+					log_error("pinb-gen", "Polygon has too many verts %d", (int)vert_count);
+				}
+				assert(vert_count <= POLY_MAX_VERTS);
 				mesh.count          = 1;
 				mesh.items          = alloc.allocf(alloc.ctx, sizeof(*mesh.items));
 				mesh.items[0].count = vert_count;
@@ -390,6 +399,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				}
 			} else {
 				mesh = poly_decomp(verts, vert_count, scratch, scratch);
+				assert(mesh.count <= (size)ARRLEN(res.col_shapes.items));
 			}
 
 			res.col_shapes.count = mesh.count;
