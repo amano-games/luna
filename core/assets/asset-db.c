@@ -59,6 +59,7 @@ asset_db_handle_from_path(str8 path, enum asset_type type)
 str8
 asset_db_push_path(struct asset_db *db, str8 path)
 {
+	assert(path.size > 0);
 	struct asset_path_table *table = &db->assets_path;
 	usize table_len                = arr_len(table->data);
 	usize table_cap                = arr_cap(table->data);
