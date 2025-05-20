@@ -450,6 +450,27 @@ col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc)
 	return v >= 0.0f && w >= 0.0f && (v + w) <= 1.0f;
 }
 
+struct col_aabb
+col_shapes_get_bounding_box(struct col_shapes shapes)
+{
+	struct col_aabb res = {
+		.min.x = F32_MAX,
+		.min.y = F32_MAX,
+		.max.x = F32_MIN,
+		.max.y = F32_MIN,
+	};
+
+	for(size i = 0; i < shapes.count; ++i) {
+		struct col_aabb aabb = col_shape_get_bounding_box(shapes.items[i]);
+		res.min.x            = min_f32(res.min.x, aabb.min.x);
+		res.min.y            = min_f32(res.min.y, aabb.min.y);
+		res.max.x            = max_f32(res.max.x, aabb.max.x);
+		res.max.y            = max_f32(res.max.y, aabb.max.y);
+	}
+
+	return res;
+}
+
 static inline struct col_aabb
 col_cir_get_bounding_box(struct col_cir col)
 {
