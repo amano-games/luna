@@ -62,7 +62,7 @@ void sys_audio_lock(void);
 void sys_audio_unlock(void);
 #endif
 
-void app_init(struct app_mem mem);
+void app_init(usize mem_max);
 void app_tick(f32 dt);
 void app_draw(void);
 void app_audio(i16 *lbuf, i16 *rbuf, i32 len);
@@ -84,6 +84,7 @@ void *sys_1bit_menu_buffer(void);
 
 void sys_accelerometer_set(bool32 enabled);
 void sys_accelerometer(f32 *x, f32 *y, f32 *z);
+struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear);
 
 void sys_internal_init(void);
 i32 sys_internal_update(void);

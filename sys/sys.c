@@ -28,43 +28,47 @@ struct sys_data {
 
 struct sys_data SYS;
 
+struct app_mem
+sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
+{
+	usize mem_max           = SYS_MAX_MEM;
+	struct sys_mem *sys_mem = &SYS.mem;
+	struct app_mem res      = {0};
+
+	assert((permanent + transient + debug) <= mem_max);
+	sys_mem->app_mem.size   = permanent + transient + debug;
+	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
+
+	if(sys_mem->app_mem.buffer == NULL) {
+		log_error("Sys", "Failed to reserve app memory %u kb", (uint)sys_mem->app_mem.size / 1024);
+		return res;
+	}
+
+	res.permanent.size   = permanent;
+	res.transient.size   = transient;
+	res.debug.size       = debug;
+	res.permanent.buffer = sys_mem->app_mem.buffer;
+	res.transient.buffer = (u8 *)sys_mem->app_mem.buffer + res.permanent.size;
+	res.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + res.permanent.size + res.transient.size;
+	res.is_initialized   = true;
+
+	log_info("Sys", "App memory %u kb", (uint)sys_mem->app_mem.size / 1024);
+	if(clear) {
+		mclr(res.transient.buffer, res.transient.size);
+		mclr(res.permanent.buffer, res.permanent.size);
+		mclr(res.debug.buffer, res.debug.size);
+	}
+	return res;
+}
+
 void
 sys_internal_init(void)
 {
-	usize max_mem           = SYS_MAX_MEM;
-	struct sys_mem *sys_mem = &SYS.mem;
-	struct app_mem app_mem  = {0};
-	SYS.fps                 = SYS_UPS;
-	SYS.last_time           = sys_seconds();
-	SYS.frame_buffer        = sys_1bit_buffer();
+	SYS.fps          = SYS_UPS;
+	SYS.last_time    = sys_seconds();
+	SYS.frame_buffer = sys_1bit_buffer();
 
-	app_mem.permanent.size = MMEGABYTE(8.5);
-	app_mem.transient.size = MMEGABYTE(2.5);
-	app_mem.debug.size     = 0;
-
-#ifdef DEBUG
-	app_mem.debug.size = max_mem - app_mem.permanent.size - app_mem.transient.size;
-#endif
-
-	assert((app_mem.permanent.size + app_mem.transient.size + app_mem.debug.size) <= max_mem);
-	sys_mem->app_mem.size   = app_mem.permanent.size + app_mem.transient.size + app_mem.debug.size;
-	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
-	if(sys_mem->app_mem.buffer == NULL) {
-		log_error("Sys", "Failed to reserve app memory %u kb", (uint)sys_mem->app_mem.size / 1024);
-	}
-	app_mem.permanent.buffer = sys_mem->app_mem.buffer;
-	app_mem.transient.buffer = (u8 *)sys_mem->app_mem.buffer + app_mem.permanent.size;
-	app_mem.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + app_mem.permanent.size + app_mem.transient.size;
-
-	// memset(app_mem.transient.buffer, 0, app_mem.transient.size);
-	// memset(app_mem.permanent.buffer, 0, app_mem.permanent.size);
-	// memset(app_mem.debug.buffer, 0, app_mem.debug.size);
-
-	app_mem.is_initialized = true;
-
-	log_info("Sys", "App memory %u kb", (uint)sys_mem->app_mem.size / 1024);
-
-	app_init(app_mem);
+	app_init(SYS_MAX_MEM);
 }
 
 // there are some frame skips when using the exact delta time and evaluating
