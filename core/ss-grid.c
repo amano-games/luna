@@ -8,11 +8,14 @@
 static inline int ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape);
 
 void
-ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usize cell_size, struct alloc alloc)
+ss_grid_gen(
+	struct ss_grid *grid,
+	struct ss_item *items,
+	usize items_count,
+	struct alloc alloc)
 {
-	f32 cell_size_inv   = 1.0f / cell_size;
+	f32 cell_size_inv   = 1.0f / grid->cell_size;
 	grid->items         = NULL;
-	grid->cell_size     = cell_size;
 	grid->cell_size_inv = cell_size_inv;
 	usize count         = items_count;
 
@@ -33,7 +36,7 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 
 	i32 columns = (x2 - x1);
 	i32 rows    = (y2 - y1);
-	log_info("SSGrid", "Generating grid cell_size: %d columns: %d rows: %d total: %d [%d,%d] => [%d,%d]", (int)cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
+	log_info("SSGrid", "Generating grid cell_size: %d columns: %d rows: %d total: %d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
 
 	grid->columns  = columns;
 	grid->rows     = rows;
@@ -115,7 +118,11 @@ ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, usiz
 }
 
 static inline int
-ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape)
+ss_grid_cell_col_with_shape(
+	struct ss_grid *grid,
+	i32 x,
+	i32 y,
+	struct col_shape shape)
 {
 	int res                   = 0;
 	struct col_aabb cell_aabb = {
