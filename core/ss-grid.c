@@ -184,7 +184,7 @@ ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
 	i32 index = 0;
 	i32 mx    = x + grid->x_offset;
 	i32 my    = y + grid->y_offset;
-	index     = (mx * grid->columns) + y;
+	index     = (mx * grid->columns) + my;
 	assert(index >= 0 && index < (i32)arr_len(grid->cells));
 	struct ss_cell *cell = grid->cells + index;
 	return cell;

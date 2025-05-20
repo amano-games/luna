@@ -103,10 +103,13 @@ body_gravity_force(struct body *body, f32 gravity)
 }
 
 void
-body_integrate_linear(struct body *body, f32 max_translation, f32 dt, f32 dt_inv)
+body_integrate_linear(struct physics *physics, struct body *body)
 {
 	// TODO: check null ?
 	// TODO: move to step context?
+	f32 dt                         = physics->dt;
+	f32 dt_inv                     = physics->dt_inv;
+	f32 max_translation            = physics->max_translation;
 	f32 damping                    = 1.0f - body->linear_damping;
 	f32 max_linear_speed           = max_translation * dt_inv;
 	float max_linear_speed_squared = max_linear_speed * max_linear_speed;
@@ -127,10 +130,12 @@ body_integrate_linear(struct body *body, f32 max_translation, f32 dt, f32 dt_inv
 
 // TODO: add delta time
 void
-body_integrate_angular(struct body *body, f32 max_rotation, f32 dt, f32 dt_inv)
+body_integrate_angular(struct physics *physics, struct body *body)
 {
-	f32 w = body->ang_vel;
-
+	f32 dt                    = physics->dt;
+	f32 dt_inv                = physics->dt_inv;
+	f32 max_rotation          = physics->max_rotation;
+	f32 w                     = body->ang_vel;
 	f32 max_ang_speed         = max_rotation * dt_inv;
 	f32 max_ang_speed_squared = max_ang_speed * max_ang_speed;
 	f32 damping               = 1.0f - body->ang_damping;
@@ -150,10 +155,10 @@ body_integrate_angular(struct body *body, f32 max_rotation, f32 dt, f32 dt_inv)
 }
 
 void
-body_integrate(struct body *body, f32 max_translation, f32 max_rotation, f32 dt, f32 dt_inv)
+body_integrate(struct physics *physics, struct body *body)
 {
-	body_integrate_linear(body, max_translation, dt, dt_inv);
-	body_integrate_angular(body, max_rotation, dt, dt_inv);
+	body_integrate_linear(physics, body);
+	body_integrate_angular(physics, body);
 
 	body->p_delta = v2_add(body->p_delta, body->vel);
 	body->p       = v2_add(body->p, body->p_delta);
@@ -164,11 +169,11 @@ body_integrate(struct body *body, f32 max_translation, f32 max_rotation, f32 dt,
 }
 
 void
-body_positional_correction(struct body *a, struct body *b, struct col_manifold *m, f32 penetration_correction, f32 penetration_allowance)
+body_positional_correction(struct physics *physics, struct body *a, struct body *b, struct col_manifold *m)
 {
 	f32 penetration    = m->depth;
-	f32 percent        = penetration_correction;
-	f32 slop           = penetration_allowance;
+	f32 percent        = physics->penetration_correction;
+	f32 slop           = physics->penetration_allowance;
 	f32 correction_mag = max_f32(penetration - slop, 0.0f) / (a->mass_inv + b->mass_inv);
 	v2 correction      = v2_mul(m->normal, correction_mag * percent);
 
@@ -178,8 +183,8 @@ body_positional_correction(struct body *a, struct body *b, struct col_manifold *
 
 void
 body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, struct col_manifold *m)
-/// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
 {
+	/// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
 	/// For example, a superball bounces on anything.
 	f32 restitution = max_f32(a->restitution, b->restitution);
 
