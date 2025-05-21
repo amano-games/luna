@@ -16,6 +16,7 @@ import {
   PhysicsProps,
   PinballTable,
   Plunger,
+  ChargedImpulse,
   ReactiveImpulse,
   ReactiveSpriteOffset,
   RigidBody,
@@ -199,6 +200,20 @@ function getPlunger(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getChargedImpulse(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: ChargedImpulse = {
+    angle_degrees: value["angle_degrees"],
+    magnitude: value["magnitude"],
+    charge_speed: value["speed_charge"],
+    release_speed: value["speed_release"],
+    reset_target: value["reset_target"],
+    auto_shoot: value["auto_shoot"],
+  };
+  return res;
+}
+
 function getSpinner(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
@@ -357,6 +372,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 plunger: getPlunger(item, prop),
+              };
+            case "charged_impulse":
+              return {
+                ...acc,
+                charged_impulse: getChargedImpulse(item, prop),
               };
             case "spinner":
               return {
