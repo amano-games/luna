@@ -527,6 +527,18 @@
     };
     return res;
   }
+  function getChargedImpulse(_object, prop) {
+    const value = prop.value;
+    const res = {
+      angle_degrees: value["angle_degrees"],
+      magnitude: value["magnitude"],
+      charge_speed: value["speed_charge"],
+      release_speed: value["speed_release"],
+      reset_target: value["reset_target"],
+      auto_shoot: value["auto_shoot"]
+    };
+    return res;
+  }
   function getSpinner(_object, prop) {
     const value = prop.value;
     const res = {
@@ -660,6 +672,10 @@
             case "plunger":
               return __spreadProps(__spreadValues({}, acc), {
                 plunger: getPlunger(item, prop)
+              });
+            case "charged_impulse":
+              return __spreadProps(__spreadValues({}, acc), {
+                charged_impulse: getChargedImpulse(item, prop)
               });
             case "spinner":
               return __spreadProps(__spreadValues({}, acc), {

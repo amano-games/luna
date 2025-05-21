@@ -34,6 +34,15 @@ export interface RigidBody {
   collision_shape?: CollisionShape;
 }
 
+export interface ChargedImpulse {
+  angle_degrees: number;
+  magnitude: number;
+  charge_speed: number;
+  release_speed: number;
+  reset_target: boolean;
+  auto_shoot: boolean;
+}
+
 export interface Plunger {
   charge_force_max: number;
   charge_force_min: number;

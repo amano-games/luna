@@ -17,8 +17,16 @@ struct pinb_reactive_sprite_offset {
 	f32 magnitude;
 };
 
+struct pinb_charged_impulse {
+	f32 angle;
+	f32 magnitude;
+	f32 charge_speed;
+	f32 release_speed;
+	bool32 reset_target;
+	bool32 auto_shoot;
+};
+
 struct pinb_plunger {
-	f32 y_initial;
 	f32 charge_force_min;
 	f32 charge_force_max;
 	f32 release_force_min;
@@ -124,6 +132,7 @@ struct pinb_entity {
 	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
+	struct pinb_charged_impulse charged_impulse;
 	struct pinb_spinner spinner;
 	struct pinb_reactive_impulse reactive_impulse;
 	struct pinb_reactive_sprite_offset reactive_sprite_offset;

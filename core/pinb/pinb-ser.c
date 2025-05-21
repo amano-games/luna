@@ -72,6 +72,26 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.charged_impulse.magnitude != 0) {
+		ser_write_string(w, str8_lit("charged_impulse"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("angle"));
+		ser_write_f32(w, entity.charged_impulse.angle);
+		ser_write_string(w, str8_lit("magnitude"));
+		ser_write_f32(w, entity.charged_impulse.magnitude);
+		ser_write_string(w, str8_lit("charge_speed"));
+		ser_write_f32(w, entity.charged_impulse.charge_speed);
+		ser_write_string(w, str8_lit("release_speed"));
+		ser_write_f32(w, entity.charged_impulse.release_speed);
+		ser_write_string(w, str8_lit("reset_target"));
+		ser_write_i32(w, entity.charged_impulse.reset_target);
+		ser_write_string(w, str8_lit("auto_shoot"));
+		ser_write_i32(w, entity.charged_impulse.auto_shoot);
+
+		ser_write_end(w);
+	}
+
 	if(entity.plunger.charge_force_max != 0) {
 		ser_write_string(w, str8_lit("plunger"));
 		ser_write_object(w);
@@ -473,6 +493,31 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				if(str8_match(item_key.str, str8_lit("animation_index"), 0)) {
 					assert(item_value.type == SER_TYPE_I32);
 					res.reactive_animation.animation_index = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("charged_impulse"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("angle"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.charged_impulse.angle = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("magnitude"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.charged_impulse.magnitude = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("charge_speed"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.charged_impulse.charge_speed = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("release_speed"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.charged_impulse.release_speed = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("reset_target"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.charged_impulse.reset_target = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("auto_shoot"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.charged_impulse.auto_shoot = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("plunger"), 0)) {

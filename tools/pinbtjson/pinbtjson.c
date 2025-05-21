@@ -136,6 +136,35 @@ pinbtjson_handle_gravity(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_charged_impulse(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("angle_degrees")) == 0) {
+			res.charged_impulse.angle = json_parse_f32(json, value) * DEG_TO_TURN;
+		} else if(json_eq(json, key, str8_lit("magnitude")) == 0) {
+			res.charged_impulse.magnitude = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("charge_speed")) == 0) {
+			res.charged_impulse.charge_speed = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("release_speed")) == 0) {
+			res.charged_impulse.release_speed = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("reset_target")) == 0) {
+			res.charged_impulse.reset_target = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("auto_shoot")) == 0) {
+			res.charged_impulse.auto_shoot = json_parse_bool32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_plunger(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -598,6 +627,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_plunger(json, tokens, i + 1);
 			res.entity.plunger            = item_res.plunger;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("charged_impulse")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_charged_impulse(json, tokens, i + 1);
+			res.entity.charged_impulse    = item_res.charged_impulse;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("spinner")) == 0) {
 			assert(value->type == JSMN_OBJECT);
