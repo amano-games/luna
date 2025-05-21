@@ -11,6 +11,7 @@ struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_v
 struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 struct pinb_message pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_animator pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
@@ -172,6 +173,25 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_i32(w, entity.animator.play_on_start);
 		ser_write_string(w, str8_lit("initial_animation"));
 		ser_write_i32(w, entity.animator.initial_animation);
+
+		if(entity.animator.transitions.len > 0) {
+			ser_write_string(w, str8_lit("transitions"));
+			ser_write_object(w);
+
+			ser_write_string(w, str8_lit("len"));
+			ser_write_i32(w, entity.animator.transitions.len);
+			ser_write_string(w, str8_lit("items"));
+			ser_write_array(w);
+			for(size i = 0; i < entity.animator.transitions.len; ++i) {
+				ser_write_array(w);
+				ser_write_i32(w, entity.animator.transitions.items[i].from);
+				ser_write_i32(w, entity.animator.transitions.items[i].to);
+				ser_write_end(w);
+			}
+			ser_write_end(w);
+
+			ser_write_end(w);
+		}
 
 		ser_write_end(w);
 	}
@@ -603,15 +623,7 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			}
 		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
-			struct ser_value item_key, item_value;
-			while(ser_iter_object(r, value, &item_key, &item_value)) {
-				assert(item_key.type == SER_TYPE_STRING);
-				if(str8_match(item_key.str, str8_lit("play_on_start"), 0)) {
-					res.animator.play_on_start = item_value.i32;
-				} else if(str8_match(item_key.str, str8_lit("initial_animation"), 0)) {
-					res.animator.initial_animation = item_value.i32;
-				}
-			}
+			res.animator = pinb_animator_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value;
@@ -768,6 +780,47 @@ pinb_read(
 			}
 		}
 	}
+	return res;
+}
+
+struct pinb_animator
+pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+{
+	struct pinb_animator res = {0};
+	struct ser_value key, value;
+
+	while(ser_iter_object(r, obj, &key, &value)) {
+		assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("play_on_start"), 0)) {
+			res.play_on_start = value.i32;
+		} else if(str8_match(key.str, str8_lit("initial_animation"), 0)) {
+			res.initial_animation = value.i32;
+		} else if(str8_match(key.str, str8_lit("transitions"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				if(str8_match(item_key.str, str8_lit("len"), 0)) {
+					res.transitions.items = arr_ini(item_value.i32, sizeof(*res.transitions.items), alloc);
+				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
+					assert(item_value.type == SER_TYPE_ARRAY);
+					struct ser_value transition_value;
+					struct pinb_animator_transition transition = {0};
+					while(ser_iter_array(r, item_value, &transition_value)) {
+						assert(transition_value.type == SER_TYPE_ARRAY);
+						struct ser_value prop_value;
+						ser_iter_array(r, transition_value, &prop_value);
+						assert(prop_value.type == SER_TYPE_I32);
+						transition.from = prop_value.i32;
+						ser_iter_array(r, transition_value, &prop_value);
+						assert(prop_value.type == SER_TYPE_I32);
+						transition.to = prop_value.i32;
+					}
+					res.transitions.items[res.transitions.len++] = transition;
+				}
+			}
+		}
+	}
+
 	return res;
 }
 

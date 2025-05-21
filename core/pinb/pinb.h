@@ -39,9 +39,20 @@ struct pinb_spr {
 	v2 offset;
 };
 
+struct pinb_animator_transition {
+	i32 from;
+	i32 to;
+};
+
+struct pinb_animator_transitions {
+	size len;
+	struct pinb_animator_transition *items;
+};
+
 struct pinb_animator {
 	bool32 play_on_start;
 	i32 initial_animation;
+	struct pinb_animator_transitions transitions;
 };
 
 struct pinb_flipper {

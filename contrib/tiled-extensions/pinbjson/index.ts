@@ -32,6 +32,7 @@ import {
   SfxToAnimation,
   Spinner,
   ScoreFXOffset,
+  AnimatorTransition,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -308,6 +309,13 @@ function getAnimator(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getAnimatorTransition(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: AnimatorTransition = [value["from"], value["to"]];
+  return res;
+}
+
 function getScoreFxOffset(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
@@ -491,6 +499,24 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               } else {
                 return acc;
               }
+            case "animator_transition":
+              if (acc.animator == null) {
+                acc.animator = {
+                  play_on_start: false,
+                  initial_animation: 1,
+                  transitions: [],
+                };
+              }
+              return {
+                ...acc,
+                animator: {
+                  ...acc.animator,
+                  transitions: [
+                    ...acc.animator.transitions,
+                    getAnimatorTransition(item, prop),
+                  ],
+                },
+              };
             case "animator":
               return {
                 ...acc,

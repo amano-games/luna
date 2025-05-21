@@ -618,6 +618,11 @@
     };
     return res;
   }
+  function getAnimatorTransition(_object, prop) {
+    const value = prop.value;
+    const res = [value["from"], value["to"]];
+    return res;
+  }
   function getScoreFxOffset(_object, prop) {
     const value = prop.value;
     const res = [value["x"], value["y"]];
@@ -773,6 +778,22 @@
               } else {
                 return acc;
               }
+            case "animator_transition":
+              if (acc.animator == null) {
+                acc.animator = {
+                  play_on_start: false,
+                  initial_animation: 1,
+                  transitions: []
+                };
+              }
+              return __spreadProps(__spreadValues({}, acc), {
+                animator: __spreadProps(__spreadValues({}, acc.animator), {
+                  transitions: [
+                    ...acc.animator.transitions,
+                    getAnimatorTransition(item, prop)
+                  ]
+                })
+              });
             case "animator":
               return __spreadProps(__spreadValues({}, acc), {
                 animator: getAnimator(item, prop)

@@ -76,12 +76,12 @@ export interface ReactiveAnimation {
   animation_index: number;
 }
 
-export type AnimatorTransitions = [number, number];
+export type AnimatorTransition = [number, number];
 
 export interface Animator {
   play_on_start: boolean;
   initial_animation: number;
-  transitions: AnimatorTransitions[];
+  transitions: AnimatorTransition[];
 }
 
 export interface Sprite {

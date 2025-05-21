@@ -96,7 +96,24 @@ pinbtjson_handle_reactive_sprite_offset(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
-pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index)
+pinbtjson_handle_animator_transition(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_ARRAY);
+	assert(root->size == 2);
+
+	jsmntok_t *from              = tokens + index + 1;
+	jsmntok_t *to                = tokens + index + 2;
+	res.animator_transition.from = json_parse_i32(json, from);
+	res.animator_transition.to   = json_parse_i32(json, to);
+	res.token_count              = root->size;
+
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -110,6 +127,18 @@ pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index)
 			res.animator.play_on_start = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("initial_animation")) == 0) {
 			res.animator.initial_animation = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("transitions")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.animator.transitions.len   = value->size;
+			res.animator.transitions.items = arr_ini(value->size, sizeof(*res.animator.transitions.items), alloc);
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + 2;
+				jsmntok_t *item = tokens + item_index;
+				assert(item->type == JSMN_ARRAY);
+				struct pinbtjson_res item_res     = pinbtjson_handle_animator_transition(json, tokens, item_index);
+				res.animator.transitions.items[j] = item_res.animator_transition;
+				i += item_res.token_count;
+			}
 		}
 	}
 
@@ -655,7 +684,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("animator")) == 0) {
 			assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_animator(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_animator(json, tokens, i + 1, alloc);
 			res.entity.animator           = item_res.animator;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("score_fx_offset")) == 0) {
