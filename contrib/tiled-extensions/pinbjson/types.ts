@@ -1,3 +1,4 @@
+export const COL_TYPE_NONE = 0;
 export const COL_TYPE_CIR = 1;
 export const COL_TYPE_AABB = 2;
 export const COL_TYPE_POLY = 3;

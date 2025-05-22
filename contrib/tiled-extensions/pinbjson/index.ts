@@ -1,6 +1,12 @@
 /// <reference types="@mapeditor/tiled-api" />
 
-import { flipPolygon, getCol, getColType, getTileObjects } from "./cols";
+import {
+  flipPolygon,
+  getCol,
+  getColType,
+  getObjectColType,
+  getTileObjects,
+} from "./cols";
 import {
   Animator,
   COL_TYPE_AABB,
@@ -33,6 +39,7 @@ import {
   Spinner,
   ScoreFXOffset,
   AnimatorTransition,
+  COL_TYPE_NONE,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -52,59 +59,58 @@ export function getPropByType(object: MapObject, typeName: string) {
 }
 
 function getPos(object: MapObject) {
-  if (object.tile) {
-    // Tiles have their pivot at their bottom left
-    const [first, second] = getTileObjects(object);
-    if (first) {
-      const colType = getColType(first.shape, second?.shape);
-      switch (colType) {
-        case COL_TYPE_CIR:
-          return [
-            Math.floor(object.x + object.width / 2),
-            Math.floor(object.y - object.height / 2),
-          ];
-        case COL_TYPE_POLY:
-          return [Math.floor(object.x), Math.floor(object.y - object.height)];
-        case COL_TYPE_AABB:
-          return [Math.floor(object.x), Math.floor(object.y - object.height)];
-        case COL_TYPE_POINT:
-          return [
-            Math.floor(object.x + first.x),
-            Math.floor(object.y + first.y),
-          ];
-        case COL_TYPE_CAPSULE:
-          const r = first.width / 2;
-          let x = Math.floor(object.x + first.x + r);
-          let y = Math.floor(object.y - (first.y + r));
-          if (object.tileFlippedHorizontally) {
-            x = object.x + object.width - (first.x + r);
-          }
-          if (object.tileFlippedVertically) {
-            tiled.warn(
-              `object with id: ${object.id} flipped vertically not supported on capsule type collisions`,
-              null,
-            );
-            y = object.y - object.height + (first.y + r);
-          }
-          return [x, y];
+  const collisioType = getObjectColType(object);
+  const isTile = object.tile != undefined;
+  // Tiles have their pivot at their bottom left
+  switch (collisioType) {
+    case COL_TYPE_CIR:
+      if (isTile) {
+        const [first] = getTileObjects(object);
+        const ax = object.x;
+        const ay = object.y - object.height;
+        const bx = first.x + first.width / 2;
+        const by = first.y + first.height / 2;
+        return [ax + bx, ay + by];
+      } else {
+        return [object.x + object.width / 2, object.y + object.height / 2];
       }
-    } else {
-      return [Math.floor(object.x), Math.floor(object.y - object.height)];
+    case COL_TYPE_POLY:
+      return [object.x, object.y + (isTile ? -object.height : 0)];
+    case COL_TYPE_AABB:
+      return [object.x, object.y + (isTile ? -object.height : 0)];
+    case COL_TYPE_POINT: {
+      if (isTile) {
+        const [first] = getTileObjects(object);
+        return [object.x + first.x, object.y + first.y];
+      } else {
+        return [object.x, object.y];
+      }
     }
-  } else {
-    // Shapes have their pivot at their top left
-    const colType = getColType(object.shape);
-    switch (colType) {
-      case COL_TYPE_CIR:
-        return [
-          Math.floor(object.x + object.width / 2),
-          Math.floor(object.y + object.height / 2),
-        ];
-      case COL_TYPE_POLY:
-        return [Math.floor(object.x), Math.floor(object.y)];
-      case COL_TYPE_AABB:
-        return [Math.floor(object.x), Math.floor(object.y)];
+    case COL_TYPE_CAPSULE: {
+      if (!isTile) {
+        tiled.error(
+          `Object with id ${object.id} is not a capsule but was identified as one`,
+          null,
+        );
+      }
+      const [first] = getTileObjects(object);
+      const r = first.width / 2;
+      let x = object.x + first.x + r;
+      let y = object.y - first.y + r;
+      if (object.tileFlippedHorizontally) {
+        x = object.x + object.width - (first.x + r);
+      }
+      if (object.tileFlippedVertically) {
+        tiled.warn(
+          `object with id: ${object.id} flipped vertically not supported on capsule type collisions`,
+          null,
+        );
+        y = object.y - object.height + (first.y + r);
+      }
+      return [x, y];
     }
+    case COL_TYPE_NONE:
+      return [object.x, object.y + (isTile ? -object.height : 0)];
   }
 }
 
@@ -134,18 +140,16 @@ function getSensor(object: MapObject, prop: PropertyValue) {
   return res;
 }
 
-function getSprite(object: MapObject) {
+function getSprite(object: MapObject, x: number, y: number) {
   if (!object.tile) {
     return undefined;
   }
   const [first] = getTileObjects(object);
+  const colType = getColType(first?.shape);
   const offset = [0, 0];
-  if (first) {
-    const colType = getColType(first.shape);
-    if (colType === COL_TYPE_CIR) {
-      offset[0] = object.width * -0.5;
-      offset[1] = object.height * -0.5;
-    }
+  if (colType == COL_TYPE_CIR) {
+    offset[0] = object.x - x;
+    offset[1] = object.y - object.height - y;
   }
   const { imageFileName } = object.tile;
   const path = getImgPath(imageFileName);
@@ -539,7 +543,7 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
           id: item.id,
           x,
           y,
-          spr: getSprite(item),
+          spr: getSprite(item, x, y),
         } as Entity,
       );
       if (res == null) {
