@@ -20,6 +20,7 @@
   var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 
   // types.ts
+  var COL_TYPE_NONE = 0;
   var COL_TYPE_CIR = 1;
   var COL_TYPE_AABB = 2;
   var COL_TYPE_POLY = 3;
@@ -27,9 +28,21 @@
   var COL_TYPE_POINT = 5;
 
   // cols.ts
+  function getObjectColType(object) {
+    if (object == null) {
+      return void 0;
+    }
+    if (object.tile) {
+      const [first, second] = getTileObjects(object);
+      const colType2 = getColType(first == null ? void 0 : first.shape, second == null ? void 0 : second.shape);
+      return colType2;
+    }
+    const colType = getColType(object.shape);
+    return colType;
+  }
   function getColType(a, b) {
     if (a == null) {
-      return void 0;
+      return COL_TYPE_NONE;
     }
     const aType = Number(a);
     switch (aType) {
@@ -47,7 +60,7 @@
       default:
         tiled.log(`Shape type unknown ${aType}`);
     }
-    return void 0;
+    return COL_TYPE_NONE;
   }
   function flipPolygon(arr, flip, width, height) {
     const verts = [...arr];
@@ -85,14 +98,15 @@
     ];
     return res;
   }
-  function getCir(object) {
+  function getCir(object, isTile = false) {
     if (getColType(object.shape) !== COL_TYPE_CIR) {
       return void 0;
     }
+    const r = object.width / 2;
     const res = {
-      x: 0,
-      y: 0,
-      r: object.width / 2
+      x: isTile ? r + object.x : 0,
+      y: isTile ? r + object.y : 0,
+      r
     };
     return res;
   }
@@ -143,7 +157,7 @@
     const res = {
       poly: getPolygon(object, isTile),
       aabb: getAABB(object, isTile),
-      cir: getCir(object),
+      cir: getCir(object, isTile),
       capsule: void 0
     };
     return res;
@@ -394,57 +408,57 @@
     return res;
   }
   function getPos(object) {
-    if (object.tile) {
-      const [first, second] = getTileObjects(object);
-      if (first) {
-        const colType = getColType(first.shape, second == null ? void 0 : second.shape);
-        switch (colType) {
-          case COL_TYPE_CIR:
-            return [
-              Math.floor(object.x + object.width / 2),
-              Math.floor(object.y - object.height / 2)
-            ];
-          case COL_TYPE_POLY:
-            return [Math.floor(object.x), Math.floor(object.y - object.height)];
-          case COL_TYPE_AABB:
-            return [Math.floor(object.x), Math.floor(object.y - object.height)];
-          case COL_TYPE_POINT:
-            return [
-              Math.floor(object.x + first.x),
-              Math.floor(object.y + first.y)
-            ];
-          case COL_TYPE_CAPSULE:
-            const r = first.width / 2;
-            let x = Math.floor(object.x + first.x + r);
-            let y = Math.floor(object.y - (first.y + r));
-            if (object.tileFlippedHorizontally) {
-              x = object.x + object.width - (first.x + r);
-            }
-            if (object.tileFlippedVertically) {
-              tiled.warn(
-                `object with id: ${object.id} flipped vertically not supported on capsule type collisions`,
-                null
-              );
-              y = object.y - object.height + (first.y + r);
-            }
-            return [x, y];
+    const collisioType = getObjectColType(object);
+    const isTile = object.tile != void 0;
+    switch (collisioType) {
+      case COL_TYPE_CIR:
+        if (isTile) {
+          const [first] = getTileObjects(object);
+          const ax = object.x;
+          const ay = object.y - object.height;
+          const bx = first.x + first.width / 2;
+          const by = first.y + first.height / 2;
+          return [ax + bx, ay + by];
+        } else {
+          return [object.x + object.width / 2, object.y + object.height / 2];
         }
-      } else {
-        return [Math.floor(object.x), Math.floor(object.y - object.height)];
+      case COL_TYPE_POLY:
+        return [object.x, object.y + (isTile ? -object.height : 0)];
+      case COL_TYPE_AABB:
+        return [object.x, object.y + (isTile ? -object.height : 0)];
+      case COL_TYPE_POINT: {
+        if (isTile) {
+          const [first] = getTileObjects(object);
+          return [object.x + first.x, object.y + first.y];
+        } else {
+          return [object.x, object.y];
+        }
       }
-    } else {
-      const colType = getColType(object.shape);
-      switch (colType) {
-        case COL_TYPE_CIR:
-          return [
-            Math.floor(object.x + object.width / 2),
-            Math.floor(object.y + object.height / 2)
-          ];
-        case COL_TYPE_POLY:
-          return [Math.floor(object.x), Math.floor(object.y)];
-        case COL_TYPE_AABB:
-          return [Math.floor(object.x), Math.floor(object.y)];
+      case COL_TYPE_CAPSULE: {
+        if (!isTile) {
+          tiled.error(
+            `Object with id ${object.id} is not a capsule but was identified as one`,
+            null
+          );
+        }
+        const [first] = getTileObjects(object);
+        const r = first.width / 2;
+        let x = object.x + first.x + r;
+        let y = object.y - first.y + r;
+        if (object.tileFlippedHorizontally) {
+          x = object.x + object.width - (first.x + r);
+        }
+        if (object.tileFlippedVertically) {
+          tiled.warn(
+            `object with id: ${object.id} flipped vertically not supported on capsule type collisions`,
+            null
+          );
+          y = object.y - object.height + (first.y + r);
+        }
+        return [x, y];
       }
+      case COL_TYPE_NONE:
+        return [object.x, object.y + (isTile ? -object.height : 0)];
     }
   }
   function getRigidBody(object, prop) {
@@ -469,18 +483,16 @@
     };
     return res;
   }
-  function getSprite(object) {
+  function getSprite(object, x, y) {
     if (!object.tile) {
       return void 0;
     }
     const [first] = getTileObjects(object);
+    const colType = getColType(first == null ? void 0 : first.shape);
     const offset = [0, 0];
-    if (first) {
-      const colType = getColType(first.shape);
-      if (colType === COL_TYPE_CIR) {
-        offset[0] = object.width * -0.5;
-        offset[1] = object.height * -0.5;
-      }
+    if (colType == COL_TYPE_CIR) {
+      offset[0] = object.x - x;
+      offset[1] = object.y - object.height - y;
     }
     const { imageFileName } = object.tile;
     const path2 = getImgPath(imageFileName);
@@ -814,7 +826,7 @@
           id: item.id,
           x,
           y,
-          spr: getSprite(item)
+          spr: getSprite(item, x, y)
         }
       );
       if (res2 == null) {

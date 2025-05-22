@@ -7,15 +7,29 @@ import {
   COL_TYPE_AABB,
   COL_TYPE_CAPSULE,
   COL_TYPE_CIR,
+  COL_TYPE_NONE,
   COL_TYPE_POINT,
   COL_TYPE_POLY,
   CollisionShape,
   Poly,
 } from "./types";
 
+export function getObjectColType(object: MapObject) {
+  if (object == null) {
+    return undefined;
+  }
+  if (object.tile) {
+    const [first, second] = getTileObjects(object);
+    const colType = getColType(first?.shape, second?.shape);
+    return colType;
+  }
+  const colType = getColType(object.shape);
+  return colType;
+}
+
 export function getColType(a: MapObjectShape, b?: MapObjectShape) {
   if (a == null) {
-    return undefined;
+    return COL_TYPE_NONE;
   }
   const aType = Number(a);
   switch (aType) {
@@ -34,7 +48,7 @@ export function getColType(a: MapObjectShape, b?: MapObjectShape) {
     default:
       tiled.log(`Shape type unknown ${aType}`);
   }
-  return undefined;
+  return COL_TYPE_NONE;
 }
 
 export function flipPolygon(
@@ -83,15 +97,16 @@ function getAABB(object: MapObject, isTile = false) {
   return res;
 }
 
-function getCir(object: MapObject) {
+function getCir(object: MapObject, isTile = false) {
   if (getColType(object.shape) !== COL_TYPE_CIR) {
     return undefined;
   }
 
+  const r = object.width / 2;
   const res: Cir = {
-    x: 0,
-    y: 0,
-    r: object.width / 2,
+    x: isTile ? r + object.x : 0,
+    y: isTile ? r + object.y : 0,
+    r: r,
   };
   return res;
 }
@@ -149,7 +164,7 @@ export function getCol(object: MapObject, isTile = false) {
   const res: CollisionShape = {
     poly: getPolygon(object, isTile),
     aabb: getAABB(object, isTile),
-    cir: getCir(object),
+    cir: getCir(object, isTile),
     capsule: undefined,
   };
 
