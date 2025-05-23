@@ -462,6 +462,16 @@
   }
   function getRigidBody(object, prop) {
     const value = prop.value;
+    const collisionShape = getCol(object);
+    if (object.tile && object.tileFlippedHorizontally) {
+      if (collisionShape.aabb) {
+        const col_w = collisionShape.aabb[2] - collisionShape.aabb[0];
+        const rel_x = collisionShape.aabb[0];
+        const flp_x = object.width - rel_x - col_w;
+        collisionShape.aabb[0] = flp_x;
+        collisionShape.aabb[2] = flp_x + col_w;
+      }
+    }
     const res = {
       angular_damping: value["angular_damping"],
       dynamic_friction: value["dynamic_friction"],
@@ -470,7 +480,7 @@
       mass: value["mass"],
       restitution: value["restitution"],
       static_friction: value["static_friction"],
-      collision_shape: getCol(object)
+      collision_shape: collisionShape
     };
     return res;
   }
