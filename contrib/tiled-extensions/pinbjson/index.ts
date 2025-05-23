@@ -40,6 +40,7 @@ import {
   ScoreFXOffset,
   AnimatorTransition,
   COL_TYPE_NONE,
+  CollisionShape,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -115,6 +116,16 @@ function getPos(object: MapObject) {
 
 function getRigidBody(object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
+  const collisionShape = getCol(object) as CollisionShape;
+  if (object.tile && object.tileFlippedHorizontally) {
+    if (collisionShape.aabb) {
+      const col_w = collisionShape.aabb[2] - collisionShape.aabb[0];
+      const rel_x = collisionShape.aabb[0];
+      const flp_x = object.width - rel_x - col_w;
+      collisionShape.aabb[0] = flp_x;
+      collisionShape.aabb[2] = flp_x + col_w;
+    }
+  }
 
   const res: RigidBody = {
     angular_damping: value["angular_damping"],
@@ -124,7 +135,7 @@ function getRigidBody(object: MapObject, prop: PropertyValue) {
     mass: value["mass"],
     restitution: value["restitution"],
     static_friction: value["static_friction"],
-    collision_shape: getCol(object),
+    collision_shape: collisionShape,
   };
   return res;
 }
