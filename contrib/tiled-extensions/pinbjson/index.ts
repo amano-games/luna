@@ -96,7 +96,7 @@ function getPos(object: MapObject) {
       const [first] = getTileObjects(object);
       const r = first.width / 2;
       let x = object.x + first.x + r;
-      let y = object.y - first.y + r;
+      let y = object.y - object.height + first.y + r;
       if (object.tileFlippedHorizontally) {
         x = object.x + object.width - (first.x + r);
       }
@@ -105,7 +105,6 @@ function getPos(object: MapObject) {
           `object with id: ${object.id} flipped vertically not supported on capsule type collisions`,
           null,
         );
-        y = object.y - object.height + (first.y + r);
       }
       return [x, y];
     }
