@@ -119,10 +119,11 @@ struct pinb_messages {
 
 struct pinb_action {
 	i32 event_type;
-	i32 event_condition; // NOTE: should be an array?
+	i32 event_condition; // NOTE: should events be an array?
+	i32 event_condition_type;
 	i32 action_type;
 	i32 action_ref;
-	i32 action_arg; // NOTE: Should be an array?
+	i32 action_arg; // NOTE: Should arguments be an array?
 };
 
 struct pinb_actions {
