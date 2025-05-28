@@ -165,6 +165,16 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.reset.flags != 0) {
+		ser_write_string(w, str8_lit("reset"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("flags"));
+		ser_write_i32(w, entity.reset.flags);
+
+		ser_write_end(w);
+	}
+
 	if(entity.animator.initial_animation != 0) {
 		ser_write_string(w, str8_lit("animator"));
 		ser_write_object(w);
@@ -616,11 +626,20 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			}
 		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
-			struct ser_value gravity_key, gravity_value;
-			while(ser_iter_object(r, value, &gravity_key, &gravity_value)) {
-				assert(gravity_key.type == SER_TYPE_STRING);
-				if(str8_match(gravity_key.str, str8_lit("value"), 0)) {
-					res.gravity.value = gravity_value.f32;
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("value"), 0)) {
+					res.gravity.value = item_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("flags"), 0)) {
+					res.reset.flags = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("animator"), 0)) {

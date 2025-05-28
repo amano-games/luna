@@ -150,6 +150,10 @@ export interface SfxToAnimation {
 
 export type ScoreFXOffset = [number, number];
 
+export interface Reset {
+  flags: number;
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -176,6 +180,7 @@ export interface Entity {
   sfx_sequences?: SfxSequence[];
   messages?: Message[];
   sfx_to_animation?: SfxToAnimation[];
+  reset?: Reset;
 }
 
 export interface PhysicsProps {

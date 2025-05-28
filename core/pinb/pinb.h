@@ -137,6 +137,10 @@ struct pinb_spinner {
 	f32 stop_threshold;
 };
 
+struct pinb_reset {
+	i32 flags;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -159,6 +163,7 @@ struct pinb_entity {
 	struct pinb_sfx_sequences sfx_sequences;
 	struct pinb_messages messages;
 	struct pinb_actions actions;
+	struct pinb_reset reset;
 	struct v2_i32 score_fx_offset;
 };
 
