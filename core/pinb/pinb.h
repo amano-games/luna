@@ -118,6 +118,7 @@ struct pinb_messages {
 };
 
 struct pinb_action {
+	bool32 debug;
 	i32 event_type;
 	i32 event_condition; // NOTE: should events be an array?
 	i32 event_condition_type;

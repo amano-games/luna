@@ -325,6 +325,8 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 						ser_write_i32(w, entity.actions.items[i].event_condition_type);
 						ser_write_string(w, str8_lit("event_condition"));
 						ser_write_i32(w, entity.actions.items[i].event_condition);
+						ser_write_string(w, str8_lit("debug"));
+						ser_write_i32(w, entity.actions.items[i].debug);
 					}
 					ser_write_end(w);
 				}
@@ -819,14 +821,16 @@ pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 		} else if(str8_match(key.str, str8_lit("transitions"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;
+			size len = 0;
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
 				if(str8_match(item_key.str, str8_lit("len"), 0)) {
-					res.transitions.items = arr_ini(item_value.i32, sizeof(*res.transitions.items), alloc);
+					len                   = item_value.i32;
+					res.transitions.items = arr_ini(len, sizeof(*res.transitions.items), alloc);
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					assert(item_value.type == SER_TYPE_ARRAY);
 					struct ser_value transition_value;
-					struct pinb_animator_transition transition = {0};
 					while(ser_iter_array(r, item_value, &transition_value)) {
+						struct pinb_animator_transition transition = {0};
 						assert(transition_value.type == SER_TYPE_ARRAY);
 						struct ser_value prop_value;
 						ser_iter_array(r, transition_value, &prop_value);
@@ -834,11 +838,12 @@ pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 						transition.from = prop_value.i32;
 						ser_iter_array(r, transition_value, &prop_value);
 						assert(prop_value.type == SER_TYPE_I32);
-						transition.to = prop_value.i32;
+						transition.to                                = prop_value.i32;
+						res.transitions.items[res.transitions.len++] = transition;
 					}
-					res.transitions.items[res.transitions.len++] = transition;
 				}
 			}
+			assert(len == res.transitions.len);
 		}
 	}
 
@@ -995,6 +1000,8 @@ pinb_action_read(struct ser_reader *r, struct ser_value obj)
 			res.event_condition_type = value.i32;
 		} else if(str8_match(key.str, str8_lit("event_condition"), 0)) {
 			res.event_condition = value.i32;
+		} else if(str8_match(key.str, str8_lit("debug"), 0)) {
+			res.debug = value.i32;
 		}
 	}
 	return res;
