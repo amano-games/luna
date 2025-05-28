@@ -666,6 +666,13 @@
     };
     return res;
   }
+  function getReset(_object, prop) {
+    const value = prop.value;
+    const res = {
+      flags: value["flags"].value
+    };
+    return res;
+  }
   function getAction(object, key, prop) {
     const value = prop.value;
     const action_ref = Number(value["action_ref"].id) || object.id;
@@ -752,6 +759,10 @@
             case "switch_list":
               return __spreadProps(__spreadValues({}, acc), {
                 switch_list: getSwitchList(item, prop)
+              });
+            case "reset":
+              return __spreadProps(__spreadValues({}, acc), {
+                reset: getReset(item, prop)
               });
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {

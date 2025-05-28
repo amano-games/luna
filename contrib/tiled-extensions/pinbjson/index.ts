@@ -9,6 +9,7 @@ import {
 } from "./cols";
 import {
   Animator,
+  COL_TYPE_NONE,
   COL_TYPE_AABB,
   COL_TYPE_CAPSULE,
   COL_TYPE_CIR,
@@ -39,8 +40,8 @@ import {
   Spinner,
   ScoreFXOffset,
   AnimatorTransition,
-  COL_TYPE_NONE,
   CollisionShape,
+  Reset,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -358,6 +359,15 @@ function getSwitchList(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getReset(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: Reset = {
+    flags: value["flags"].value,
+  };
+  return res;
+}
+
 function getAction(object: MapObject, key: string, prop: PropertyValue) {
   const value = prop.value as object;
   const action_ref = Number(value["action_ref"].id) || object.id;
@@ -461,6 +471,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 switch_list: getSwitchList(item, prop),
+              };
+            case "reset":
+              return {
+                ...acc,
+                reset: getReset(item, prop),
               };
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {

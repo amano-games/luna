@@ -36,6 +36,7 @@ struct pinbtjson_res {
 		struct pinb_sfx_sequence sfx_sequence;
 		struct pinb_action action;
 		struct pinb_message message;
+		struct pinb_reset reset;
 	};
 };
 
