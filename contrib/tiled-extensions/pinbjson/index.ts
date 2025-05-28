@@ -549,10 +549,20 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
                 },
               };
             case "animator":
-              return {
-                ...acc,
-                animator: getAnimator(item, prop),
-              };
+              if (acc.animator == null) {
+                return {
+                  ...acc,
+                  animator: getAnimator(item, prop),
+                };
+              } else {
+                return {
+                  ...acc,
+                  animator: {
+                    ...getAnimator(item, prop),
+                    transitions: [...acc.animator.transitions],
+                  },
+                };
+              }
             case "score_fx_offset":
               return {
                 ...acc,
