@@ -15,6 +15,7 @@ struct pinb_reactive_animation {
 struct pinb_reactive_sprite_offset {
 	f32 delay;
 	f32 magnitude;
+	i32 ref;
 };
 
 struct pinb_charged_impulse {

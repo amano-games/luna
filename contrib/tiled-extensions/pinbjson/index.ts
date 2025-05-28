@@ -187,10 +187,12 @@ function getReactiveImpulse(_object: MapObject, prop: PropertyValue) {
 
 function getReactiveSpriteOffset(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
+  const ref = Number(value["ref"].id) || 0;
 
   const res: ReactiveSpriteOffset = {
     delay: value["delay"],
     magnitude: value["magnitude"],
+    ref: ref,
   };
   return res;
 }

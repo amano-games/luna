@@ -71,6 +71,7 @@ export interface ReactiveImpulse {
 export interface ReactiveSpriteOffset {
   delay: number;
   magnitude: number;
+  ref: number;
 }
 
 export interface ReactiveAnimation {

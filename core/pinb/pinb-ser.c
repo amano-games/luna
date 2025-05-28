@@ -62,6 +62,8 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_f32(w, entity.reactive_sprite_offset.delay);
 		ser_write_string(w, str8_lit("magnitude"));
 		ser_write_f32(w, entity.reactive_sprite_offset.magnitude);
+		ser_write_string(w, str8_lit("ref"));
+		ser_write_i32(w, entity.reactive_sprite_offset.ref);
 		ser_write_end(w);
 	}
 
@@ -517,6 +519,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(item_key.str, str8_lit("delay"), 0)) {
 					assert(item_value.type == SER_TYPE_F32);
 					res.reactive_sprite_offset.delay = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("ref"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.reactive_sprite_offset.ref = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("reactive_animation"), 0)) {
