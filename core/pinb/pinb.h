@@ -34,6 +34,12 @@ struct pinb_plunger {
 	f32 release_force_max;
 };
 
+struct pinb_force_field {
+	f32 angle;
+	f32 magnitude;
+	bool32 is_enabled;
+};
+
 struct pinb_spr {
 	str8 path;
 	i32 flip;
@@ -164,6 +170,7 @@ struct pinb_entity {
 	struct pinb_reactive_animation reactive_animation;
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
+	struct pinb_force_field force_field;
 	struct pinb_animator animator;
 	struct pinb_flip flip;
 	struct pinb_sensor sensor;
