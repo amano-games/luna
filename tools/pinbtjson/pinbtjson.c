@@ -89,6 +89,8 @@ pinbtjson_handle_reactive_sprite_offset(str8 json, jsmntok_t *tokens, i32 index)
 			res.reactive_sprite_offset.delay = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("magnitude")) == 0) {
 			res.reactive_sprite_offset.magnitude = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("ref")) == 0) {
+			res.reactive_sprite_offset.ref = json_parse_i32(json, value);
 		}
 	}
 

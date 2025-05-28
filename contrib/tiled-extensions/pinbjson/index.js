@@ -525,9 +525,11 @@
   }
   function getReactiveSpriteOffset(_object, prop) {
     const value = prop.value;
+    const ref = Number(value["ref"].id) || 0;
     const res = {
       delay: value["delay"],
-      magnitude: value["magnitude"]
+      magnitude: value["magnitude"],
+      ref
     };
     return res;
   }
