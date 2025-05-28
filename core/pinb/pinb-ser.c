@@ -55,6 +55,18 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.force_field.magnitude != 0) {
+		ser_write_string(w, str8_lit("force_field"));
+		ser_write_object(w);
+		ser_write_string(w, str8_lit("magnitude"));
+		ser_write_f32(w, entity.force_field.magnitude);
+		ser_write_string(w, str8_lit("angle"));
+		ser_write_f32(w, entity.force_field.angle);
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.force_field.is_enabled);
+		ser_write_end(w);
+	}
+
 	if(entity.reactive_sprite_offset.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_sprite_offset"));
 		ser_write_object(w);
@@ -513,15 +525,31 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			}
 		} else if(str8_match(key.str, str8_lit("reactive_impulse"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
-			struct ser_value reactive_impulse_key, reactive_impulse_value;
-			while(ser_iter_object(r, value, &reactive_impulse_key, &reactive_impulse_value)) {
-				assert(reactive_impulse_key.type == SER_TYPE_STRING);
-				if(str8_match(reactive_impulse_key.str, str8_lit("magnitude"), 0)) {
-					assert(reactive_impulse_value.type == SER_TYPE_F32);
-					res.reactive_impulse.magnitude = reactive_impulse_value.f32;
-				} else if(str8_match(reactive_impulse_key.str, str8_lit("normalize"), 0)) {
-					assert(reactive_impulse_value.type == SER_TYPE_I32);
-					res.reactive_impulse.normalize = reactive_impulse_value.i32;
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("magnitude"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.reactive_impulse.magnitude = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("normalize"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.reactive_impulse.normalize = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("force_field"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("magnitude"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.force_field.magnitude = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("angle"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.force_field.angle = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("is_enabled"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.force_field.is_enabled = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("reactive_sprite_offset"), 0)) {

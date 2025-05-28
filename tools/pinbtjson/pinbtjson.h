@@ -24,6 +24,7 @@ struct pinbtjson_res {
 		struct pinb_plunger plunger;
 		struct pinb_charged_impulse charged_impulse;
 		struct pinb_spinner spinner;
+		struct pinb_force_field force_field;
 		struct pinb_reactive_impulse reactive_impulse;
 		struct pinb_reactive_sprite_offset reactive_sprite_offset;
 		struct pinb_reactive_animation reactive_animation;

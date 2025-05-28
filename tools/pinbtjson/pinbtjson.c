@@ -56,6 +56,29 @@ pinbtjson_handle_reactive_impulse(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_force_field(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("magnitude")) == 0) {
+			res.force_field.magnitude = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("angle_degrees")) == 0) {
+			res.force_field.angle = json_parse_f32(json, value) * DEG_TO_TURN;
+		} else if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.force_field.is_enabled = json_parse_bool32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_reactive_animation(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -691,6 +714,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_reactive_impulse(json, tokens, i + 1);
 			res.entity.reactive_impulse   = item_res.reactive_impulse;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("force_field")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_force_field(json, tokens, i + 1);
+			res.entity.force_field        = item_res.force_field;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("reactive_sprite_offset")) == 0) {
 			assert(value->type == JSMN_OBJECT);
