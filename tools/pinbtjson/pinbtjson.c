@@ -107,7 +107,7 @@ pinbtjson_handle_animator_transition(str8 json, jsmntok_t *tokens, i32 index)
 	jsmntok_t *to                = tokens + index + 2;
 	res.animator_transition.from = json_parse_i32(json, from);
 	res.animator_transition.to   = json_parse_i32(json, to);
-	res.token_count              = root->size;
+	res.token_count              = root->size + 1;
 
 	return res;
 }
@@ -406,6 +406,8 @@ pinbtjson_handle_action(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.action.event_condition_type = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("event_condition")) == 0) {
 			res.action.event_condition = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("debug")) == 0) {
+			res.action.debug = json_parse_bool32(json, value);
 		}
 	}
 	return res;

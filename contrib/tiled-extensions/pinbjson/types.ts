@@ -136,6 +136,7 @@ export interface Spinner {
 
 export interface GameAction {
   _name?: string;
+  debug: boolean;
   action_argument: number;
   action_ref: number;
   action_type: number;
