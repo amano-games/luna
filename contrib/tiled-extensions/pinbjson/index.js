@@ -829,9 +829,17 @@
                 })
               });
             case "animator":
-              return __spreadProps(__spreadValues({}, acc), {
-                animator: getAnimator(item, prop)
-              });
+              if (acc.animator == null) {
+                return __spreadProps(__spreadValues({}, acc), {
+                  animator: getAnimator(item, prop)
+                });
+              } else {
+                return __spreadProps(__spreadValues({}, acc), {
+                  animator: __spreadProps(__spreadValues({}, getAnimator(item, prop)), {
+                    transitions: [...acc.animator.transitions]
+                  })
+                });
+              }
             case "score_fx_offset":
               return __spreadProps(__spreadValues({}, acc), {
                 score_fx_offset: getScoreFxOffset(item, prop)
