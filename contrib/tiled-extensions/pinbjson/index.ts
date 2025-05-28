@@ -43,6 +43,7 @@ import {
   CollisionShape,
   Reset,
   Counter,
+  ForceField,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -383,6 +384,17 @@ function getReset(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getForceField(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: ForceField = {
+    angle_degrees: value["angle_degrees"],
+    magnitude: value["magnitude"],
+    is_enabled: value["is_enabled"],
+  };
+  return res;
+}
+
 function getAction(object: MapObject, key: string, prop: PropertyValue) {
   const value = prop.value as object;
   const action_ref = Number(value["action_ref"].id) || object.id;
@@ -497,6 +509,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 reset: getReset(item, prop),
+              };
+            case "force_field":
+              return {
+                ...acc,
+                force_field: getForceField(item, prop),
               };
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {

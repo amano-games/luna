@@ -686,6 +686,15 @@
     };
     return res;
   }
+  function getForceField(_object, prop) {
+    const value = prop.value;
+    const res = {
+      angle_degrees: value["angle_degrees"],
+      magnitude: value["magnitude"],
+      is_enabled: value["is_enabled"]
+    };
+    return res;
+  }
   function getAction(object, key, prop) {
     const value = prop.value;
     const action_ref = Number(value["action_ref"].id) || object.id;
@@ -781,6 +790,10 @@
             case "reset":
               return __spreadProps(__spreadValues({}, acc), {
                 reset: getReset(item, prop)
+              });
+            case "force_field":
+              return __spreadProps(__spreadValues({}, acc), {
+                force_field: getForceField(item, prop)
               });
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {

@@ -143,6 +143,12 @@ export interface Spinner {
   stop_threshold: number;
 }
 
+export interface ForceField {
+  angle_degrees: number;
+  magnitude: number;
+  is_enabled: boolean;
+}
+
 export interface GameAction {
   _name?: string;
   debug: boolean;
@@ -187,6 +193,7 @@ export interface Entity {
   counter?: Counter;
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
+  force_field?: ForceField;
   actions?: GameAction[];
   sfx_sequences?: SfxSequence[];
   messages?: Message[];
