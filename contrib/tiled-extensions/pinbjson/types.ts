@@ -96,6 +96,13 @@ export interface Gravity {
   value: number;
 }
 
+export interface Counter {
+  max: number;
+  min: number;
+  resolution: number;
+  value: number;
+}
+
 export interface SfxSequence {
   clips: string[];
   pitch_max: number;
@@ -177,6 +184,7 @@ export interface Entity {
   sensor?: Sensor;
   switch_value?: SwitchValue;
   switch_list?: SwitchList;
+  counter?: Counter;
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
   actions?: GameAction[];

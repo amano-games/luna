@@ -601,6 +601,16 @@
     };
     return res;
   }
+  function getCounter(_object, prop) {
+    const value = prop.value;
+    const res = {
+      max: value["max"],
+      min: value["min"],
+      resolution: value["resolution"],
+      value: value["value"]
+    };
+    return res;
+  }
   function getSfxSequence(_object, prop) {
     const value = prop.value;
     const res = {
@@ -751,6 +761,10 @@
             case "gravity":
               return __spreadProps(__spreadValues({}, acc), {
                 gravity: getGravity(item, prop)
+              });
+            case "counter":
+              return __spreadProps(__spreadValues({}, acc), {
+                counter: getCounter(item, prop)
               });
             case "sensor":
               return __spreadProps(__spreadValues({}, acc), {

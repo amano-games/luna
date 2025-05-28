@@ -42,6 +42,7 @@ import {
   AnimatorTransition,
   CollisionShape,
   Reset,
+  Counter,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -278,6 +279,17 @@ function getGravity(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getCounter(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: Counter = {
+    max: value["max"],
+    min: value["min"],
+    resolution: value["resolution"],
+    value: value["value"],
+  };
+  return res;
+}
+
 function getSfxSequence(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
@@ -460,6 +472,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 gravity: getGravity(item, prop),
+              };
+            case "counter":
+              return {
+                ...acc,
+                counter: getCounter(item, prop),
               };
             case "sensor":
               return {
