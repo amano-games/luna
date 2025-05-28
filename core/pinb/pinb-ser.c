@@ -167,6 +167,22 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.counter.resolution != 0) {
+		ser_write_string(w, str8_lit("counter"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("min"));
+		ser_write_i32(w, entity.counter.min);
+		ser_write_string(w, str8_lit("max"));
+		ser_write_i32(w, entity.counter.max);
+		ser_write_string(w, str8_lit("value"));
+		ser_write_i32(w, entity.counter.value);
+		ser_write_string(w, str8_lit("resolution"));
+		ser_write_i32(w, entity.counter.resolution);
+
+		ser_write_end(w);
+	}
+
 	if(entity.reset.flags != 0) {
 		ser_write_string(w, str8_lit("reset"));
 		ser_write_object(w);
@@ -638,6 +654,21 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("value"), 0)) {
 					res.gravity.value = item_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("counter"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("min"), 0)) {
+					res.counter.min = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("max"), 0)) {
+					res.counter.max = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("value"), 0)) {
+					res.counter.value = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("resolution"), 0)) {
+					res.counter.resolution = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("reset"), 0)) {

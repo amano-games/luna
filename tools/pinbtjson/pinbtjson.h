@@ -30,6 +30,7 @@ struct pinbtjson_res {
 		struct pinb_animator animator;
 		struct pinb_animator_transition animator_transition;
 		struct pinb_gravity gravity;
+		struct pinb_counter counter;
 		struct pinb_sensor sensor;
 		struct pinb_switch switch_value;
 		struct pinb_switch_list switch_list;

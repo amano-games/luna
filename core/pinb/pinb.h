@@ -89,6 +89,13 @@ struct pinb_gravity {
 	f32 value;
 };
 
+struct pinb_counter {
+	i32 min;
+	i32 max;
+	i32 value;
+	i32 resolution;
+};
+
 struct pinb_sfx_sequence {
 	i32 type;
 	f32 reset_time;
@@ -166,6 +173,7 @@ struct pinb_entity {
 	struct pinb_messages messages;
 	struct pinb_actions actions;
 	struct pinb_reset reset;
+	struct pinb_counter counter;
 	struct v2_i32 score_fx_offset;
 };
 
