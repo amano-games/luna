@@ -119,6 +119,7 @@ export interface Sensor {
 
 export interface SwitchValue {
   is_enabled: boolean;
+  value: boolean;
   animation_on: number;
   animation_off: number;
 }

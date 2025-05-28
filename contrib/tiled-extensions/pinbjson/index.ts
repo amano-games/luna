@@ -344,6 +344,7 @@ function getSwitchValue(_object: MapObject, prop: PropertyValue) {
 
   const res: SwitchValue = {
     is_enabled: value["is_enabled"],
+    value: value["value"],
     animation_on: value["animation_on"],
     animation_off: value["animation_off"],
   };
