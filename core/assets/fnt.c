@@ -4,7 +4,6 @@
 #include "mathfunc.h"
 #include "serialize/serialize.h"
 #include "str.h"
-#include "sys-assert.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
@@ -158,4 +157,46 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 	}
 
 	return 1;
+}
+
+struct fnt
+fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
+{
+	struct fnt res = {0};
+	str8 fnt_ext   = str8_lit(".fnt");
+
+	res.widths                      = arr_ini(FNT_CHAR_MAX, sizeof(*res.widths), alloc);
+	res.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*res.kern_pairs), alloc);
+	arr_header(res.widths)->len     = arr_cap(res.widths);
+	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
+	mclr(res.widths, sizeof(*res.widths) * arr_len(res.widths));
+	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * arr_len(res.kern_pairs));
+
+	assert(str8_ends_with(path, fnt_ext, 0));
+	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
+	if(file_res.data == NULL) {
+		log_error("fnt", "Failed loading info: %s", path.str);
+		return res;
+	}
+	char *data          = file_res.data;
+	usize size          = file_res.size;
+	struct ser_reader r = {
+		.data = data,
+		.len  = size,
+	};
+
+	fnt_read(&r, &res);
+
+	str8 base_name = str8_chop_last_dot(path);
+	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", (i32)base_name.size, base_name.str, res.cell_w, res.cell_h);
+
+	res.t = tex_load(tex_path, alloc);
+	if(res.t.px == NULL) {
+		log_error("fnt", "Failed loading tex: %s", path.str);
+		return res;
+	}
+
+	res.grid_w = res.t.w / res.cell_w;
+	res.grid_h = res.t.h / res.cell_h;
+	return res;
 }

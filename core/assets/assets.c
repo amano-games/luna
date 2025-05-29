@@ -1,6 +1,7 @@
 #include "assets.h"
-#include "arr.h"
+#include "assets/asset-db.h"
 #include "assets/fnt.h"
+#include "audio/audio.h"
 #include "gfx/gfx.h"
 #include "mem-arena.h"
 #include "sys-log.h"
@@ -14,9 +15,8 @@ assets_init(void *mem, usize size)
 {
 	log_info("Assets", "init");
 	marena_init(&ASSETS.marena, mem, size);
-	ASSETS.alloc       = (struct alloc){asset_allocf, (void *)&ASSETS};
-	ASSETS.next_tex_id = NUM_TEX_ID;
-	ASSETS.next_snd_id = NUM_SFX_ID;
+	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
+	ASSETS.display = tex_frame_buffer();
 }
 
 void *
@@ -39,33 +39,24 @@ asset_allocf(void *ctx, usize s)
 struct tex
 asset_tex(i32 id)
 {
-	assert(0 <= id && id < NUM_TEX_ID_MAX);
-	return ASSETS.tex[id].tex;
+	struct tex res = asset_db_tex_get_by_id(&ASSETS.db, id);
+	return res;
 }
 
 i32
-asset_tex_get_id(str8 file_name)
+asset_tex_get_id(str8 path)
 {
-	for(i32 i = 0; i < ASSETS.next_tex_id; i++) {
-		struct asset_tex *at = &ASSETS.tex[i];
-		if(str8_match(at->path, file_name, 0)) {
-			return i;
-		}
-	}
-	return 0;
+	i32 res = asset_db_tex_get_id(&ASSETS.db, (struct asset_handle){
+												  .path_hash = hash_string(path),
+												  .type      = ASSET_TYPE_TEXTURE,
+											  });
+	return res;
 }
 
 i32
-asset_tex_load(const str8 path, struct tex *tex)
+asset_tex_load(str8 path, struct tex *tex)
 {
-	for(i32 i = 0; i < ASSETS.next_tex_id; i++) {
-		struct asset_tex *at = &ASSETS.tex[i];
-		if(str8_match(at->path, path, 0)) {
-			if(tex) *tex = at->tex;
-			return i;
-		}
-	}
-
+	i32 res      = 0;
 	struct tex t = tex_load(path, ASSETS.alloc);
 
 	if(t.px == NULL) {
@@ -74,48 +65,90 @@ asset_tex_load(const str8 path, struct tex *tex)
 	}
 
 	log_info("Assets", "Load tex %s", path.str);
-	i32 id              = ASSETS.next_tex_id++;
-	ASSETS.tex[id].path = path;
-	ASSETS.tex[id].tex  = t;
-
+	res = asset_db_tex_push(&ASSETS.db, path, t);
 	if(tex) *tex = t;
-	return id;
+	return res;
+}
+
+struct fnt
+asset_fnt(i32 id)
+{
+	struct fnt res = asset_db_fnt_get_by_id(&ASSETS.db, id);
+	return res;
 }
 
 i32
-asset_tex_load_id(i32 id, str8 path, struct tex *tex)
+asset_fnt_get_id(str8 path)
 {
-	assert(0 <= id && id < NUM_TEX_ID_MAX);
-	// assert(ASSET_ALLOCATOR.ctx != NULL);
+	i32 res = asset_db_fnt_get_id(&ASSETS.db, (struct asset_handle){
+												  .path_hash = hash_string(path),
+												  .type      = ASSET_TYPE_FONT,
+											  });
+	return res;
+}
 
-	log_info("Assets", "Load tex %s", path.str);
+i32
+asset_fnt_load(str8 path, struct fnt *fnt)
+{
+	i32 res = 0;
 
-	struct tex t        = tex_load(path, ASSETS.alloc);
-	ASSETS.tex[id].path = str8_cpy_push(ASSETS.alloc, path);
-	ASSETS.tex[id].tex  = t;
+	usize size           = MKILOBYTE(200);
+	void *mem            = ASSETS.alloc.allocf(ASSETS.alloc.ctx, MKILOBYTE(200));
+	struct marena marena = {0};
+	struct alloc alloc   = {0};
+	marena_init(&marena, mem, size);
+	alloc = marena_allocator(&marena);
 
-	if(t.px) {
-		if(tex) *tex = t;
-		return id;
+	usize size_scratch           = MKILOBYTE(200);
+	void *mem_scratch            = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch);
+	struct marena marena_scratch = {0};
+	struct alloc scratch         = {0};
+	marena_init(&marena_scratch, mem_scratch, size_scratch);
+	scratch = marena_allocator(&marena_scratch);
+
+	struct fnt f = fnt_load(path, alloc, scratch);
+	if(f.t.px == NULL) {
+		log_warn("Assets", "Load failed %s", path.str);
 	}
+	res = asset_db_fnt_push(&ASSETS.db, path, f);
+	log_info("Assets", "Load fnt %s", path.str);
+	if(fnt) *fnt = f;
 
-	return -1;
+	mclr(marena.p, size_scratch);
+	marena_reset_to(&ASSETS.marena, marena.p);
+	return res;
+}
+
+struct snd
+asset_snd(i32 id)
+{
+	struct snd res = asset_db_snd_get_by_id(&ASSETS.db, id);
+	return res;
 }
 
 i32
-asset_tex_put(struct tex t)
+asset_snd_load(str8 path, struct snd *snd)
 {
-	i32 id = ASSETS.next_tex_id++;
-	asset_tex_put_id(id, t);
-	return id;
+
+	i32 res      = 0;
+	struct snd s = snd_load(path, ASSETS.alloc);
+	if(s.len == 0) {
+		log_warn("Assets", "Load failed %s", path.str);
+	}
+	log_info("Assets", "Load snd %s", path.str);
+	res = asset_db_snd_push(&ASSETS.db, path, s);
+	if(snd) *snd = s;
+	return res;
 }
 
-struct tex
-asset_tex_put_id(i32 id, struct tex t)
+i32
+asset_snd_get_id(str8 path)
 {
-	assert(0 <= id && id < NUM_TEX_ID_MAX);
-	ASSETS.tex[id].tex = t;
-	return t;
+	i32 res = asset_db_snd_get_id(&ASSETS.db, (struct asset_handle){
+												  .path_hash = hash_string(path),
+												  .type      = ASSET_TYPE_SOUND,
+											  });
+	return res;
 }
 
 struct tex_rec
@@ -123,79 +156,13 @@ asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 {
 	struct tex_rec result = {0};
 
-	result.t   = asset_tex(id);
+	result.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
 	result.r.x = x;
 	result.r.y = y;
 	result.r.w = w;
 	result.r.h = h;
 
 	return result;
-}
-
-struct snd
-asset_snd(i32 id)
-{
-	assert(0 <= id && id < NUM_SFX_ID_MAX);
-	return ASSETS.snd[id].snd;
-}
-
-i32
-asset_snd_load(const str8 path, struct snd *snd)
-{
-	for(i32 i = 0; i < ASSETS.next_snd_id; i++) {
-		struct asset_snd *asset_snd = &ASSETS.snd[i];
-		if(str8_match(asset_snd->path, path, 0)) {
-			if(snd) *snd = asset_snd->snd;
-			return i;
-		}
-	}
-
-	log_info("Assets", "Load snd %s", path.str);
-
-	struct snd s = snd_load(path, ASSETS.alloc);
-
-	if(s.buf == NULL) {
-		log_info("Assets", "Lod failed %s", path.str);
-		return -1;
-	}
-
-	i32 id         = ASSETS.next_snd_id++;
-	ASSETS.snd[id] = (struct asset_snd){
-		.snd  = s,
-		.path = path,
-	};
-
-	if(snd) *snd = s;
-	return id;
-}
-
-i32
-asset_snd_load_id(i32 id, str8 file_name, struct snd *snd)
-{
-	assert(0 <= id && id < NUM_SFX_ID_MAX);
-	log_info("Assets", "Load snd %s", file_name.str);
-
-	struct snd s       = snd_load(file_name, ASSETS.alloc);
-	ASSETS.snd[id].snd = s;
-
-	if(s.buf) {
-		if(snd) *snd = s;
-		return id;
-	}
-
-	return -1;
-}
-
-i32
-asset_snd_get_id(str8 path)
-{
-	for(i32 i = 1; i < ASSETS.next_snd_id; i++) {
-		struct asset_snd *at = &ASSETS.snd[i];
-		if(str8_match(at->path, path, 0)) {
-			return i;
-		}
-	}
-	return 0;
 }
 
 enum asset_type
@@ -217,48 +184,4 @@ asset_path_get_type(str8 path)
 	}
 
 	return 0;
-}
-
-struct fnt
-assets_fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
-{
-	struct fnt res = {0};
-	str8 fnt_ext   = str8_lit(".fnt");
-
-	res.widths                      = arr_ini(FNT_CHAR_MAX, sizeof(*res.widths), alloc);
-	res.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*res.kern_pairs), alloc);
-	arr_header(res.widths)->len     = arr_cap(res.widths);
-	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
-	mclr(res.widths, sizeof(*res.widths) * arr_len(res.widths));
-	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * arr_len(res.kern_pairs));
-
-	assert(str8_ends_with(path, fnt_ext, 0));
-	log_info("fnt", "Load fnt info: %s", path.str);
-	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
-	if(file_res.data == NULL) {
-		log_error("fnt", "Failed loading fnt info: %s", path.str);
-		return res;
-	}
-	char *data          = file_res.data;
-	usize size          = file_res.size;
-	struct ser_reader r = {
-		.data = data,
-		.len  = size,
-	};
-
-	fnt_read(&r, &res);
-
-	str8 base_name = str8_chop_last_dot(path);
-	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", (i32)base_name.size, base_name.str, res.cell_w, res.cell_h);
-
-	log_info("fnt", "Load tex: %s", tex_path.str);
-	res.t = tex_load(tex_path, alloc);
-	if(res.t.px == NULL) {
-		log_error("fnt", "Failed loading tex info: %s", path.str);
-		return res;
-	}
-
-	res.grid_w = res.t.w / res.cell_w;
-	res.grid_h = res.t.h / res.cell_h;
-	return res;
 }

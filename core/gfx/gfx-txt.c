@@ -6,9 +6,9 @@ void
 fnt_draw_str(
 	struct gfx_ctx ctx,
 	struct fnt fnt,
+	str8 str,
 	i32 x,
 	i32 y,
-	str8 str,
 	i32 tracking,
 	i32 leading,
 	i32 mode)
@@ -43,14 +43,16 @@ fnt_draw_str_pivot(
 	str8 str,
 	i32 x,
 	i32 y,
+	i32 tracking,
+	i32 leading,
 	v2 pivot,
 	enum spr_mode mode)
 {
 	if(fnt.t.px != NULL) {
-		v2_i32 text_size = fnt_size_px(fnt, str, 0, 0);
+		v2_i32 text_size = fnt_size_px(fnt, str, tracking, leading);
 		i32 txt_x        = x - (i32)(text_size.x * pivot.x);
 		i32 txt_y        = y - (i32)(text_size.y * pivot.y);
-		fnt_draw_str(ctx, fnt, txt_x, txt_y, str, 0, 0, mode);
+		fnt_draw_str(ctx, fnt, str, txt_x, txt_y, tracking, leading, mode);
 		return (rec_i32){txt_x, txt_y, text_size.x, text_size.y};
 	}
 	return (rec_i32){0};
