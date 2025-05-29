@@ -121,7 +121,7 @@ aud_cmds_flush(void)
 			assert(cmd->channel_id != AUD_MUS_CHANNEL_NONE);
 			struct mus_channel *mc = &AUDIO.mus_channel[cmd->channel_id];
 			mus_channel_stop(mc);
-			str8 path = asset_db_get_path(&ASSETS.db, cmd->path_handle);
+			str8 path = asset_db_path_get(&ASSETS.db, cmd->path_handle);
 			if(path.size == 0) {
 				log_warn("Audio", "Music file path doesn't exist in DB");
 				break;

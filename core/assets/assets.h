@@ -8,42 +8,9 @@
 #include "mem.h"
 #include "mem-arena.h"
 
-enum {
-	TEX_ID_NONE,
-	TEX_ID_DISPLAY,
-
-	// Debug
-	TEX_ID_LOADING,
-
-	NUM_TEX_ID,
-	NUM_TEX_ID_MAX = 512
-};
-
-enum {
-	SFX_NONE,
-	NUM_SFX_ID,
-	NUM_SFX_ID_MAX = 100,
-};
-
-struct asset_tex {
-	struct tex tex;
-	str8 path;
-};
-
-struct asset_snd {
-	struct snd snd;
-	// TODO: Add path handle (hash)
-	// TODO: MOVE TO ASSET DB
-	str8 path;
-};
-
 struct assets {
-	struct asset_tex tex[NUM_TEX_ID_MAX];
-	struct asset_snd snd[NUM_SFX_ID_MAX];
-
-	i32 next_tex_id;
-	i32 next_snd_id;
 	struct asset_db db;
+	struct tex display;
 
 	struct marena marena;
 	struct alloc alloc;
@@ -53,20 +20,18 @@ static struct assets ASSETS;
 struct alloc assets_allocator(struct assets *assets);
 
 void assets_init(void *mem, usize size);
+
 struct tex asset_tex(i32 id);
-i32 asset_tex_load(const str8 path, struct tex *tex);
-i32 asset_tex_load_id(i32 id, str8 path, struct tex *tex);
+i32 asset_tex_load(str8 path, struct tex *tex);
 i32 asset_tex_get_id(str8 path);
 
-i32 asset_tex_put(struct tex tex);
-struct tex asset_tex_put_id(i32 id, struct tex tex);
+struct fnt asset_fnt(i32 id);
+i32 asset_fnt_load(str8 path, struct fnt *fnt);
+i32 asset_fnt_get_id(str8 path);
 
 struct snd asset_snd(i32 id);
-i32 asset_snd_load(const str8 path, struct snd *snd);
-i32 asset_snd_load_id(i32 id, str8 path, struct snd *snd);
+i32 asset_snd_load(str8 path, struct snd *snd);
 i32 asset_snd_get_id(str8 path);
 
 struct tex_rec asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h);
-
 enum asset_type asset_path_get_type(str8 path);
-struct fnt assets_fnt_load(str8 path, struct alloc alloc, struct alloc scratch);
