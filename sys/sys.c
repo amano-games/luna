@@ -1,5 +1,4 @@
 #include "sys.h"
-#include "sys-utils.h"
 #include "sys-font.h"
 #include "sys-log.h"
 #include "sys-assert.h"
