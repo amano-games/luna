@@ -156,6 +156,7 @@ export interface GameAction {
   action_ref: number;
   action_type: number;
   event_condition: number;
+  event_condition_type: number;
   event_type: number;
 }
 
