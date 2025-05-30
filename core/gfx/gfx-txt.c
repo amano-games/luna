@@ -1,5 +1,4 @@
 #include "gfx-txt.h"
-#include "assets/fnt.h"
 #include "gfx/gfx-spr.h"
 
 void

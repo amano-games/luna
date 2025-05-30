@@ -21,13 +21,12 @@
 #include "str.h"
 #include "str.c"
 #include "path.c"
+#include "tex/tex.c"
 
 #include "audio/adpcm.c"
 #include "./wav/wav.h"
 #include "./wav/wav.c"
-
-#include "./tex/tex.c"
-#include "./tex/tex.h"
+#include "./png/png.c"
 
 #include "physics/physics.c"
 #include "physics/body-ser.c"
@@ -40,7 +39,7 @@
 #include "tools/pinbtjson/pinbtjson.h"
 #include "tools/pinbtjson/pinbtjson.c"
 #include "pinb/pinb-ser.c"
-#include "core/assets/fnt.c"
+#include "core/fnt/fnt.c"
 #include "collisions.c"
 #include "sys-io.c"
 

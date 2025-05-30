@@ -1,4 +1,4 @@
-#include "tex.h"
+#include "png.h"
 #include "path.h"
 #include "str.h"
 #include "sys-io.h"

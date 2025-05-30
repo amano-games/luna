@@ -1,21 +1,10 @@
 #pragma once
 
 #include "sys-types.h"
-#include "mem.h"
+#include "tex/tex.h"
 
 #define GFX_PATTERN_NUM 17
 #define GFX_PATTERN_MAX (GFX_PATTERN_NUM - 1)
-
-enum {
-	TEX_FMT_OPAQUE, // only color pixels
-	TEX_FMT_MASK,   // color and mask interlaced in words
-};
-
-enum gfx_col {
-	GFX_COL_BLACK,
-	GFX_COL_WHITE,
-	GFX_COL_CLEAR,
-};
 
 enum spr_mode {          // pattern holes always transparent
 	SPR_MODE_COPY,       // 0 kDrawModeCopy
@@ -39,14 +28,6 @@ enum prim_mode {
 enum spr_flip {
 	SPR_FLIP_X = 1, // kBitmapFlippedX
 	SPR_FLIP_Y = 2, // kBitmapFlippedY
-};
-
-struct tex {
-	u32 *px; // either black/white words or black/white and transparent/opaque words interlaced
-	int wword;
-	int fmt;
-	int w;
-	int h;
 };
 
 struct tex_rec {
@@ -76,16 +57,6 @@ struct gfx_ctx {
 #define gfx_pattern_black() gfx_pattern_0()
 
 struct tex tex_frame_buffer(void);
-struct tex tex_create(i32 w, i32 h, struct alloc alloc);
-struct tex tex_create_opaque(i32 w, i32 h, struct alloc alloc);
-struct tex tex_load(str8 path, struct alloc alloc);
-
-void tex_clr(struct tex dst, i32 col);
-
-i32 tex_px_at(struct tex tex, i32 x, i32 y);
-i32 tex_mask_at(struct tex tex, i32 x, i32 y);
-void tex_px(struct tex tex, i32 x, i32 y, i32 col);
-void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
 
 struct gfx_pattern gfx_pattern_2x2(i32 p0, i32 p1);
 struct gfx_pattern gfx_pattern_4x4(i32 p0, i32 p1, i32 p2, i32 p3);

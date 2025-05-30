@@ -1,6 +1,6 @@
 #include "assets.h"
 #include "assets/asset-db.h"
-#include "assets/fnt.h"
+#include "fnt/fnt.h"
 #include "audio/audio.h"
 #include "gfx/gfx.h"
 #include "mem-arena.h"
