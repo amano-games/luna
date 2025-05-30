@@ -10,7 +10,7 @@
 #include "sys-assert.h"
 #include "sys-log.h"
 #include "sys.h"
-#include "tools/tex/tex.h"
+#include "tools/png/png.h"
 #include "tools/wav/wav.h"
 
 struct pinbtjson_res

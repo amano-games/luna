@@ -1,6 +1,6 @@
 #include "fnt-pd.h"
 #include "arr.h"
-#include "assets/fnt.h"
+#include "fnt/fnt.h"
 #include "json.h"
 #include "mem-arena.h"
 #include "str.h"
