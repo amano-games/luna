@@ -5,6 +5,7 @@
 #endif
 
 #include "gfx/gfx.h"
+#include "gfx/gfx-defs.h"
 #include "str.h"
 #include "sys-utils.h"
 #include "sys-assert.h"
