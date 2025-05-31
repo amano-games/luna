@@ -52,10 +52,6 @@
 #define ASSETS_DB_EXT     ".tsj"
 #define PINBALL_TABLE_EXT ".pinbjson"
 
-#if !defined(SYS_LOG_LEVEL)
-#define SYS_LOG_LEVEL 0
-#endif
-
 void
 fcopy(const str8 in_path, const str8 out_path)
 {
