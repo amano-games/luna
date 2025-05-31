@@ -273,14 +273,20 @@ sys_free(void *ptr)
 }
 
 void
-sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename)
+sys_log(
+	const char *tag,
+	enum sys_log_level log_level,
+	u32 log_item,
+	const char *msg,
+	uint32_t line_nr,
+	const char *filename)
 {
 	if(log_level <= SYS_LOG_LEVEL) {
 		const char *log_level_str;
 		switch(log_level) {
-		case 0: log_level_str = "PANI"; break;
-		case 1: log_level_str = "ERRO"; break;
-		case 2: log_level_str = "WARN"; break;
+		case SYS_LOG_LEVEL_PANI: log_level_str = "PANI"; break;
+		case SYS_LOG_LEVEL_ERROR: log_level_str = "ERRO"; break;
+		case SYS_LOG_LEVEL_WARN: log_level_str = "WARN"; break;
 		default: log_level_str = "INFO"; break;
 		}
 
