@@ -149,6 +149,15 @@ export interface ForceField {
   is_enabled: boolean;
 }
 
+export interface Attractor {
+  is_enabled: boolean;
+  offset: [number, number];
+  radius: number;
+  force: number;
+  damping: number;
+  distance_threshold: number;
+}
+
 export interface GameAction {
   _name?: string;
   debug: boolean;
@@ -195,6 +204,7 @@ export interface Entity {
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
   force_field?: ForceField;
+  attractor?: Attractor;
   actions?: GameAction[];
   sfx_sequences?: SfxSequence[];
   messages?: Message[];

@@ -695,6 +695,18 @@
     };
     return res;
   }
+  function getAttractor(_object, prop) {
+    const value = prop.value;
+    const res = {
+      is_enabled: value["is_enabled"],
+      offset: [value["offset_x"], value["offset_y"]],
+      radius: value["radius"],
+      force: value["force"],
+      damping: value["damping"],
+      distance_threshold: value["distance_threshold"]
+    };
+    return res;
+  }
   function getAction(object, key, prop) {
     const value = prop.value;
     const action_ref = Number(value["action_ref"].id) || object.id;
@@ -795,6 +807,10 @@
             case "force_field":
               return __spreadProps(__spreadValues({}, acc), {
                 force_field: getForceField(item, prop)
+              });
+            case "attractor":
+              return __spreadProps(__spreadValues({}, acc), {
+                attractor: getAttractor(item, prop)
               });
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {

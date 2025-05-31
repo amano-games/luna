@@ -44,6 +44,7 @@ import {
   Reset,
   Counter,
   ForceField,
+  Attractor,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -395,6 +396,20 @@ function getForceField(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getAttractor(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: Attractor = {
+    is_enabled: value["is_enabled"],
+    offset: [value["offset_x"], value["offset_y"]],
+    radius: value["radius"],
+    force: value["force"],
+    damping: value["damping"],
+    distance_threshold: value["distance_threshold"],
+  };
+  return res;
+}
+
 function getAction(object: MapObject, key: string, prop: PropertyValue) {
   const value = prop.value as object;
   const action_ref = Number(value["action_ref"].id) || object.id;
@@ -515,6 +530,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 force_field: getForceField(item, prop),
+              };
+            case "attractor":
+              return {
+                ...acc,
+                attractor: getAttractor(item, prop),
               };
             case "sfx_sequence":
               if (acc.sfx_sequences == null) {
