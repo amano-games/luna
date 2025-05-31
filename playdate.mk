@@ -87,6 +87,7 @@ PD_CFLAGS      += -ffunction-sections
 PD_CFLAGS      += -fno-strict-aliasing
 PD_CFLAGS      += -fsingle-precision-constant
 PD_CFLAGS      += -falign-functions=32
+PD_CFLAGS      += -falign-loops=32
 PD_CFLAGS      += -fno-common
 PD_CFLAGS      += $(PD_DEFS)
 
