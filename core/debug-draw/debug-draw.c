@@ -19,7 +19,7 @@ debug_draw_init(void *mem, usize size)
 }
 
 void
-debug_draw_draw(i32 x, i32 y)
+debug_draw_do(i32 x, i32 y)
 {
 #if !defined(TARGET_PLAYDATE) && defined(DEBUG)
 	TRACE_START(__func__);
