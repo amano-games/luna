@@ -67,6 +67,27 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.attractor.force != 0) {
+		ser_write_string(w, str8_lit("attractor"));
+		ser_write_object(w);
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.attractor.is_enabled);
+		ser_write_string(w, str8_lit("offset"));
+		ser_write_array(w);
+		ser_write_f32(w, entity.attractor.offset.x);
+		ser_write_f32(w, entity.attractor.offset.y);
+		ser_write_end(w);
+		ser_write_string(w, str8_lit("radius"));
+		ser_write_f32(w, entity.attractor.radius);
+		ser_write_string(w, str8_lit("force"));
+		ser_write_f32(w, entity.attractor.force);
+		ser_write_string(w, str8_lit("damping"));
+		ser_write_f32(w, entity.attractor.damping);
+		ser_write_string(w, str8_lit("distance_threshold"));
+		ser_write_f32(w, entity.attractor.distance_threshold);
+		ser_write_end(w);
+	}
+
 	if(entity.reactive_sprite_offset.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_sprite_offset"));
 		ser_write_object(w);
@@ -550,6 +571,37 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(item_key.str, str8_lit("is_enabled"), 0)) {
 					assert(item_value.type == SER_TYPE_I32);
 					res.force_field.is_enabled = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("attractor"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("is_enabled"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.attractor.is_enabled = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("offset"), 0)) {
+					assert(item_value.type == SER_TYPE_ARRAY);
+					struct ser_value v2_value;
+					ser_iter_array(r, item_value, &v2_value);
+					assert(v2_value.type == SER_TYPE_F32);
+					res.attractor.offset.x = v2_value.f32;
+					ser_iter_array(r, item_value, &v2_value);
+					assert(v2_value.type == SER_TYPE_F32);
+					res.attractor.offset.y = v2_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("radius"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.attractor.radius = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("force"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.attractor.force = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("damping"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.attractor.damping = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("distance_threshold"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.attractor.distance_threshold = item_value.f32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("reactive_sprite_offset"), 0)) {
