@@ -70,8 +70,8 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	if(entity.attractor.force != 0) {
 		ser_write_string(w, str8_lit("attractor"));
 		ser_write_object(w);
-		ser_write_string(w, str8_lit("is_enabled"));
-		ser_write_i32(w, entity.attractor.is_enabled);
+		ser_write_string(w, str8_lit("flags"));
+		ser_write_i32(w, entity.attractor.flags);
 		ser_write_string(w, str8_lit("offset"));
 		ser_write_array(w);
 		ser_write_f32(w, entity.attractor.offset.x);
@@ -578,9 +578,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			struct ser_value item_key, item_value;
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
 				assert(item_key.type == SER_TYPE_STRING);
-				if(str8_match(item_key.str, str8_lit("is_enabled"), 0)) {
+				if(str8_match(item_key.str, str8_lit("flags"), 0)) {
 					assert(item_value.type == SER_TYPE_I32);
-					res.attractor.is_enabled = item_value.i32;
+					res.attractor.flags = item_value.i32;
 				} else if(str8_match(item_key.str, str8_lit("offset"), 0)) {
 					assert(item_value.type == SER_TYPE_ARRAY);
 					struct ser_value v2_value;

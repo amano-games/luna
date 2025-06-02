@@ -41,7 +41,7 @@ struct pinb_force_field {
 };
 
 struct pinb_attractor {
-	bool32 is_enabled;
+	i32 flags;
 	v2 offset;
 	f32 radius;
 	f32 force;
