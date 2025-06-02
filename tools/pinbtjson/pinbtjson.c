@@ -89,8 +89,8 @@ pinbtjson_handle_attractor(str8 json, jsmntok_t *tokens, i32 index)
 	for(usize i = index + 1; i < index + res.token_count; i += 2) {
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
-		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
-			res.attractor.is_enabled = json_parse_bool32(json, value);
+		if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.attractor.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("offset")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			res.attractor.offset.x = json_parse_f32(json, tokens + i + 2);

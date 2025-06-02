@@ -400,7 +400,7 @@ function getAttractor(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
   const res: Attractor = {
-    is_enabled: value["is_enabled"],
+    flags: value["flags"].value,
     offset: [value["offset_x"], value["offset_y"]],
     radius: value["radius"],
     force: value["force"],

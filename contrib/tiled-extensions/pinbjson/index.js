@@ -698,7 +698,7 @@
   function getAttractor(_object, prop) {
     const value = prop.value;
     const res = {
-      is_enabled: value["is_enabled"],
+      flags: value["flags"].value,
       offset: [value["offset_x"], value["offset_y"]],
       radius: value["radius"],
       force: value["force"],

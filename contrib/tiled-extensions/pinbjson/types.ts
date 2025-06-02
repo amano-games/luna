@@ -150,7 +150,7 @@ export interface ForceField {
 }
 
 export interface Attractor {
-  is_enabled: boolean;
+  flags: number;
   offset: [number, number];
   radius: number;
   force: number;
