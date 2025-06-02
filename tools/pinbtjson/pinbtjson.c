@@ -79,6 +79,37 @@ pinbtjson_handle_force_field(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_attractor(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.attractor.is_enabled = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("offset")) == 0) {
+			assert(value->type == JSMN_ARRAY);
+			res.attractor.offset.x = json_parse_f32(json, tokens + i + 2);
+			res.attractor.offset.y = json_parse_f32(json, tokens + i + 3);
+		} else if(json_eq(json, key, str8_lit("radius")) == 0) {
+			res.attractor.radius = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("force")) == 0) {
+			res.attractor.force = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("damping")) == 0) {
+			res.attractor.damping = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("distance_threshold")) == 0) {
+			res.attractor.distance_threshold = json_parse_f32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_reactive_animation(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -719,6 +750,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_force_field(json, tokens, i + 1);
 			res.entity.force_field        = item_res.force_field;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("attractor")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_attractor(json, tokens, i + 1);
+			res.entity.attractor          = item_res.attractor;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("reactive_sprite_offset")) == 0) {
 			assert(value->type == JSMN_OBJECT);

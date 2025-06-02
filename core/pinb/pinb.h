@@ -40,6 +40,15 @@ struct pinb_force_field {
 	bool32 is_enabled;
 };
 
+struct pinb_attractor {
+	bool32 is_enabled;
+	v2 offset;
+	f32 radius;
+	f32 force;
+	f32 damping;
+	f32 distance_threshold;
+};
+
 struct pinb_spr {
 	str8 path;
 	i32 flip;
@@ -171,6 +180,7 @@ struct pinb_entity {
 	struct pinb_flipper flipper;
 	struct pinb_gravity gravity;
 	struct pinb_force_field force_field;
+	struct pinb_attractor attractor;
 	struct pinb_animator animator;
 	struct pinb_flip flip;
 	struct pinb_sensor sensor;
