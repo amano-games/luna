@@ -32,6 +32,7 @@ RELEASE_CFLAGS += -std=gnu11
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
+DEBUG_CFLAGS += -DDEBUG=1
 DEBUG_CFLAGS += -Wno-limited-postlink-optimizations
 DEBUG_CFLAGS += -fsanitize=address,undefined
 
@@ -52,7 +53,7 @@ ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJS         := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
-.PHONY: all clean build steam run
+.PHONY: all clean build run publish
 .DEFAULT_GOAL := all
 
 all: clean build run
