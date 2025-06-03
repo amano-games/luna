@@ -161,6 +161,13 @@ struct pinb_spinner {
 	f32 stop_threshold;
 };
 
+struct pinb_bucket {
+	i32 animation_shoot;
+	f32 delay;
+	f32 impulse_angle;
+	f32 impulse_magnitude;
+};
+
 struct pinb_reset {
 	i32 flags;
 };
@@ -191,6 +198,7 @@ struct pinb_entity {
 	struct pinb_actions actions;
 	struct pinb_reset reset;
 	struct pinb_counter counter;
+	struct pinb_bucket bucket;
 	struct v2_i32 score_fx_offset;
 };
 
