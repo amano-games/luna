@@ -1,3 +1,5 @@
+#undef SYS_LOG_LEVEL
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
 #include <tinydir.h>
 #include <jsmn.h>
 #include "whereami.c"
@@ -19,12 +21,16 @@
 #include "sys.h"
 
 #define TABLE_EXT ".luntable"
+#define LOG_ID "MetaGen"
 
 enum COLUMN_TYPE {
 	COLUMN_TYPE_NONE,
+
 	COLUMN_TYPE_ID,
 	COLUMN_TYPE_LABEL,
 	COLUMN_TYPE_BITMASK,
+
+	COLUMN_TYPE_NUM_COUNT,
 };
 
 struct column {
@@ -60,8 +66,6 @@ struct table {
 i32
 gen_table(const str8 in_path, struct alloc scratch)
 {
-	log_info("Meta", "Generating table from: %s", in_path.str);
-
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
 	jsmn_parser parser;
@@ -147,7 +151,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 			}
 			i += value->size + 1;
 		} else {
-			sys_printf("Unexpected key[%d]: %.*s", i, tokens[i].end - tokens[i].start, json.str + tokens[i].start);
+			log_warn(LOG_ID, "Unexpected key[%d]: %.*s", i, tokens[i].end - tokens[i].start, json.str + tokens[i].start);
 		}
 	}
 
@@ -162,7 +166,6 @@ gen_table(const str8 in_path, struct alloc scratch)
 	str8_list_pushf(alloc, &content, "#include \"sys-types.h\"\n\n");
 
 	{
-
 		str8 enum_none  = str8_fmt_push(alloc, "%.*sNONE = 0", (i32)table.prefix.size, table.prefix.str);
 		str8 enum_count = str8_fmt_push(alloc, "%.*sNUM_COUNT", (i32)table.prefix.size, table.prefix.str);
 
@@ -180,7 +183,6 @@ gen_table(const str8 in_path, struct alloc scratch)
 					str8_list_pushf(alloc, &content, "  %.*s%.*s,\n", (i32)table.prefix.size, table.prefix.str, (i32)row_value.string.size, row_value.string.str);
 				}
 				str8_list_pushf(alloc, &content, "\n  %.*s,\n", (i32)enum_count.size, enum_count.str);
-
 				str8_list_pushf(alloc, &content, "};\n\n");
 				str8_list_pushf(alloc, &content, "\n");
 
@@ -224,7 +226,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	sys_file_close(f);
 	sys_free(mem);
 
-	sys_printf("%s -> %s", in_path.str, out_file_path.str);
+	log_info(LOG_ID, "items:%-2d %s -> %s", arr_len(table.rows),in_path.str + 3, out_file_path.str + 3);
 	return EXIT_SUCCESS;
 }
 
@@ -233,7 +235,7 @@ gen_tables_recursive(const str8 in_dir, struct alloc scratch)
 {
 	tinydir_dir dir;
 	if(tinydir_open(&dir, (char *)in_dir.str) == -1) {
-		log_error("Meta", "Cannot open directory: %s", in_dir.str);
+		log_error(LOG_ID, "Cannot open directory: %s", in_dir.str);
 		return;
 	}
 
@@ -261,10 +263,10 @@ i32
 main(i32 argc, char *argv[])
 {
 	if(argc != 2) {
-		printf("Usage: %s <in_path>\n", argv[0]);
+		sys_printf("Usage: %s <in_path>\n", argv[0]);
 		return 1;
 	}
-	fprintf(stderr, "Processing tables ...\n");
+	log_info(LOG_ID, "Generating tables recursively from %s -> %s", argv[0], argv[2]);
 	mkdir(argv[2], 0755);
 
 	usize scratch_mem_size = MMEGABYTE(1);

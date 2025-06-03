@@ -20,7 +20,12 @@ sys_log(
 	const char *filename)
 {
 	if(log_level <= SYS_LOG_LEVEL) {
-		slog_func(tag, log_level, log_item, msg, line_nr, filename, NULL);
+#if defined DEBUG
+    const char * fn = filename;
+#else
+    const char * fn = NULL;
+#endif
+		slog_func(tag, log_level, log_item, msg, line_nr, fn, NULL);
 	}
 }
 
