@@ -111,6 +111,10 @@ struct pinb_counter {
 	i32 resolution;
 };
 
+struct pinb_crank_animation {
+	f32 interval;
+};
+
 struct pinb_sfx_sequence {
 	i32 type;
 	f32 reset_time;
@@ -199,6 +203,7 @@ struct pinb_entity {
 	struct pinb_actions actions;
 	struct pinb_reset reset;
 	struct pinb_counter counter;
+	struct pinb_crank_animation crank_animation;
 	struct pinb_bucket bucket;
 	struct v2_i32 score_fx_offset;
 };
