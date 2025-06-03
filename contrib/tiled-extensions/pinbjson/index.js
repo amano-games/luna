@@ -621,6 +621,13 @@
     };
     return res;
   }
+  function getCrankAnimation(_object, prop) {
+    const value = prop.value;
+    const res = {
+      interval: value["interval"]
+    };
+    return res;
+  }
   function getSfxSequence(_object, prop) {
     const value = prop.value;
     const res = {
@@ -802,6 +809,10 @@
             case "counter":
               return __spreadProps(__spreadValues({}, acc), {
                 counter: getCounter(item, prop)
+              });
+            case "crank_animation":
+              return __spreadProps(__spreadValues({}, acc), {
+                crank_animation: getCrankAnimation(item, prop)
               });
             case "sensor":
               return __spreadProps(__spreadValues({}, acc), {

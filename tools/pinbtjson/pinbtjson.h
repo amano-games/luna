@@ -41,6 +41,7 @@ struct pinbtjson_res {
 		struct pinb_message message;
 		struct pinb_reset reset;
 		struct pinb_bucket bucket;
+		struct pinb_crank_animation crank_animation;
 	};
 };
 
