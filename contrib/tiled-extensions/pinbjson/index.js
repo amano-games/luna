@@ -571,6 +571,16 @@
     };
     return res;
   }
+  function getBucket(_object, prop) {
+    const value = prop.value;
+    const res = {
+      animation_shoot: value["animation_shoot"],
+      impulse_angle_degrees: value["impulse_angle_degrees"],
+      impulse_magnitude: value["impulse_magnitude"],
+      delay: value["delay"]
+    };
+    return res;
+  }
   function getFlip(_object, prop) {
     const value = prop.value;
     const res = {
@@ -749,6 +759,10 @@
             case "spinner":
               return __spreadProps(__spreadValues({}, acc), {
                 spinner: getSpinner(item, prop)
+              });
+            case "bucket":
+              return __spreadProps(__spreadValues({}, acc), {
+                bucket: getBucket(item, prop)
               });
             case "flipper":
               return __spreadProps(__spreadValues({}, acc), {

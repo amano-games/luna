@@ -45,6 +45,7 @@ import {
   Counter,
   ForceField,
   Attractor,
+  Bucket,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -242,6 +243,18 @@ function getSpinner(_object: MapObject, prop: PropertyValue) {
     damping: value["damping"],
     spin_force: value["spin_force"],
     stop_threshold: value["stop_threshold"],
+  };
+  return res;
+}
+
+function getBucket(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: Bucket = {
+    animation_shoot: value["animation_shoot"],
+    impulse_angle_degrees: value["impulse_angle_degrees"],
+    impulse_magnitude: value["impulse_magnitude"],
+    delay: value["delay"],
   };
   return res;
 }
@@ -458,6 +471,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 spinner: getSpinner(item, prop),
+              };
+            case "bucket":
+              return {
+                ...acc,
+                bucket: getBucket(item, prop),
               };
             case "flipper":
               return {
