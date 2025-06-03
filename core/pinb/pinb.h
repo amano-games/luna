@@ -147,6 +147,7 @@ struct pinb_action {
 	i32 event_condition_type;
 	i32 action_type;
 	i32 action_ref;
+	f32 action_delay;
 	i32 action_arg; // NOTE: Should arguments be an array?
 };
 

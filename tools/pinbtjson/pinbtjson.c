@@ -506,6 +506,8 @@ pinbtjson_handle_action(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.action.action_ref = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("action_argument")) == 0) {
 			res.action.action_arg = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("action_delay")) == 0) {
+			res.action.action_delay = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("event_type")) == 0) {
 			res.action.event_type = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("event_condition_type")) == 0) {
