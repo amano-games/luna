@@ -44,6 +44,13 @@ export interface ChargedImpulse {
   auto_shoot: boolean;
 }
 
+export interface Bucket {
+  animation_shoot: number;
+  impulse_angle_degrees: number;
+  impulse_magnitude: number;
+  delay: number;
+}
+
 export interface Plunger {
   charge_force_max: number;
   charge_force_min: number;
@@ -188,6 +195,7 @@ export interface Entity {
   x: number;
   y: number;
   rigid_body?: RigidBody;
+  charged_impulse?: ChargedImpulse;
   plunger?: Plunger;
   spr?: Sprite;
   reactive_impulse?: ReactiveImpulse;
@@ -203,6 +211,7 @@ export interface Entity {
   counter?: Counter;
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
+  bucket?: Bucket;
   force_field?: ForceField;
   attractor?: Attractor;
   actions?: GameAction[];
