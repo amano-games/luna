@@ -726,6 +726,7 @@
       action_argument: value["action_argument"],
       action_ref,
       action_type: value["action_type"].value,
+      action_delay: value["action_delay"],
       event_condition: value["event_condition"],
       event_condition_type: value["event_condition_type"].value,
       event_type: value["event_type"].value

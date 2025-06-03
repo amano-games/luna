@@ -389,6 +389,8 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 						ser_write_i32(w, entity.actions.items[i].action_ref);
 						ser_write_string(w, str8_lit("action_arg"));
 						ser_write_i32(w, entity.actions.items[i].action_arg);
+						ser_write_string(w, str8_lit("action_delay"));
+						ser_write_f32(w, entity.actions.items[i].action_delay);
 						ser_write_string(w, str8_lit("event_type"));
 						ser_write_i32(w, entity.actions.items[i].event_type);
 						ser_write_string(w, str8_lit("event_condition_type"));
@@ -1148,6 +1150,8 @@ pinb_action_read(struct ser_reader *r, struct ser_value obj)
 			res.action_ref = value.i32;
 		} else if(str8_match(key.str, str8_lit("action_arg"), 0)) {
 			res.action_arg = value.i32;
+		} else if(str8_match(key.str, str8_lit("action_delay"), 0)) {
+			res.action_delay = value.f32;
 		} else if(str8_match(key.str, str8_lit("event_type"), 0)) {
 			res.event_type = value.i32;
 		} else if(str8_match(key.str, str8_lit("event_condition_type"), 0)) {
