@@ -163,6 +163,25 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.bucket.impulse_magnitude != 0) {
+		ser_write_string(w, str8_lit("bucket"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("animation_shoot"));
+		ser_write_i32(w, entity.bucket.animation_shoot);
+
+		ser_write_string(w, str8_lit("impulse_magnitude"));
+		ser_write_f32(w, entity.bucket.impulse_magnitude);
+
+		ser_write_string(w, str8_lit("impulse_angle"));
+		ser_write_f32(w, entity.bucket.impulse_angle);
+
+		ser_write_string(w, str8_lit("delay"));
+		ser_write_f32(w, entity.bucket.delay);
+
+		ser_write_end(w);
+	}
+
 	if(entity.flipper.velocity_scale != 0) {
 		ser_write_string(w, str8_lit("flipper"));
 		ser_write_object(w);
@@ -688,6 +707,25 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(item_key.str, str8_lit("stop_threshold"), 0)) {
 					assert(item_value.type == SER_TYPE_F32);
 					res.spinner.stop_threshold = item_value.f32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("bucket"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("animation_shoot"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.bucket.animation_shoot = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("impulse_angle"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.bucket.impulse_angle = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("impulse_magnitude"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.bucket.impulse_magnitude = item_value.f32;
+				} else if(str8_match(item_key.str, str8_lit("delay"), 0)) {
+					assert(item_value.type == SER_TYPE_F32);
+					res.bucket.delay = item_value.f32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
