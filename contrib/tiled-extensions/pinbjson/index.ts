@@ -46,6 +46,7 @@ import {
   ForceField,
   Attractor,
   Bucket,
+  CrankAnimation,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -305,6 +306,14 @@ function getCounter(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getCrankAnimation(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: CrankAnimation = {
+    interval: value["interval"],
+  };
+  return res;
+}
+
 function getSfxSequence(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
@@ -524,6 +533,11 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
               return {
                 ...acc,
                 counter: getCounter(item, prop),
+              };
+            case "crank_animation":
+              return {
+                ...acc,
+                crank_animation: getCrankAnimation(item, prop),
               };
             case "sensor":
               return {

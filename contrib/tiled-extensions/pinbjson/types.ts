@@ -110,6 +110,10 @@ export interface Counter {
   value: number;
 }
 
+export interface CrankAnimation {
+  interval: number;
+}
+
 export interface SfxSequence {
   clips: string[];
   pitch_max: number;
@@ -210,6 +214,7 @@ export interface Entity {
   switch_value?: SwitchValue;
   switch_list?: SwitchList;
   counter?: Counter;
+  crank_animation?: CrankAnimation;
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
   bucket?: Bucket;

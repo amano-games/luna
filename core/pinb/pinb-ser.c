@@ -235,6 +235,16 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.crank_animation.interval != 0) {
+		ser_write_string(w, str8_lit("crank_animation"));
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("interval"));
+		ser_write_f32(w, entity.crank_animation.interval);
+
+		ser_write_end(w);
+	}
+
 	if(entity.reset.flags != 0) {
 		ser_write_string(w, str8_lit("reset"));
 		ser_write_object(w);
@@ -789,6 +799,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 					res.counter.value = item_value.i32;
 				} else if(str8_match(item_key.str, str8_lit("resolution"), 0)) {
 					res.counter.resolution = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("crank_animation"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("interval"), 0)) {
+					res.crank_animation.interval = item_value.f32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
