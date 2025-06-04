@@ -168,6 +168,8 @@ struct pinb_spinner {
 
 struct pinb_bucket {
 	i32 animation_shoot;
+	i32 animation_on;
+	i32 animation_off;
 	f32 delay;
 	f32 impulse_angle;
 	f32 impulse_magnitude;

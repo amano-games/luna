@@ -373,6 +373,10 @@ pinbtjson_handle_bucket(str8 json, jsmntok_t *tokens, i32 index)
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("animation_shoot")) == 0) {
 			res.bucket.animation_shoot = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("animation_on")) == 0) {
+			res.bucket.animation_on = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("animation_off")) == 0) {
+			res.bucket.animation_off = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("delay")) == 0) {
 			res.bucket.delay = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("impulse_angle_degrees")) == 0) {
