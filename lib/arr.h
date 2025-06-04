@@ -11,12 +11,11 @@ struct arr_header {
 	usize cap;
 };
 
-#define arr_header(a) \
-	((struct arr_header *)((char *)(a) - sizeof(struct arr_header)))
-
-#define arr_len(a)  ((a) ? arr_header(a)->len : 0)
-#define arr_cap(a)  ((a) ? arr_header(a)->cap : 0)
-#define arr_full(a) ((a) ? arr_len(a) == arr_cap(a) : true)
+#define arr_header(a) ((a) ? (struct arr_header *)((char *)(a) - sizeof(struct arr_header)) : NULL)
+#define arr_pop(a)    ((a) ? (--arr_header(a)->len, (a)[arr_len(a)]) : (a)[0])
+#define arr_len(a)    ((a) ? arr_header(a)->len : 0)
+#define arr_cap(a)    ((a) ? arr_header(a)->cap : 0)
+#define arr_full(a)   ((a) ? arr_len(a) == arr_cap(a) : true)
 
 #define arr_clear(a) ((a) ? arr_header(a)->len = 0 : 0)
 #define arr_push(a, item) \
