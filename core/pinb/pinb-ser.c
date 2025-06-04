@@ -170,6 +170,12 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_string(w, str8_lit("animation_shoot"));
 		ser_write_i32(w, entity.bucket.animation_shoot);
 
+		ser_write_string(w, str8_lit("animation_on"));
+		ser_write_i32(w, entity.bucket.animation_on);
+
+		ser_write_string(w, str8_lit("animation_off"));
+		ser_write_i32(w, entity.bucket.animation_off);
+
 		ser_write_string(w, str8_lit("impulse_magnitude"));
 		ser_write_f32(w, entity.bucket.impulse_magnitude);
 
@@ -728,7 +734,13 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("animation_shoot"), 0)) {
 					assert(item_value.type == SER_TYPE_I32);
-					res.bucket.animation_shoot = item_value.f32;
+					res.bucket.animation_shoot = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("animation_on"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.bucket.animation_on = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("animation_off"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.bucket.animation_off = item_value.i32;
 				} else if(str8_match(item_key.str, str8_lit("impulse_angle"), 0)) {
 					assert(item_value.type == SER_TYPE_F32);
 					res.bucket.impulse_angle = item_value.f32;

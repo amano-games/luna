@@ -46,6 +46,8 @@ export interface ChargedImpulse {
 
 export interface Bucket {
   animation_shoot: number;
+  animation_on: number;
+  animation_off: number;
   impulse_angle_degrees: number;
   impulse_magnitude: number;
   delay: number;

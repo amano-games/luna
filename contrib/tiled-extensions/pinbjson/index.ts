@@ -253,6 +253,8 @@ function getBucket(_object: MapObject, prop: PropertyValue) {
 
   const res: Bucket = {
     animation_shoot: value["animation_shoot"],
+    animation_on: value["animation_on"],
+    animation_off: value["animation_off"],
     impulse_angle_degrees: value["impulse_angle_degrees"],
     impulse_magnitude: value["impulse_magnitude"],
     delay: value["delay"],
