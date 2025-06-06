@@ -44,15 +44,17 @@ body_init(struct body *body)
 void
 body_reset(struct body *body, f32 x, f32 y)
 {
-	body->flags       = 0;
-	body->vel.x       = 0;
-	body->vel.y       = 0;
-	body->vel_delta.x = 0;
-	body->vel_delta.y = 0;
-	body->p_delta.x   = 0;
-	body->p_delta.y   = 0;
-	body->p.x         = x;
-	body->p.y         = y;
+	body->flags         = 0;
+	body->vel.x         = 0;
+	body->vel.y         = 0;
+	body->vel_delta.x   = 0;
+	body->vel_delta.y   = 0;
+	body->ang_vel       = 0;
+	body->ang_vel_delta = 0;
+	body->p_delta.x     = 0;
+	body->p_delta.y     = 0;
+	body->p.x           = x;
+	body->p.y           = y;
 }
 
 void
