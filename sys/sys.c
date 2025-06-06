@@ -1,4 +1,6 @@
 #include "sys.h"
+#include "mem-arena.h"
+#include "str.h"
 #include "sys-font.h"
 #include "sys-log.h"
 #include "sys-assert.h"
@@ -30,11 +32,22 @@ struct sys_data SYS;
 struct app_mem
 sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 {
+	struct app_mem res      = {0};
 	usize mem_max           = SYS_MAX_MEM;
 	struct sys_mem *sys_mem = &SYS.mem;
-	struct app_mem res      = {0};
+	usize mem_total         = permanent + transient + debug;
 
-	assert((permanent + transient + debug) <= mem_max);
+	if(mem_total > mem_max) {
+		log_error(
+			"Sys",
+			"Not enough sys memory | asked:%u kb available:%u kb missing:%u kb",
+			(uint)mem_total / 1024,
+			(uint)mem_max / 1024,
+			(uint)((mem_total - mem_max) / 1024));
+		BAD_PATH;
+		return res;
+	}
+	assert(mem_total <= mem_max);
 	sys_mem->app_mem.size   = permanent + transient + debug;
 	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
 
