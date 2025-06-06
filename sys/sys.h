@@ -23,6 +23,7 @@
 #define SYS_MAX_MEM MMEGABYTE(100)
 #else
 #define SYS_MAX_MEM 8388208
+// #define SYS_MAX_MEM MMEGABYTE(10)
 #endif
 
 #if defined(BACKEND_SOKOL)
