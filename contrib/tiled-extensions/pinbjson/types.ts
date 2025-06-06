@@ -178,6 +178,7 @@ export interface GameAction {
   action_ref: number;
   action_type: number;
   action_delay: number;
+  action_cooldown: number;
   event_condition: number;
   event_condition_type: number;
   event_type: number;

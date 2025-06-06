@@ -736,6 +736,7 @@
       action_ref,
       action_type: value["action_type"].value,
       action_delay: value["action_delay"],
+      action_cooldown: value["action_cooldown"],
       event_condition: value["event_condition"],
       event_condition_type: value["event_condition_type"].value,
       event_type: value["event_type"].value
