@@ -1,6 +1,5 @@
 #pragma once
 
-#include "str.h"
 #include "sys-types.h"
 #if defined(AUTO_TRACE)
 #define SPALL_AUTO_IMPLEMENTATION
