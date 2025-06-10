@@ -1,6 +1,6 @@
 #include "queue.h"
 #include "sys-log.h"
-#include "sys-assert.h"
+#include "dbg.h"
 #include "sys-utils.h"
 
 void

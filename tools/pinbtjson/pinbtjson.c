@@ -7,11 +7,11 @@
 #include "pinb/pinb-ser.h"
 #include "poly.h"
 #include "serialize/serialize.h"
-#include "sys-assert.h"
 #include "sys-log.h"
 #include "sys.h"
 #include "tools/png/png.h"
 #include "tools/wav/wav.h"
+#include "dbg.h"
 
 struct pinbtjson_res
 pinbtjson_handle_flip(str8 json, jsmntok_t *tokens, i32 index)

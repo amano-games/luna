@@ -4,7 +4,7 @@
 #include "sys-io.h"
 #include "sys-types.h"
 #include "str.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 bool32
 json_load(const str8 path, struct alloc alloc, str8 *out)

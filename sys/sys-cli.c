@@ -2,10 +2,10 @@
 
 #include "whereami.h"
 
-#include "sys-assert.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys.h"
+#include "dbg.h"
 
 #define SOKOL_LOG_IMPL
 #include "sokol/sokol_log.h"
@@ -21,9 +21,9 @@ sys_log(
 {
 	if(log_level <= SYS_LOG_LEVEL) {
 #if defined DEBUG
-    const char * fn = filename;
+		const char *fn = filename;
 #else
-    const char * fn = NULL;
+		const char *fn = NULL;
 #endif
 		slog_func(tag, log_level, log_item, msg, line_nr, fn, NULL);
 	}

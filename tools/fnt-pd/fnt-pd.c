@@ -9,7 +9,6 @@
 #include "sys-types.h"
 #include "sys-utils.h"
 #include "sys.h"
-#include "sys-assert.h"
 #include "str.h"
 #include <jsmn.h>
 #include <tinydir.h>

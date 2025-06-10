@@ -10,10 +10,10 @@
 #include "str.h"
 #include "sys-io.h"
 #include "sys-log.h"
-#include "sys-assert.h"
 #include "sys-types.h"
 #include "sys-utils.h"
 #include "sys.h"
+#include "dbg.h"
 
 #define AI_FILE_EXT "bet"
 

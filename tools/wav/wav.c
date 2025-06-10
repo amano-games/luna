@@ -1,8 +1,8 @@
 #include "wav.h"
 #include "audio/adpcm.h"
+#include "dbg.h"
 #include "path.h"
 #include "str.h"
-#include "sys-assert.h"
 #include "sys.h"
 #include "tools/utils.h"
 #include <stdio.h>
@@ -135,7 +135,7 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 
 				num_samples = chunk_header.chunk_size / wave_header.block_align;
 			} else {
-				NOT_IMPLEMENTED;
+				dbg_not_implemeneted("snd-gen");
 				// TODO: Handle adpcm?
 #if 0
 				u32 complete_blocks = chunk_header.chunk_size / wave_header.block_align;
@@ -238,8 +238,11 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 		log_info("snd-gen", "%s -> %s", in_file_path.str, out_file_path.str);
 
 	} else {
-		NOT_IMPLEMENTED;
+		dbg_not_implemeneted("snd-gen");
 	}
 
 	return 1;
+
+error:
+	return -1;
 }

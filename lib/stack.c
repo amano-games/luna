@@ -1,6 +1,6 @@
 #include "stack.h"
 #include "sys-log.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 void
 stack_u8_init(struct stack_u8 *stack)

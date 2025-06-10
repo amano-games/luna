@@ -1,9 +1,9 @@
 #include "path.h"
 #include "link_list.h"
 #include "str.h"
-#include "sys-assert.h"
 #include "sys-io.h"
 #include "sys-types.h"
+#include "dbg.h"
 
 // TODO: accept OS enum
 str_match_flags
