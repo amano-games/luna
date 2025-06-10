@@ -13,6 +13,28 @@ struct pinb_message pinb_message_read(struct ser_reader *r, struct ser_value obj
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_animator pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 
+static inline void
+pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity)
+{
+	ser_write_string(w, str8_lit("spr"));
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("path"));
+	ser_write_string(w, entity.spr.path);
+	ser_write_string(w, str8_lit("flip"));
+	ser_write_i32(w, entity.spr.flip);
+	ser_write_string(w, str8_lit("layer"));
+	ser_write_i32(w, entity.spr.layer);
+
+	ser_write_string(w, str8_lit("offset"));
+	ser_write_array(w);
+	ser_write_f32(w, entity.spr.offset.x);
+	ser_write_f32(w, entity.spr.offset.y);
+	ser_write_end(w);
+
+	ser_write_end(w);
+}
+
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 {
@@ -23,29 +45,32 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_i32(w, entity.x);
 	ser_write_string(w, str8_lit("y"));
 	ser_write_i32(w, entity.y);
+
 	if(entity.spr.path.size > 0) {
-		ser_write_string(w, str8_lit("spr"));
-		ser_write_object(w);
-
-		ser_write_string(w, str8_lit("path"));
-		ser_write_string(w, entity.spr.path);
-		ser_write_string(w, str8_lit("flip"));
-		ser_write_i32(w, entity.spr.flip);
-		ser_write_string(w, str8_lit("layer"));
-		ser_write_i32(w, entity.spr.layer);
-
-		ser_write_string(w, str8_lit("offset"));
-		ser_write_array(w);
-		ser_write_f32(w, entity.spr.offset.x);
-		ser_write_f32(w, entity.spr.offset.y);
-		ser_write_end(w);
-
-		ser_write_end(w);
+		pinb_entity_spr_write(w, entity);
 	}
 
 	if(entity.body.shapes.count > 0) {
 		ser_write_string(w, str8_lit("body"));
 		body_write(w, entity.body);
+	}
+
+	if(entity.sensor.shapes.count > 0) {
+		ser_write_string(w, str8_lit("sensor"));
+
+		ser_write_object(w);
+
+		ser_write_string(w, str8_lit("is_enabled"));
+		ser_write_i32(w, entity.sensor.is_enabled);
+		ser_write_string(w, str8_lit("shapes"));
+
+		ser_write_array(w);
+		for(size i = 0; i < entity.sensor.shapes.count; ++i) {
+			col_shape_write(w, entity.sensor.shapes.items[i]);
+		}
+		ser_write_end(w);
+
+		ser_write_end(w);
 	}
 
 	if(entity.reactive_impulse.magnitude != 0) {
@@ -280,6 +305,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 			ser_write_string(w, str8_lit("len"));
 			ser_write_i32(w, entity.animator.transitions.len);
 			ser_write_string(w, str8_lit("items"));
+
 			ser_write_array(w);
 			for(size i = 0; i < entity.animator.transitions.len; ++i) {
 				ser_write_array(w);
@@ -429,24 +455,6 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
-	if(entity.sensor.shapes.count > 0) {
-		ser_write_string(w, str8_lit("sensor"));
-
-		ser_write_object(w);
-
-		ser_write_string(w, str8_lit("is_enabled"));
-		ser_write_i32(w, entity.sensor.is_enabled);
-		ser_write_string(w, str8_lit("shapes"));
-
-		ser_write_array(w);
-		for(size i = 0; i < entity.sensor.shapes.count; ++i) {
-			col_shape_write(w, entity.sensor.shapes.items[i]);
-		}
-		ser_write_end(w);
-
-		ser_write_end(w);
-	}
-
 	if(entity.switch_value.is_enabled) {
 		ser_write_string(w, str8_lit("switch_value"));
 		ser_write_object(w);
@@ -524,6 +532,7 @@ pinb_write(struct ser_writer *w, struct pinb_table pinb)
 	i32 res = 0;
 	ser_write_object(w);
 
+	assert(pinb.version == 1);
 	ser_write_string(w, str8_lit("version"));
 	ser_write_i32(w, pinb.version);
 
@@ -977,6 +986,7 @@ pinb_read(
 			assert(value.type == SER_TYPE_I32);
 			assert(value.i32 > 0);
 			table->version = value.i32;
+			assert(table->version == 1);
 		} else if(str8_match(key.str, str8_lit("props"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
 			table->props = pinb_table_props_read(r, value);

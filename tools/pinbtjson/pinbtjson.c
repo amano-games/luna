@@ -1033,6 +1033,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 		if(json_eq(json, key, str8_lit("version")) == 0) {
 			assert(value->type == JSMN_PRIMITIVE);
 			res.version = json_parse_i32(json, value);
+			assert(res.version == 1);
 			++i;
 		} else if(json_eq(json, key, str8_lit("props")) == 0) {
 			assert(value->type == JSMN_OBJECT);
