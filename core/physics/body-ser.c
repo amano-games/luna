@@ -1,4 +1,5 @@
 #include "body-ser.h"
+#include "dbg.h"
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
@@ -204,10 +205,14 @@ col_shape_write(struct ser_writer *w, struct col_shape col_shape)
 		ser_write_end(w);
 	} break;
 	default: {
-		BAD_PATH;
+		dbg_sentinel("col");
 	} break;
 	}
 	ser_write_end(w);
+
+error:
+	ser_write_end(w);
+	return;
 }
 
 struct col_shape

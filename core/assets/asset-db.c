@@ -75,10 +75,7 @@ asset_db_path_push(struct asset_db *db, str8 path)
 	usize table_cap          = arr_cap(table->data);
 
 	// Can we add the string?
-	if(table_len + path.size > table_cap) {
-		BAD_PATH;
-		return (str8){0}; // out of memory
-	}
+	dbg_check(table_len + path.size <= table_cap, "AssetsDB", "Out of memory");
 
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
@@ -98,6 +95,9 @@ asset_db_path_push(struct asset_db *db, str8 path)
 	arr_push(table->arr, res);
 
 	return res;
+
+error:
+	return (struct str8){0};
 }
 
 str8
@@ -117,11 +117,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 	usize table_cap         = arr_cap(table->arr);
 
 	// Can we add the string?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return 0;
-	}
-
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex");
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
 	bool32 has_key = value != 0;
@@ -134,6 +130,9 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 		arr_push(table->arr, tex);
 		return value;
 	}
+
+error:
+	return 0;
 }
 
 struct tex
@@ -171,10 +170,7 @@ asset_db_tex_info_push(struct asset_db *db, str8 path, struct tex_info info)
 	usize table_cap              = arr_cap(table->arr);
 
 	// Can we add the string?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return 0;
-	}
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex info");
 
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
@@ -188,6 +184,9 @@ asset_db_tex_info_push(struct asset_db *db, str8 path, struct tex_info info)
 		arr_push(table->arr, info);
 		return value;
 	}
+
+error:
+	return 0;
 }
 
 struct tex_info
@@ -244,10 +243,7 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 	usize table_cap               = arr_cap(table->arr);
 
 	// Can we add the item?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return 0;
-	}
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Cant push animation slice");
 
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
@@ -261,6 +257,9 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 		arr_push(table->arr, slice);
 		return value;
 	}
+
+error:
+	return 0;
 }
 
 struct animation_slice
@@ -282,10 +281,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	usize table_cap         = arr_cap(table->arr);
 
 	// Can we add the item?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return 0;
-	}
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add snd");
 
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
@@ -300,6 +296,9 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 		return value;
 	}
 	TRACE_END();
+
+error:
+	return 0;
 }
 
 struct snd
@@ -340,10 +339,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 	usize table_cap         = arr_cap(table->arr);
 
 	// Can we add the item?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return 0;
-	}
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add fnt");
 
 	u64 key        = hash_string(path);
 	u32 value      = ht_get_u32(&table->ht, key);
@@ -357,6 +353,9 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 		arr_push(table->arr, fnt);
 		return value;
 	}
+
+error:
+	return 0;
 }
 
 struct fnt
@@ -399,10 +398,7 @@ asset_db_bet_load(
 	usize table_cap         = arr_cap(table->arr);
 
 	// Can we add the item?
-	if(table_len + 1 > table_cap) {
-		BAD_PATH;
-		return (struct asset_bet_handle){0};
-	}
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push bet");
 
 	u64 key         = hash_string(path);
 	u32 value       = ht_get_u32(&table->ht, key);
@@ -419,6 +415,9 @@ asset_db_bet_load(
 		arr_push(table->arr, asset_bet);
 		return (struct asset_bet_handle){.id = value};
 	}
+
+error:
+	return (struct asset_bet_handle){0};
 }
 
 struct asset_bet_handle

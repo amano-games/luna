@@ -1,9 +1,7 @@
 #include "sys.h"
-#include "mem-arena.h"
-#include "str.h"
 #include "sys-font.h"
 #include "sys-log.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 #if !defined(SYS_SHOW_FPS)
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
@@ -37,24 +35,23 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 	struct sys_mem *sys_mem = &SYS.mem;
 	usize mem_total         = permanent + transient + debug;
 
-	if(mem_total > mem_max) {
-		log_error(
-			"Sys",
-			"Not enough sys memory | asked:%u kb available:%u kb missing:%u kb",
-			(uint)mem_total / 1024,
-			(uint)mem_max / 1024,
-			(uint)((mem_total - mem_max) / 1024));
-		BAD_PATH;
-		return res;
-	}
 	assert(mem_total <= mem_max);
+	dbg_check(
+		mem_total <= mem_max,
+		"Sys",
+		"Not enough sys memory | asked:%u kb available:%u kb missing:%u kb",
+		(uint)mem_total / 1024,
+		(uint)mem_max / 1024,
+		(uint)((mem_total - mem_max) / 1024));
+
 	sys_mem->app_mem.size   = permanent + transient + debug;
 	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
 
-	if(sys_mem->app_mem.buffer == NULL) {
-		log_error("Sys", "Failed to reserve app memory %u kb", (uint)sys_mem->app_mem.size / 1024);
-		return res;
-	}
+	dbg_check(
+		sys_mem->app_mem.buffer != NULL,
+		"Sys",
+		"Failed to reserve app memory %u kb",
+		(uint)sys_mem->app_mem.size / 1024);
 
 	res.permanent.size   = permanent;
 	res.transient.size   = transient;
@@ -71,6 +68,12 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 		mclr(res.debug.buffer, res.debug.size);
 	}
 	return res;
+
+error:
+	if(sys_mem->app_mem.buffer != NULL) {
+		sys_free(sys_mem->app_mem.buffer);
+	}
+	return (struct app_mem){0};
 }
 
 void

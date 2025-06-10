@@ -2,7 +2,7 @@
 
 #include "mathfunc.h"
 #include "poly.h"
-#include "sys-assert.h"
+#include "dbg.h"
 #include "sys-types.h"
 #include "v2.h"
 
@@ -24,7 +24,7 @@ body_init(struct body *body)
 		case COL_TYPE_CAPSULE:
 			break;
 		default:
-			BAD_PATH;
+			dbg_sentinel("body");
 		}
 	}
 
@@ -39,6 +39,9 @@ body_init(struct body *body)
 	} else {
 		body->inertia_inv = 0.0f;
 	}
+
+error:
+	return;
 }
 
 void

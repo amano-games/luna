@@ -5,7 +5,6 @@
 
 #include "assets/assets.h"
 #include "trace.h"
-#include "sys-assert.h"
 
 void animator_set_animation(struct animator *animator, usize index);
 

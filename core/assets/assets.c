@@ -1,11 +1,11 @@
 #include "assets.h"
 #include "assets/asset-db.h"
+#include "dbg.h"
 #include "fnt/fnt.h"
 #include "audio/audio.h"
 #include "gfx/gfx.h"
 #include "mem-arena.h"
 #include "sys-log.h"
-#include "sys-assert.h"
 #include "str.h"
 #include "sys-types.h"
 
@@ -25,16 +25,17 @@ asset_allocf(void *ctx, usize s)
 {
 	struct assets *assets = (struct assets *)ctx;
 	void *mem             = marena_alloc(&assets->marena, s);
-	if(!mem) {
-		usize left  = marena_size_rem(&ASSETS.marena);
-		usize total = assets->marena.buf_size;
-		usize used  = total - left;
-		log_error("Assets", "Ran out of asset mem! requested: %u kb", (uint)s / 1024);
-		log_error("Assets", "MEM: used: %u kb left: %u kb total: %u kb", (uint)used / 1024, (uint)left / 1024, (uint)total / 1024);
-		BAD_PATH
-	}
-
+	dbg_check_mem(mem != NULL, "Assets");
 	return mem;
+
+error: {
+	usize left  = marena_size_rem(&ASSETS.marena);
+	usize total = assets->marena.buf_size;
+	usize used  = total - left;
+	log_error("Assets", "Ran out of asset mem! requested: %u kb", (uint)s / 1024);
+	log_error("Assets", "MEM: used: %u kb left: %u kb total: %u kb", (uint)used / 1024, (uint)left / 1024, (uint)total / 1024);
+	assert(0);
+}
 }
 
 struct tex

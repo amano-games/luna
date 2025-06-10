@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sys-assert.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys-types.h"

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dbg.h"
 #include "mathfunc.h"
 
 enum ui_cut_side {
@@ -88,10 +89,12 @@ ui_rect_cut(struct ui_cut ui_cut, i32 a)
 	case UI_CUT_TOP: return ui_cut_top(ui_cut.rect, a);
 	case UI_CUT_BOTTOM: return ui_cut_bottom(ui_cut.rect, a);
 	default: {
-		BAD_PATH;
-		return (struct ui_rec){0};
+		dbg_sentinel("ui");
 	}
 	}
+
+error:
+	return (struct ui_rec){0};
 }
 
 struct v2_i32

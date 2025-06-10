@@ -1,14 +1,14 @@
 
 #include "mathfunc.h"
 #include "str.h"
-#include "sys-debug.h"
+#include "sys-debug-draw.h"
 #include "sys-scoreboards.h"
 #include "sys.h"
 #include "sys-types.h"
 #include "sys-log.h"
 #include "sys-io.h"
 #include "sys-input.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 PlaydateAPI *PD;
 
@@ -578,22 +578,22 @@ pd_scores_start_next(void)
 		PD_GET_PERSONAL_BEST((const char *)req->personal_best.board_id.str, pd_personal_best_get_callback);
 	} break;
 	default: {
-		BAD_PATH;
+		dbg_sentinel("sys-scores");
 	} break;
 	}
+
+error:
+	assert(0);
 }
 
 int
 sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
 {
-	if(value == 0) { return -1; }
+	dbg_check(value != 0, "sys-scores", "Submited value of 0");
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-	if(next == state->start) {
-		BAD_PATH;
-		return -1; // Queue full
-	}
 
+	dbg_check(next != state->start, "sys-scores", "Queue Full");
 	assert(state->start < ARRLEN(state->reqs));
 	assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req = state->reqs + state->end;
@@ -610,6 +610,9 @@ sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *
 	if(!state->busy) { pd_scores_start_next(); }
 
 	return 0;
+
+error:
+	return -1;
 }
 
 void
@@ -664,11 +667,8 @@ sys_scores_get(
 {
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-	if(next == state->start) {
-		BAD_PATH;
-		return -1; // Queue full
-	}
 
+	dbg_check(next != state->start, "sys-scores", "Queue Full");
 	assert(state->start < ARRLEN(state->reqs));
 	assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req = state->reqs + state->end;
@@ -684,6 +684,9 @@ sys_scores_get(
 	if(!state->busy) { pd_scores_start_next(); }
 
 	return 0;
+
+error:
+	return -1;
 }
 
 void
@@ -745,11 +748,8 @@ sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, vo
 {
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-	if(next == state->start) {
-		BAD_PATH;
-		return -1; // Queue full
-	}
 
+	dbg_check(next != state->start, "sys-scores", "Queue Full");
 	assert(state->start < ARRLEN(state->reqs));
 	assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req   = state->reqs + state->end;
@@ -764,6 +764,9 @@ sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, vo
 	if(!state->busy) { pd_scores_start_next(); }
 
 	return 0;
+
+error:
+	return -1;
 }
 
 void

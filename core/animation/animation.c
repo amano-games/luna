@@ -1,9 +1,8 @@
 #include "animation.h"
 
-#include "sys-log.h"
 #include "sys-types.h"
 #include "sys-utils.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 #include "mathfunc.h"
 

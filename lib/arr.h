@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mem.h"
-#include "sys-assert.h"
+#include "dbg.h"
 #include "sys-types.h"
 
 // https://ruby0x1.github.io/machinery_blog_archive/post/minimalist-container-library-in-c-part-1/index.html
@@ -47,7 +47,8 @@ void *
 arr_grow(void *a, usize size)
 {
 	// TODO: arr_ini if it's null else bat path
-	BAD_PATH
+	dbg_sentinel("arr");
+error:
 	return NULL;
 }
 
