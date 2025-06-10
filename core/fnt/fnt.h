@@ -1,8 +1,8 @@
 #pragma once
 
-#include "gfx/gfx.h"
 #include "serialize/serialize.h"
 #include "sys-types.h"
+#include "tex/tex.h"
 
 #define FNT_CHAR_MAX       256
 #define FNT_KERN_PAIRS_MAX U16_MAX

@@ -272,11 +272,9 @@ SOKOL_API_IMPL void slog_func(const char* tag, uint32_t log_level, uint32_t log_
     str = _slog_append("[", str, end);
     str = _slog_append(log_level_str, str, end);
     str = _slog_append("]", str, end);
-    if(log_item != 0){
-      str = _slog_append("[id:", str, end);
-      str = _slog_append(_slog_itoa(log_item, num_buf, sizeof(num_buf)), str, end);
-      str = _slog_append("]", str, end);
-    }
+    str = _slog_append("[id:", str, end);
+    str = _slog_append(_slog_itoa(log_item, num_buf, sizeof(num_buf)), str, end);
+    str = _slog_append("]", str, end);
     // if a filename is provided, build a clickable log message that's compatible with compiler error messages
     if (filename) {
         str = _slog_append(" ", str, end);
@@ -300,8 +298,7 @@ SOKOL_API_IMPL void slog_func(const char* tag, uint32_t log_level, uint32_t log_
         str = _slog_append("] ", str, end);
     }
     if (message) {
-        // str = _slog_append("\n\t", str, end);
-        str = _slog_append("", str, end);
+        str = _slog_append("\n\t", str, end);
         str = _slog_append(message, str, end);
     }
     str = _slog_append("\n\n", str, end);
