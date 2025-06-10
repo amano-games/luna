@@ -24,10 +24,9 @@
 	} while(0);
 
 // https://learncodethehardway.com/client/#/lesson/9725/learn-c-the-hard-way-lesson-exercise-19-zeds-awesome-debug-macros/
-// https://stackoverflow.com/questions/5588855/standard-alternative-to-gccs-va-args-trick
-#define dbg_check(A, T, M, ...) \
+#define dbg_check(A, ...) \
 	if(!(A)) { \
-		log_error(T, M __VA_OPT__(, ) __VA_ARGS__); \
+		log_error(__VA_ARGS__); \
 		assert(0); \
 		goto error; \
 	}
