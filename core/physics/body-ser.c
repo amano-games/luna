@@ -208,7 +208,9 @@ col_shape_write(struct ser_writer *w, struct col_shape col_shape)
 		dbg_sentinel("col");
 	} break;
 	}
+
 	ser_write_end(w);
+	return;
 
 error:
 	ser_write_end(w);
