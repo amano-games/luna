@@ -23,14 +23,6 @@
 		goto error; \
 	} while(0);
 
-#if 0
-#define dbg_bad_path(T) \
-	do { \
-		log_error(T, "+++ BAD PATH +++ " FILE_AND_LINE); \
-		assert(0); \
-	} while(0);
-#endif
-
 // https://learncodethehardway.com/client/#/lesson/9725/learn-c-the-hard-way-lesson-exercise-19-zeds-awesome-debug-macros/
 #define dbg_check(A, T, M, ...) \
 	if(!(A)) { \
@@ -40,10 +32,10 @@
 	}
 
 #define dbg_sentinel(T) \
-	{ \
+	do { \
 		log_error(T, "+++ BAD PATH +++"); \
 		assert(0); \
 		goto error; \
-	}
+	} while(0);
 
 #define dbg_check_mem(A, T) dbg_check((A), (T), "Out of memory.")
