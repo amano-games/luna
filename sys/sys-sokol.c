@@ -8,12 +8,11 @@
 #include "gfx/gfx-defs.h"
 #include "str.h"
 #include "sys-utils.h"
-#include "sys-assert.h"
-#include "sys-debug.h"
 #include "sys-input.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys.h"
+#include "dbg.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 

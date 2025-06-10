@@ -5,6 +5,8 @@
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
+#include "sys-log.h"
+#include "dbg.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
