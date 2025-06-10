@@ -3,7 +3,7 @@
 #include "mem.h"
 #include "rndm.h"
 #include "sys-types.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 void bet_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
@@ -80,14 +80,14 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				continue;
 			} break;
 			case BET_NODE_ACTION: {
-				if(curr_ctx->res == BET_RES_RUNNING) { BAD_PATH; }
+				if(curr_ctx->res == BET_RES_RUNNING) { dbg_sentinel("bet"); }
 				if(ctx->action_init != NULL) {
 					ctx->action_init(bet, ctx, curr_node, userdata);
 				}
 				continue;
 			} break;
 			default: {
-				BAD_PATH;
+				dbg_sentinel("bet");
 			} break;
 			}
 		}
@@ -161,7 +161,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				}
 			} break;
 			default: {
-				BAD_PATH;
+				dbg_sentinel("bet");
 			} break;
 			}
 
@@ -182,12 +182,13 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 			bet_set_child(bet, ctx, curr_index, i);
 		} break;
 		default: {
-			BAD_PATH;
+			dbg_sentinel("bet");
 		} break;
 		}
 	}
 
-	BAD_PATH;
+error:
+	assert(0);
 	return res;
 }
 
@@ -364,9 +365,12 @@ bet_deco_tick(
 		bet_set_child(bet, ctx, node_index, i);
 	} break;
 	default: {
-		NOT_IMPLEMENTED;
+		dbg_sentinel("bet");
 	} break;
 	}
+
+error:
+	return;
 }
 
 enum bet_res
@@ -458,7 +462,7 @@ bet_deco_end(
 		} else if(*res == BET_RES_FAILURE) {
 			*res = BET_RES_SUCCESS;
 		} else {
-			BAD_PATH;
+			dbg_sentinel("bet");
 		}
 	} break;
 	case BET_DECO_FAILURE: {
@@ -493,9 +497,12 @@ bet_deco_end(
 		}
 	} break;
 	default: {
-		NOT_IMPLEMENTED;
+		dbg_not_implemeneted("bet");
 	} break;
 	}
+
+error:
+	assert(0);
 }
 
 static inline void

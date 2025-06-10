@@ -4,7 +4,7 @@
 
 #include "mem.h"
 #include "sys-types.h"
-#include "sys-assert.h"
+#include "dbg.h"
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)

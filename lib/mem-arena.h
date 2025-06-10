@@ -1,9 +1,9 @@
 #pragma once
 
 #include "mem.h"
-#include "sys-assert.h"
 #include "sys-log.h"
 #include "sys-types.h"
+#include "dbg.h"
 
 struct marena {
 	void *buf_og;
@@ -27,13 +27,11 @@ marena_alloc_func(void *ctx, usize s)
 {
 	struct marena *arena = (struct marena *)ctx;
 	void *mem            = marena_alloc(arena, s);
-
-	if(!mem) {
-		sys_printf("Ran out of arena mem!\n");
-		BAD_PATH
-	}
-
+	dbg_check(mem, "marena", "Ran out of arena mem!");
 	return mem;
+
+error:
+	return NULL;
 }
 
 struct alloc

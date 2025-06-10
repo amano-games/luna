@@ -156,10 +156,13 @@ aud_cmds_flush(void)
 			AUDIO.lowpass               = cmd->v;
 		} break;
 		default: {
-			NOT_IMPLEMENTED;
+			dbg_not_implemeneted("Audio");
 		} break;
 		}
 	}
+
+error:
+	return;
 }
 // Called by gameplay thread/context
 static void

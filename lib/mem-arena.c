@@ -1,15 +1,11 @@
 #include "mem.h"
-#include "sys-assert.h"
-#include "sys-log.h"
+#include "dbg.h"
 #include "mem-arena.h"
 
 void
 marena_init(struct marena *m, void *buf, usize bufsize)
 {
-	if(buf == NULL) {
-		log_error("Mem", "Can't initialize memory arena: address is 0");
-		BAD_PATH;
-	}
+	dbg_check_mem(buf, "Marena");
 	mspan sp    = {buf, bufsize};
 	sp          = mspan_align(sp);
 	m->buf_og   = buf;
@@ -17,6 +13,10 @@ marena_init(struct marena *m, void *buf, usize bufsize)
 	m->buf_size = sp.size;
 
 	marena_reset(m);
+	return;
+
+error:
+	return;
 }
 
 void *

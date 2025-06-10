@@ -2,7 +2,7 @@
 
 #include "arr.h"
 #include "v2.h"
-#include "sys-debug.h"
+#include "sys-debug-draw.h"
 
 void
 debug_draw_init(void *mem, usize size)

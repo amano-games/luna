@@ -1,4 +1,5 @@
 #include "rndm.h"
+#include "dbg.h"
 #include "sys-log.h"
 #include "sys.h"
 #include "v2.h"
@@ -90,7 +91,8 @@ rndm_weighted_choice_i32(struct rndm_weighted_choice *choices, usize count)
 		rnd = rnd - choices[i].value;
 	}
 
-	BAD_PATH;
+	dbg_sentinel("rndm");
+error:
 	return 0;
 }
 

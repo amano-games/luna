@@ -3,7 +3,6 @@
 #include <math.h>
 
 #include "sys-types.h"
-#include "sys-assert.h"
 #include "sys-utils.h"
 
 #define PI_FLOAT    3.1415927f

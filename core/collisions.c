@@ -1,6 +1,6 @@
 #include "collisions.h"
 
-#include "sys-assert.h"
+#include "dbg.h"
 #include "sys-types.h"
 
 #include "trace.h"
@@ -298,7 +298,7 @@ col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
 struct col_toi
 col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 {
-	BAD_PATH;
+	dbg_sentinel("col");
 	c2Circle c2a   = cir_to_c2cir(a);
 	c2v c2va       = v2_to_c2v(va);
 	C2_TYPE type_b = C2_TYPE_POLY;
@@ -318,7 +318,7 @@ col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 		c2b    = (void *)&c2_cir;
 	} break;
 	case COL_TYPE_POLY: {
-		NOT_IMPLEMENTED;
+		dbg_not_implemeneted("col");
 	} break;
 	default: {
 		assert(false);
@@ -339,6 +339,9 @@ col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 	c2toi_to_toi(&res, &toi);
 
 	return toi;
+
+error:
+	return (struct col_toi){0};
 }
 
 void
@@ -541,8 +544,11 @@ col_shape_get_bounding_box(struct col_shape shape)
 		res = col_capsule_get_bounding_box(shape.capsule);
 	} break;
 	default: {
-		BAD_PATH;
+		dbg_sentinel("col");
 	}
 	}
 	return res;
+
+error:
+	return (struct col_aabb){0};
 }
