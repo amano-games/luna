@@ -52,6 +52,7 @@ struct pinb_attractor {
 struct pinb_spr {
 	str8 path;
 	i32 flip;
+	i32 layer;
 	v2 offset;
 };
 

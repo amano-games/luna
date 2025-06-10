@@ -31,6 +31,9 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_string(w, entity.spr.path);
 		ser_write_string(w, str8_lit("flip"));
 		ser_write_i32(w, entity.spr.flip);
+		ser_write_string(w, str8_lit("layer"));
+		ser_write_i32(w, entity.spr.layer);
+
 		ser_write_string(w, str8_lit("offset"));
 		ser_write_array(w);
 		ser_write_f32(w, entity.spr.offset.x);
@@ -572,6 +575,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				} else if(str8_match(spr_key.str, str8_lit("flip"), 0)) {
 					assert(spr_value.type == SER_TYPE_I32);
 					res.spr.flip = spr_value.i32;
+				} else if(str8_match(spr_key.str, str8_lit("layer"), 0)) {
+					assert(spr_value.type == SER_TYPE_I32);
+					res.spr.layer = spr_value.i32;
 				} else if(str8_match(spr_key.str, str8_lit("offset"), 0)) {
 					assert(spr_value.type == SER_TYPE_ARRAY);
 					struct ser_value offset_value;
