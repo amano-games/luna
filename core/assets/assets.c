@@ -34,7 +34,7 @@ error: {
 	usize used  = total - left;
 	log_error("Assets", "Ran out of asset mem! requested: %u kb", (uint)s / 1024);
 	log_error("Assets", "MEM: used: %u kb left: %u kb total: %u kb", (uint)used / 1024, (uint)left / 1024, (uint)total / 1024);
-	assert(0);
+	return NULL;
 }
 }
 
