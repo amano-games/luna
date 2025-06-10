@@ -7,6 +7,7 @@
 #include "sys-log.h"
 #include "sys-assert.h"
 #include "str.h"
+#include "sys-types.h"
 
 void *asset_allocf(void *ctx, usize s);
 
@@ -90,17 +91,20 @@ asset_fnt_get_id(str8 path)
 i32
 asset_fnt_load(str8 path, struct fnt *fnt)
 {
+	sys_printf("Assets fnt load %s", path.str);
 	i32 res = 0;
 
-	usize size           = MKILOBYTE(200);
-	void *mem            = ASSETS.alloc.allocf(ASSETS.alloc.ctx, MKILOBYTE(200));
+	usize size = MKILOBYTE(200);
+	void *mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size);
+	mclr(mem, size);
 	struct marena marena = {0};
 	struct alloc alloc   = {0};
 	marena_init(&marena, mem, size);
 	alloc = marena_allocator(&marena);
 
-	usize size_scratch           = MKILOBYTE(200);
-	void *mem_scratch            = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch);
+	usize size_scratch = MKILOBYTE(200);
+	void *mem_scratch  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch);
+	mclr(mem_scratch, size_scratch);
 	struct marena marena_scratch = {0};
 	struct alloc scratch         = {0};
 	marena_init(&marena_scratch, mem_scratch, size_scratch);
@@ -116,6 +120,7 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 
 	mclr(marena.p, size_scratch);
 	marena_reset_to(&ASSETS.marena, marena.p);
+	sys_printf(FILE_AND_LINE);
 	return res;
 }
 

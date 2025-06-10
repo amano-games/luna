@@ -59,13 +59,12 @@ typedef ptrdiff_t size;
 #define F32_MAX FLT_MAX
 #define F32_MIN FLT_MIN
 
-#define mset            memset
-#define mcpy            memcpy
-#define mmov            memmove
-#define mclr(DST, SIZE) mset(DST, 0, SIZE)
-#define mclr_struct(s)  mclr((s), sizeof(*(s)))
-#define mclr_array(a)   mclr((a), sizeof(a))
-
+#define mset              memset
+#define mcpy              memcpy
+#define mmov              memmove
+#define mclr(DST, SIZE)   mset(DST, 0, SIZE)
+#define mclr_struct(s)    mclr((s), sizeof(*(s)))
+#define mclr_array(a)     mclr((a), sizeof(a))
 #define mcpy_struct(d, s) mcpy((d), (s), sizeof(*(d)))
 #define mcpy_array(d, s)  mcpy((d), (s), sizeof(d))
 

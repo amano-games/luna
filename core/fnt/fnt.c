@@ -4,6 +4,7 @@
 #include "mathfunc.h"
 #include "serialize/serialize.h"
 #include "str.h"
+#include "sys-log.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
@@ -162,15 +163,26 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 struct fnt
 fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
-	struct fnt res = {0};
-	str8 fnt_ext   = str8_lit(".fnt");
+	struct fnt res       = {0};
+	str8 fnt_ext         = str8_lit(".fnt");
+	size widths_size     = FNT_CHAR_MAX;
+	size kern_pairs_size = FNT_KERN_PAIRS_MAX;
+	res.widths           = arr_ini(widths_size, sizeof(*res.widths), alloc);
+	res.kern_pairs       = arr_ini(kern_pairs_size, sizeof(*res.kern_pairs), alloc);
 
-	res.widths                      = arr_ini(FNT_CHAR_MAX, sizeof(*res.widths), alloc);
-	res.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*res.kern_pairs), alloc);
+	if(res.widths == NULL) {
+		log_error("fnt", "Failed to alloc widths array ");
+		return res;
+	}
+	if(res.widths == NULL) {
+		log_error("fnt", "Failed to alloc kern pairs array ");
+		return res;
+	}
+
 	arr_header(res.widths)->len     = arr_cap(res.widths);
 	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
-	mclr(res.widths, sizeof(*res.widths) * arr_len(res.widths));
-	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * arr_len(res.kern_pairs));
+	mclr(res.widths, sizeof(*res.widths) * widths_size);
+	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * kern_pairs_size);
 
 	assert(str8_ends_with(path, fnt_ext, 0));
 	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
@@ -178,6 +190,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 		log_error("fnt", "Failed loading info: %s", path.str);
 		return res;
 	}
+	sys_printf(FILE_AND_LINE);
 	char *data          = file_res.data;
 	usize size          = file_res.size;
 	struct ser_reader r = {
