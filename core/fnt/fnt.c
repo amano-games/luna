@@ -107,7 +107,7 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 	struct ser_value key, value;
 
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_check(key.type == SER_TYPE_STRING, "fnt", "Corrupt fnt data");
 		if(str8_match(key.str, str8_lit("tracking"), 0)) {
 			fnt->tracking = value.i32;
 		} else if(str8_match(key.str, str8_lit("grid_w"), 0)) {
@@ -137,8 +137,7 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 			struct ser_value item_val;
 			usize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
-				fnt->widths[i] = item_val.u8;
-				i++;
+				fnt->widths[i++] = item_val.u8;
 			}
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
 			struct ser_value item_val;
@@ -160,6 +159,9 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 	}
 
 	return 1;
+
+error:
+	return -1;
 }
 
 struct fnt

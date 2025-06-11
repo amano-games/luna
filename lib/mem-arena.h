@@ -6,6 +6,9 @@
 #include "dbg.h"
 
 struct marena {
+#if defined DEBUG || 1
+	char *name;
+#endif
 	void *buf_og;
 	void *buf;
 	usize buf_size;
@@ -28,6 +31,11 @@ marena_alloc_func(void *ctx, usize s)
 	struct marena *arena = (struct marena *)ctx;
 	void *mem            = marena_alloc(arena, s);
 	dbg_check(mem, "marena", "Ran out of arena mem!");
+#if defined DEBUG || 1
+	if(arena->name != NULL) {
+		log_info("marena", "%s | Alloc: %d", arena->name, (int)s);
+	}
+#endif
 	return mem;
 
 error:
