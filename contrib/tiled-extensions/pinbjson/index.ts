@@ -47,6 +47,8 @@ import {
   Attractor,
   Bucket,
   CrankAnimation,
+  SpriteLayer,
+  LayerProps,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -156,7 +158,12 @@ function getSensor(object: MapObject, prop: PropertyValue) {
   return res;
 }
 
-function getSprite(object: MapObject, x: number, y: number) {
+function getSprite(
+  object: MapObject,
+  x: number,
+  y: number,
+  layerProps: LayerProps,
+) {
   if (!object.tile) {
     return undefined;
   }
@@ -172,10 +179,18 @@ function getSprite(object: MapObject, x: number, y: number) {
   let flip = 0;
   flip = flip | (object.tileFlippedHorizontally ? 1 : 0);
   flip = flip | (object.tileFlippedVertically ? 2 : 0);
+  const layer = layerProps.sprite_layer?.layer
+    ? layerProps.sprite_layer.layer
+    : 0;
+  const y_sort = layerProps.sprite_layer?.y_sort
+    ? layerProps.sprite_layer.y_sort
+    : false;
   const res = {
     path,
     flip,
     offset,
+    layer,
+    y_sort,
   } as Sprite;
   return res;
 }
@@ -452,13 +467,40 @@ function getAction(object: MapObject, key: string, prop: PropertyValue) {
   return res;
 }
 
-function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
+function getSpriteLayer(prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: SpriteLayer = {
+    layer: value["layer"].value,
+    y_sort: value["y_sort"],
+  };
+  return res;
+}
+
+function handleObjectLayer(layer: Layer, layer_index: number) {
   const res = [];
   if (!layer.isObjectLayer) {
     return res;
   }
 
-  return layer.objects
+  const layerProps: LayerProps = Object.entries(layer.properties()).reduce(
+    (acc, [_key, value]) => {
+      const prop = value as PropertyValue;
+      switch (prop.typeName) {
+        case "sprite_layer": {
+          return {
+            ...acc,
+            sprite_layer: getSpriteLayer(prop),
+          };
+        }
+      }
+      return acc;
+    },
+    {} as LayerProps,
+  );
+
+  const objectGroup = layer as ObjectGroup;
+
+  return objectGroup.objects
     .map((item) => {
       const [x, y] = getPos(item);
       const res: Entity = Object.entries(item.properties()).reduce(
@@ -520,6 +562,20 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
                 const spr = {
                   ...acc.spr,
                   offset: getSpriteOffset(item, prop),
+                };
+                return {
+                  ...acc,
+                  spr,
+                };
+              }
+              return acc;
+            case "sprite_layer":
+              const sprite_layer = getSpriteLayer(prop);
+              if (acc.spr != null) {
+                const spr = {
+                  ...acc.spr,
+                  layer: sprite_layer.layer,
+                  y_sort: sprite_layer.y_sort,
                 };
                 return {
                   ...acc,
@@ -673,7 +729,7 @@ function handleObjectLayer(layer: ObjectGroup, layer_index: number) {
           id: item.id,
           x,
           y,
-          spr: getSprite(item, x, y),
+          spr: getSprite(item, x, y, layerProps),
         } as Entity,
       );
       if (res == null) {
