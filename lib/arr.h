@@ -11,12 +11,14 @@ struct arr_header {
 	usize cap;
 };
 
-#define arr_header(a) ((a) ? (struct arr_header *)((char *)(a) - sizeof(struct arr_header)) : NULL)
-#define arr_pop(a)    ((a) ? (--arr_header(a)->len, (a)[arr_len(a)]) : (a)[0])
-#define arr_len(a)    ((a) ? arr_header(a)->len : 0)
-#define arr_cap(a)    ((a) ? arr_header(a)->cap : 0)
-#define arr_full(a)   ((a) ? arr_len(a) == arr_cap(a) : true)
-#define arr_reset(a)  ((a) ? arr_header(a)->len = 0 : 0)
+#define arr_new(a, c, m)     arr_ini((c), sizeof(*(a)), (m))
+#define arr_new_clr(a, c, m) arr_ini_clr((c), sizeof(*(a)), (m))
+#define arr_header(a)        ((a) ? (struct arr_header *)((char *)(a) - sizeof(struct arr_header)) : NULL)
+#define arr_pop(a)           ((a) ? (--arr_header(a)->len, (a)[arr_len(a)]) : (a)[0])
+#define arr_len(a)           ((a) ? arr_header(a)->len : 0)
+#define arr_cap(a)           ((a) ? arr_header(a)->cap : 0)
+#define arr_full(a)          ((a) ? arr_len(a) == arr_cap(a) : true)
+#define arr_reset(a)         ((a) ? arr_header(a)->len = 0 : 0)
 #define arr_push(a, item) \
 	arr_full(a) ? (a) = arr_grow(a, sizeof(*a)) : 0, (a)[arr_header(a)->len++] = item
 #define arr_clr(a) \
@@ -31,15 +33,34 @@ struct arr_header {
 	arr_full(a) ? (a) = arr_grow_packed(a, arr_len(a) + 1, sizeof(*a), alloc) : 0, (a)[arr_header(a)->len++] = item
 
 void *
-arr_ini(usize size, usize elem_size, struct alloc alloc)
+arr_ini(usize count, usize elem_size, struct alloc alloc)
 {
-	usize new_size            = sizeof(struct arr_header) + size * elem_size;
+	usize new_size            = sizeof(struct arr_header) + count * elem_size;
 	struct arr_header *header = alloc.allocf(alloc.ctx, new_size);
-	header->len               = 0;
-	header->cap               = size;
-	char *res                 = (char *)header + sizeof(struct arr_header);
-	struct arr_header *h      = arr_header(res);
+	dbg_check_mem(header, "arr");
+	header->len = 0;
+	header->cap = count;
+	char *res   = (char *)header + sizeof(struct arr_header);
 	return res;
+
+error:
+	return NULL;
+}
+
+void *
+arr_ini_clr(usize count, usize elem_size, struct alloc alloc)
+{
+	usize new_size            = sizeof(struct arr_header) + count * elem_size;
+	struct arr_header *header = alloc.allocf(alloc.ctx, new_size);
+	dbg_check_mem(header, "arr");
+	header->len = 0;
+	header->cap = count;
+	char *res   = (char *)header + sizeof(struct arr_header);
+	mclr(res, count * elem_size);
+	return res;
+
+error:
+	return NULL;
 }
 
 void *

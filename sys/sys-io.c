@@ -1,5 +1,5 @@
 #include "sys-io.h"
-#include "sys-log.h"
+#include "dbg.h"
 
 void *
 sys_file_open(str8 path, i32 sys_file_mode)
@@ -18,22 +18,18 @@ sys_load_full_file(str8 path, struct alloc alloc)
 	struct sys_full_file_res res = {0};
 	void *f                      = sys_file_open_r(path);
 
-	if(f == NULL) {
-		log_error("io", "failed to open file: %s", path.str);
-		return res;
-	}
+	dbg_check(f != NULL, "io", "Failed to open file %*.s", (int)path.size, path.str);
 
+	// Get file size
 	sys_file_seek_end(f, 0);
 	usize size = sys_file_tell(f);
 	sys_file_seek_set(f, 0);
+
+	// Alloc memory
 	void *data = alloc.allocf(alloc.ctx, size);
+	dbg_check(data != NULL, "io", "Failed alloc mem for: %*.s", (int)path.size, path.str);
 
-	if(!data) {
-		sys_file_close(f);
-		log_error("io", "failed to load %s", path.str);
-		return res;
-	}
-
+	// Read contents
 	sys_file_r(f, data, size);
 	sys_file_close(f);
 
@@ -41,6 +37,10 @@ sys_load_full_file(str8 path, struct alloc alloc)
 	res.size = size;
 
 	return res;
+
+error:
+	if(f != NULL) { sys_file_close(f); }
+	return (struct sys_full_file_res){0};
 }
 
 // usize

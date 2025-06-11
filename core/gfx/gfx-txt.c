@@ -1,5 +1,6 @@
 #include "gfx-txt.h"
 #include "gfx/gfx-spr.h"
+#include "dbg.h"
 
 void
 fnt_draw_str(
@@ -12,6 +13,8 @@ fnt_draw_str(
 	i32 leading,
 	i32 mode)
 {
+	assert(fnt.cell_h > 0);
+	assert(fnt.cell_w > 0);
 	v2_i32 p         = (v2_i32){x, y};
 	struct tex_rec t = {0};
 	t.t              = fnt.t;
