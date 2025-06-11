@@ -16,20 +16,19 @@ struct arr_header {
 #define arr_len(a)    ((a) ? arr_header(a)->len : 0)
 #define arr_cap(a)    ((a) ? arr_header(a)->cap : 0)
 #define arr_full(a)   ((a) ? arr_len(a) == arr_cap(a) : true)
-
-#define arr_clear(a) ((a) ? arr_header(a)->len = 0 : 0)
+#define arr_reset(a)  ((a) ? arr_header(a)->len = 0 : 0)
 #define arr_push(a, item) \
 	arr_full(a) ? (a) = arr_grow(a, sizeof(*a)) : 0, (a)[arr_header(a)->len++] = item
+#define arr_clr(a) \
+	do { \
+		if(a) { \
+			arr_header(a)->len = 0; \
+			mclr(a, sizeof(*(a)) * arr_cap(a)); \
+		} \
+	} while(0)
 
 #define arr_push_packed(a, item, alloc) \
 	arr_full(a) ? (a) = arr_grow_packed(a, arr_len(a) + 1, sizeof(*a), alloc) : 0, (a)[arr_header(a)->len++] = item
-
-void
-arr_zero(void *arr, usize size)
-{
-	usize count = arr_cap(arr);
-	mclr(arr, size * count);
-}
 
 void *
 arr_ini(usize size, usize elem_size, struct alloc alloc)

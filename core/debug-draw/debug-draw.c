@@ -14,7 +14,7 @@ debug_draw_init(void *mem, usize size)
 
 #if !defined(TARGET_PLAYDATE) && DEBUG
 	DEBUG_STATE.shapes = arr_ini(MAX_DEBUG_SHAPES, sizeof(struct debug_shape), DEBUG_STATE.alloc);
-	arr_clear(DEBUG_STATE.shapes);
+	arr_reset(DEBUG_STATE.shapes);
 #endif
 }
 
@@ -46,7 +46,7 @@ debug_draw_set_offset(i32 x, i32 y)
 void
 debug_draw_clear(void)
 {
-	arr_clear(DEBUG_STATE.shapes);
+	arr_reset(DEBUG_STATE.shapes);
 }
 void
 debug_draw_push_shape(struct debug_shape shape)
