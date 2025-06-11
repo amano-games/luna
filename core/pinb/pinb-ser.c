@@ -26,6 +26,8 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_i32(w, entity.spr.layer);
 	ser_write_string(w, str8_lit("y_sort"));
 	ser_write_i32(w, entity.spr.y_sort);
+	ser_write_string(w, str8_lit("y_sort_offset"));
+	ser_write_i32(w, entity.spr.y_sort_offset);
 
 	ser_write_string(w, str8_lit("offset"));
 	ser_write_array(w);
@@ -576,28 +578,31 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.y = value.i32;
 		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
 			assert(value.type == SER_TYPE_OBJECT);
-			struct ser_value spr_key, spr_value;
-			while(ser_iter_object(r, value, &spr_key, &spr_value)) {
-				assert(spr_key.type == SER_TYPE_STRING);
-				if(str8_match(spr_key.str, str8_lit("path"), 0)) {
-					assert(spr_value.type == SER_TYPE_STRING);
-					res.spr.path = spr_value.str;
-				} else if(str8_match(spr_key.str, str8_lit("flip"), 0)) {
-					assert(spr_value.type == SER_TYPE_I32);
-					res.spr.flip = spr_value.i32;
-				} else if(str8_match(spr_key.str, str8_lit("layer"), 0)) {
-					assert(spr_value.type == SER_TYPE_I32);
-					res.spr.layer = spr_value.i32;
-				} else if(str8_match(spr_key.str, str8_lit("y_sort"), 0)) {
-					assert(spr_value.type == SER_TYPE_I32);
-					res.spr.y_sort = spr_value.i32;
-				} else if(str8_match(spr_key.str, str8_lit("offset"), 0)) {
-					assert(spr_value.type == SER_TYPE_ARRAY);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("path"), 0)) {
+					assert(item_value.type == SER_TYPE_STRING);
+					res.spr.path = item_value.str;
+				} else if(str8_match(item_key.str, str8_lit("flip"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.spr.flip = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("layer"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.spr.layer = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("y_sort"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.spr.y_sort = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("y_sort_offset"), 0)) {
+					assert(item_value.type == SER_TYPE_I32);
+					res.spr.y_sort_offset = item_value.i32;
+				} else if(str8_match(item_key.str, str8_lit("offset"), 0)) {
+					assert(item_value.type == SER_TYPE_ARRAY);
 					struct ser_value offset_value;
-					ser_iter_array(r, spr_value, &offset_value);
+					ser_iter_array(r, item_value, &offset_value);
 					assert(offset_value.type == SER_TYPE_F32);
 					res.spr.offset.x = offset_value.f32;
-					ser_iter_array(r, spr_value, &offset_value);
+					ser_iter_array(r, item_value, &offset_value);
 					assert(offset_value.type == SER_TYPE_F32);
 					res.spr.offset.y = offset_value.f32;
 				}

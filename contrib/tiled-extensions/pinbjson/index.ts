@@ -472,6 +472,7 @@ function getSpriteLayer(prop: PropertyValue) {
   const res: SpriteLayer = {
     layer: value["layer"].value,
     y_sort: value["y_sort"],
+    y_sort_offset: value["y_sort_offset"],
   };
   return res;
 }
@@ -574,8 +575,7 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               if (acc.spr != null) {
                 const spr = {
                   ...acc.spr,
-                  layer: sprite_layer.layer,
-                  y_sort: sprite_layer.y_sort,
+                  ...sprite_layer,
                 };
                 return {
                   ...acc,
