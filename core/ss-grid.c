@@ -43,7 +43,7 @@ ss_grid_gen(
 	grid->x_offset = -x1;
 	grid->y_offset = -y1;
 	grid->cells    = arr_ini(columns * rows, sizeof(*grid->cells), alloc);
-	arr_zero(grid->cells, sizeof(*grid->cells));
+	arr_clr(grid->cells);
 	struct arr_header *header = arr_header(grid->cells);
 	header->len               = arr_cap(grid->cells);
 	assert(arr_len(grid->cells) == arr_cap(grid->cells));
