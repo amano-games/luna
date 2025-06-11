@@ -99,6 +99,8 @@ export interface Sprite {
   path: string;
   offset: [number, number];
   flip: number;
+  layer: number;
+  y_sort: boolean;
 }
 
 export interface Gravity {
@@ -195,6 +197,11 @@ export interface Reset {
   flags: number;
 }
 
+export interface SpriteLayer {
+  layer: number;
+  y_sort: boolean;
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -228,6 +235,10 @@ export interface Entity {
   messages?: Message[];
   sfx_to_animation?: SfxToAnimation[];
   reset?: Reset;
+}
+
+export interface LayerProps {
+  sprite_layer?: SpriteLayer;
 }
 
 export interface PhysicsProps {

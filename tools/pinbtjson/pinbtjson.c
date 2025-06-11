@@ -564,6 +564,8 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 			res.spr.path = make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
 		} else if(json_eq(json, key, str8_lit("flip")) == 0) {
 			res.spr.flip = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("layer")) == 0) {
+			res.spr.layer = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("offset")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			res.spr.offset.x = json_parse_f32(json, tokens + i + 2);

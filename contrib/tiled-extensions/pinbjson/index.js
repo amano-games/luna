@@ -492,7 +492,8 @@
     };
     return res;
   }
-  function getSprite(object, x, y) {
+  function getSprite(object, x, y, layerProps) {
+    var _a, _b;
     if (!object.tile) {
       return void 0;
     }
@@ -508,10 +509,14 @@
     let flip = 0;
     flip = flip | (object.tileFlippedHorizontally ? 1 : 0);
     flip = flip | (object.tileFlippedVertically ? 2 : 0);
+    const layer = ((_a = layerProps.sprite_layer) == null ? void 0 : _a.layer) ? layerProps.sprite_layer.layer : 0;
+    const y_sort = ((_b = layerProps.sprite_layer) == null ? void 0 : _b.y_sort) ? layerProps.sprite_layer.y_sort : false;
     const res = {
       path: path2,
       flip,
-      offset
+      offset,
+      layer,
+      y_sort
     };
     return res;
   }
@@ -743,12 +748,35 @@
     };
     return res;
   }
+  function getSpriteLayer(prop) {
+    const value = prop.value;
+    const res = {
+      layer: value["layer"].value,
+      y_sort: value["y_sort"]
+    };
+    return res;
+  }
   function handleObjectLayer(layer, layer_index) {
     const res = [];
     if (!layer.isObjectLayer) {
       return res;
     }
-    return layer.objects.map((item) => {
+    const layerProps = Object.entries(layer.properties()).reduce(
+      (acc, [_key, value]) => {
+        const prop = value;
+        switch (prop.typeName) {
+          case "sprite_layer": {
+            return __spreadProps(__spreadValues({}, acc), {
+              sprite_layer: getSpriteLayer(prop)
+            });
+          }
+        }
+        return acc;
+      },
+      {}
+    );
+    const objectGroup = layer;
+    return objectGroup.objects.map((item) => {
       var _a, _b;
       const [x, y] = getPos(item);
       const res2 = Object.entries(item.properties()).reduce(
@@ -799,6 +827,18 @@
               if (acc.spr != null) {
                 const spr = __spreadProps(__spreadValues({}, acc.spr), {
                   offset: getSpriteOffset(item, prop)
+                });
+                return __spreadProps(__spreadValues({}, acc), {
+                  spr
+                });
+              }
+              return acc;
+            case "sprite_layer":
+              const sprite_layer = getSpriteLayer(prop);
+              if (acc.spr != null) {
+                const spr = __spreadProps(__spreadValues({}, acc.spr), {
+                  layer: sprite_layer.layer,
+                  y_sort: sprite_layer.y_sort
                 });
                 return __spreadProps(__spreadValues({}, acc), {
                   spr
@@ -931,7 +971,7 @@
           id: item.id,
           x,
           y,
-          spr: getSprite(item, x, y)
+          spr: getSprite(item, x, y, layerProps)
         }
       );
       if (res2 == null) {
