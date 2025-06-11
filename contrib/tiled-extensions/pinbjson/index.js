@@ -752,7 +752,8 @@
     const value = prop.value;
     const res = {
       layer: value["layer"].value,
-      y_sort: value["y_sort"]
+      y_sort: value["y_sort"],
+      y_sort_offset: value["y_sort_offset"]
     };
     return res;
   }
@@ -836,10 +837,7 @@
             case "sprite_layer":
               const sprite_layer = getSpriteLayer(prop);
               if (acc.spr != null) {
-                const spr = __spreadProps(__spreadValues({}, acc.spr), {
-                  layer: sprite_layer.layer,
-                  y_sort: sprite_layer.y_sort
-                });
+                const spr = __spreadValues(__spreadValues({}, acc.spr), sprite_layer);
                 return __spreadProps(__spreadValues({}, acc), {
                   spr
                 });

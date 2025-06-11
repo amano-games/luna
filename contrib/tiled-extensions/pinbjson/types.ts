@@ -200,6 +200,7 @@ export interface Reset {
 export interface SpriteLayer {
   layer: number;
   y_sort: boolean;
+  y_sort_offset: number;
 }
 
 export interface Entity {

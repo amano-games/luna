@@ -568,6 +568,8 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 			res.spr.layer = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("y_sort")) == 0) {
 			res.spr.y_sort = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("y_sort_offset")) == 0) {
+			res.spr.y_sort_offset = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("offset")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			res.spr.offset.x = json_parse_f32(json, tokens + i + 2);

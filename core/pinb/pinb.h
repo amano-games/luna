@@ -53,6 +53,7 @@ struct pinb_spr {
 	str8 path;
 	i32 flip;
 	i32 layer;
+	i32 y_sort_offset;
 	bool32 y_sort;
 	v2 offset;
 };
