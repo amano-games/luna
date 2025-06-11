@@ -1,4 +1,5 @@
 #include "sys-sokol.h"
+#include "sys-debug-draw.h"
 #include <stdio.h>
 #if !defined(TARGET_WASM)
 #include "whereami.h"
@@ -382,7 +383,10 @@ sys_epoch(u32 *milliseconds)
 void
 sys_1bit_invert(bool32 i)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
+	return;
 }
 
 void *
@@ -597,7 +601,7 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 			}
 		} break;
 		case DEBUG_POLY: {
-			BAD_PATH;
+			dbg_sentinel("sokol");
 		} break;
 		case DEBUG_LIN: {
 			struct debug_shape_lin lin = shape->lin;
@@ -607,6 +611,9 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 		} break;
 		}
 	}
+
+error:
+	return;
 
 #endif
 }
@@ -621,26 +628,36 @@ sys_audio_set_volume(f32 vol)
 f32
 sys_audio_get_volume(void)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
 	return 1.0f;
 }
 
 void
 sys_audio_lock(void)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
+	return;
 }
 
 void
 sys_audio_unlock(void)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
+	return;
 }
 
 usize
 sys_file_modified(str8 path)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
 	return 0;
 }
 
@@ -662,19 +679,26 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 void
 sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
+	return;
 }
 
 int
 sys_score_add(str8 board_id, u32 value)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
 	return 0;
 }
 
 int
 sys_scores_get(str8 board_id)
 {
-	NOT_IMPLEMENTED;
+	dbg_not_implemeneted("sokol");
+
+error:
 	return 0;
 }
