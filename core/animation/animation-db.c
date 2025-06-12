@@ -177,7 +177,7 @@ ani_db_asset_read(
 		} else if(str8_match(key.str, str8_lit("cell_height"), 0)) {
 			res.info.cell_size.y = value.i32;
 		} else if(str8_match(key.str, str8_lit("clips_count"), 0)) {
-			res.clips = arr_ini(value.i32, sizeof(*res.clips), alloc);
+			res.clips = arr_new(res.clips, value.i32, alloc);
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			struct ser_value item_val;
 			while(ser_iter_array(r, value, &item_val)) {
@@ -202,7 +202,7 @@ ani_db_read(struct ser_reader *r, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("bank_count"), 0)) {
 			res.bank_count = value.i32;
 		} else if(str8_match(key.str, str8_lit("assets_count"), 0)) {
-			res.assets = arr_ini(value.i32, sizeof(*res.assets), alloc);
+			res.assets = arr_new(res.assets, value.i32, alloc);
 		} else if(str8_match(key.str, str8_lit("assets"), 0)) {
 			struct ser_value item_val;
 			while(ser_iter_array(r, value, &item_val)) {

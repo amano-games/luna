@@ -8,7 +8,7 @@ static u32 *
 bit_arr_u32_new(usize count, struct alloc alloc)
 {
 	usize bit_arr_count = (count + 31) / 32;
-	u32 *res            = arr_ini(bit_arr_count, sizeof(*res), alloc);
+	u32 *res            = arr_new(res, bit_arr_count, alloc);
 	arr_clr(res);
 	return res;
 }

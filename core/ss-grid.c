@@ -42,7 +42,7 @@ ss_grid_gen(
 	grid->rows     = rows;
 	grid->x_offset = -x1;
 	grid->y_offset = -y1;
-	grid->cells    = arr_ini(columns * rows, sizeof(*grid->cells), alloc);
+	grid->cells    = arr_new(grid->cells, columns * rows, alloc);
 	arr_clr(grid->cells);
 	struct arr_header *header = arr_header(grid->cells);
 	header->len               = arr_cap(grid->cells);
@@ -74,7 +74,7 @@ ss_grid_gen(
 		}
 	}
 
-	grid->items = arr_ini(handles_count, sizeof(*grid->items), alloc);
+	grid->items = arr_new(grid->items, handles_count, alloc);
 	log_info("SSGrid", "Grid items:%zu cell-size:%" PRIu32 " handles:%zu", count, grid->cell_size, arr_cap(grid->items));
 	for(usize i = 0; i < arr_cap(grid->items); ++i) {
 		struct ss_item item = {0};
