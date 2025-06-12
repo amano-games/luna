@@ -178,8 +178,8 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch
 {
 	poly_make_ccw(verts, count);
 	// Linked list
-	i32 *prev       = arr_ini(count, sizeof(*prev), scratch);
-	i32 *next       = arr_ini(count, sizeof(*next), scratch);
+	i32 *prev       = arr_new(prev, count, scratch);
+	i32 *next       = arr_new(next, count, scratch);
 	struct mesh res = {
 		.count = 0,
 		.items = alloc.allocf(alloc.ctx, sizeof(*res.items)),

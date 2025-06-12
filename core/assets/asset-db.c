@@ -27,33 +27,33 @@ asset_db_init(
 	i32 exp               = 10;
 
 	db->animations.ht   = ht_new_u32(exp, alloc);
-	db->animations.data = arr_ini(clip_count + 1, sizeof(*db->animations.data), alloc);
-	db->animations.arr  = arr_ini(slice_count + 1, sizeof(*db->animations.arr), alloc);
+	db->animations.data = arr_new(db->animations.data, clip_count + 1, alloc);
+	db->animations.arr  = arr_new(db->animations.arr, slice_count + 1, alloc);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
 	db->paths.ht   = ht_new_u32(exp, alloc);
-	db->paths.arr  = arr_ini(paths_count + 1, sizeof(*db->paths.arr), alloc);
-	db->paths.data = arr_ini(paths_data_size, sizeof(*db->paths.data), alloc);
+	db->paths.arr  = arr_new(db->paths.arr, paths_count + 1, alloc);
+	db->paths.data = arr_new(db->paths.data, paths_data_size, alloc);
 	arr_push(db->paths.arr, (str8){0});
 
 	db->textures.ht  = ht_new_u32(exp, alloc);
-	db->textures.arr = arr_ini(textures_count + 1, sizeof(*db->textures.arr), alloc);
+	db->textures.arr = arr_new(db->textures.arr, textures_count + 1, alloc);
 	arr_push(db->textures.arr, (struct tex){0});
 
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
-	db->textures_info.arr = arr_ini(textures_count + 1, sizeof(*db->textures_info.arr), alloc);
+	db->textures_info.arr = arr_new(db->textures_info.arr, textures_count + 1, alloc);
 	arr_push(db->textures_info.arr, (struct tex_info){0});
 
 	db->snds.ht  = ht_new_u32(exp, alloc);
-	db->snds.arr = arr_ini(snds_count + 1, sizeof(*db->snds.arr), alloc);
+	db->snds.arr = arr_new(db->snds.arr, snds_count + 1, alloc);
 	arr_push(db->snds.arr, (struct snd){0});
 
 	db->fonts.ht  = ht_new_u32(exp, alloc);
-	db->fonts.arr = arr_ini(fonts_count + 1, sizeof(*db->fonts.arr), alloc);
+	db->fonts.arr = arr_new(db->fonts.arr, fonts_count + 1, alloc);
 	arr_push(db->fonts.arr, (struct fnt){0});
 
 	db->bets.ht  = ht_new_u32(exp, alloc);
-	db->bets.arr = arr_ini(bets_count + 1, sizeof(*db->bets.arr), alloc);
+	db->bets.arr = arr_new(db->bets.arr, bets_count + 1, alloc);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 }
 

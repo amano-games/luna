@@ -24,7 +24,7 @@ static inline bool32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx
 void
 bet_init(struct bet *bet, struct alloc alloc)
 {
-	bet->nodes = arr_ini(1, sizeof(*bet->nodes), alloc);
+	bet->nodes = arr_new(bet->nodes, 1, alloc);
 	bet->alloc = alloc;
 	arr_push(bet->nodes, (struct bet_node){0});
 }

@@ -876,7 +876,7 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("len"), 0)) {
 					res.sfx_sequences.len   = item_value.i32;
-					res.sfx_sequences.items = arr_ini(item_value.i32, sizeof(*res.sfx_sequences.items), alloc);
+					res.sfx_sequences.items = arr_new(res.sfx_sequences.items, item_value.i32, alloc);
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					struct ser_value sequence_value;
 					while(ser_iter_array(r, item_value, &sequence_value)) {
@@ -891,7 +891,7 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("len"), 0)) {
 					res.messages.len   = item_value.i32;
-					res.messages.items = arr_ini(item_value.i32, sizeof(*res.messages.items), alloc);
+					res.messages.items = arr_new(res.messages.items, item_value.i32, alloc);
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					struct ser_value sequence_value;
 					while(ser_iter_array(r, item_value, &sequence_value)) {
@@ -906,7 +906,7 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 				assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("len"), 0)) {
 					res.actions.len   = item_value.i32;
-					res.actions.items = arr_ini(item_value.i32, sizeof(*res.sfx_sequences.items), alloc);
+					res.actions.items = arr_new(res.sfx_sequences.items, item_value.i32, alloc);
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					struct ser_value sequence_value;
 					while(ser_iter_array(r, item_value, &sequence_value)) {
@@ -1002,7 +1002,7 @@ pinb_read(
 		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			table->entities_count = value.i32;
-			table->entities       = arr_ini(table->entities_count, sizeof(*table->entities), alloc);
+			table->entities       = arr_new(table->entities, table->entities_count, alloc);
 		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
 			assert(value.type == SER_TYPE_I32);
 			table->entities_max_id = value.i32;
@@ -1039,7 +1039,7 @@ pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
 				if(str8_match(item_key.str, str8_lit("len"), 0)) {
 					len                   = item_value.i32;
-					res.transitions.items = arr_ini(len, sizeof(*res.transitions.items), alloc);
+					res.transitions.items = arr_new(res.transitions.items, len, alloc);
 				} else if(str8_match(item_key.str, str8_lit("items"), 0)) {
 					assert(item_value.type == SER_TYPE_ARRAY);
 					struct ser_value transition_value;
@@ -1152,7 +1152,7 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc 
 			res.pitch_max = value.f32;
 		} else if(str8_match(key.str, str8_lit("clips_len"), 0)) {
 			res.clips_len = value.i32;
-			res.clips     = arr_ini(res.clips_len, sizeof(*res.clips), alloc);
+			res.clips     = arr_new(res.clips, res.clips_len, alloc);
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value clip_value;
@@ -1181,7 +1181,7 @@ pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 			res.hide_time = value.f32;
 		} else if(str8_match(key.str, str8_lit("text_len"), 0)) {
 			res.text_len = value.i32;
-			res.text     = arr_ini(res.text_len, sizeof(*res.text), alloc);
+			res.text     = arr_new(res.text, res.text_len, alloc);
 		} else if(str8_match(key.str, str8_lit("text"), 0)) {
 			assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value clip_value;

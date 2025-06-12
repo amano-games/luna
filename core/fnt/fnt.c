@@ -171,8 +171,8 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	str8 fnt_ext         = str8_lit(".fnt");
 	size widths_size     = FNT_CHAR_MAX;
 	size kern_pairs_size = FNT_KERN_PAIRS_MAX;
-	res.widths           = arr_ini(widths_size, sizeof(*res.widths), alloc);
-	res.kern_pairs       = arr_ini(kern_pairs_size, sizeof(*res.kern_pairs), alloc);
+	res.widths           = arr_new(res.widths, widths_size, alloc);
+	res.kern_pairs       = arr_new(res.kern_pairs, kern_pairs_size, alloc);
 
 	if(res.widths == NULL) {
 		log_error("fnt", "Failed to alloc widths array ");

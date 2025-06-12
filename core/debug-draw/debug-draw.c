@@ -13,7 +13,7 @@ debug_draw_init(void *mem, usize size)
 	marena_init(&DEBUG_STATE.marena, DEBUG_STATE.mem, size);
 
 #if !defined(TARGET_PLAYDATE) && DEBUG
-	DEBUG_STATE.shapes = arr_ini(MAX_DEBUG_SHAPES, sizeof(struct debug_shape), DEBUG_STATE.alloc);
+	DEBUG_STATE.shapes = arr_new(DEBUG_STATE.shapes, MAX_DEBUG_SHAPES, DEBUG_STATE.alloc);
 	arr_reset(DEBUG_STATE.shapes);
 #endif
 }
