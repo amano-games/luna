@@ -212,7 +212,7 @@ tsj_handle_tile(
 			res.asset.info.tex_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			assert(value->type == JSMN_ARRAY);
-			res.asset.clips = arr_ini(value->size, sizeof(*res.asset.clips), alloc);
+			res.asset.clips = arr_new(res.asset.clips, value->size, alloc);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
@@ -257,7 +257,7 @@ tsj_handle_json(
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
+	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	assert(json_res == token_count);
 
@@ -272,7 +272,7 @@ tsj_handle_json(
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("tilecount")) == 0) {
 			usize count = json_parse_i32(json, value);
-			res.assets  = arr_ini(count, sizeof(*res.assets), alloc);
+			res.assets  = arr_new(res.assets, count, alloc);
 		} else if(json_eq(json, key, str8_lit("tiles")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 			assert(arr_cap(res.assets) == (usize)value->size);

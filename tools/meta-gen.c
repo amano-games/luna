@@ -21,7 +21,7 @@
 #include "sys.h"
 
 #define TABLE_EXT ".luntable"
-#define LOG_ID "MetaGen"
+#define LOG_ID    "MetaGen"
 
 enum COLUMN_TYPE {
 	COLUMN_TYPE_NONE,
@@ -71,7 +71,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	jsmn_parser parser;
 	jsmn_init(&parser);
 	i32 token_count   = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
-	jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
+	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	jsmn_init(&parser);
 	i32 json_res = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	assert(json_res == token_count);
@@ -93,7 +93,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("columns")) == 0) {
 			assert(value->type == JSMN_ARRAY);
 
-			table.columns = arr_ini(value->size, sizeof(*table.columns), scratch);
+			table.columns = arr_new(table.columns, value->size, scratch);
 			for(i32 j = 0; j < value->size; j++) {
 				jsmntok_t *child_key   = &tokens[i + j + 1];
 				jsmntok_t *child_value = &tokens[i + j + 2];
@@ -115,12 +115,12 @@ gen_table(const str8 in_path, struct alloc scratch)
 			i += value->size + 1;
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
 			assert(value->type == JSMN_ARRAY);
-			table.rows = arr_ini(value->size, sizeof(*table.rows), scratch);
+			table.rows = arr_new(table.rows, value->size, scratch);
 
 			for(i32 j = 0; j < value->size; j++) {
 				struct row row            = {0};
 				usize count               = arr_len(table.columns);
-				row.items                 = arr_ini(count, sizeof(*row.items), scratch);
+				row.items                 = arr_new(row.items, count, scratch);
 				struct arr_header *header = arr_header(row.items);
 				header->len               = count;
 
@@ -226,7 +226,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	sys_file_close(f);
 	sys_free(mem);
 
-	log_info(LOG_ID, "items:%-2d %s -> %s", arr_len(table.rows),in_path.str + 3, out_file_path.str + 3);
+	log_info(LOG_ID, "items:%-2d %s -> %s", (int)arr_len(table.rows), in_path.str + 3, out_file_path.str + 3);
 	return EXIT_SUCCESS;
 }
 

@@ -45,7 +45,7 @@ handle_metrics(str8 json, struct alloc scratch)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
+	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	assert(json_res == token_count);
 
@@ -163,8 +163,8 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	fnt.cell_w   = cell_size.x;
 	fnt.cell_h   = cell_size.y;
 
-	fnt.widths                      = arr_ini(FNT_CHAR_MAX, sizeof(*fnt.widths), alloc);
-	fnt.kern_pairs                  = arr_ini(FNT_KERN_PAIRS_MAX, sizeof(*fnt.kern_pairs), alloc);
+	fnt.widths                      = arr_new(fnt.widths, FNT_CHAR_MAX, alloc);
+	fnt.kern_pairs                  = arr_new(fnt.kern_pairs, FNT_KERN_PAIRS_MAX, alloc);
 	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
 	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);
 	mclr(fnt.widths, sizeof(*fnt.widths) * arr_len(fnt.widths));
