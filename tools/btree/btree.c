@@ -230,7 +230,7 @@ handle_btree_json(str8 json, struct bet *bet, struct alloc scratch)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	jsmntok_t *tokens = arr_ini(token_count, sizeof(jsmntok_t), scratch);
+	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	assert(json_res == token_count);
 
