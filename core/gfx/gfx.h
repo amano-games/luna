@@ -35,6 +35,20 @@ struct tex_rec {
 	rec_i32 r;
 };
 
+struct tex_patch {
+	struct tex t;
+	rec_i32 r;
+	union {
+		i32 margins[4];
+		struct {
+			i32 ml; // left
+			i32 mr; // right
+			i32 mt; // top
+			i32 mb; // bottom
+		};
+	};
+};
+
 struct gfx_pattern {
 	u32 p[8];
 };

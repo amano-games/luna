@@ -4,6 +4,7 @@
 #include "sys-intrin.h"
 #include "mathfunc.h"
 #include "trace.h"
+#include "dbg.h"
 
 static void
 spr_blit(u32 *restrict dp, u32 *restrict dm, u32 sp, u32 sm, int mode)
@@ -434,4 +435,80 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 		}
 	}
 	TRACE_END();
+}
+
+void
+gfx_spr_tiled(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip, i32 mode, i32 tx, i32 ty)
+{
+	if(!src.t.px) return;
+	if((src.r.w | src.r.h) == 0) return;
+	i32 dx = tx ? tx : src.r.w;
+	i32 dy = ty ? ty : src.r.h;
+	i32 x1 = tx ? ((px % dx) - dx) % dx : px;
+	i32 y1 = ty ? ((py % dy) - dy) % dy : py;
+	i32 x2 = tx ? ((ctx.dst.w - x1) / dx) * dx : x1;
+	i32 y2 = ty ? ((ctx.dst.h - y1) / dy) * dy : y1;
+
+	for(i32 y = y1; y <= y2; y += dy) {
+		for(i32 x = x1; x <= x2; x += dx) {
+			v2_i32 p = {x, y};
+			gfx_spr(ctx, src, p.x, p.y, flip, mode);
+		}
+	}
+}
+
+void
+gfx_patch(
+	struct gfx_ctx ctx,
+	struct tex_patch patch,
+	i32 dx,
+	i32 dy,
+	i32 dw,
+	i32 dh,
+	enum spr_flip flip,
+	enum spr_mode mode)
+{
+	i32 ml = patch.ml;
+	i32 mr = patch.mr;
+	i32 mt = patch.mt;
+	i32 mb = patch.mb;
+	i32 sx = patch.r.x;
+	i32 sy = patch.r.y;
+	i32 sw = patch.r.w;
+	i32 sh = patch.r.h;
+
+	assert(ml >= 0 && ml <= sw);
+	assert(mr >= 0 && mr <= sw);
+	assert(mt >= 0 && mt <= sh);
+	assert(mb >= 0 && mb <= sh);
+
+	// Fixed corners
+	struct tex_rec top_left     = {.t = patch.t, .r = {sx, sy, ml, mt}};
+	struct tex_rec top_right    = {.t = patch.t, .r = {sx + sw - mr, sy, mr, mt}};
+	struct tex_rec bottom_left  = {.t = patch.t, .r = {sx, sy + sh - mb, ml, mb}};
+	struct tex_rec bottom_right = {.t = patch.t, .r = {sx + sw - mr, sy + sh - mb, mr, mb}};
+
+	gfx_spr(ctx, top_left, dx, dy, flip, mode);
+	gfx_spr(ctx, top_right, dx + dw - mr, dy, flip, mode);
+	gfx_spr(ctx, bottom_left, dx, dy + dh - mb, flip, mode);
+	gfx_spr(ctx, bottom_right, dx + dw - mr, dy + dh - mb, flip, mode);
+
+	// Widths and heights of middle stretchable areas
+	i32 smw = sw - ml - mr; // source middle width
+	i32 smh = sh - mt - mb; // source middle height
+	i32 dmw = dw - ml - mr; // destination middle width
+	i32 dmh = dh - mt - mb; // destination middle height
+
+	// Tiled edges and center
+	struct tex_rec top    = {.t = patch.t, .r = {sx + ml, sy, smw, mt}};
+	struct tex_rec bottom = {.t = patch.t, .r = {sx + ml, sy + sh - mb, smw, mb}};
+	struct tex_rec left   = {.t = patch.t, .r = {sx, sy + mt, ml, smh}};
+	struct tex_rec right  = {.t = patch.t, .r = {sx + sw - mr, sy + mt, mr, smh}};
+	struct tex_rec center = {.t = patch.t, .r = {sx + ml, sy + mt, smw, smh}};
+
+	gfx_spr_tiled(ctx, top, dx + ml, dy, flip, mode, dmw, mt);
+	gfx_spr_tiled(ctx, bottom, dx + ml, dy + dh - mb, flip, mode, dmw, mb);
+	gfx_spr_tiled(ctx, left, dx, dy + mt, flip, mode, ml, dmh);
+	gfx_spr_tiled(ctx, right, dx + dw - mr, dy + mt, flip, mode, mr, dmh);
+	gfx_spr_tiled(ctx, center, dx + ml, dy + mt, flip, mode, dmw, dmh);
 }
