@@ -160,15 +160,33 @@ asset_snd_get_id(str8 path)
 struct tex_rec
 asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 {
-	struct tex_rec result = {0};
+	struct tex_rec res = {0};
 
-	result.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
-	result.r.x = x;
-	result.r.y = y;
-	result.r.w = w;
-	result.r.h = h;
+	res.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
+	res.r.x = x;
+	res.r.y = y;
+	res.r.w = w;
+	res.r.h = h;
 
-	return result;
+	return res;
+}
+
+struct tex_patch
+asset_tex_patch(i32 id, i32 x, i32 y, i32 w, i32 h, i32 ml, i32 mr, i32 mt, i32 mb)
+{
+	struct tex_patch res = {0};
+
+	res.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
+	res.r.x = x;
+	res.r.y = y;
+	res.r.w = w;
+	res.r.h = h;
+	res.ml  = ml;
+	res.mr  = mr;
+	res.mt  = mt;
+	res.mb  = mb;
+
+	return res;
 }
 
 enum asset_type

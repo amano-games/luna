@@ -438,21 +438,36 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 }
 
 void
-gfx_spr_tiled(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip, i32 mode, i32 tx, i32 ty)
+gfx_spr_tiled(
+	struct gfx_ctx ctx,
+	struct tex_rec src,
+	rec_i32 dst, // New: destination rect to fill (x, y, w, h)
+	i32 flip,
+	i32 mode,
+	i32 tx,
+	i32 ty)
 {
-	if(!src.t.px) return;
-	if((src.r.w | src.r.h) == 0) return;
-	i32 dx = tx ? tx : src.r.w;
-	i32 dy = ty ? ty : src.r.h;
-	i32 x1 = tx ? ((px % dx) - dx) % dx : px;
-	i32 y1 = ty ? ((py % dy) - dy) % dy : py;
-	i32 x2 = tx ? ((ctx.dst.w - x1) / dx) * dx : x1;
-	i32 y2 = ty ? ((ctx.dst.h - y1) / dy) * dy : y1;
+	if(!src.t.px || src.r.w <= 0 || src.r.h <= 0)
+		return;
 
-	for(i32 y = y1; y <= y2; y += dy) {
-		for(i32 x = x1; x <= x2; x += dx) {
-			v2_i32 p = {x, y};
-			gfx_spr(ctx, src, p.x, p.y, flip, mode);
+	i32 tile_w = src.r.w;
+	i32 tile_h = src.r.h;
+
+	i32 x_end = dst.x + dst.w;
+	i32 y_end = dst.y + dst.h;
+
+	for(i32 y = dst.y; y < y_end; y += tile_h) {
+		for(i32 x = dst.x; x < x_end; x += tile_w) {
+			i32 rem_w = x_end - x;
+			i32 rem_h = y_end - y;
+
+			struct tex_rec clipped = src;
+
+			// Crop the source rect if the tile goes out of bounds
+			clipped.r.w = rem_w < tile_w ? rem_w : tile_w;
+			clipped.r.h = rem_h < tile_h ? rem_h : tile_h;
+
+			gfx_spr(ctx, clipped, x, y, flip, mode);
 		}
 	}
 }
@@ -500,15 +515,21 @@ gfx_patch(
 	i32 dmh = dh - mt - mb; // destination middle height
 
 	// Tiled edges and center
+	rec_i32 dst_top    = {dx + ml, dy, dw - ml - mr, mt};
+	rec_i32 dst_bottom = {dx + ml, dy + dh - mb, dw - ml - mr, mb};
+	rec_i32 dst_left   = {dx, dy + mt, ml, dh - mt - mb};
+	rec_i32 dst_right  = {dx + dw - mr, dy + mt, mr, dh - mt - mb};
+	rec_i32 dst_center = {dx + ml, dy + mt, dw - ml - mr, dh - mt - mb};
+
 	struct tex_rec top    = {.t = patch.t, .r = {sx + ml, sy, smw, mt}};
 	struct tex_rec bottom = {.t = patch.t, .r = {sx + ml, sy + sh - mb, smw, mb}};
 	struct tex_rec left   = {.t = patch.t, .r = {sx, sy + mt, ml, smh}};
 	struct tex_rec right  = {.t = patch.t, .r = {sx + sw - mr, sy + mt, mr, smh}};
 	struct tex_rec center = {.t = patch.t, .r = {sx + ml, sy + mt, smw, smh}};
 
-	gfx_spr_tiled(ctx, top, dx + ml, dy, flip, mode, dmw, mt);
-	gfx_spr_tiled(ctx, bottom, dx + ml, dy + dh - mb, flip, mode, dmw, mb);
-	gfx_spr_tiled(ctx, left, dx, dy + mt, flip, mode, ml, dmh);
-	gfx_spr_tiled(ctx, right, dx + dw - mr, dy + mt, flip, mode, mr, dmh);
-	gfx_spr_tiled(ctx, center, dx + ml, dy + mt, flip, mode, dmw, dmh);
+	gfx_spr_tiled(ctx, top, dst_top, flip, mode, 0, 0);
+	gfx_spr_tiled(ctx, bottom, dst_bottom, flip, mode, 0, 0);
+	gfx_spr_tiled(ctx, left, dst_left, flip, mode, 0, 0);
+	gfx_spr_tiled(ctx, right, dst_right, flip, mode, 0, 0);
+	gfx_spr_tiled(ctx, center, dst_center, flip, mode, 0, 0);
 }
