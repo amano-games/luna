@@ -101,6 +101,12 @@ floor_f32(f32 a)
 }
 
 static inline f32
+ceil_f32(f32 a)
+{
+	return ceilf(a);
+}
+
+static inline f32
 sqrt_f32(f32 x)
 {
 	f32 r = sqrtf(x);

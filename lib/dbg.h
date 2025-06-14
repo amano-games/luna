@@ -31,6 +31,12 @@
 		goto error; \
 	}
 
+#define dbg_check_warn(A, ...) \
+	if(!(A)) { \
+		log_warn(__VA_ARGS__); \
+		goto error; \
+	}
+
 #define dbg_sentinel(T) \
 	do { \
 		log_error(T, "+++ BAD PATH +++"); \

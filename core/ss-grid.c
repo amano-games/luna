@@ -30,12 +30,14 @@ ss_grid_gen(
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		x1                   = min_i32(x1, (i32)floor_f32(aabb.min.x * cell_size_inv));
 		y1                   = min_i32(y1, (i32)floor_f32(aabb.min.y * cell_size_inv));
-		x2                   = max_i32(x2, (i32)floor_f32(aabb.max.x * cell_size_inv));
-		y2                   = max_i32(y2, (i32)floor_f32(aabb.max.y * cell_size_inv));
+		x2                   = max_i32(x2, (i32)ceil_f32(aabb.max.x * cell_size_inv));
+		y2                   = max_i32(y2, (i32)ceil_f32(aabb.max.y * cell_size_inv));
 	}
 
-	i32 columns = (x2 - x1);
-	i32 rows    = (y2 - y1);
+	i32 width   = (x2 - x1);
+	i32 height  = (y2 - y1);
+	i32 columns = width > 0 ? width + 1 : 0;
+	i32 rows    = height > 0 ? height + 1 : 0;
 	log_info("SSGrid", "Generating grid cell_size:%d columns:%d rows:%d total:%d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
 
 	grid->columns             = columns;
@@ -55,8 +57,8 @@ ss_grid_gen(
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);
-		i32 x2               = (i32)floor_f32(aabb.max.x * cell_size_inv);
-		i32 y2               = (i32)floor_f32(aabb.max.y * cell_size_inv);
+		i32 x2               = (i32)ceil_f32(aabb.max.x * cell_size_inv);
+		i32 y2               = (i32)ceil_f32(aabb.max.y * cell_size_inv);
 
 		for(int cx = x1; cx <= x2; ++cx) {
 			for(int cy = y1; cy <= y2; ++cy) {
@@ -99,8 +101,8 @@ ss_grid_gen(
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);
-		i32 x2               = (i32)floor_f32(aabb.max.x * cell_size_inv);
-		i32 y2               = (i32)floor_f32(aabb.max.y * cell_size_inv);
+		i32 x2               = (i32)ceil_f32(aabb.max.x * cell_size_inv);
+		i32 y2               = (i32)ceil_f32(aabb.max.y * cell_size_inv);
 
 		for(int cx = x1; cx <= x2; ++cx) {
 			for(int cy = y1; cy <= y2; ++cy) {
@@ -183,9 +185,9 @@ ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
 	i32 index = 0;
 	i32 mx    = x + grid->x_offset;
 	i32 my    = y + grid->y_offset;
-	index     = (mx * grid->columns) + my;
-	assert(mx <= (i32)grid->columns);
-	assert(my <= (i32)grid->rows);
+	index     = (my * grid->columns) + mx;
+	assert(mx < (i32)grid->columns);
+	assert(my < (i32)grid->rows);
 	assert(index >= 0 && index < (i32)arr_len(grid->cells));
 	struct ss_cell *cell = grid->cells + index;
 	return cell;
