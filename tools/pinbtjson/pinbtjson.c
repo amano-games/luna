@@ -1074,7 +1074,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 i32
 pinbtjson_handle(str8 in_path, str8 out_path)
 {
-	usize mem_size = MMEGABYTE(1);
+	usize mem_size = MMEGABYTE(4);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	assert(mem_buffer != NULL);
 	struct marena marena = {0};
