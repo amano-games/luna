@@ -7,6 +7,7 @@
 #include "pinb/pinb-ser.h"
 #include "poly.h"
 #include "serialize/serialize.h"
+#include "str.h"
 #include "sys-log.h"
 #include "sys.h"
 #include "tools/png/png.h"
@@ -994,7 +995,7 @@ pinbtjson_handle_flippers_props(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
-pinbtjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index)
+pinbtjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -1009,6 +1010,11 @@ pinbtjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index)
 			struct pinbtjson_res item_res = pinbtjson_handle_physics_props(json, tokens, i + 1);
 			res.table_props.physics_props = item_res.physics_props;
 			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("bg_tex_path")) == 0) {
+			assert(value->type == JSMN_STRING);
+			str8 path                   = json_str8(json, value);
+			res.table_props.bg_tex_path = make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
+			i++;
 		} else if(json_eq(json, key, str8_lit("flippers_props")) == 0) {
 			struct pinbtjson_res item_res  = pinbtjson_handle_flippers_props(json, tokens, i + 1);
 			res.table_props.flippers_props = item_res.flipper_props;
@@ -1043,7 +1049,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 			++i;
 		} else if(json_eq(json, key, str8_lit("props")) == 0) {
 			assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_table_props(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_table_props(json, tokens, i + 1, alloc);
 			res.props                     = item_res.table_props;
 			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("entities_max_id")) == 0) {

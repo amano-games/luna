@@ -526,6 +526,8 @@ pinb_table_props_write(struct ser_writer *w, struct pinb_table_props props)
 	pinb_physics_props_write(w, props.physics_props);
 	ser_write_string(w, str8_lit("flippers_props"));
 	pinb_flippers_props_write(w, props.flippers_props);
+	ser_write_string(w, str8_lit("bg_tex_path"));
+	ser_write_string(w, props.bg_tex_path);
 	ser_write_end(w);
 }
 
@@ -975,6 +977,9 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 			res.physics_props = pinb_physics_props_read(r, value);
 		} else if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
 			res.flippers_props = pinb_flippers_props_read(r, value);
+		} else if(str8_match(key.str, str8_lit("bg_tex_path"), 0)) {
+			assert(value.type == SER_TYPE_STRING);
+			res.bg_tex_path = value.str;
 		}
 	}
 	return res;
