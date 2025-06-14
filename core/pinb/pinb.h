@@ -230,6 +230,7 @@ struct pinb_flippers_props {
 };
 
 struct pinb_table_props {
+	str8 bg_tex_path;
 	struct pinb_physics_props physics_props;
 	struct pinb_flippers_props flippers_props;
 };

@@ -754,6 +754,12 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
     .filter(Boolean);
 }
 
+function getBgTexPath(prop: PropertyValue) {
+  const value = prop.value as object;
+  const res = getImgPath(value["image"].localFile);
+  return res;
+}
+
 function getFlippersProps(prop: PropertyValue) {
   const value = prop.value as object;
   const res: FlipperProps = {
@@ -764,6 +770,7 @@ function getFlippersProps(prop: PropertyValue) {
   };
   return res;
 }
+
 function getPhysicsProps(prop: PropertyValue) {
   const value = prop.value as object;
   const res: PhysicsProps = {
@@ -781,6 +788,11 @@ function getTableProps(map: TileMap) {
     (acc, [_key, value]) => {
       const prop = value as PropertyValue;
       switch (prop.typeName) {
+        case "bg_image":
+          return {
+            ...acc,
+            bg_tex_path: getBgTexPath(prop),
+          };
         case "flippers_props":
           return {
             ...acc,

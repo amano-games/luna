@@ -990,6 +990,11 @@
       return res2;
     }).filter(Boolean);
   }
+  function getBgTexPath(prop) {
+    const value = prop.value;
+    const res = getImgPath(value["image"].localFile);
+    return res;
+  }
   function getFlippersProps(prop) {
     const value = prop.value;
     const res = {
@@ -1016,6 +1021,10 @@
       (acc, [_key, value]) => {
         const prop = value;
         switch (prop.typeName) {
+          case "bg_image":
+            return __spreadProps(__spreadValues({}, acc), {
+              bg_tex_path: getBgTexPath(prop)
+            });
           case "flippers_props":
             return __spreadProps(__spreadValues({}, acc), {
               flippers_props: getFlippersProps(prop)

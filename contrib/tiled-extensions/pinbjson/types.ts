@@ -258,7 +258,9 @@ export interface FlipperProps {
 }
 
 export interface TableProperties {
+  physics_props?: PhysicsProps;
   flippers_props?: FlipperProps;
+  bg_tex_path?: string;
 }
 
 export interface PinballTable {
