@@ -36,7 +36,7 @@ ss_grid_gen(
 
 	i32 columns = (x2 - x1);
 	i32 rows    = (y2 - y1);
-	log_info("SSGrid", "Generating grid cell_size: %d columns: %d rows: %d total: %d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
+	log_info("SSGrid", "Generating grid cell_size:%d columns:%d rows:%d total:%d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
 
 	grid->columns  = columns;
 	grid->rows     = rows;
@@ -185,6 +185,8 @@ ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
 	i32 mx    = x + grid->x_offset;
 	i32 my    = y + grid->y_offset;
 	index     = (mx * grid->columns) + my;
+	assert(mx <= (i32)grid->columns);
+	assert(my <= (i32)grid->rows);
 	assert(index >= 0 && index < (i32)arr_len(grid->cells));
 	struct ss_cell *cell = grid->cells + index;
 	return cell;
