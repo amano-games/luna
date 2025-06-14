@@ -38,12 +38,11 @@ ss_grid_gen(
 	i32 rows    = (y2 - y1);
 	log_info("SSGrid", "Generating grid cell_size:%d columns:%d rows:%d total:%d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
 
-	grid->columns  = columns;
-	grid->rows     = rows;
-	grid->x_offset = -x1;
-	grid->y_offset = -y1;
-	grid->cells    = arr_new(grid->cells, columns * rows, alloc);
-	arr_clr(grid->cells);
+	grid->columns             = columns;
+	grid->rows                = rows;
+	grid->x_offset            = -x1;
+	grid->y_offset            = -y1;
+	grid->cells               = arr_new_clr(grid->cells, columns * rows, alloc);
 	struct arr_header *header = arr_header(grid->cells);
 	header->len               = arr_cap(grid->cells);
 	assert(arr_len(grid->cells) == arr_cap(grid->cells));
