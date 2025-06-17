@@ -203,6 +203,10 @@ export interface SpriteLayer {
   y_sort_offset: number;
 }
 
+export interface CollisionLayer {
+  layer: number;
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -234,12 +238,14 @@ export interface Entity {
   actions?: GameAction[];
   sfx_sequences?: SfxSequence[];
   messages?: Message[];
+  collision_layer?: CollisionLayer;
   sfx_to_animation?: SfxToAnimation[];
   reset?: Reset;
 }
 
 export interface LayerProps {
   sprite_layer?: SpriteLayer;
+  collision_layer?: CollisionLayer;
 }
 
 export interface PhysicsProps {

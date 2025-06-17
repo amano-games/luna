@@ -183,6 +183,10 @@ struct pinb_reset {
 	i32 flags;
 };
 
+struct pinb_collision_layer {
+	i32 layer;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 x;
@@ -212,6 +216,7 @@ struct pinb_entity {
 	struct pinb_crank_animation crank_animation;
 	struct pinb_bucket bucket;
 	struct v2_i32 score_fx_offset;
+	struct pinb_collision_layer collision_layer;
 };
 
 struct pinb_physics_props {

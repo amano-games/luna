@@ -272,6 +272,13 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		ser_write_end(w);
 	}
 
+	if(entity.collision_layer.layer > 0) {
+		ser_write_string(w, str8_lit("collision_layer"));
+		ser_write_string(w, str8_lit("layer"));
+		ser_write_i32(w, entity.collision_layer.layer);
+		ser_write_end(w);
+	}
+
 	if(entity.crank_animation.interval != 0) {
 		ser_write_string(w, str8_lit("crank_animation"));
 		ser_write_object(w);
@@ -839,6 +846,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 					res.counter.value = item_value.i32;
 				} else if(str8_match(item_key.str, str8_lit("resolution"), 0)) {
 					res.counter.resolution = item_value.i32;
+				}
+			}
+		} else if(str8_match(key.str, str8_lit("collision_layer"), 0)) {
+			assert(value.type == SER_TYPE_OBJECT);
+			struct ser_value item_key, item_value;
+			while(ser_iter_object(r, value, &item_key, &item_value)) {
+				assert(item_key.type == SER_TYPE_STRING);
+				if(str8_match(item_key.str, str8_lit("layer"), 0)) {
+					res.collision_layer.layer = item_value.i32;
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("crank_animation"), 0)) {
