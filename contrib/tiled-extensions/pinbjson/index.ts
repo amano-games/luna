@@ -48,6 +48,7 @@ import {
   Bucket,
   CrankAnimation,
   SpriteLayer,
+  CollisionLayer,
   LayerProps,
 } from "./types";
 import { getImgPath } from "./utils";
@@ -477,6 +478,14 @@ function getSpriteLayer(prop: PropertyValue) {
   return res;
 }
 
+function getCollisionLayer(prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: CollisionLayer = {
+    layer: value["layer"].value,
+  };
+  return res;
+}
+
 function handleObjectLayer(layer: Layer, layer_index: number) {
   const res = [];
   if (!layer.isObjectLayer) {
@@ -491,6 +500,12 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
           return {
             ...acc,
             sprite_layer: getSpriteLayer(prop),
+          };
+        }
+        case "collision_layer": {
+          return {
+            ...acc,
+            collision_layer: getCollisionLayer(prop),
           };
         }
       }
@@ -583,6 +598,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 };
               }
               return acc;
+            case "collision_layer":
+              return {
+                ...acc,
+                collision_layer: getCollisionLayer(prop),
+              };
             case "gravity":
               return {
                 ...acc,
@@ -730,6 +750,7 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
           x,
           y,
           spr: getSprite(item, x, y, layerProps),
+          collision_layer: layerProps.collision_layer,
         } as Entity,
       );
       if (res == null) {

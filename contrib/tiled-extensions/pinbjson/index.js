@@ -757,6 +757,13 @@
     };
     return res;
   }
+  function getCollisionLayer(prop) {
+    const value = prop.value;
+    const res = {
+      layer: value["layer"].value
+    };
+    return res;
+  }
   function handleObjectLayer(layer, layer_index) {
     const res = [];
     if (!layer.isObjectLayer) {
@@ -769,6 +776,11 @@
           case "sprite_layer": {
             return __spreadProps(__spreadValues({}, acc), {
               sprite_layer: getSpriteLayer(prop)
+            });
+          }
+          case "collision_layer": {
+            return __spreadProps(__spreadValues({}, acc), {
+              collision_layer: getCollisionLayer(prop)
             });
           }
         }
@@ -843,6 +855,10 @@
                 });
               }
               return acc;
+            case "collision_layer":
+              return __spreadProps(__spreadValues({}, acc), {
+                collision_layer: getCollisionLayer(prop)
+              });
             case "gravity":
               return __spreadProps(__spreadValues({}, acc), {
                 gravity: getGravity(item, prop)
@@ -969,7 +985,8 @@
           id: item.id,
           x,
           y,
-          spr: getSprite(item, x, y, layerProps)
+          spr: getSprite(item, x, y, layerProps),
+          collision_layer: layerProps.collision_layer
         }
       );
       if (res2 == null) {
