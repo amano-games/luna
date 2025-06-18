@@ -274,6 +274,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 	if(entity.collision_layer.layer > 0) {
 		ser_write_string(w, str8_lit("collision_layer"));
+		ser_write_object(w);
 		ser_write_string(w, str8_lit("layer"));
 		ser_write_i32(w, entity.collision_layer.layer);
 		ser_write_end(w);
