@@ -46,6 +46,7 @@ struct sokol_state {
 	u8 keys[SYS_KEYS_LEN];
 	bool32 crank_docked;
 	f32 crank;
+	f32 volume;
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -90,8 +91,8 @@ stream_cb(f32 *buffer, int num_frames, int num_channels)
 
 	static i16 lbuf[0x1000];
 	static i16 rbuf[0x1000];
-	mclr(lbuf, sizeof(lbuf));
-	mclr(rbuf, sizeof(rbuf));
+	mclr_array(lbuf);
+	mclr_array(rbuf);
 
 	sys_internal_audio(lbuf, rbuf, num_frames);
 
@@ -138,9 +139,9 @@ init(void)
 	});
 
 	saudio_setup(&(saudio_desc){
-		// .stream_cb   = stream_cb,
-		.stream_cb   = stream_cb,
-		.logger.func = slog_func,
+		.buffer_frames = 256,
+		.stream_cb     = stream_cb,
+		.logger.func   = slog_func,
 	});
 
 	/* a pass action to framebuffer to black */
@@ -628,27 +629,20 @@ sys_audio_set_volume(f32 vol)
 f32
 sys_audio_get_volume(void)
 {
-	dbg_not_implemeneted("sokol");
-
-error:
-	return 1.0f;
+	return SOKOL_STATE.volume;
 }
 
 void
 sys_audio_lock(void)
 {
-	dbg_not_implemeneted("sokol");
-
-error:
+	// SDL_LockAudioDevice(g_SDL.audiodevID);
 	return;
 }
 
 void
 sys_audio_unlock(void)
 {
-	dbg_not_implemeneted("sokol");
-
-error:
+	// SDL_UnlockAudioDevice(g_SDL.audiodevID);
 	return;
 }
 
