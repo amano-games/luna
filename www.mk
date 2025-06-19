@@ -46,6 +46,7 @@ endif
 CFLAGS += $(CDEFS)
 CFLAGS += -s ALLOW_MEMORY_GROWTH=1
 CFLAGS += -s USE_WEBGL2
+CFLAGS += -s NO_EXIT_RUNTIME=1
 CFLAGS += --shell-file=$(PLATFORM_DIR)/index.html
 CFLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
 
