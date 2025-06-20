@@ -216,7 +216,7 @@ bet_deco_init(
 	case BET_DECO_REPEAT_RND_TIMES: {
 		i32 min           = bet_prop_f32_get(node->props[0], 0);
 		i32 max           = bet_prop_f32_get(node->props[1], 0);
-		i32 value         = rndm_range_i32(min, max);
+		i32 value         = rndm_range_i32(NULL, min, max);
 		node_ctx->run_max = value;
 	} break;
 	default: {
@@ -246,7 +246,7 @@ bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdat
 	case BET_COMP_PARALLEL: {
 	} break;
 	case BET_COMP_RND: {
-		usize rnd = rndm_range_i32(0, node->children_count - 1);
+		usize rnd = rndm_range_i32(NULL, 0, node->children_count - 1);
 		bet_set_child(bet, ctx, node_index, rnd);
 	} break;
 	case BET_COMP_RND_WEIGHTED: {
@@ -258,7 +258,7 @@ bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdat
 			choices[i].key   = i;
 			choices[i].value = weights.u8_arr[i];
 		}
-		usize rnd = rndm_weighted_choice_i32(choices, node->children_count);
+		usize rnd = rndm_weighted_choice_i32(NULL, choices, node->children_count);
 		bet_set_child(bet, ctx, node_index, rnd);
 	} break;
 	default: {
