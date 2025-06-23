@@ -628,6 +628,15 @@
     };
     return res;
   }
+  function getBallSaver(_object, prop) {
+    const value = prop.value;
+    const res = {
+      duration: value["duration"],
+      save_delay: value["save_delay"],
+      is_enabled: value["is_enabled"]
+    };
+    return res;
+  }
   function getCrankAnimation(_object, prop) {
     const value = prop.value;
     const res = {
@@ -866,6 +875,10 @@
             case "counter":
               return __spreadProps(__spreadValues({}, acc), {
                 counter: getCounter(item, prop)
+              });
+            case "ball_saver":
+              return __spreadProps(__spreadValues({}, acc), {
+                ball_saver: getBallSaver(item, prop)
               });
             case "crank_animation":
               return __spreadProps(__spreadValues({}, acc), {
