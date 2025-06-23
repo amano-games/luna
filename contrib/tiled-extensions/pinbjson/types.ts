@@ -207,6 +207,12 @@ export interface CollisionLayer {
   layer: number;
 }
 
+export interface BallSaver {
+  is_enabled: boolean;
+  duration: number;
+  save_delay: number;
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -241,6 +247,7 @@ export interface Entity {
   collision_layer?: CollisionLayer;
   sfx_to_animation?: SfxToAnimation[];
   reset?: Reset;
+  ball_saver?: BallSaver;
 }
 
 export interface LayerProps {

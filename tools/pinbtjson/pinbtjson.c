@@ -410,6 +410,29 @@ pinbtjson_handle_bucket(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_ball_saver(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.ball_saver.is_enabled = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("duration")) == 0) {
+			res.ball_saver.duration = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("save_delay")) == 0) {
+			res.ball_saver.save_delay = json_parse_f32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_flipper(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -863,6 +886,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_bucket(json, tokens, i + 1);
 			res.entity.bucket             = item_res.bucket;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("ball_saver")) == 0) {
+			assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_ball_saver(json, tokens, i + 1);
+			res.entity.ball_saver         = item_res.ball_saver;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("flipper")) == 0) {
 			assert(value->type == JSMN_OBJECT);

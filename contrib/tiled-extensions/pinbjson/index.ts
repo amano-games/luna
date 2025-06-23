@@ -50,6 +50,7 @@ import {
   SpriteLayer,
   CollisionLayer,
   LayerProps,
+  BallSaver,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -320,6 +321,16 @@ function getCounter(_object: MapObject, prop: PropertyValue) {
     min: value["min"],
     resolution: value["resolution"],
     value: value["value"],
+  };
+  return res;
+}
+
+function getBallSaver(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: BallSaver = {
+    duration: value["duration"],
+    save_delay: value["save_delay"],
+    is_enabled: value["is_enabled"],
   };
   return res;
 }
@@ -612,6 +623,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               return {
                 ...acc,
                 counter: getCounter(item, prop),
+              };
+            case "ball_saver":
+              return {
+                ...acc,
+                ball_saver: getBallSaver(item, prop),
               };
             case "crank_animation":
               return {
