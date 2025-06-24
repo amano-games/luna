@@ -102,6 +102,7 @@ rndm_weighted_choice_i32(
 	assert(sum != 0);
 	u32 rnd = rndm_next_f32(rndm) * sum;
 	for(usize i = 0; i < count; i++) {
+		if(choices[i].value == 0) { continue; }
 		if(rnd < choices[i].value) return choices[i].key;
 		rnd = rnd - choices[i].value;
 	}
