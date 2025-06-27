@@ -290,14 +290,7 @@ sys_log(
 		default: log_level_str = "INFO"; break;
 		}
 
-		char strret[1024] = {0};
-		sys_sprintf(strret,
-			"[%s] %s: %s",
-			log_level_str,
-			tag,
-			msg);
-
-		sys_printf(strret);
+		sys_printf("[%s] %s: %s", log_level_str, tag, msg);
 	}
 }
 
