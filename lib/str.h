@@ -118,15 +118,4 @@ str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join 
 #define PBWIDTH 20
 #define PBCHAR  '#'
 
-void
-ascii_progress_bar(u8 percent)
-{
-	if(SYS_LOG_LEVEL > 2) {
-		char pbstr[PBWIDTH];
-		mset(pbstr, PBCHAR, PBWIDTH);
-		sys_printf("[%-" S(PBWIDTH) ".*s] %u%%", percent * PBWIDTH / 100, pbstr, percent);
-		sys_printf(" ");
-	}
-}
-
 struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize first_line_max_width, usize max_width, usize wrap_indent);
