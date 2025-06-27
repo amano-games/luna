@@ -35,23 +35,29 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 	struct sys_mem *sys_mem = &SYS.mem;
 	usize mem_total         = permanent + transient + debug;
 
+	log_info("Sys", "Permanent: %$$u", (uint)permanent);
+	log_info("Sys", "Transient: %$$u", (uint)transient);
+	log_info("Sys", "Debug    : %$$u", (uint)debug);
+	log_info("Sys", "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
+	log_info("Sys", "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
 	dbg_assert(mem_total <= mem_max);
 	dbg_check(
 		mem_total <= mem_max,
 		"Sys",
-		"Not enough sys memory | asked:%u available:%u kb missing:%u",
+		"Not enough sys memory | asked:%$$u available:%$$u missing:%$$u",
 		(uint)mem_total,
 		(uint)mem_max,
 		(uint)((mem_total - mem_max)));
 
-	sys_mem->app_mem.size   = permanent + transient + debug;
+	sys_mem->app_mem.size   = mem_total;
 	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
 
 	dbg_check(
 		sys_mem->app_mem.buffer != NULL,
 		"Sys",
-		"Failed to reserve app memory %u",
-		(uint)sys_mem->app_mem.size);
+		"Failed to reserve app memory %$$u: %p",
+		(uint)sys_mem->app_mem.size,
+		sys_mem->app_mem.buffer);
 
 	res.permanent.size   = permanent;
 	res.transient.size   = transient;
@@ -61,7 +67,6 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 	res.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + res.permanent.size + res.transient.size;
 	res.is_initialized   = true;
 
-	log_info("Sys", "App memory %$u", (uint)sys_mem->app_mem.size);
 	if(clear) {
 		mclr(res.transient.buffer, res.transient.size);
 		mclr(res.permanent.buffer, res.permanent.size);

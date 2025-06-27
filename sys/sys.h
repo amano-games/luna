@@ -19,11 +19,11 @@
 #define SYS_ACCELEROMETER_SUPPORT 0
 #endif
 
-#if !defined(TARGET_PLAYDATE)
-#define SYS_MAX_MEM MMEGABYTE(100)
+#if defined(DEBUG)
+// #define SYS_MAX_MEM MMEGABYTE(100)
+#define SYS_MAX_MEM MMEGABYTE(7.0)
 #else
-#define SYS_MAX_MEM 8388208
-// #define SYS_MAX_MEM MMEGABYTE(10)
+#define SYS_MAX_MEM MMEGABYTE(7.0)
 #endif
 
 #if defined(BACKEND_SOKOL)
