@@ -24,6 +24,7 @@ sys_logf(
 	const char *fmt,
 	...)
 {
+#if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL)
 		return;
 
@@ -34,17 +35,9 @@ sys_logf(
 	va_end(args);
 
 	sys_log(tag, log_level, log_item, strret, line_nr, filename);
+#endif
 }
 
-#if DISABLE_LOGGING
-#define __sys_log(tag, level, ...) {};
-#else
-#define __sys_log(tag, level, ...) \
-	{ \
-		sys_logf(tag, level, 0, __LINE__, __FILE__, __VA_ARGS__); \
-	}
-#endif
-
-#define log_info(tag, ...)  __sys_log(tag, SYS_LOG_LEVEL_INFO, __VA_ARGS__);
-#define log_warn(tag, ...)  __sys_log(tag, SYS_LOG_LEVEL_WARN, __VA_ARGS__);
-#define log_error(tag, ...) __sys_log(tag, SYS_LOG_LEVEL_ERROR, __VA_ARGS__);
+#define log_info(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_INFO, 0, __LINE__, __FILE__, __VA_ARGS__);
+#define log_warn(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_WARN, 0, __LINE__, __FILE__, __VA_ARGS__);
+#define log_error(tag, ...) sys_logf(tag, SYS_LOG_LEVEL_ERROR, 0, __LINE__, __FILE__, __VA_ARGS__);
