@@ -124,8 +124,8 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 		i32 shake_x = (c->shake_str_x * c->shake_ticks + (c->shake_ticks_max >> 1)) / c->shake_ticks_max;
 		i32 shake_y = (c->shake_str_y * c->shake_ticks + (c->shake_ticks_max >> 1)) / c->shake_ticks_max;
 		c->shake_ticks--;
-		c->offset.x = rndm_range_i32(-shake_x, shake_x);
-		c->offset.y = rndm_range_i32(-shake_y, shake_y);
+		c->offset.x = rndm_range_i32(NULL, -shake_x, shake_x);
+		c->offset.y = rndm_range_i32(NULL, -shake_y, shake_y);
 	}
 }
 
