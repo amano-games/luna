@@ -74,7 +74,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	jsmn_init(&parser);
 	i32 json_res = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	assert(json_res == token_count);
+	dbg_assert(json_res == token_count);
 
 	struct table table = {0};
 	/* Loop over all keys of the root object */
@@ -83,15 +83,15 @@ gen_table(const str8 in_path, struct alloc scratch)
 		jsmntok_t *value = &tokens[i + 1];
 
 		if(json_eq(json, key, str8_lit("name")) == 0) {
-			assert(value->type == JSMN_STRING);
+			dbg_assert(value->type == JSMN_STRING);
 			table.name = json_str8_cpy_push(json, value, scratch);
 			i++;
 		} else if(json_eq(json, key, str8_lit("prefix")) == 0) {
-			assert(value->type == JSMN_STRING);
+			dbg_assert(value->type == JSMN_STRING);
 			table.prefix = json_str8_cpy_push(json, value, scratch);
 			i++;
 		} else if(json_eq(json, key, str8_lit("columns")) == 0) {
-			assert(value->type == JSMN_ARRAY);
+			dbg_assert(value->type == JSMN_ARRAY);
 
 			table.columns = arr_new(table.columns, value->size, scratch);
 			for(i32 j = 0; j < value->size; j++) {
@@ -108,13 +108,13 @@ gen_table(const str8 in_path, struct alloc scratch)
 				} else if(json_eq(json, child_value, str8_lit("bitmask")) == 0) {
 					column.type = COLUMN_TYPE_BITMASK;
 				} else {
-					assert(0);
+					dbg_assert(0);
 				}
 				arr_push(table.columns, column);
 			}
 			i += value->size + 1;
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
-			assert(value->type == JSMN_ARRAY);
+			dbg_assert(value->type == JSMN_ARRAY);
 			table.rows = arr_new(table.rows, value->size, scratch);
 
 			for(i32 j = 0; j < value->size; j++) {
@@ -127,7 +127,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 				jsmntok_t *child_key   = &tokens[i + j + 1];
 				jsmntok_t *child_value = &tokens[i + j + 2];
 				size_t len             = child_value->end - child_value->start;
-				assert(child_value->type == JSMN_STRING);
+				dbg_assert(child_value->type == JSMN_STRING);
 				for(size_t z = 0; z < arr_len(row.items); ++z) {
 					struct column column        = table.columns[z];
 					struct row_value *row_value = &row.items[z];
@@ -179,7 +179,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 				for(size_t j = 0; j < arr_len(table.rows); ++j) {
 					struct row row             = table.rows[j];
 					struct row_value row_value = row.items[i];
-					assert(row_value.type == column.type);
+					dbg_assert(row_value.type == column.type);
 					str8_list_pushf(alloc, &content, "  %.*s%.*s,\n", (i32)table.prefix.size, table.prefix.str, (i32)row_value.string.size, row_value.string.str);
 				}
 				str8_list_pushf(alloc, &content, "\n  %.*s,\n", (i32)enum_count.size, enum_count.str);
@@ -195,7 +195,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];
-					assert(row_value.type == column.type);
+					dbg_assert(row_value.type == column.type);
 					str8_list_pushf(alloc, &content, "  [%.*s%.*s] = \"%.*s\",\n", (i32)table.prefix.size, table.prefix.str, (i32)row_value_id.string.size, row_value_id.string.str, (i32)row_value.string.size, row_value.string.str);
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
@@ -208,7 +208,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];
-					assert(row_value.type == column.type);
+					dbg_assert(row_value.type == column.type);
 					str8_list_pushf(alloc, &content, "  [%.*s%.*s] = %d,\n", (i32)table.prefix.size, table.prefix.str, (i32)row_value_id.string.size, row_value_id.string.str, row_value.u32);
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
@@ -271,7 +271,7 @@ main(i32 argc, char *argv[])
 
 	usize scratch_mem_size = MMEGABYTE(1);
 	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
-	assert(scratch_mem_buffer != NULL);
+	dbg_assert(scratch_mem_buffer != NULL);
 	struct marena scratch_marena = {0};
 	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
 	struct alloc scratch = marena_allocator(&scratch_marena);

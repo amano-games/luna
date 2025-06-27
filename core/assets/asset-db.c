@@ -69,7 +69,7 @@ asset_db_handle_from_path(str8 path, enum asset_type type)
 str8
 asset_db_path_push(struct asset_db *db, str8 path)
 {
-	assert(path.size > 0);
+	dbg_assert(path.size > 0);
 	struct path_table *table = &db->paths;
 	usize table_len          = arr_len(table->data);
 	usize table_cap          = arr_cap(table->data);
@@ -155,8 +155,8 @@ asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 struct tex
 asset_db_tex_get_by_id(struct asset_db *db, i32 id)
 {
-	assert(id > 0);
-	assert(id < (i32)arr_len(db->textures.arr));
+	dbg_assert(id > 0);
+	dbg_assert(id < (i32)arr_len(db->textures.arr));
 	struct tex_table *table = &db->textures;
 	struct tex res          = table->arr[id];
 	return res;
@@ -215,7 +215,7 @@ asset_db_animation_clip_get(struct asset_db *db, struct asset_handle handle, usi
 	struct animation_slice slice = asset_db_animation_slice_get(db, handle);
 
 	if(slice.clip != NULL) {
-		assert(index < slice.size);
+		dbg_assert(index < slice.size);
 		struct animation_clip *clip = slice.clip + index;
 		res                         = *clip;
 	}
@@ -323,8 +323,8 @@ asset_db_snd_get_id(struct asset_db *db, struct asset_handle handle)
 struct snd
 asset_db_snd_get_by_id(struct asset_db *db, i32 id)
 {
-	assert(id > 0);
-	assert(id < (i32)arr_len(db->snds.arr));
+	dbg_assert(id > 0);
+	dbg_assert(id < (i32)arr_len(db->snds.arr));
 	TRACE_START(__func__);
 	struct snd res = db->snds.arr[id];
 	TRACE_END();
@@ -380,8 +380,8 @@ asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle)
 struct fnt
 asset_db_fnt_get_by_id(struct asset_db *db, i32 id)
 {
-	assert(id > 0);
-	assert(id < (i32)arr_len(db->fonts.arr));
+	dbg_assert(id > 0);
+	dbg_assert(id < (i32)arr_len(db->fonts.arr));
 	struct fnt res = db->fonts.arr[id];
 	return res;
 }
@@ -444,7 +444,7 @@ struct bet *
 asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
 	TRACE_START(__func__);
-	assert(handle.id < arr_len(db->bets.arr));
+	dbg_assert(handle.id < arr_len(db->bets.arr));
 	i32 index             = handle.id;
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
@@ -465,7 +465,7 @@ usize
 asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
 	TRACE_START(__func__);
-	assert(handle.id < arr_len(db->bets.arr));
+	dbg_assert(handle.id < arr_len(db->bets.arr));
 	i32 index             = handle.id;
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();

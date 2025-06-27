@@ -23,7 +23,7 @@
 
 #define ARR_PUSH(xs, x) \
 	do { \
-		assert((xs)->count < (xs)->capacity); \
+		dbg_assert((xs)->count < (xs)->capacity); \
 		(xs)->items[(xs)->count++] = (x); \
 	} while(0)
 

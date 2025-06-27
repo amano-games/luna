@@ -11,7 +11,7 @@ stack_u8_init(struct stack_u8 *stack)
 bool32
 stack_u8_push(struct stack_u8 *stack, u8 value)
 {
-	assert(!stack_u8_is_full(stack));
+	dbg_assert(!stack_u8_is_full(stack));
 	stack->data[stack->count++] = value;
 	return true;
 }

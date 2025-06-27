@@ -315,7 +315,7 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 							}
 						}
 
-						assert(merged_poly.count > 2);
+						dbg_assert(merged_poly.count > 2);
 
 						if(poly_is_convex(merged_poly.verts, merged_poly.count)) {
 							res.items[res.count++] = merged_poly;

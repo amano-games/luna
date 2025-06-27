@@ -118,7 +118,7 @@ aud_cmds_flush(void)
 		} break;
 		case AUD_CMD_MUS_PLAY: {
 			struct aud_cmd_mus_play *cmd = &aud_cmd.c.mus_play;
-			assert(cmd->channel_id != AUD_MUS_CHANNEL_NONE);
+			dbg_assert(cmd->channel_id != AUD_MUS_CHANNEL_NONE);
 			struct mus_channel *mc = &AUDIO.mus_channel[cmd->channel_id];
 			mus_channel_stop(mc);
 			str8 path = asset_db_path_get(&ASSETS.db, cmd->path_handle);
@@ -214,7 +214,7 @@ mus_play(
 	enum mus_channel_id channel_id,
 	f32 vol)
 {
-	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct aud_cmd cmd = {
 		.type     = AUD_CMD_MUS_PLAY,
 		.priority = AUD_CMD_PRIORITY_MUS_PLAY,
@@ -232,7 +232,7 @@ mus_play_by_path(
 	enum mus_channel_id channel_id,
 	f32 vol)
 {
-	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){
 		.path_hash = hash_string(path),
@@ -243,7 +243,7 @@ mus_play_by_path(
 bool32
 mus_is_playing(enum mus_channel_id channel_id)
 {
-	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
 	return mc->stream != NULL;
 }
@@ -251,7 +251,7 @@ mus_is_playing(enum mus_channel_id channel_id)
 void
 mus_stop(enum mus_channel_id channel_id)
 {
-	assert(channel_id != AUD_MUS_CHANNEL_NONE);
+	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
 	mus_channel_stop(mc);
 }
@@ -302,15 +302,15 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 	struct adpcm *adpcm = &mc->adpcm;
 	adpcm->data_pos     = 0;
 
-	assert(adpcm->pos_pitched == adpcm->pos);
+	dbg_assert(adpcm->pos_pitched == adpcm->pos);
 	u32 pos_new = adpcm->pos + len;
 	u32 bneeded = (pos_new - adpcm->pos + (adpcm->nibble == 0)) >> 1;
 
 	if(bneeded) {
 		u32 ft    = sys_file_tell(mc->stream);
 		u32 fnewt = ft + bneeded;
-		assert(fnewt <= mc->total_bytes_file);
-		assert(bneeded <= sizeof(mc->chunk));
+		dbg_assert(fnewt <= mc->total_bytes_file);
+		dbg_assert(bneeded <= sizeof(mc->chunk));
 		sys_file_r(mc->stream, mc->chunk, bneeded);
 	}
 
@@ -321,10 +321,10 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 		// adpcm_playback_nonpitch_silent(adpcm, len);
 		adpcm_playback_nonpitch(adpcm, lb, rb, len);
 	}
-	// assert((adpcm->data_pos - data_pos_prev) == bneeded);
-	assert(adpcm->pos == pos_new);
-	assert(adpcm->data_pos == bneeded);
-	assert(adpcm->pos_pitched == adpcm->pos);
+	// dbg_assert((adpcm->data_pos - data_pos_prev) == bneeded);
+	dbg_assert(adpcm->pos == pos_new);
+	dbg_assert(adpcm->data_pos == bneeded);
+	dbg_assert(adpcm->pos_pitched == adpcm->pos);
 }
 
 u32
@@ -384,11 +384,11 @@ sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i32 len)
 	if(!sc->snd_id) return;
 
 	struct adpcm *adpcm = &sc->adpcm;
-	assert(0 < adpcm->len_pitched);
-	assert(adpcm->pos_pitched < adpcm->len_pitched);
+	dbg_assert(0 < adpcm->len_pitched);
+	dbg_assert(adpcm->pos_pitched < adpcm->len_pitched);
 	i32 l = min_i32(len, adpcm->len_pitched - adpcm->pos_pitched - 1);
 	adpcm_playback(adpcm, lbuf, rbuf, l);
-	assert(adpcm->pos_pitched < adpcm->len_pitched);
+	dbg_assert(adpcm->pos_pitched < adpcm->len_pitched);
 
 	if(adpcm->pos_pitched == adpcm->len_pitched - 1) {
 		sc->count++;
@@ -448,6 +448,5 @@ snd_load(const str8 path, struct alloc alloc)
 
 	res.buf = (u8 *)buf;
 	res.len = num_samples;
-	log_info("Audio", "Load aud: %s samples: %u", path.str, (uint)num_samples);
 	return res;
 }

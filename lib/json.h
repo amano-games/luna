@@ -45,7 +45,7 @@ json_eq(str8 json, jsmntok_t *tok, str8 b)
 static i32
 json_parse_i32(str8 json, jsmntok_t *tok)
 {
-	assert(tok->type == JSMN_PRIMITIVE);
+	dbg_assert(tok->type == JSMN_PRIMITIVE);
 	i32 res = str8_to_i32((str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -57,7 +57,7 @@ json_parse_i32(str8 json, jsmntok_t *tok)
 static bool32
 json_parse_bool32(str8 json, jsmntok_t *tok)
 {
-	assert(tok->type == JSMN_PRIMITIVE);
+	dbg_assert(tok->type == JSMN_PRIMITIVE);
 	i32 res = str8_to_bool32((str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -70,7 +70,7 @@ static f32
 json_parse_f32(str8 json, jsmntok_t *tok)
 {
 	// TODO: Replace with sys_parse_string to use sscanf when it's not broken
-	assert(tok->type == JSMN_PRIMITIVE);
+	dbg_assert(tok->type == JSMN_PRIMITIVE);
 	f32 res = str8_to_f32((str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -81,7 +81,7 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 static str8
 json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
 {
-	assert(tok->type == JSMN_STRING);
+	dbg_assert(tok->type == JSMN_STRING);
 	str8 src = (str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -93,7 +93,7 @@ json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
 static void
 json_str8_cpy(str8 json, jsmntok_t *tok, str8 *dst)
 {
-	assert(tok->type == JSMN_STRING);
+	dbg_assert(tok->type == JSMN_STRING);
 	str8 src = (str8){
 		.str  = (u8 *)json.str + tok->start,
 		.size = tok->end - tok->start,
@@ -114,7 +114,7 @@ json_str8(str8 json, jsmntok_t *tok)
 static inline usize
 json_obj_count(str8 json, const jsmntok_t *tok)
 {
-	assert(tok->type == JSMN_OBJECT);
+	dbg_assert(tok->type == JSMN_OBJECT);
 	usize res = 0;
 	jsmn_parser parser;
 	jsmn_init(&parser);

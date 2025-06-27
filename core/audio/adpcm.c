@@ -31,7 +31,7 @@ adpcm_set_pitch(struct adpcm *adpcm, i32 pitch_q8)
 	adpcm->len_pitched = (adpcm->len * adpcm->pitch_q8) >> 8;
 
 	// highest position in pitched len shall not be out of bounds
-	assert((((adpcm->len_pitched - 1) * adpcm->ipitch_q8) >> 8) < adpcm->len);
+	dbg_assert((((adpcm->len_pitched - 1) * adpcm->ipitch_q8) >> 8) < adpcm->len);
 }
 
 void
@@ -66,8 +66,8 @@ adpcm_playback_nonpitch(struct adpcm *adpcm, i16 *lb, i16 *rb, i32 len)
 static i32
 adpcm_advance_to(struct adpcm *adpcm, u32 pos)
 {
-	assert(pos < adpcm->len);
-	assert(adpcm->pos <= pos);
+	dbg_assert(pos < adpcm->len);
+	dbg_assert(adpcm->pos <= pos);
 	while(adpcm->pos < pos) { // can't savely skip any samples with ADPCM
 		adpcm_advance_step(adpcm);
 	}
@@ -77,7 +77,7 @@ adpcm_advance_to(struct adpcm *adpcm, u32 pos)
 static i32
 adpcm_advance_step(struct adpcm *adpcm)
 {
-	assert(adpcm->pos + 1 < adpcm->len);
+	dbg_assert(adpcm->pos + 1 < adpcm->len);
 	adpcm->pos++;
 	if(!adpcm->nibble) {
 		adpcm->curr_byte = adpcm->data[adpcm->data_pos++];

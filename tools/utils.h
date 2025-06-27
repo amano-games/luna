@@ -21,7 +21,7 @@ to_big_endian(uint32_t value)
 uint32_t
 safe_truncate_u_int64(uint64_t value)
 {
-	assert(value <= 0xFFFFFFFF);
+	dbg_assert(value <= 0xFFFFFFFF);
 	uint32_t result = (uint32_t)value;
 	return (result);
 }

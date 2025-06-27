@@ -13,8 +13,8 @@ fnt_draw_str(
 	i32 leading,
 	i32 mode)
 {
-	assert(fnt.cell_h > 0);
-	assert(fnt.cell_w > 0);
+	dbg_assert(fnt.cell_h > 0);
+	dbg_assert(fnt.cell_w > 0);
 	v2_i32 p         = (v2_i32){x, y};
 	struct tex_rec t = {0};
 	t.t              = fnt.t;
@@ -28,7 +28,7 @@ fnt_draw_str(
 		p.y += is_newline * (fnt.cell_h + leading);
 
 		if(!is_newline) {
-			assert(ci > 31);
+			dbg_assert(ci > 31);
 			t.r.x = ((ci - 32) % fnt.grid_w) * fnt.cell_w;
 			t.r.y = ((ci - 32) / fnt.grid_w) * fnt.cell_h;
 			gfx_spr(ctx, t, p.x, p.y, 0, mode);

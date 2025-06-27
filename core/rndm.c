@@ -100,7 +100,7 @@ rndm_weighted_choice_i32(
 		struct rndm_weighted_choice choice = choices[i];
 		sum += choice.value;
 	}
-	assert(sum != 0);
+	dbg_assert(sum != 0);
 	u32 rnd = rndm_next_f32(rndm) * sum;
 	for(usize i = 0; i < count; i++) {
 		if(choices[i].value == 0) { continue; }

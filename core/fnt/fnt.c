@@ -119,10 +119,10 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 		} else if(str8_match(key.str, str8_lit("cell_h"), 0)) {
 			fnt->cell_h = value.i32;
 		} else if(str8_match(key.str, str8_lit("metrics"), 0)) {
-			assert(value.type == SER_TYPE_OBJECT);
+			dbg_assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
-				assert(item_key.type == SER_TYPE_STRING);
+				dbg_assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("baseline"), 0)) {
 					fnt->metrics.baseline = item_value.i32;
 				} else if(str8_match(item_key.str, str8_lit("x_height"), 0)) {
@@ -143,11 +143,11 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 			struct ser_value item_val;
 			usize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->kern_pairs)) {
-				assert(item_val.type == SER_TYPE_OBJECT);
+				dbg_assert(item_val.type == SER_TYPE_OBJECT);
 				struct ser_value ker_key, ker_value;
 				while(ser_iter_object(r, item_val, &ker_key, &ker_value)) {
-					assert(ker_key.type == SER_TYPE_STRING);
-					assert(ker_value.type == SER_TYPE_I32);
+					dbg_assert(ker_key.type == SER_TYPE_STRING);
+					dbg_assert(ker_value.type == SER_TYPE_I32);
 					u8 a                   = ker_key.str.str[0];
 					u8 b                   = ker_key.str.str[1];
 					u16 index              = ((u16)a << 8) | b;
@@ -188,13 +188,12 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	mclr(res.widths, sizeof(*res.widths) * widths_size);
 	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * kern_pairs_size);
 
-	assert(str8_ends_with(path, fnt_ext, 0));
+	dbg_assert(str8_ends_with(path, fnt_ext, 0));
 	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
 	if(file_res.data == NULL) {
 		log_error("fnt", "Failed loading info: %s", path.str);
 		return res;
 	}
-	sys_printf(FILE_AND_LINE);
 	char *data          = file_res.data;
 	usize size          = file_res.size;
 	struct ser_reader r = {

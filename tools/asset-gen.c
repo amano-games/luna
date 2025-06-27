@@ -140,7 +140,7 @@ main(int argc, char *argv[])
 
 	usize scratch_mem_size = MMEGABYTE(1);
 	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
-	assert(scratch_mem_buffer != NULL);
+	dbg_assert(scratch_mem_buffer != NULL);
 	struct marena scratch_marena = {0};
 	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
 	struct alloc scratch = marena_allocator(&scratch_marena);

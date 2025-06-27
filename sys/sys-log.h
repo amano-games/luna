@@ -14,6 +14,10 @@ enum sys_log_level {
 #endif
 
 void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
+
+// TODO: Add __attribute__(format(gnu_printf, 6, 7)))
+// for static validation
+// https://github.com/nothings/stb/issues/1814
 static inline void
 sys_logf(
 	const char *tag,

@@ -3,11 +3,9 @@
 #include "sys-log.h"
 
 #if defined(TARGET_PLAYDATE) // assertions don't work on hardware - disable
-#undef assert
-#define assert(X)
+#define dbg_assert(X)
 #else
-#undef assert
-#define assert(c) \
+#define dbg_assert(c) \
 	while(!(c)) __builtin_unreachable()
 #endif
 
@@ -19,7 +17,7 @@
 #define dbg_not_implemeneted(T) \
 	do { \
 		log_error(T, "+++ NOT IMPLEMENTED +++" FILE_AND_LINE); \
-		assert(0); \
+		dbg_assert(0); \
 		goto error; \
 	} while(0);
 
@@ -27,7 +25,7 @@
 #define dbg_check(A, ...) \
 	if(!(A)) { \
 		log_error(__VA_ARGS__); \
-		assert(0); \
+		dbg_assert(0); \
 		goto error; \
 	}
 
@@ -40,7 +38,7 @@
 #define dbg_sentinel(T) \
 	do { \
 		log_error(T, "+++ BAD PATH +++"); \
-		assert(0); \
+		dbg_assert(0); \
 		goto error; \
 	} while(0);
 

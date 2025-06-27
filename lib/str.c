@@ -228,7 +228,7 @@ str8_fmtv_push(struct alloc alloc, char *fmt, va_list args)
 str8
 str8_fmt_push(struct alloc alloc, char *fmt, ...)
 {
-	assert(alloc.allocf != NULL);
+	dbg_assert(alloc.allocf != NULL);
 	va_list args;
 	va_start(args, fmt);
 	str8 result = str8_fmtv_push(alloc, fmt, args);

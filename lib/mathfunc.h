@@ -247,7 +247,7 @@ atan_q16(i32 x)
 static i32
 asin_q16(i32 x)
 {
-	// ASSERT(-0x10000 <= x && x <= 0x10000);
+	// dbg_assert(-0x10000 <= x && x <= 0x10000);
 	if(x == 0) return 0;
 	if(x == +0x10000) return +0x10000;
 	if(x == -0x10000) return -0x10000;
@@ -306,7 +306,7 @@ acos_f32(f32 x)
 static i32
 mod_euc_i32(i32 a, i32 b)
 {
-	assert(b > 0);
+	dbg_assert(b > 0);
 	i32 r = a % b;
 	return r < 0 ? r + b : r;
 }
@@ -314,7 +314,7 @@ mod_euc_i32(i32 a, i32 b)
 static f32
 rem_f32(f32 a, f32 b)
 {
-	assert(b > 0);
+	dbg_assert(b > 0);
 	f32 r = fmodf(a, b);
 	return r;
 }
@@ -322,7 +322,7 @@ rem_f32(f32 a, f32 b)
 static f32
 mod_euc_f32(f32 a, f32 b)
 {
-	assert(b > 0);
+	dbg_assert(b > 0);
 	f32 r = fmodf(a, b);
 	r     = r < 0 ? r + b : r;
 	return r;
