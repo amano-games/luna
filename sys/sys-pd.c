@@ -71,9 +71,9 @@ struct pd_state {
 
 static struct pd_state PD_STATE;
 
+void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *fmt, ...);
 int (*PD_SYSTEM_PARSE_STR)(const char *str, const char *format, ...);
 void *(*PD_SYSTEM_REALLOC)(void *ptr, usize size);
-void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *fmt, ...);
 
 static void (*PD_SYSTEM_GET_BUTTON_STATE)(PDButtons *a, PDButtons *b, PDButtons *c);
 static void (*PD_GRAPHICS_MARK_UPDATED_ROWS)(int a, int b);
@@ -297,7 +297,7 @@ sys_log(
 			tag,
 			msg);
 
-		PD_SYSTEM_LOG_TO_CONSOLE(strret);
+		sys_printf(strret);
 	}
 }
 

@@ -269,7 +269,7 @@ sokol_main(i32 argc, char **argv)
 			str8 base_name        = str8_chop_last_slash(where);
 			i32 runtime_path_size = 1 + where.size + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
 			char *runtime_path    = (char *)malloc(runtime_path_size);
-			stbsp_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)where.size, where.str, STEAM_RUNTIME_RELATIVE_PATH);
+			sys_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)where.size, where.str, STEAM_RUNTIME_RELATIVE_PATH);
 
 			log_info("SYS", "dirname:  %.*s", (i32)where.size, where.str);
 			log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
