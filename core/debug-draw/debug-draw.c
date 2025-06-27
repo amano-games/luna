@@ -12,7 +12,7 @@ debug_draw_init(void *mem, usize size)
 	DEBUG_STATE.alloc = marena_allocator(&DEBUG_STATE.marena);
 	marena_init(&DEBUG_STATE.marena, DEBUG_STATE.mem, size);
 
-#if !defined(TARGET_PLAYDATE) && DEBUG
+#if !defined(TARGET_PLAYDATE) && DEBUG && !defined(APP_DISABLE_DEBUG_DRAW)
 	DEBUG_STATE.shapes = arr_new(DEBUG_STATE.shapes, MAX_DEBUG_SHAPES, DEBUG_STATE.alloc);
 	arr_reset(DEBUG_STATE.shapes);
 #endif
@@ -21,7 +21,7 @@ debug_draw_init(void *mem, usize size)
 void
 debug_draw_do(i32 x, i32 y)
 {
-#if !defined(TARGET_PLAYDATE) && defined(DEBUG)
+#if !defined(TARGET_PLAYDATE) && defined(DEBUG) && !defined(APP_DISABLE_DEBUG_DRAW)
 	TRACE_START(__func__);
 	debug_draw_set_offset(x, y);
 	sys_debug_draw(DEBUG_STATE.shapes, arr_len(DEBUG_STATE.shapes));
@@ -51,7 +51,7 @@ debug_draw_clear(void)
 void
 debug_draw_push_shape(struct debug_shape shape)
 {
-#if !defined(TARGET_PLAYDATE) && defined(DEBUG)
+#if !defined(TARGET_PLAYDATE) && defined(DEBUG) && !defined(APP_DISABLE_DEBUG_DRAW)
 	arr_push(DEBUG_STATE.shapes, shape);
 #endif
 }
