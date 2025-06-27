@@ -25,8 +25,7 @@ sys_logf(
 	...)
 {
 #if !defined(SYS_LOG_DISABLE)
-	if(log_level > SYS_LOG_LEVEL)
-		return;
+	if(log_level > SYS_LOG_LEVEL) { return; }
 
 	char strret[1024];
 	va_list args;
