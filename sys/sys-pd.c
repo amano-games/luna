@@ -291,7 +291,7 @@ sys_log(
 		}
 
 		char strret[1024] = {0};
-		stbsp_sprintf(strret,
+		sys_sprintf(strret,
 			"[%s] %s: %s",
 			log_level_str,
 			tag,

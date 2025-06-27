@@ -27,7 +27,7 @@ void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const 
 #define __sys_log(tag, level, ...) \
 	{ \
 		char strret[1024] = {0}; \
-		stbsp_snprintf(strret, sizeof(strret) - 1, __VA_ARGS__); \
+		sys_snprintf(strret, sizeof(strret) - 1, __VA_ARGS__); \
 		sys_log(tag, level, 0, strret, __LINE__, __FILE__); \
 	}
 #if defined(BACKEND_SOKOL)

@@ -10,6 +10,7 @@
 #define STB_SPRINTF_IMPLEMENTATION
 #define STB_SPRINTF_STATIC
 #define STB_SPRINTF_NOUNALIGNED
+#define STB_SPRINTF_DECORATE(name) sys_##name
 #include "stb_sprintf.h"
 
 typedef unsigned char uchar;
