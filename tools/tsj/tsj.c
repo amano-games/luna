@@ -44,14 +44,14 @@ tsj_handle_track(str8 json,
 {
 	struct tsj_track_res res = {0};
 	jsmntok_t *root          = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	res.token_count = json_obj_count(json, root);
 
 	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("frames")) == 0) {
-			assert(value->type == JSMN_STRING);
+			dbg_assert(value->type == JSMN_STRING);
 			str8 frames_str = {
 				.str  = json.str + value->start,
 				.size = value->end - value->start,
@@ -80,7 +80,7 @@ tsj_handle_animation(str8 json,
 {
 	struct tsj_animation_res res = {0};
 	jsmntok_t *root              = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	str8 json_root = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
@@ -100,13 +100,13 @@ tsj_handle_animation(str8 json,
 		} else if(json_eq(json, key, str8_lit("scale")) == 0) {
 			res.clip.scale = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("track_frame")) == 0) {
-			assert(value->type == JSMN_OBJECT);
+			dbg_assert(value->type == JSMN_OBJECT);
 			struct tsj_track_res track_res                  = tsj_handle_track(json, tokens, i + 1, alloc, scratch);
 			res.clip.tracks[ANIMATION_TRACK_FRAME - 1]      = track_res.track;
 			res.clip.tracks[ANIMATION_TRACK_FRAME - 1].type = ANIMATION_TRACK_FRAME;
 			i += track_res.token_count;
 		} else if(json_eq(json, key, str8_lit("track_sprite_mode")) == 0) {
-			assert(value->type == JSMN_OBJECT);
+			dbg_assert(value->type == JSMN_OBJECT);
 			struct tsj_track_res track_res                        = tsj_handle_track(json, tokens, i + 1, alloc, scratch);
 			res.clip.tracks[ANIMATION_TRACK_SPRITE_MODE - 1]      = track_res.track;
 			res.clip.tracks[ANIMATION_TRACK_SPRITE_MODE - 1].type = ANIMATION_TRACK_SPRITE_MODE;
@@ -125,8 +125,8 @@ tsj_handle_animation(str8 json,
 	}
 
 	res.clip.frame_duration = res.clip.frame_duration / 1000;
-	assert(res.clip.frame_duration > 0);
-	assert(res.clip.frame_duration < 10);
+	dbg_assert(res.clip.frame_duration > 0);
+	dbg_assert(res.clip.frame_duration < 10);
 
 	return res;
 }
@@ -141,7 +141,7 @@ tsj_handle_property(
 {
 	struct tsj_property_res res = {0};
 	jsmntok_t *root             = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	str8 json_root = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
@@ -159,7 +159,7 @@ tsj_handle_property(
 				return res;
 			}
 		} else if(json_eq(json, key, str8_lit("value")) == 0) {
-			assert(value->type == JSMN_OBJECT);
+			dbg_assert(value->type == JSMN_OBJECT);
 			usize item_index                  = i + 1;
 			struct tsj_animation_res item_res = tsj_handle_animation(
 				json,
@@ -168,7 +168,7 @@ tsj_handle_property(
 				alloc,
 				scratch);
 			res.clip = item_res.clip;
-			assert(res.clip.count != 0);
+			dbg_assert(res.clip.count != 0);
 			return res;
 		}
 	}
@@ -187,7 +187,7 @@ tsj_handle_tile(
 {
 	struct tsj_tile_res res = {0};
 	jsmntok_t *root         = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	str8 json_root = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
@@ -211,12 +211,12 @@ tsj_handle_tile(
 		} else if(json_eq(json, key, str8_lit("imageheight")) == 0) {
 			res.asset.info.tex_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
-			assert(value->type == JSMN_ARRAY);
+			dbg_assert(value->type == JSMN_ARRAY);
 			res.asset.clips = arr_new(res.asset.clips, value->size, alloc);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
-				assert(item->type == JSMN_OBJECT);
+				dbg_assert(item->type == JSMN_OBJECT);
 				struct tsj_property_res item_res = tsj_handle_property(
 					json,
 					tokens,
@@ -259,11 +259,11 @@ tsj_handle_json(
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	assert(json_res == token_count);
+	dbg_assert(json_res == token_count);
 
 	jsmntok_t root = tokens[0];
 
-	assert(root.type == JSMN_OBJECT);
+	dbg_assert(root.type == JSMN_OBJECT);
 
 	struct ani_db res = {0};
 
@@ -274,12 +274,12 @@ tsj_handle_json(
 			usize count = json_parse_i32(json, value);
 			res.assets  = arr_new(res.assets, count, alloc);
 		} else if(json_eq(json, key, str8_lit("tiles")) == 0) {
-			assert(value->type == JSMN_ARRAY);
-			assert(arr_cap(res.assets) == (usize)value->size);
+			dbg_assert(value->type == JSMN_ARRAY);
+			dbg_assert(arr_cap(res.assets) == (usize)value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
-				assert(item->type == JSMN_OBJECT);
+				dbg_assert(item->type == JSMN_OBJECT);
 				struct tsj_tile_res tile_res = tsj_handle_tile(
 					in_path,
 					json,
@@ -294,7 +294,7 @@ tsj_handle_json(
 		}
 	}
 
-	assert(arr_len(res.assets) == arr_cap(res.assets));
+	dbg_assert(arr_len(res.assets) == arr_cap(res.assets));
 	for(usize i = 0; i < arr_len(res.assets); ++i) {
 		struct ani_db_asset asset = res.assets[i];
 		usize clip_count          = arr_len(asset.clips);
@@ -312,7 +312,7 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
-	assert(mem_buffer != NULL);
+	dbg_assert(mem_buffer != NULL);
 	struct marena marean = {0};
 	marena_init(&marean, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marean);

@@ -32,7 +32,7 @@ queue_u8_is_empty(struct queue_u8 *queue)
 bool32
 enqueue_u8(struct queue_u8 *queue, u8 value)
 {
-	// assert(!queue_u8_is_full(queue));
+	// dbg_assert(!queue_u8_is_full(queue));
 
 	queue->data[queue->tail] = value;                               // Add the value at the tail
 	queue->tail              = (queue->tail + 1) % QUEUE_MAX_ITEMS; // Circular increment of tail

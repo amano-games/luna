@@ -41,7 +41,7 @@ bit_pairs_arr_u32_new(usize count, struct alloc alloc)
 static bool32
 bit_pair_arr_exists_and_set(u32 *arr, usize count, usize index_a, usize index_b)
 {
-	assert(index_a != index_b);
+	dbg_assert(index_a != index_b);
 	u32 min = index_a;
 	u32 max = index_b;
 	if(index_b < index_a) {

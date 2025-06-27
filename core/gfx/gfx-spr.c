@@ -492,10 +492,10 @@ gfx_patch(
 	i32 sw = patch.r.w;
 	i32 sh = patch.r.h;
 
-	assert(ml >= 0 && ml <= sw);
-	assert(mr >= 0 && mr <= sw);
-	assert(mt >= 0 && mt <= sh);
-	assert(mb >= 0 && mb <= sh);
+	dbg_assert(ml >= 0 && ml <= sw);
+	dbg_assert(mr >= 0 && mr <= sw);
+	dbg_assert(mt >= 0 && mt <= sh);
+	dbg_assert(mb >= 0 && mb <= sh);
 
 	// Fixed corners
 	struct tex_rec top_left     = {.t = patch.t, .r = {sx, sy, ml, mt}};

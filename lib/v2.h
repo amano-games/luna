@@ -272,7 +272,7 @@ v2_lerp(v2 a, v2 b, f32 t)
 static inline v2
 v2_move_towards(v2 a, v2 b, f32 delta, f32 direction)
 {
-	assert(direction == 1.0f || direction == -1.0f);
+	dbg_assert(direction == 1.0f || direction == -1.0f);
 	v2 ba   = v2_mul(v2_sub(b, a), direction);
 	f32 len = v2_len(ba);
 

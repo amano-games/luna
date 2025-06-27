@@ -21,7 +21,7 @@ struct prop_res
 handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct alloc scratch)
 {
 	jsmntok_t *root = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	str8 node_json = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
@@ -38,10 +38,10 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			switch(value->type) {
 			case JSMN_ARRAY: {
 				res.prop.type = BET_PROP_U8_ARR;
-				assert((usize)value->size <= ARRLEN(res.prop.u8_arr));
+				dbg_assert((usize)value->size <= ARRLEN(res.prop.u8_arr));
 				for(int j = 0; j < value->size; j++) {
 					jsmntok_t *num = &tokens[i + j + 2];
-					assert(num->type == JSMN_PRIMITIVE);
+					dbg_assert(num->type == JSMN_PRIMITIVE);
 					res.prop.u8_arr[j] = (u8)json_parse_i32(json, num);
 				}
 			} break;
@@ -57,7 +57,7 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			} break;
 			case JSMN_STRING: {
 				res.prop.type = BET_PROP_STR;
-				assert((usize)value->size <= ARRLEN(res.prop.str));
+				dbg_assert((usize)value->size <= ARRLEN(res.prop.str));
 				str8 str = str8_cstr((char *)res.prop.str);
 				json_str8_cpy(json, value, &str);
 			} break;
@@ -74,7 +74,7 @@ struct node_res
 handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct alloc scratch)
 {
 	jsmntok_t *root = &tokens[index];
-	assert(root->type == JSMN_OBJECT);
+	dbg_assert(root->type == JSMN_OBJECT);
 	str8 node_json = {
 		.str  = json.str + root->start,
 		.size = root->end - root->start,
@@ -162,7 +162,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			}
 			struct bet_node *node = bet->nodes + res.node_index;
 
-			assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+			dbg_assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
 
 			str8 dst = {
 				.str  = (u8 *)node->name,
@@ -174,7 +174,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			usize len = value->end - value->start;
 			if(len > 0) {
 				struct bet_node *node = bet->nodes + res.node_index;
-				assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+				dbg_assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
 
 				str8 dst = {
 					.str  = (u8 *)node->name,
@@ -184,11 +184,11 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 			}
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			struct bet_prop props[MAX_BET_NODE_PROPS] = {0};
-			assert(value->size <= MAX_BET_NODE_PROPS);
+			dbg_assert(value->size <= MAX_BET_NODE_PROPS);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 prop_index  = i + 2;
 				jsmntok_t *item = &tokens[prop_index];
-				assert(item->type == JSMN_OBJECT);
+				dbg_assert(item->type == JSMN_OBJECT);
 				struct prop_res prop_res = handle_prop(json, tokens, prop_index, bet, scratch);
 				if(prop_res.prop.type != BET_PROP_NONE) {
 					bet_push_prop(bet, res.node_index, prop_res.prop);
@@ -196,23 +196,23 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				i += prop_res.token_count;
 			}
 		} else if(json_eq(json, key, str8_lit("decorators")) == 0) {
-			assert(value->type == JSMN_ARRAY);
-			assert(res.node_index != 0);
+			dbg_assert(value->type == JSMN_ARRAY);
+			dbg_assert(res.node_index != 0);
 			if(value->size > 0) {
 				log_warn("ai-gen", "using decorators, not supported");
 			}
 
 		} else if(json_eq(json, key, str8_lit("childNodes")) == 0) {
-			assert(res.node_index != 0);
+			dbg_assert(res.node_index != 0);
 			struct bet_node *node = &bet->nodes[res.node_index];
-			assert(node->type != BET_NODE_NONE);
-			assert(node->type == BET_NODE_COMP || node->type == BET_NODE_DECO);
+			dbg_assert(node->type != BET_NODE_NONE);
+			dbg_assert(node->type == BET_NODE_COMP || node->type == BET_NODE_DECO);
 
-			assert(value->type == JSMN_ARRAY);
+			dbg_assert(value->type == JSMN_ARRAY);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 child_index = i + 2;
 				jsmntok_t *item = &tokens[child_index];
-				assert(item->type == JSMN_OBJECT);
+				dbg_assert(item->type == JSMN_OBJECT);
 				struct node_res child_res = handle_node(json, tokens, child_index, bet, scratch);
 				bet_push_child(bet, res.node_index, child_res.node_index);
 				i += child_res.token_count;
@@ -232,11 +232,11 @@ handle_btree_json(str8 json, struct bet *bet, struct alloc scratch)
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	assert(json_res == token_count);
+	dbg_assert(json_res == token_count);
 
 	jsmntok_t root = tokens[0];
 
-	assert(root.type == JSMN_OBJECT);
+	dbg_assert(root.type == JSMN_OBJECT);
 
 	handle_node(json, tokens, 0, bet, scratch);
 }
@@ -247,7 +247,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
-	assert(mem_buffer != NULL);
+	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);

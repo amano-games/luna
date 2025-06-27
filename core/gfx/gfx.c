@@ -309,7 +309,7 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode
 	i32 y2 = min_i32(y + h - 1, ctx.clip_y2);
 	if(x2 < x1) return;
 
-	assert(y2 <= ctx.clip_y2);
+	dbg_assert(y2 <= ctx.clip_y2);
 	struct tex dtex       = ctx.dst;
 	struct span_blit info = span_blit_gen(ctx, y1, x1, x2, mode);
 	if(dtex.fmt == TEX_FMT_OPAQUE) {
@@ -328,7 +328,7 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode
 void
 gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2)
 {
-	assert(0 <= y1 && y2 <= dst.h);
+	dbg_assert(0 <= y1 && y2 <= dst.h);
 	u32 *px = &dst.px[y1 * dst.wword];
 	for(i32 y = y1; y < y2; y++) {
 		const u32 p = pat.p[y & 7];
@@ -471,7 +471,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 	static u8 cirx[GFX_LIN_NUM_CIRX];
 
 	i32 r = d >> 1;
-	assert(r < GFX_LIN_NUM_CIRX);
+	dbg_assert(r < GFX_LIN_NUM_CIRX);
 
 	if(r <= 1) {
 		cirx[0] = r;
@@ -499,7 +499,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 	i32 ymin = max_i32(min_i32(ay, by) - r, ctx.clip_y1);
 	i32 ymax = min_i32(max_i32(ay, by) + r, ctx.clip_y2);
 	i32 y_dt = ymax - ymin;
-	assert(y_dt < GFX_LIN_NUM_SPANS);
+	dbg_assert(y_dt < GFX_LIN_NUM_SPANS);
 
 	for(i32 n = 0; n <= y_dt; n++) {
 		spans[n][0] = U16_MAX;
@@ -521,8 +521,8 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 			if(x2 < x1) continue;
 			i32 y1 = yi - y - ymin;
 			i32 y2 = yi + y - ymin;
-			assert(0 <= x1 && x1 <= U16_MAX);
-			assert(0 <= x2 && x2 <= U16_MAX);
+			dbg_assert(0 <= x1 && x1 <= U16_MAX);
+			dbg_assert(0 <= x2 && x2 <= U16_MAX);
 			if(0 <= y1 && y1 <= y_dt) {
 
 				spans[y1][0] = min_i32(spans[y1][0], x1);

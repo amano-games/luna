@@ -13,10 +13,10 @@ animation_clip_init(struct animation_clip *data)
 		struct animation_track *track = &data->tracks[i];
 		track->type                   = i + 1;
 		if(track->type == ANIMATION_TRACK_FRAME) {
-			// assert(track->frames.len > 0);
+			// dbg_assert(track->frames.len > 0);
 		}
-		assert(track->type != ANIMATION_TRACK_NONE);
-		assert(track->type < ANIMATION_TRACK_SPRITE_MODE + 1);
+		dbg_assert(track->type != ANIMATION_TRACK_NONE);
+		dbg_assert(track->type < ANIMATION_TRACK_SPRITE_MODE + 1);
 	}
 	data->clip_duration      = animation_data_get_clip_duration(data);
 	data->frame_duration_inv = 1.0f / (data->frame_duration * data->scale);
@@ -57,7 +57,7 @@ usize
 animation_get_last_frame(struct animation_track *track)
 {
 	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) return 0;
-	assert(track->frames.len > 0);
+	dbg_assert(track->frames.len > 0);
 	usize frame_index = track->frames.len - 1;
 	usize res         = track->frames.items[frame_index];
 	return res;
@@ -67,7 +67,7 @@ usize
 animation_get_first_frame(struct animation_track *track)
 {
 	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) return 0;
-	assert(track->frames.len > 0);
+	dbg_assert(track->frames.len > 0);
 	usize res = track->frames.items[0];
 	return res;
 }
@@ -75,7 +75,7 @@ animation_get_first_frame(struct animation_track *track)
 usize
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
-	assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
+	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
 	usize track_index             = track_type - 1;
 	struct animation_track *track = &ani->clip.tracks[track_index];

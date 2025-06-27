@@ -130,7 +130,7 @@ ani_db_clip_read(
 	struct animation_clip res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("count"), 0)) {
 			res.count = value.i32;
 		} else if(str8_match(key.str, str8_lit("frame_duration"), 0)) {
@@ -148,10 +148,10 @@ ani_db_clip_read(
 		}
 	}
 
-	assert(res.count != 0);
-	assert(res.frame_duration > 0);
-	assert(res.frame_duration < 10);
-	assert(res.tracks[0].frames.len > 0 || res.tracks[1].frames.len > 0);
+	dbg_assert(res.count != 0);
+	dbg_assert(res.frame_duration > 0);
+	dbg_assert(res.frame_duration < 10);
+	dbg_assert(res.tracks[0].frames.len > 0 || res.tracks[1].frames.len > 0);
 
 	return res;
 }
@@ -165,7 +165,7 @@ ani_db_asset_read(
 	struct ani_db_asset res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
 			res.path = str8_cpy_push(alloc, value.str);
 		} else if(str8_match(key.str, str8_lit("tex_width"), 0)) {
@@ -196,7 +196,7 @@ ani_db_read(struct ser_reader *r, struct alloc alloc)
 	struct ser_value key, value;
 
 	while(ser_iter_object(r, db, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("clip_count"), 0)) {
 			res.clip_count = value.i32;
 		} else if(str8_match(key.str, str8_lit("bank_count"), 0)) {

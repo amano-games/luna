@@ -310,7 +310,7 @@ col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 	switch(b.type) {
 	case COL_TYPE_AABB: {
 		type_b = C2_TYPE_AABB;
-		assert(false); // not implemented
+		dbg_assert(false); // not implemented
 	} break;
 	case COL_TYPE_CIR: {
 		type_b = C2_TYPE_CIRCLE;
@@ -321,7 +321,7 @@ col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb)
 		dbg_not_implemeneted("col");
 	} break;
 	default: {
-		assert(false);
+		dbg_assert(false);
 	};
 	}
 
@@ -526,7 +526,7 @@ struct col_aabb
 col_shape_get_bounding_box(struct col_shape shape)
 {
 	struct col_aabb res = {0};
-	assert(shape.type != COL_TYPE_NONE);
+	dbg_assert(shape.type != COL_TYPE_NONE);
 	switch(shape.type) {
 	case COL_TYPE_CIR: {
 		res = (struct col_aabb){

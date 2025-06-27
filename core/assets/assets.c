@@ -32,8 +32,8 @@ error: {
 	usize left  = marena_size_rem(&ASSETS.marena);
 	usize total = assets->marena.buf_size;
 	usize used  = total - left;
-	log_error("Assets", "Ran out of asset mem! requested: %u kb", (uint)s / 1024);
-	log_error("Assets", "MEM: used: %u kb left: %u kb total: %u kb", (uint)used / 1024, (uint)left / 1024, (uint)total / 1024);
+	log_error("Assets", "Ran out of asset mem! requested: %$u", (uint)s);
+	log_error("Assets", "MEM: used: %$u left: %$u total: %$u", (uint)used, (uint)left, (uint)total);
 	return NULL;
 }
 }
@@ -92,7 +92,6 @@ asset_fnt_get_id(str8 path)
 i32
 asset_fnt_load(str8 path, struct fnt *fnt)
 {
-	sys_printf("Assets fnt load %s", path.str);
 	i32 res = 0;
 
 	usize size = MKILOBYTE(200);
@@ -121,7 +120,6 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 
 	mclr(marena.p, size_scratch);
 	marena_reset_to(&ASSETS.marena, marena.p);
-	sys_printf(FILE_AND_LINE);
 	return res;
 }
 

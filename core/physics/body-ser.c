@@ -56,45 +56,45 @@ body_read(struct ser_reader *r, struct ser_value obj)
 	struct body res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {
-			assert(value.type == SER_TYPE_I32);
+			dbg_assert(value.type == SER_TYPE_I32);
 			res.flags = value.i32;
 		} else if(str8_match(key.str, str8_lit("x"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.p.x = value.i32;
 		} else if(str8_match(key.str, str8_lit("y"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.p.y = value.i32;
 		} else if(str8_match(key.str, str8_lit("restitution"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.restitution = value.f32;
 		} else if(str8_match(key.str, str8_lit("dynamic_friction"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.dynamic_friction = value.f32;
 		} else if(str8_match(key.str, str8_lit("static_friction"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.static_friction = value.f32;
 		} else if(str8_match(key.str, str8_lit("mass"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.mass = value.f32;
 		} else if(str8_match(key.str, str8_lit("mass_inv"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.mass_inv = value.f32;
 		} else if(str8_match(key.str, str8_lit("inertia"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.inertia = value.f32;
 		} else if(str8_match(key.str, str8_lit("inertia_inv"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.inertia_inv = value.f32;
 		} else if(str8_match(key.str, str8_lit("linear_damping"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.linear_damping = value.f32;
 		} else if(str8_match(key.str, str8_lit("ang_damping"), 0)) {
-			assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_F32);
 			res.ang_damping = value.f32;
 		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
-			assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value shape_value = {0};
 			while(ser_iter_array(r, value, &shape_value)) {
 				res.shapes.items[res.shapes.count++] = col_shape_read(r, shape_value);
@@ -118,17 +118,17 @@ col_cir_write(struct ser_writer *w, struct col_cir cir)
 static inline struct col_cir
 col_cir_read(struct ser_reader *r, struct ser_value value)
 {
-	assert(value.type == SER_TYPE_ARRAY);
+	dbg_assert(value.type == SER_TYPE_ARRAY);
 	struct col_cir res   = {0};
 	struct ser_value val = {0};
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.p.x = val.f32;
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.p.y = val.f32;
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.r = val.f32;
 
 	return res;
@@ -140,16 +140,16 @@ col_aabb_read(struct ser_reader *r, struct ser_value value)
 	struct col_aabb res  = {0};
 	struct ser_value val = {0};
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.min.x = val.f32;
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.min.y = val.f32;
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.max.x = val.f32;
 	ser_iter_array(r, value, &val);
-	assert(val.type == SER_TYPE_F32);
+	dbg_assert(val.type == SER_TYPE_F32);
 	res.max.y = val.f32;
 	return res;
 }
@@ -221,57 +221,57 @@ struct col_shape
 col_shape_read(struct ser_reader *r, struct ser_value obj)
 {
 	struct col_shape res = {0};
-	assert(obj.type == SER_TYPE_OBJECT);
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("aabb"), 0)) {
-			assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type = COL_TYPE_AABB;
 			res.aabb = col_aabb_read(r, value);
 		} else if(str8_match(key.str, str8_lit("cir"), 0)) {
-			assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type = COL_TYPE_CIR;
 			res.cir  = col_cir_read(r, value);
 		} else if(str8_match(key.str, str8_lit("poly"), 0)) {
-			assert(value.type == SER_TYPE_OBJECT);
+			dbg_assert(value.type == SER_TYPE_OBJECT);
 			res.type = COL_TYPE_POLY;
 			struct ser_value poly_key, poly_value;
 			while(ser_iter_object(r, value, &poly_key, &poly_value)) {
-				assert(poly_key.type == SER_TYPE_STRING);
+				dbg_assert(poly_key.type == SER_TYPE_STRING);
 				if(str8_match(poly_key.str, str8_lit("count"), 0)) {
-					assert(poly_value.type == SER_TYPE_I32);
+					dbg_assert(poly_value.type == SER_TYPE_I32);
 					res.poly.count = poly_value.i32;
 				} else if(str8_match(poly_key.str, str8_lit("verts"), 0)) {
-					assert(poly_value.type == SER_TYPE_ARRAY);
+					dbg_assert(poly_value.type == SER_TYPE_ARRAY);
 					struct ser_value val;
 					size i = 0;
 					while(ser_iter_array(r, poly_value, &val)) {
-						assert(val.type == SER_TYPE_F32);
-						assert(i < (size)ARRLEN(res.poly.verts));
+						dbg_assert(val.type == SER_TYPE_F32);
+						dbg_assert(i < (size)ARRLEN(res.poly.verts));
 						res.poly.verts[i].x = val.f32;
 						ser_iter_array(r, poly_value, &val);
 						res.poly.verts[i].y = val.f32;
 						++i;
 					}
-					assert(res.poly.count == i);
+					dbg_assert(res.poly.count == i);
 				} else if(str8_match(poly_key.str, str8_lit("norms"), 0)) {
-					assert(poly_value.type == SER_TYPE_ARRAY);
+					dbg_assert(poly_value.type == SER_TYPE_ARRAY);
 					struct ser_value val;
 					size i = 0;
 					while(ser_iter_array(r, poly_value, &val)) {
-						assert(val.type == SER_TYPE_F32);
-						assert(i < (size)ARRLEN(res.poly.norms));
+						dbg_assert(val.type == SER_TYPE_F32);
+						dbg_assert(i < (size)ARRLEN(res.poly.norms));
 						res.poly.norms[i].x = val.f32;
 						ser_iter_array(r, poly_value, &val);
 						res.poly.norms[i].y = val.f32;
 						++i;
 					}
-					assert(res.poly.count == i);
+					dbg_assert(res.poly.count == i);
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("capsule"), 0)) {
-			assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type             = COL_TYPE_CAPSULE;
 			struct ser_value val = {0};
 			ser_iter_array(r, value, &val);

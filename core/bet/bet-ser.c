@@ -118,7 +118,7 @@ bet_prop_read(struct ser_reader *r, struct ser_value obj)
 	struct bet_prop res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
 			res.type = value.i32;
 		} else if(str8_match(key.str, str8_lit("value"), 0)) {
@@ -160,7 +160,7 @@ bet_node_read(struct ser_reader *r, struct ser_value obj)
 	struct ser_value key, value;
 
 	while(ser_iter_object(r, obj, &key, &value)) {
-		assert(key.type == SER_TYPE_STRING);
+		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
 			res.type = value.i32;
 		} else if(str8_match(key.str, str8_lit("sub_type"), 0)) {

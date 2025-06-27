@@ -47,23 +47,23 @@ handle_metrics(str8 json, struct alloc scratch)
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	assert(json_res == token_count);
+	dbg_assert(json_res == token_count);
 
 	struct fnt_metrics res = {0};
 	for(i32 i = 1; i < token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("baseline")) == 0) {
-			assert(value->type == JSMN_PRIMITIVE);
+			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.baseline = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("xHeight")) == 0) {
-			assert(value->type == JSMN_PRIMITIVE);
+			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.x_height = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("capHeight")) == 0) {
-			assert(value->type == JSMN_PRIMITIVE);
+			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.cap_height = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("descent")) == 0) {
-			assert(value->type == JSMN_PRIMITIVE);
+			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.descent = json_parse_i32(json, value);
 		}
 	}
@@ -148,7 +148,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
-	assert(mem_buffer != NULL);
+	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
@@ -173,7 +173,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	str8 metrics_id  = str8_lit("--metrics=");
 	str8 tracking_id = str8_lit("tracking=");
 	usize metrics_i  = str8_find_needle(data, 0, metrics_id, 0);
-	assert((char)*(data.str + metrics_i + metrics_id.size) == '{');
+	dbg_assert((char)*(data.str + metrics_i + metrics_id.size) == '{');
 	usize metrics_f  = str8_find_needle(data, metrics_i, str8_lit("}"), 0);
 	usize tracking_i = str8_find_needle(data, 0, tracking_id, 0);
 	usize tracking_f = str8_find_needle(data, tracking_i, str8_lit("\n"), 0);

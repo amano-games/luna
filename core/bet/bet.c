@@ -188,7 +188,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 	}
 
 error:
-	assert(0);
+	dbg_assert(0);
 	return res;
 }
 
@@ -253,7 +253,7 @@ bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdat
 	case BET_COMP_RND_WEIGHTED: {
 		struct rndm_weighted_choice choices[MAX_BET_CHILDREN] = {0};
 		struct bet_prop weights                               = node->props[0];
-		assert(weights.type == BET_PROP_U8_ARR);
+		dbg_assert(weights.type == BET_PROP_U8_ARR);
 
 		for(usize i = 0; i < node->children_count; ++i) {
 			choices[i].key   = i;
@@ -278,7 +278,7 @@ bet_comp_tick(
 {
 	struct bet_node *node         = bet_get_node(bet, node_index);
 	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
-	assert(node->type == BET_NODE_COMP);
+	dbg_assert(node->type == BET_NODE_COMP);
 	enum bet_comp_type type = node->sub_type;
 
 	switch(type) {
@@ -327,8 +327,8 @@ bet_deco_tick(
 {
 	struct bet_node *node         = bet_get_node(bet, node_index);
 	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
-	assert(node->type == BET_NODE_DECO);
-	assert(node->children_count == 1);
+	dbg_assert(node->type == BET_NODE_DECO);
+	dbg_assert(node->children_count == 1);
 	enum bet_deco_type type = node->sub_type;
 
 	switch(type) {
@@ -382,12 +382,12 @@ bet_action_tick(
 {
 	struct bet_node *node         = bet_get_node(bet, node_index);
 	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
-	assert(node->type == BET_NODE_ACTION);
+	dbg_assert(node->type == BET_NODE_ACTION);
 	enum bet_res res = BET_RES_NONE;
 	if(ctx->action_do != NULL) {
 		res           = ctx->action_do(bet, ctx, node, userdata);
 		node_ctx->res = res;
-		assert(res != BET_RES_NONE);
+		dbg_assert(res != BET_RES_NONE);
 	}
 
 	return res;
@@ -403,7 +403,7 @@ bet_comp_end(
 {
 	struct bet_node *node         = bet_get_node(bet, node_index);
 	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
-	assert(node->type == BET_NODE_COMP);
+	dbg_assert(node->type == BET_NODE_COMP);
 	enum bet_comp_type type = node->sub_type;
 
 	switch(type) {
@@ -450,8 +450,8 @@ bet_deco_end(
 {
 	struct bet_node *node         = bet_get_node(bet, node_index);
 	struct bet_node_ctx *node_ctx = ctx->bet_node_ctx + node_index;
-	assert(node->type == BET_NODE_DECO);
-	assert(node->children_count == 1);
+	dbg_assert(node->type == BET_NODE_DECO);
+	dbg_assert(node->children_count == 1);
 	enum bet_deco_type type = node->sub_type;
 	node_ctx->run_count++;
 
@@ -502,7 +502,7 @@ bet_deco_end(
 	}
 
 error:
-	assert(0);
+	dbg_assert(0);
 }
 
 static inline void
@@ -535,8 +535,8 @@ bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 i32
 bet_push_node(struct bet *bet, struct bet_node node)
 {
-	assert(bet != NULL);
-	assert(arr_len(bet->nodes) + 1 < MAX_BET_NODES);
+	dbg_assert(bet != NULL);
+	dbg_assert(arr_len(bet->nodes) + 1 < MAX_BET_NODES);
 	arr_push_packed(bet->nodes, node, bet->alloc);
 	return arr_len(bet->nodes) - 1;
 }
@@ -544,8 +544,8 @@ bet_push_node(struct bet *bet, struct bet_node node)
 struct bet_node *
 bet_get_node(struct bet *bet, usize node_index)
 {
-	assert(bet != NULL);
-	assert(node_index > 0 && node_index < arr_len(bet->nodes));
+	dbg_assert(bet != NULL);
+	dbg_assert(node_index > 0 && node_index < arr_len(bet->nodes));
 	return bet->nodes + node_index;
 }
 
@@ -567,9 +567,9 @@ bool32
 bet_push_child(struct bet *bet, usize parent_index, usize child_index)
 {
 	struct bet_node *parent = bet_get_node(bet, parent_index);
-	assert(parent != NULL);
-	assert(parent->type == BET_NODE_COMP || parent->type == BET_NODE_DECO);
-	assert(parent->children_count + 1 < MAX_BET_CHILDREN);
+	dbg_assert(parent != NULL);
+	dbg_assert(parent->type == BET_NODE_COMP || parent->type == BET_NODE_DECO);
+	dbg_assert(parent->children_count + 1 < MAX_BET_CHILDREN);
 
 	parent->children[parent->children_count++] = child_index;
 	bet->nodes[child_index].parent             = parent_index;
@@ -582,7 +582,7 @@ bool32
 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 {
 	struct bet_node *node = bet_get_node(bet, node_index);
-	assert(node->prop_count + 1 <= MAX_BET_NODE_PROPS);
+	dbg_assert(node->prop_count + 1 <= MAX_BET_NODE_PROPS);
 	node->props[node->prop_count++] = prop;
 	return true;
 }
@@ -591,7 +591,7 @@ f32
 bet_prop_f32_get(struct bet_prop prop, f32 fallback)
 {
 	f32 res = 0;
-	assert(prop.type == BET_PROP_F32 || prop.type == BET_PROP_NONE);
+	dbg_assert(prop.type == BET_PROP_F32 || prop.type == BET_PROP_NONE);
 	res = prop.type == BET_PROP_F32 ? prop.f32 : fallback;
 
 	return res;
@@ -601,7 +601,7 @@ i32
 bet_prop_i32_get(struct bet_prop prop, i32 fallback)
 {
 	i32 res = 0;
-	assert(prop.type == BET_PROP_I32 || prop.type == BET_PROP_NONE);
+	dbg_assert(prop.type == BET_PROP_I32 || prop.type == BET_PROP_NONE);
 	res = prop.type == BET_PROP_I32 ? prop.i32 : fallback;
 
 	return res;
@@ -611,7 +611,7 @@ bool32
 bet_prop_bool32_get(struct bet_prop prop)
 {
 	bool32 res = false;
-	assert(prop.type == BET_PROP_BOOL32 || prop.type == BET_PROP_NONE);
+	dbg_assert(prop.type == BET_PROP_BOOL32 || prop.type == BET_PROP_NONE);
 	res = prop.bool32;
 	return res;
 }

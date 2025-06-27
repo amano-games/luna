@@ -18,7 +18,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #define SOKOL_IMPL
-#define SOKOL_ASSERT(c) assert(c);
+#define SOKOL_dbg_assert(c) dbg_assert(c);
 
 #include "sokol_gfx.h"
 #include "sokol_app.h"
@@ -86,7 +86,7 @@ event(const sapp_event *e)
 static void
 stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
-	assert(1 == num_channels);
+	dbg_assert(1 == num_channels);
 	bool32 is_mono = (num_channels == 1);
 
 	static i16 lbuf[0x1000];

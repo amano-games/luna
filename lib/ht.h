@@ -9,7 +9,7 @@
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
 {
-	assert(len > 0);
+	dbg_assert(len > 0);
 	const i64 h1 = 0x8da6b343; // Large multiplicative constants
 	const i64 h2 = 0xd8163841; // here arbitarly chosen primes
 	i64 n        = (i64)((h1 * x + h2 * y) % len);
@@ -92,7 +92,7 @@ ht_new_u32(int exp, struct alloc alloc)
 {
 	struct ht_u32 ht = {0, exp, 0};
 
-	assert(exp >= 0);
+	dbg_assert(exp >= 0);
 	if(exp >= 32) {
 		return ht; // request too large
 	}

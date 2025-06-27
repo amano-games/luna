@@ -47,7 +47,7 @@ ss_grid_gen(
 	grid->cells               = arr_new_clr(grid->cells, columns * rows, alloc);
 	struct arr_header *header = arr_header(grid->cells);
 	header->len               = arr_cap(grid->cells);
-	assert(arr_len(grid->cells) == arr_cap(grid->cells));
+	dbg_assert(arr_len(grid->cells) == arr_cap(grid->cells));
 
 	usize handles_count = 0;
 
@@ -109,7 +109,7 @@ ss_grid_gen(
 				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
 					usize item_index     = cell->index + cell->count;
-					assert(item_index < arr_len(grid->items));
+					dbg_assert(item_index < arr_len(grid->items));
 					grid->items[item_index] = item;
 					cell->count++;
 				}
@@ -186,9 +186,9 @@ ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
 	i32 mx    = x + grid->x_offset;
 	i32 my    = y + grid->y_offset;
 	index     = (my * grid->columns) + mx;
-	assert(mx < (i32)grid->columns);
-	assert(my < (i32)grid->rows);
-	assert(index >= 0 && index < (i32)arr_len(grid->cells));
+	dbg_assert(mx < (i32)grid->columns);
+	dbg_assert(my < (i32)grid->rows);
+	dbg_assert(index >= 0 && index < (i32)arr_len(grid->cells));
 	struct ss_cell *cell = grid->cells + index;
 	return cell;
 }
