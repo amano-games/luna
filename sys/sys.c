@@ -7,6 +7,8 @@
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
 #endif
 
+#define SYS_MEM_POISON_PATTERN 0xCD
+
 struct sys_data {
 	void *frame_buffer;
 	u32 tick;
@@ -58,6 +60,10 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 		"Failed to reserve app memory %$$u: %p",
 		(uint)sys_mem->app_mem.size,
 		sys_mem->app_mem.buffer);
+
+#if DEBUG && !defined(TARGET_PLAYDATE)
+	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, sys_mem->app_mem.size);
+#endif
 
 	res.permanent.size   = permanent;
 	res.transient.size   = transient;
