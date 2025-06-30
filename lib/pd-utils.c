@@ -1,63 +1,73 @@
 #include "pd-utils.h"
+#include "dbg.h"
 #include "str.h"
 #include "sys-io.h"
-// TODO: Remove this
-#include <string.h>
+#include "sys-types.h"
 
 void
-extract_value(char *line, char *key, char *dest, size_t max_len)
+pdxinfo_extract_value_str(str8 line, str8 key, char *dest, size_t max_len)
 {
-	char *value = strchr(line, '='); // Find the '=' character
-	if(value) {
-		value++;                           // Move past the '='
-		strncpy(dest, value, max_len - 1); // Copy the value into the destination
-		dest[max_len - 1] = '\0';          // Ensure null-termination
-		// Remove trailing newline if present
-		size_t len = strlen(dest);
-		if(len > 0 && dest[len - 1] == '\n') {
-			dest[len - 1] = '\0';
-		}
-	}
+	str8 value    = str8_skip(line, key.size);
+	str8 dest_str = {.str = (u8 *)dest, .size = max_len};
+	str8_cpy(&value, &dest_str);
 }
 
-void
-extract_int_value(char *line, char *key, int *dest)
+i32
+pdxinfo_extract_value_i32(str8 line, str8 key)
 {
-	// char *value = strchr(line, '='); // Find the '=' character
-	// if(value) {
-	// 	*dest = 0;
-	// 	// atoi(value + 1); // Convert the value after '=' to an integer
-	// }
+	str8 value = str8_skip_chop_whitespace(str8_skip(line, key.size));
+	i32 res    = str8_to_i32(value);
+	return res;
 }
 
 void
 pdxinfo_parse(struct pdxinfo *info, struct alloc scratch)
 {
-	void *f = sys_file_open_r(str8_lit("pdxinfo"));
-	if(f != NULL) {
-		struct sys_file_stats stats = sys_file_stats(str8_lit("pdxinfo"));
-		char *buffer                = scratch.allocf(scratch.ctx, stats.size);
-		sys_file_r(f, (void *)buffer, stats.size);
+	str8 path = str8_lit("pdxinfo");
+	void *f   = sys_file_open_r(str8_lit("pdxinfo"));
+	dbg_check(f, "pd", "failed to open pdxinfo");
 
-		char *line = strtok(buffer, "\n");
-		while(line) {
-			if(strncmp(line, "name=", 5) == 0) {
-				extract_value(line, "name", info->name, sizeof(info->name));
-			} else if(strncmp(line, "author=", 7) == 0) {
-				extract_value(line, "author", info->author, sizeof(info->author));
-			} else if(strncmp(line, "description=", 12) == 0) {
-				extract_value(line, "description", info->description, sizeof(info->description));
-			} else if(strncmp(line, "bundleID=", 9) == 0) {
-				extract_value(line, "bundleID", info->bundle_id, sizeof(info->bundle_id));
-			} else if(strncmp(line, "version=", 8) == 0) {
-				extract_value(line, "version", info->version, sizeof(info->version));
-			} else if(strncmp(line, "buildNumber=", 12) == 0) {
-				extract_int_value(line, "buildNumber", &info->build_number);
-			} else if(strncmp(line, "imagePath=", 10) == 0) {
-				extract_value(line, "imagePath", info->image_path, sizeof(info->image_path));
-			}
+	struct sys_full_file_res res = sys_load_full_file(path, scratch);
+	sys_file_close(f);
 
-			line = strtok(NULL, "\n"); // Move to the next line
+	str8 data = {.str = res.data, .size = res.size};
+
+	struct str8_list list = str8_split_by_string_chars(scratch, data, str8_lit("\n"), 0);
+	str8 name_key         = str8_lit("name=");
+	str8 author_key       = str8_lit("author=");
+	str8 description_key  = str8_lit("description=");
+	str8 bundle_id_key    = str8_lit("bundleID=");
+	str8 version_key      = str8_lit("version=");
+	str8 build_number_key = str8_lit("buildNumber=");
+	str8 image_path_key   = str8_lit("imagePath=");
+
+	for(struct str8_node *n = list.first; n != 0; n = n->next) {
+		str8 line = n->str;
+		i32 flags = 0;
+
+		if(str8_starts_with(line, name_key, flags)) {
+			pdxinfo_extract_value_str(line, name_key, info->name, sizeof(info->name));
+		} else if(str8_starts_with(line, author_key, flags)) {
+			pdxinfo_extract_value_str(line, author_key, info->author, sizeof(info->author));
+		} else if(str8_starts_with(line, description_key, flags)) {
+			pdxinfo_extract_value_str(line, description_key, info->description, sizeof(info->description));
+		} else if(str8_starts_with(line, bundle_id_key, flags)) {
+			pdxinfo_extract_value_str(line, bundle_id_key, info->bundle_id, sizeof(info->bundle_id));
+		} else if(str8_starts_with(line, version_key, flags)) {
+			pdxinfo_extract_value_str(line, version_key, info->version, sizeof(info->version));
+		} else if(str8_starts_with(line, build_number_key, flags)) {
+			info->build_number = pdxinfo_extract_value_i32(line, build_number_key);
+		} else if(str8_starts_with(line, image_path_key, flags)) {
+			pdxinfo_extract_value_str(line, image_path_key, info->image_path, sizeof(info->image_path));
 		}
 	}
+
+	return;
+
+error:
+	if(f != NULL) {
+		sys_file_close(f);
+	}
+	info = NULL;
+	return;
 }
