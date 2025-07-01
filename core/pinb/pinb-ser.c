@@ -3,6 +3,7 @@
 #include "physics/body-ser.h"
 #include "serialize/serialize.h"
 #include "str.h"
+#include "sys-log.h"
 
 struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
@@ -1031,6 +1032,7 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 			res.bg_tex_path = value.str;
 		}
 	}
+
 	return res;
 }
 
@@ -1071,6 +1073,15 @@ pinb_read(
 			}
 		}
 	}
+	log_info(
+		"Pinb",
+		"Parsed, version: %d\n"
+		"entities_count: %d\n"
+		"entities_max_id %d",
+		table->version,
+		table->entities_count,
+		table->entities_max_id);
+
 	return res;
 }
 

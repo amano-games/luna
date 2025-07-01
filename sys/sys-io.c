@@ -1,5 +1,7 @@
 #include "sys-io.h"
 #include "dbg.h"
+#include "sys-log.h"
+#include "sys-pd.h"
 
 void *
 sys_file_open(str8 path, i32 sys_file_mode)
@@ -35,6 +37,8 @@ sys_load_full_file(str8 path, struct alloc alloc)
 
 	res.data = data;
 	res.size = size;
+
+	log_info("sys", "Loaded full file contents %s %$$u", path.str, (uint)res.size);
 
 	return res;
 
