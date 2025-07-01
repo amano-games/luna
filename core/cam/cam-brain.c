@@ -35,7 +35,7 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, i32 r, v2 vel, f32 dt)
 {
 	i32 index_prev = brain->active_index;
 	i32 index      = cam_brain_query_circle(brain, tx, ty, r);
-	if(index == -1) return;
+	if(index == -1) { index = index_prev; }
 	struct cam_data data = brain->areas[index].data;
 	struct cam *cam      = brain->c;
 	bool32 do_change_cam = index_prev != index;
