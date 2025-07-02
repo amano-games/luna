@@ -55,6 +55,7 @@ body_read(struct ser_reader *r, struct ser_value obj)
 {
 	struct body res = {0};
 	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {

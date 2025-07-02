@@ -209,7 +209,7 @@ function getReactiveImpulse(_object: MapObject, prop: PropertyValue) {
 
 function getReactiveSpriteOffset(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
-  const ref = Number(value["ref"].id) || 0;
+  const ref = Number(value["ref"]?.id) || 0;
 
   const res: ReactiveSpriteOffset = {
     delay: value["delay"],
@@ -473,7 +473,7 @@ function getAction(object: MapObject, key: string, prop: PropertyValue) {
     action_delay: value["action_delay"],
     action_cooldown: value["action_cooldown"],
     event_condition: value["event_condition"],
-    event_condition_type: value["event_condition_type"].value,
+    event_condition_type: value["event_condition_type"]?.value,
     event_type: value["event_type"].value,
   };
   return res;

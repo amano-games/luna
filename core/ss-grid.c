@@ -66,6 +66,7 @@ ss_grid_gen(
 				// But this would help get less items to check when queriing the grid
 				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
+					dbg_assert(cell != NULL);
 					handles_count++;
 					cell->count++;
 					cell->x = cx;
@@ -108,7 +109,8 @@ ss_grid_gen(
 			for(int cy = y1; cy <= y2; ++cy) {
 				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
-					usize item_index     = cell->index + cell->count;
+					dbg_assert(cell != NULL);
+					usize item_index = cell->index + cell->count;
 					dbg_assert(item_index < arr_len(grid->items));
 					grid->items[item_index] = item;
 					cell->count++;
@@ -185,7 +187,9 @@ ss_grid_get(struct ss_grid *grid, i32 x, i32 y)
 	i32 index = 0;
 	i32 mx    = x + grid->x_offset;
 	i32 my    = y + grid->y_offset;
-	index     = (my * grid->columns) + mx;
+	if(mx >= (i32)grid->columns) { return NULL; }
+	if(my >= (i32)grid->rows) { return NULL; }
+	index = (my * grid->columns) + mx;
 	dbg_assert(mx < (i32)grid->columns);
 	dbg_assert(my < (i32)grid->rows);
 	dbg_assert(index >= 0 && index < (i32)arr_len(grid->cells));

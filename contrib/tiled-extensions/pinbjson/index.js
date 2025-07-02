@@ -529,8 +529,9 @@
     return res;
   }
   function getReactiveSpriteOffset(_object, prop) {
+    var _a;
     const value = prop.value;
-    const ref = Number(value["ref"].id) || 0;
+    const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
     const res = {
       delay: value["delay"],
       magnitude: value["magnitude"],
@@ -741,6 +742,7 @@
     return res;
   }
   function getAction(object, key, prop) {
+    var _a;
     const value = prop.value;
     const action_ref = Number(value["action_ref"].id) || object.id;
     const res = {
@@ -752,7 +754,7 @@
       action_delay: value["action_delay"],
       action_cooldown: value["action_cooldown"],
       event_condition: value["event_condition"],
-      event_condition_type: value["event_condition_type"].value,
+      event_condition_type: (_a = value["event_condition_type"]) == null ? void 0 : _a.value,
       event_type: value["event_type"].value
     };
     return res;

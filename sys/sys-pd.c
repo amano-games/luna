@@ -580,7 +580,7 @@ pd_scores_start_next(void)
 	}
 
 error:
-	dbg_assert(0);
+	return;
 }
 
 int

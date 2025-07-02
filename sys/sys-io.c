@@ -1,7 +1,6 @@
 #include "sys-io.h"
 #include "dbg.h"
 #include "sys-log.h"
-#include "sys-pd.h"
 
 void *
 sys_file_open(str8 path, i32 sys_file_mode)
