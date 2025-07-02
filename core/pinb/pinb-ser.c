@@ -4,7 +4,6 @@
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
-#include "sys-pd.h"
 #include "sys.h"
 
 struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
@@ -565,6 +564,7 @@ pinb_write(struct ser_writer *w, struct pinb_table pinb)
 	ser_write_object(w);
 
 	dbg_assert(pinb.version == 1);
+	dbg_assert(pinb.entities_count == arr_len(pinb.entities));
 	ser_write_string(w, str8_lit("version"));
 	ser_write_i32(w, pinb.version);
 
@@ -1165,13 +1165,13 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.counter = pinb_counter_read(r, value);
 		} else if(str8_match(key.str, str8_lit("collision_layer"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
-			res.collision_layer = pinb_collision_layer_read(r, obj);
+			res.collision_layer = pinb_collision_layer_read(r, value);
 		} else if(str8_match(key.str, str8_lit("crank_animation"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
-			res.crank_animation = pinb_crank_animation_read(r, obj);
+			res.crank_animation = pinb_crank_animation_read(r, value);
 		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
-			res.reset = pinb_reset_read(r, obj);
+			res.reset = pinb_reset_read(r, value);
 		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
 			res.animator = pinb_animator_read(r, value, alloc);
@@ -1287,11 +1287,10 @@ pinb_read(
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			dbg_assert(table->entities_count > 0);
 			struct ser_value val;
-			usize i = 0;
-			while(ser_iter_array(r, value, &val) && i < table->entities_count) {
+			while(ser_iter_array(r, value, &val)) {
 				arr_push(table->entities, pinb_entity_read(r, val, alloc));
-				i++;
 			}
+			dbg_assert(arr_len(table->entities) == table->entities_count);
 		}
 	}
 	log_info(
@@ -1310,12 +1309,12 @@ struct pinb_animator_transition
 pinb_animator_transition_read(struct ser_reader *r, struct ser_value arr)
 {
 	struct pinb_animator_transition res = {0};
-	struct ser_value key, value;
+	struct ser_value value;
 	dbg_assert(arr.type == SER_TYPE_ARRAY);
 	ser_iter_array(r, arr, &value);
 	dbg_assert(value.type == SER_TYPE_I32);
 	res.from = value.i32;
-	ser_iter_array(r, value, &value);
+	ser_iter_array(r, arr, &value);
 	dbg_assert(value.type == SER_TYPE_I32);
 	res.to = value.i32;
 	return res;
@@ -1337,7 +1336,7 @@ pinb_animator_transitions_read(struct ser_reader *r, struct ser_value obj, struc
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value = {0};
-			while(ser_iter_array(r, item_value, &item_value)) {
+			while(ser_iter_array(r, value, &item_value)) {
 				res.items[res.len++] = pinb_animator_transition_read(r, item_value);
 			}
 		}
