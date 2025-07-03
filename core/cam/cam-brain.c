@@ -4,7 +4,7 @@
 #include "sys-types.h"
 #include "sys-utils.h"
 
-#include "collisions.h"
+#include "collisions/collisions.h"
 #include "mathfunc.h"
 #include "v2.h"
 

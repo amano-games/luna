@@ -1,6 +1,6 @@
 #pragma once
 
-#include "collisions.h"
+#include "collisions/collisions.h"
 #include "layout.h"
 #include "mem-arena.h"
 #include "mem.h"

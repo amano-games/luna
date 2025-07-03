@@ -40,7 +40,8 @@
 #include "tools/pinbtjson/pinbtjson.c"
 #include "pinb/pinb-ser.c"
 #include "core/fnt/fnt.c"
-#include "collisions.c"
+#include "collisions/collisions.c"
+#include "collisions/collisions-ser.c"
 #include "sys-io.c"
 
 #define IMG_EXT ".png"
