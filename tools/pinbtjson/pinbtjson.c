@@ -8,6 +8,7 @@
 #include "poly.h"
 #include "serialize/serialize.h"
 #include "str.h"
+#include "sys-io.h"
 #include "sys-log.h"
 #include "sys.h"
 #include "tools/png/png.h"
@@ -1161,6 +1162,18 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	struct ser_writer w = {.f = out_file};
 	pinb_write(&w, table);
 	sys_file_close(out_file);
+
+#if DEBUG
+	{
+		struct sys_full_file_res io_res = sys_load_full_file(out_file_path, scratch);
+		struct ser_reader r             = {
+						.data = io_res.data,
+						.len  = io_res.size,
+        };
+		struct ser_value obj = ser_read(&r);
+	}
+#endif
+
 	sys_free(mem_buffer);
 	sys_free(scratch_mem_buffer);
 	log_info("pinb-gen", "%s -> %s\n", in_path.str, out_file_path.str);
