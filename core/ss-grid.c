@@ -1,7 +1,7 @@
 #include "ss-grid.h"
 
 #include "arr.h"
-#include "collisions.h"
+#include "collisions/collisions.h"
 #include "mathfunc.h"
 #include "sys-log.h"
 

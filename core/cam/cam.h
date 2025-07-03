@@ -1,6 +1,6 @@
 #pragma once
 
-#include "collisions.h"
+#include "collisions/collisions.h"
 #include "sys.h"
 #include "sys-types.h"
 
