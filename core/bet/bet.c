@@ -502,7 +502,7 @@ bet_deco_end(
 	}
 
 error:
-	dbg_assert(0);
+	return;
 }
 
 static inline void
