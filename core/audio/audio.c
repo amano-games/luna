@@ -141,7 +141,7 @@ aud_cmds_flush(void)
 			adpcm->len           = num_samples;
 			adpcm->vol_q8        = cmd->vol_q8;
 			mc->stream           = f;
-			mc->looping          = 1;
+			mc->looping          = cmd->loop;
 			mc->total_bytes_file = sizeof(u32) + ((num_samples + 1) >> 1);
 			adpcm_set_pitch(adpcm, 256);
 			adpcm_reset_to_start(adpcm);
@@ -212,7 +212,8 @@ void
 mus_play(
 	const struct asset_handle handle,
 	enum mus_channel_id channel_id,
-	f32 vol)
+	f32 vol,
+	bool32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct aud_cmd cmd = {
@@ -223,6 +224,7 @@ mus_play(
 	cmd.c.mus_play.path_handle = handle;
 	cmd.c.mus_play.channel_id  = channel_id;
 	cmd.c.mus_play.vol_q8      = (i32)(vol * 255.0f);
+	cmd.c.mus_play.loop        = loop;
 	aud_push_cmd(cmd);
 }
 
@@ -230,14 +232,15 @@ void
 mus_play_by_path(
 	const str8 path,
 	enum mus_channel_id channel_id,
-	f32 vol)
+	f32 vol,
+	bool32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){
 		.path_hash = hash_string(path),
 	};
-	mus_play(handle, channel_id, vol);
+	mus_play(handle, channel_id, vol, loop);
 }
 
 bool32
