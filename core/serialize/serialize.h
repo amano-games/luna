@@ -1,7 +1,8 @@
 #pragma once
 
+#include "dbg.h"
+#include "str.h"
 #include "sys-io.h"
-#include "sys-log.h"
 #include "sys-types.h"
 
 struct ser_reader {
@@ -198,68 +199,71 @@ ser_iter_array(struct ser_reader *r, struct ser_value arr, struct ser_value *val
 }
 
 void
-ser_print_indent(int depth)
+ser_indent_push(int depth, struct str8_list *list, struct alloc alloc)
 {
 	for(int i = 0; i < depth; i++) {
-		sys_printf("    ");
+		str8_list_push(alloc, list, str8_lit("  "));
 	}
 }
 
 void
-ser_print_value(struct ser_reader *r, struct ser_value val, int depth)
+ser_value_push(struct ser_reader *r, struct ser_value val, int depth, struct str8_list *list, struct alloc alloc)
 {
 	struct ser_value k, v;
 	int count = 0;
 	switch(val.type) {
 	case SER_TYPE_OBJECT:
-		sys_printf("{\n");
+		str8_list_push(alloc, list, str8_lit("{\n"));
 		while(ser_iter_object(r, val, &k, &v)) {
-			if(count++ > 0) { sys_printf(",\n"); }
-			ser_print_indent(depth + 1);
-			ser_print_value(r, k, depth + 1);
-			sys_printf(": ");
-			ser_print_value(r, v, depth + 1);
+			if(count++ > 0) { str8_list_push(alloc, list, str8_lit(",\n")); }
+			ser_indent_push(depth + 1, list, alloc);
+			ser_value_push(r, k, depth + 1, list, alloc);
+			str8_list_push(alloc, list, str8_lit(": "));
+			ser_value_push(r, v, depth + 1, list, alloc);
 		}
-		if(count > 0) { sys_printf("\n"); }
-		ser_print_indent(depth);
-		sys_printf("}");
+		if(count > 0) { str8_list_push(alloc, list, str8_lit("\n")); }
+		ser_indent_push(depth, list, alloc);
+		str8_list_push(alloc, list, str8_lit("}"));
 		break;
 	case SER_TYPE_ARRAY:
-		sys_printf("[\n");
+		str8_list_push(alloc, list, str8_lit("[\n"));
 		while(ser_iter_array(r, val, &v)) {
-			if(count++ > 0) { sys_printf(",\n"); }
-			ser_print_indent(depth + 1);
-			ser_print_value(r, v, depth + 1);
+			if(count++ > 0) { str8_list_push(alloc, list, str8_lit(",\n")); }
+			ser_indent_push(depth + 1, list, alloc);
+			ser_value_push(r, v, depth + 1, list, alloc);
 		}
-		if(count > 0) { sys_printf("\n"); }
-		ser_print_indent(depth);
-		sys_printf("]");
+		if(count > 0) { str8_list_push(alloc, list, str8_lit("\n")); }
+		ser_indent_push(depth, list, alloc);
+		str8_list_push(alloc, list, str8_lit("]"));
 		break;
 	case SER_TYPE_U8:
-		sys_printf("%d", val.u8);
+		str8_list_pushf(alloc, list, "%d", val.u8);
 		break;
 	case SER_TYPE_I32:
-		sys_printf("%" PRId32 "", val.i32);
+		str8_list_pushf(alloc, list, "%" PRId32 "", val.i32);
 		break;
 	case SER_TYPE_F32:
-		sys_printf("%.14g", (double)val.f32);
+		str8_list_pushf(alloc, list, "%.14g", (double)val.f32);
 		break;
 	case SER_TYPE_BOOL:
-		sys_printf(val.bool32 ? "true" : "false");
+		str8_list_push(alloc, list, val.bool32 ? str8_lit("true") : str8_lit("false"));
 		break;
 	case SER_TYPE_STRING:
-		sys_printf("\"");
+		str8_list_push(alloc, list, str8_lit("\""));
 		for(usize i = 0; i < val.str.size; i++) {
 			if(val.str.str[i] == '"') {
-				sys_printf("\\\"");
+				str8_list_push(alloc, list, str8_lit("\\\""));
 			} else {
-				sys_printf("%c", val.str.str[i]);
+				str8_list_pushf(alloc, list, "%c", val.str.str[i]);
 			}
 		}
-		sys_printf("\"");
+		str8_list_push(alloc, list, str8_lit("\""));
 		break;
+
 	default: // bad type
-		sys_printf("Ser Error: Bad type %d", val.type);
-		return;
+		dbg_sentinel("Ser");
 	}
+
+error:
+	return;
 }
