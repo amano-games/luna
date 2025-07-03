@@ -61,6 +61,7 @@ struct aud_cmd_mus_play {
 	struct asset_handle path_handle;
 	u8 channel_id;
 	u8 vol_q8;
+	u8 loop;
 };
 
 struct aud_cmd_mus_modify {
@@ -131,8 +132,8 @@ void snd_instance_stop(u32 snd_id);
 void snd_instance_set_repeat_count(u32 snd_id, u16 repeat_count);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
-void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol);
-void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol);
+void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol, bool32 loop);
+void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol, bool32 loop);
 bool32 mus_is_playing(enum mus_channel_id channel_id);
 void mus_set_vol(enum mus_channel_id channel_id, f32 vol);
 void mus_stop(enum mus_channel_id channel_id);
