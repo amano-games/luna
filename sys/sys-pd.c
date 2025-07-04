@@ -292,7 +292,7 @@ sys_log(
 	}
 
 #if defined(DEV)
-	sys_printf("[%s] %d %s\n %s: %s", log_level_str, (int)line_nr, filename, tag, msg);
+	sys_printf("[%s] %s:%d\n %s: %s", log_level_str, filename, (int)line_nr, tag, msg);
 #else
 	sys_printf("[%s] %s: %s", log_level_str, tag, msg);
 #endif
