@@ -584,13 +584,31 @@ error:
 }
 
 int
-sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
+sys_scores_clear_queue(void)
+{
+	int res                       = 0;
+	struct pd_scores_state *state = &PD_STATE.scores_state;
+	if(!state->busy) {
+		state->start = 0;
+		state->end   = 0;
+	} else {
+		state->end = (state->start + 1) % ARRLEN(state->reqs);
+	}
+	return res;
+}
+
+int
+sys_score_add(
+	str8 board_id,
+	u32 value,
+	sys_scores_req_callback callback,
+	void *userdata)
 {
 	dbg_check(value != 0, "sys-scores", "Submited value of 0");
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
-	dbg_check(next != state->start, "sys-scores", "Queue Full");
+	dbg_check(next != state->start, "sys-scores", "Score add queue Full");
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req = state->reqs + state->end;
@@ -621,6 +639,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
+	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_ADD);
 	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
 
@@ -665,7 +684,7 @@ sys_scores_get(
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
-	dbg_check(next != state->start, "sys-scores", "Queue Full");
+	dbg_check(next != state->start, "sys-scores", "Scores get queue Full");
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req = state->reqs + state->end;
@@ -690,17 +709,19 @@ void
 pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 {
 	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
+	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
-	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_GET};
 
 	if(error_message) {
 		log_error("sys-score", "failed to get scores for board %s: %s", req->get.board_id.str, error_message);
 		res.error_message = str8_cstr((char *)error_message);
+		goto error;
 	} else {
 		log_info("sys-score", "got scores for board %s: %d", req->get.board_id.str, scores->count);
 		res.get = (struct sys_scores_res_get){
@@ -730,6 +751,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		}
 	}
 
+error:
 	if(req->callback) {
 		req->callback(req->id, res, req->userdata);
 	}
@@ -738,15 +760,19 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 	state->busy  = false;
 	PD_FREE_SCORES_LIST(scores);
 	pd_scores_start_next();
+	return;
 }
 
 int
-sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, void *userdata)
+sys_scores_personal_best_get(
+	str8 board_id,
+	sys_scores_req_callback callback,
+	void *userdata)
 {
 	struct pd_scores_state *state = &PD_STATE.scores_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
-	dbg_check(next != state->start, "sys-scores", "Queue Full");
+	dbg_check(next != state->start, "sys-scores", "Personal best queue Full");
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	struct pd_scores_req *req   = state->reqs + state->end;
@@ -770,13 +796,14 @@ void
 pd_personal_best_get_callback(PDScore *score, const char *error_message)
 {
 	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
+	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
-	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET};
 
 	if(error_message) {
 		log_error("sys-score", "failed to get personal best for board %s: %s", req->personal_best.board_id.str, error_message);
