@@ -19,7 +19,7 @@ sys_load_full_file(str8 path, struct alloc alloc)
 	struct sys_full_file_res res = {0};
 	void *f                      = sys_file_open_r(path);
 
-	dbg_check(f != NULL, "io", "Failed to open file %*.s", (int)path.size, path.str);
+	dbg_check_warn(f != NULL, "io", "Failed to open file %*.s", (int)path.size, path.str);
 
 	// Get file size
 	sys_file_seek_end(f, 0);
