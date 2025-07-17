@@ -568,7 +568,7 @@ pd_scores_start_next(void)
 		PD_GET_SCORES((const char *)req->get.board_id.str, pd_get_scores_callback);
 	} break;
 	case PD_SCORES_REQ_TYPE_ADD: {
-		log_info("sys-scores", "adding score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
+		log_info("sys-scores", "Adding score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 		PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, pd_add_score_callback);
 	} break;
 	case PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET: {
@@ -644,16 +644,16 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
 
 	if(error_message) {
-		log_error("sys-score", "failed to submit score to board %s: %s", req->add.board_id.str, error_message);
+		log_error("sys-score", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
 			pd_scores_start_next();
-			log_info("sys-score", "attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
+			log_info("sys-score", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
 			return;
 		}
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		log_info("sys-score", "submit score for board %s: %" PRIu32 "", req->add.board_id.str, score->value);
+		log_info("sys-score", "Submited score for board %s: %d. %s %" PRIu32 "", req->add.board_id.str, score->rank, score->player, score->value);
 		res.add = (struct sys_scores_res_add){
 			.score = (struct sys_score){
 				.rank   = score->rank,
