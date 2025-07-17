@@ -588,6 +588,7 @@ sys_scores_clear_queue(void)
 {
 	int res                       = 0;
 	struct pd_scores_state *state = &PD_STATE.scores_state;
+	log_info("sys-scores", "Clear scores queue, start: %d, end: %d", (int)state->start, (int)state->end);
 	if(!state->busy) {
 		state->start = 0;
 		state->end   = 0;
@@ -723,6 +724,10 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		res.error_message = str8_cstr((char *)error_message);
 		goto error;
 	} else {
+		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
+		for(size i = 0; i < (size)scores->count; ++i) {
+			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores->value);
+		}
 		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
 		res.get = (struct sys_scores_res_get){
 			.board_id        = req->get.board_id,
