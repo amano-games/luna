@@ -723,7 +723,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		res.error_message = str8_cstr((char *)error_message);
 		goto error;
 	} else {
-		log_info("sys-score", "got scores for board %s: %d", req->get.board_id.str, scores->count);
+		log_info("sys-score", "got scores for board %s: No of scores: %d", req->get.board_id.str, scores->count);
 		res.get = (struct sys_scores_res_get){
 			.board_id        = req->get.board_id,
 			.last_updated    = scores->lastUpdated,
