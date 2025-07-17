@@ -619,7 +619,7 @@ sys_score_add(
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
 	req->add.board_id         = board_id;
 	req->add.value            = value;
-	log_info("sys-scores", "queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
+	log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 	state->end = next;
 
 	if(!state->busy) { pd_scores_start_next(); }
@@ -644,16 +644,16 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
 
 	if(error_message) {
-		log_error("sys-score", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
+		log_error("sys-scores", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
 			pd_scores_start_next();
-			log_info("sys-score", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
+			log_info("sys-scores", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
 			return;
 		}
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		log_info("sys-score", "Submited score for board %s: %d. %s %" PRIu32 "", req->add.board_id.str, score->rank, score->player, score->value);
+		log_info("sys-scores", "Submited score for board %s: %d. %s %" PRIu32 "", req->add.board_id.str, score->rank, score->player, score->value);
 		res.add = (struct sys_scores_res_add){
 			.score = (struct sys_score){
 				.rank   = score->rank,
@@ -719,11 +719,11 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
 
 	if(error_message) {
-		log_error("sys-score", "failed to get scores for board %s: %s", req->get.board_id.str, error_message);
+		log_error("sys-scores", "Failed to get scores for board %s: %s", req->get.board_id.str, error_message);
 		res.error_message = str8_cstr((char *)error_message);
 		goto error;
 	} else {
-		log_info("sys-score", "got scores for board %s: No of scores: %d", req->get.board_id.str, scores->count);
+		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
 		res.get = (struct sys_scores_res_get){
 			.board_id        = req->get.board_id,
 			.last_updated    = scores->lastUpdated,
@@ -736,7 +736,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 				entries->items = req->get.alloc.allocf(req->get.alloc.ctx, sizeof(*entries->items) * scores->count);
 			}
 			if(entries->items == NULL) {
-				log_error("sys-score", "failed to allocate memory for %d scores", scores->count);
+				log_error("sys-scores", "Failed to allocate memory for %d scores", scores->count);
 			} else {
 				entries->cap = scores->count;
 				entries->len = scores->count;
@@ -806,11 +806,11 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
 
 	if(error_message) {
-		log_error("sys-score", "failed to get personal best for board %s: %s", req->personal_best.board_id.str, error_message);
+		log_error("sys-scores", "Failed to get personal best for board %s: %s", req->personal_best.board_id.str, error_message);
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
 		if(score) {
-			log_info("sys-score", "personal best for board %s: %" PRIu32 "", req->personal_best.board_id.str, score->value);
+			log_info("sys-scores", "Personal best for board %s: %" PRIu32 "", req->personal_best.board_id.str, score->value);
 			res.personal_best = (struct sys_scores_res_personal_best){
 				.score = (struct sys_score){
 					.rank   = score->rank,
@@ -819,7 +819,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 				},
 			};
 		} else {
-			log_info("sys-score", "no personal best for board %s", req->personal_best.board_id.str);
+			log_info("sys-scores", "No personal best for board %s", req->personal_best.board_id.str);
 		}
 	}
 
