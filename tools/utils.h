@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include "dbg.h"
 
 #define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x0100)
 
