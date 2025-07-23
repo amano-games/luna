@@ -1166,7 +1166,7 @@ pinb_reset_read(struct ser_reader *r, struct ser_value obj)
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = key.i32;
+			res.flags = value.i32;
 		}
 	}
 	return res;
