@@ -534,6 +534,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
         (acc, [key, value]) => {
           const prop = value as PropertyValue;
           switch (prop.typeName) {
+            case "entity_flags": {
+              return {
+                ...acc,
+              };
+            }
             case "rigid_body":
               return {
                 ...acc,
