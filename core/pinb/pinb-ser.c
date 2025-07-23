@@ -5,9 +5,7 @@
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
-#include "sys-utils.h"
 #include "collisions/collisions-ser.h"
-#include "sys.h"
 
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
@@ -16,6 +14,8 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 	ser_write_string(w, str8_lit("id"));
 	ser_write_i32(w, entity.id);
+	ser_write_string(w, str8_lit("flags"));
+	ser_write_i32(w, entity.flags);
 	ser_write_string(w, str8_lit("x"));
 	ser_write_i32(w, entity.x);
 	ser_write_string(w, str8_lit("y"));
@@ -1305,6 +1305,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 		if(str8_match(key.str, str8_lit("id"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.id = value.i32;
+		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.flags = value.i32;
 		} else if(str8_match(key.str, str8_lit("x"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.x = value.i32;

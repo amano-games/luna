@@ -195,6 +195,7 @@ struct pinb_ball_saver {
 
 struct pinb_entity {
 	i32 id;
+	i32 flags;
 	i32 x;
 	i32 y;
 	struct pinb_spr spr;

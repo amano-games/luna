@@ -830,6 +830,8 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		if(json.str[key->start] == '_') {
 		} else if(json_eq(json, key, str8_lit("id")) == 0) {
 			res.entity.id = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.entity.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("x")) == 0) {
 			res.entity.x = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("y")) == 0) {
