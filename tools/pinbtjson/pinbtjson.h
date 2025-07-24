@@ -44,6 +44,7 @@ struct pinbtjson_res {
 		struct pinb_crank_animation crank_animation;
 		struct pinb_collision_layer collision_layer;
 		struct pinb_ball_saver ball_saver;
+		struct pinb_spawner spawner;
 	};
 };
 

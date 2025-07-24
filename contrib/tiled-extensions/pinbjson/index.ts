@@ -51,6 +51,7 @@ import {
   CollisionLayer,
   LayerProps,
   BallSaver,
+  Spawner,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -497,6 +498,16 @@ function getCollisionLayer(prop: PropertyValue) {
   return res;
 }
 
+function getSpawner(prop: PropertyValue) {
+  const value = prop.value as object;
+  const ref = Number(value["ref"]?.id) || 0;
+  const res: Spawner = {
+    offset: [value["offset_x"], value["offset_y"]],
+    ref: ref,
+  };
+  return res;
+}
+
 function handleObjectLayer(layer: Layer, layer_index: number) {
   const res = [];
   if (!layer.isObjectLayer) {
@@ -537,6 +548,7 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
             case "entity_flags": {
               return {
                 ...acc,
+                flags: prop.value,
               };
             }
             case "rigid_body":
@@ -757,6 +769,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               return {
                 ...acc,
                 score_fx_offset: getScoreFxOffset(item, prop),
+              };
+            case "spawner":
+              return {
+                ...acc,
+                spawner: getSpawner(prop),
               };
             default: {
               return acc;

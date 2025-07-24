@@ -213,6 +213,11 @@ export interface BallSaver {
   save_delay: number;
 }
 
+export interface Spawner {
+  offset: [number, number];
+  ref: number;
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -248,6 +253,7 @@ export interface Entity {
   sfx_to_animation?: SfxToAnimation[];
   reset?: Reset;
   ball_saver?: BallSaver;
+  spawner?: Spawner;
 }
 
 export interface LayerProps {

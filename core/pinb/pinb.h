@@ -193,6 +193,11 @@ struct pinb_ball_saver {
 	f32 save_delay;
 };
 
+struct pinb_spawner {
+	v2_i32 offset;
+	i32 ref;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 flags;
@@ -216,8 +221,6 @@ struct pinb_entity {
 	struct pinb_switch switch_value;
 	struct pinb_switch_list switch_list;
 	struct pinb_sfx_sequences sfx_sequences;
-	struct pinb_messages messages;
-	struct pinb_actions actions;
 	struct pinb_reset reset;
 	struct pinb_counter counter;
 	struct pinb_crank_animation crank_animation;
@@ -225,6 +228,9 @@ struct pinb_entity {
 	struct pinb_ball_saver ball_saver;
 	struct v2_i32 score_fx_offset;
 	struct pinb_collision_layer collision_layer;
+	struct pinb_spawner spawner;
+	struct pinb_messages messages;
+	struct pinb_actions actions;
 };
 
 struct pinb_physics_props {

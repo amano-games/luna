@@ -7,7 +7,6 @@ i32 pinb_write(struct ser_writer *w, struct pinb_table pinb);
 i32 pinb_read(struct ser_reader *r, struct pinb_table *table, struct alloc alloc);
 i32 pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc);
 
-void pinb_v2_i32_write(struct ser_writer *w, v2_i32 value);
 void pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity);
 void pinb_counter_write(struct ser_writer *w, struct pinb_counter value);
 void pinb_sensor_write(struct ser_writer *w, struct pinb_sensor value);
@@ -31,6 +30,7 @@ void pinb_animator_write(struct ser_writer *w, struct pinb_animator value);
 void pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_transitions value);
 void pinb_switch_value_write(struct ser_writer *w, struct pinb_switch value);
 void pinb_switch_list_write(struct ser_writer *w, struct pinb_switch_list value);
+void pinb_spawner_write(struct ser_writer *w, struct pinb_spawner value);
 void pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences value);
 void pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence value);
 void pinb_messages_write(struct ser_writer *w, struct pinb_messages value);
@@ -47,3 +47,4 @@ struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser
 struct pinb_message pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 struct pinb_animator pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj);
