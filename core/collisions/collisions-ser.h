@@ -12,7 +12,6 @@ void col_capsule_write(struct ser_writer *w, struct col_capsule col);
 
 struct col_shapes col_shapes_read(struct ser_reader *r, struct ser_value obj);
 struct col_shape col_shape_read(struct ser_reader *r, struct ser_value obj);
-struct v2 col_v2_read(struct ser_reader *r, struct ser_value arr);
 struct col_cir col_cir_read(struct ser_reader *r, struct ser_value arr);
 struct col_aabb col_aabb_read(struct ser_reader *r, struct ser_value arr);
 struct col_poly col_poly_read(struct ser_reader *r, struct ser_value obj);

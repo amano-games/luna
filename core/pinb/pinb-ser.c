@@ -2,6 +2,7 @@
 #include "arr.h"
 #include "physics/body-ser.h"
 #include "pinb/pinb.h"
+#include "serialize/serialize-utils.h"
 #include "serialize/serialize.h"
 #include "str.h"
 #include "sys-log.h"
@@ -128,7 +129,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 
 	if(entity.score_fx_offset.x != 0 || entity.score_fx_offset.y != 0) {
 		ser_write_string(w, str8_lit("score_fx_offset"));
-		pinb_v2_i32_write(w, entity.score_fx_offset);
+		ser_write_v2_i32(w, entity.score_fx_offset);
 	}
 
 	if(entity.switch_value.is_enabled) {
@@ -139,6 +140,11 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	if(entity.switch_list.next != 0 || entity.switch_list.next != 0) {
 		ser_write_string(w, str8_lit("switch_list"));
 		pinb_switch_list_write(w, entity.switch_list);
+	}
+
+	if(entity.spawner.ref != 0) {
+		ser_write_string(w, str8_lit("spawner"));
+		pinb_spawner_write(w, entity.spawner);
 	}
 
 	if(entity.sfx_sequences.len > 0) {
@@ -288,10 +294,7 @@ pinb_attractor_write(struct ser_writer *w, struct pinb_attractor value)
 	ser_write_string(w, str8_lit("flags"));
 	ser_write_i32(w, value.flags);
 	ser_write_string(w, str8_lit("offset"));
-	ser_write_array(w);
-	ser_write_f32(w, value.offset.x);
-	ser_write_f32(w, value.offset.y);
-	ser_write_end(w);
+	ser_write_v2(w, value.offset);
 	ser_write_string(w, str8_lit("radius"));
 	ser_write_f32(w, value.radius);
 	ser_write_string(w, str8_lit("force"));
@@ -538,17 +541,6 @@ pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_trans
 }
 
 void
-pinb_v2_i32_write(struct ser_writer *w, v2_i32 value)
-{
-	ser_write_array(w);
-
-	ser_write_i32(w, value.x);
-	ser_write_i32(w, value.y);
-
-	ser_write_end(w);
-}
-
-void
 pinb_switch_value_write(struct ser_writer *w, struct pinb_switch value)
 {
 	ser_write_object(w);
@@ -576,6 +568,37 @@ pinb_switch_list_write(struct ser_writer *w, struct pinb_switch_list value)
 	ser_write_i32(w, value.prev);
 
 	ser_write_end(w);
+}
+
+void
+pinb_spawner_write(struct ser_writer *w, struct pinb_spawner value)
+{
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("offset"));
+	ser_write_v2_i32(w, value.offset);
+	ser_write_string(w, str8_lit("ref"));
+	ser_write_i32(w, value.ref);
+
+	ser_write_end(w);
+}
+
+struct pinb_spawner
+pinb_spawner_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_spawner res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("ref"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.ref = value.i32;
+		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
+			res.offset = ser_read_v2_i32(r, value);
+		}
+	}
+	return res;
 }
 
 void
@@ -843,14 +866,7 @@ pinb_attractor_read(struct ser_reader *r, struct ser_value obj)
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.flags = value.i32;
 		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value v2_value;
-			ser_iter_array(r, value, &v2_value);
-			dbg_assert(v2_value.type == SER_TYPE_F32);
-			res.offset.x = v2_value.f32;
-			ser_iter_array(r, value, &v2_value);
-			dbg_assert(v2_value.type == SER_TYPE_F32);
-			res.offset.y = v2_value.f32;
+			res.offset = ser_read_v2(r, value);
 		} else if(str8_match(key.str, str8_lit("radius"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.radius = value.f32;
@@ -1197,31 +1213,10 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 			res.y_sort_offset = value.i32;
 		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value offset_value;
-			ser_iter_array(r, value, &offset_value);
-			dbg_assert(offset_value.type == SER_TYPE_F32);
-			res.offset.x = offset_value.f32;
-			ser_iter_array(r, value, &offset_value);
-			dbg_assert(offset_value.type == SER_TYPE_F32);
-			res.offset.y = offset_value.f32;
+			res.offset = ser_read_v2(r, value);
 		}
 	}
 
-	return res;
-}
-
-struct v2_i32
-pinb_v2_i32_read(struct ser_reader *r, struct ser_value arr)
-{
-	dbg_assert(arr.type == SER_TYPE_ARRAY);
-	struct v2_i32 res = {0};
-	struct ser_value value;
-	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.x = value.i32;
-	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.y = value.i32;
 	return res;
 }
 
@@ -1359,9 +1354,11 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
 			res.reset = pinb_reset_read(r, value);
 		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
-			res.score_fx_offset = pinb_v2_i32_read(r, value);
+			res.score_fx_offset = ser_read_v2_i32(r, value);
 		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
 			res.animator = pinb_animator_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("spawner"), 0)) {
+			res.spawner = pinb_spawner_read(r, value);
 		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
 			res.sfx_sequences = pinb_sfx_sequences_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
@@ -1676,10 +1673,7 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_i32(w, entity.spr.y_sort_offset);
 
 	ser_write_string(w, str8_lit("offset"));
-	ser_write_array(w);
-	ser_write_f32(w, entity.spr.offset.x);
-	ser_write_f32(w, entity.spr.offset.y);
-	ser_write_end(w);
+	ser_write_v2(w, entity.spr.offset);
 
 	ser_write_end(w);
 }

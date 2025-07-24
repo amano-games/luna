@@ -1,6 +1,7 @@
 #include "collisions-ser.h"
 #include "collisions.h"
 #include "dbg.h"
+#include "serialize/serialize-utils.h"
 #include "str.h"
 #include "sys-utils.h"
 
@@ -57,15 +58,6 @@ error:
 }
 
 void
-col_v2_write(struct ser_writer *w, struct v2 v2)
-{
-	ser_write_array(w);
-	ser_write_f32(w, v2.x);
-	ser_write_f32(w, v2.y);
-	ser_write_end(w);
-}
-
-void
 col_cir_write(struct ser_writer *w, struct col_cir col)
 {
 	ser_write_array(w);
@@ -98,14 +90,14 @@ col_poly_write(struct ser_writer *w, struct col_poly col)
 		ser_write_string(w, str8_lit("verts"));
 		ser_write_array(w);
 		for(size i = 0; i < col.count; ++i) {
-			col_v2_write(w, col.verts[i]);
+			ser_write_v2(w, col.verts[i]);
 		}
 		ser_write_end(w);
 
 		ser_write_string(w, str8_lit("norms"));
 		ser_write_array(w);
 		for(size i = 0; i < col.count; ++i) {
-			col_v2_write(w, col.norms[i]);
+			ser_write_v2(w, col.norms[i]);
 		}
 		ser_write_end(w);
 	}
@@ -175,24 +167,6 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
-struct v2
-col_v2_read(struct ser_reader *r, struct ser_value arr)
-{
-	v2 res = {0};
-	dbg_assert(arr.type == SER_TYPE_ARRAY);
-	struct ser_value value = {0};
-
-	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.x = value.f32;
-
-	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.y = value.f32;
-
-	return res;
-}
-
 struct col_cir
 col_cir_read(struct ser_reader *r, struct ser_value arr)
 {
@@ -259,7 +233,7 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 			size i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
 				dbg_assert(i < (size)ARRLEN(res.verts));
-				res.verts[i++] = col_v2_read(r, item_value);
+				res.verts[i++] = ser_read_v2(r, item_value);
 			}
 			dbg_assert(res.count == i);
 		} else if(str8_match(key.str, str8_lit("norms"), 0)) {
@@ -268,7 +242,7 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 			size i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
 				dbg_assert(i < (size)ARRLEN(res.norms));
-				res.norms[i++] = col_v2_read(r, item_value);
+				res.norms[i++] = ser_read_v2(r, item_value);
 			}
 			dbg_assert(res.count == i);
 		}

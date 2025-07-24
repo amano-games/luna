@@ -815,6 +815,29 @@ pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct all
 }
 
 struct pinbtjson_res
+pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("offset")) == 0) {
+			dbg_assert(value->type == JSMN_ARRAY);
+			res.spawner.offset.x = json_parse_i32(json, tokens + i + 2);
+			res.spawner.offset.y = json_parse_i32(json, tokens + i + 3);
+		} else if(json_eq(json, key, str8_lit("ref")) == 0) {
+			res.spawner.ref = json_parse_i32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
@@ -990,6 +1013,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			dbg_assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_switch_list(json, tokens, i + 1, alloc);
 			res.entity.switch_list        = item_res.switch_list;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("spawner")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_spawner(json, tokens, i + 1);
+			res.entity.spawner            = item_res.spawner;
 			i += item_res.token_count - 1;
 		}
 	}

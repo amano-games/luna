@@ -775,6 +775,16 @@
     };
     return res;
   }
+  function getSpawner(prop) {
+    var _a;
+    const value = prop.value;
+    const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
+    const res = {
+      offset: [value["offset_x"], value["offset_y"]],
+      ref
+    };
+    return res;
+  }
   function handleObjectLayer(layer, layer_index) {
     const res = [];
     if (!layer.isObjectLayer) {
@@ -807,6 +817,11 @@
         (acc, [key, value]) => {
           const prop = value;
           switch (prop.typeName) {
+            case "entity_flags": {
+              return __spreadProps(__spreadValues({}, acc), {
+                flags: prop.value
+              });
+            }
             case "rigid_body":
               return __spreadProps(__spreadValues({}, acc), {
                 rigid_body: getRigidBody(item, prop)
@@ -987,6 +1002,10 @@
             case "score_fx_offset":
               return __spreadProps(__spreadValues({}, acc), {
                 score_fx_offset: getScoreFxOffset(item, prop)
+              });
+            case "spawner":
+              return __spreadProps(__spreadValues({}, acc), {
+                spawner: getSpawner(prop)
               });
             default: {
               return acc;
