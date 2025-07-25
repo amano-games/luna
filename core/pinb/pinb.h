@@ -3,6 +3,10 @@
 #include "physics/physics.h"
 #include "sys-types.h"
 
+struct pinb_ball {
+	f32 debug_linear_damping;
+};
+
 struct pinb_reactive_impulse {
 	f32 magnitude;
 	bool32 normalize;
@@ -203,6 +207,7 @@ struct pinb_entity {
 	i32 flags;
 	i32 x;
 	i32 y;
+	struct pinb_ball ball;
 	struct pinb_spr spr;
 	struct body body;
 	struct pinb_plunger plunger;
