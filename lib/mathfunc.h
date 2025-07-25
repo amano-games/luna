@@ -4,6 +4,7 @@
 
 #include "sys-types.h"
 #include "sys-utils.h"
+#include "dbg.h"
 
 #define PI_FLOAT    3.1415927f
 #define PI2_FLOAT   6.2831853f

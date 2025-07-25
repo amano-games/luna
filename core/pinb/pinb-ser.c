@@ -8,6 +8,73 @@
 #include "sys-log.h"
 #include "collisions/collisions-ser.h"
 
+i32
+pinb_read(
+	struct ser_reader *r,
+	struct pinb_table *table,
+	struct alloc alloc)
+{
+	i32 res               = 0;
+	struct ser_value root = ser_read(r);
+	struct ser_value key, value;
+	while(ser_iter_object(r, root, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("version"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			dbg_assert(value.i32 > 0);
+			table->version = value.i32;
+			dbg_assert(table->version == 1);
+		} else if(str8_match(key.str, str8_lit("props"), 0)) {
+			dbg_assert(value.type == SER_TYPE_OBJECT);
+			table->props = pinb_table_props_read(r, value);
+		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			table->entities_count = value.i32;
+			table->entities       = arr_new(table->entities, table->entities_count, alloc);
+		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			table->entities_max_id = value.i32;
+		} else if(str8_match(key.str, str8_lit("entities"), 0)) {
+			dbg_assert(value.type == SER_TYPE_ARRAY);
+			struct ser_value val;
+			while(ser_iter_array(r, value, &val)) {
+				arr_push(table->entities, pinb_entity_read(r, val, alloc));
+			}
+			dbg_assert(arr_len(table->entities) == table->entities_count);
+		}
+	}
+	log_info(
+		"Pinb",
+		"Parsed, version: %d\n"
+		"entities_count: %d\n"
+		"entities_max_id %d",
+		table->version,
+		table->entities_count,
+		table->entities_max_id);
+
+	return res;
+}
+
+i32
+pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc)
+{
+	i32 res               = 0;
+	struct str8_list list = {0};
+	struct ser_value root = ser_read(r);
+	ser_value_push(r, root, 0, &list, alloc);
+	str8 str          = str8_list_join(alloc, &list, NULL);
+	void *inspct_file = NULL;
+	if(!(inspct_file = sys_file_open_w(path))) {
+		log_error("pinb-ser", "can't open file %s for writing!", path.str);
+		return -1;
+	}
+	sys_file_w(inspct_file, str.str, str.size);
+	sys_file_close(inspct_file);
+	log_info("pinb-ser", "inspect output: %s", path.str);
+
+	return res;
+}
+
 void
 pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 {
@@ -165,70 +232,84 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_end(w);
 }
 
-i32
-pinb_read(
-	struct ser_reader *r,
-	struct pinb_table *table,
-	struct alloc alloc)
+struct pinb_entity
+pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 {
-	i32 res               = 0;
-	struct ser_value root = ser_read(r);
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	struct pinb_entity res = {0};
 	struct ser_value key, value;
-	while(ser_iter_object(r, root, &key, &value)) {
+	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("version"), 0)) {
+		if(str8_match(key.str, str8_lit("id"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
-			dbg_assert(value.i32 > 0);
-			table->version = value.i32;
-			dbg_assert(table->version == 1);
-		} else if(str8_match(key.str, str8_lit("props"), 0)) {
-			dbg_assert(value.type == SER_TYPE_OBJECT);
-			table->props = pinb_table_props_read(r, value);
-		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
+			res.id = value.i32;
+		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
-			table->entities_count = value.i32;
-			table->entities       = arr_new(table->entities, table->entities_count, alloc);
-		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
+			res.flags = value.i32;
+		} else if(str8_match(key.str, str8_lit("x"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
-			table->entities_max_id = value.i32;
-		} else if(str8_match(key.str, str8_lit("entities"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value val;
-			while(ser_iter_array(r, value, &val)) {
-				arr_push(table->entities, pinb_entity_read(r, val, alloc));
-			}
-			dbg_assert(arr_len(table->entities) == table->entities_count);
+			res.x = value.i32;
+		} else if(str8_match(key.str, str8_lit("y"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.y = value.i32;
+		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
+			res.spr = pinb_spr_read(r, value);
+		} else if(str8_match(key.str, str8_lit("reactive_impulse"), 0)) {
+			res.reactive_impulse = pinb_reactive_impulse_read(r, value);
+		} else if(str8_match(key.str, str8_lit("force_field"), 0)) {
+			res.force_field = pinb_force_field_read(r, value);
+		} else if(str8_match(key.str, str8_lit("attractor"), 0)) {
+			res.attractor = pinb_attractor_read(r, value);
+		} else if(str8_match(key.str, str8_lit("reactive_sprite_offset"), 0)) {
+			res.reactive_sprite_offset = pinb_reactive_sprite_offset_read(r, value);
+		} else if(str8_match(key.str, str8_lit("reactive_animation"), 0)) {
+			res.reactive_animation = pinb_reactive_animation_read(r, value);
+		} else if(str8_match(key.str, str8_lit("charged_impulse"), 0)) {
+			res.charged_impulse = pinb_charged_impulse_read(r, value);
+		} else if(str8_match(key.str, str8_lit("plunger"), 0)) {
+			res.plunger = pinb_plunger_read(r, value);
+		} else if(str8_match(key.str, str8_lit("spinner"), 0)) {
+			res.spinner = pinb_spinner_read(r, value);
+		} else if(str8_match(key.str, str8_lit("bucket"), 0)) {
+			res.bucket = pinb_bucket_read(r, value);
+		} else if(str8_match(key.str, str8_lit("ball_saver"), 0)) {
+			res.ball_saver = pinb_ball_saver_read(r, value);
+		} else if(str8_match(key.str, str8_lit("body"), 0)) {
+			res.body = body_read(r, value);
+		} else if(str8_match(key.str, str8_lit("sensor"), 0)) {
+			res.sensor = pinb_sensor_read(r, value);
+		} else if(str8_match(key.str, str8_lit("switch_value"), 0)) {
+			res.switch_value = pinb_switch_value_read(r, value);
+		} else if(str8_match(key.str, str8_lit("switch_list"), 0)) {
+			res.switch_list = pinb_switch_list_read(r, value);
+		} else if(str8_match(key.str, str8_lit("flipper"), 0)) {
+			res.flipper = pinb_flipper_read(r, value);
+		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
+			res.flip = pinb_flip_read(r, value);
+		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
+			res.gravity = pinb_gravity_read(r, value);
+		} else if(str8_match(key.str, str8_lit("counter"), 0)) {
+			res.counter = pinb_counter_read(r, value);
+		} else if(str8_match(key.str, str8_lit("collision_layer"), 0)) {
+			res.collision_layer = pinb_collision_layer_read(r, value);
+		} else if(str8_match(key.str, str8_lit("crank_animation"), 0)) {
+			res.crank_animation = pinb_crank_animation_read(r, value);
+		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
+			res.reset = pinb_reset_read(r, value);
+		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
+			res.score_fx_offset = ser_read_v2_i32(r, value);
+		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
+			res.animator = pinb_animator_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("spawner"), 0)) {
+			res.spawner = pinb_spawner_read(r, value);
+		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
+			res.sfx_sequences = pinb_sfx_sequences_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
+			res.messages = pinb_messages_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
+			res.actions = pinb_actions_read(r, value, alloc);
 		}
 	}
-	log_info(
-		"Pinb",
-		"Parsed, version: %d\n"
-		"entities_count: %d\n"
-		"entities_max_id %d",
-		table->version,
-		table->entities_count,
-		table->entities_max_id);
-
-	return res;
-}
-
-i32
-pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc)
-{
-	i32 res               = 0;
-	struct str8_list list = {0};
-	struct ser_value root = ser_read(r);
-	ser_value_push(r, root, 0, &list, alloc);
-	str8 str          = str8_list_join(alloc, &list, NULL);
-	void *inspct_file = NULL;
-	if(!(inspct_file = sys_file_open_w(path))) {
-		log_error("pinb-ser", "can't open file %s for writing!", path.str);
-		return -1;
-	}
-	sys_file_w(inspct_file, str.str, str.size);
-	sys_file_close(inspct_file);
-	log_info("pinb-ser", "inspect output: %s", path.str);
-
 	return res;
 }
 
@@ -1284,87 +1365,6 @@ pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 				arr_push(res.items, pinb_action_read(r, item_value));
 			}
 			dbg_assert(res.len == arr_len(res.items));
-		}
-	}
-	return res;
-}
-
-struct pinb_entity
-pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
-{
-	dbg_assert(obj.type == SER_TYPE_OBJECT);
-	struct pinb_entity res = {0};
-	struct ser_value key, value;
-	while(ser_iter_object(r, obj, &key, &value)) {
-		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("id"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.id = value.i32;
-		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
-		} else if(str8_match(key.str, str8_lit("x"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.x = value.i32;
-		} else if(str8_match(key.str, str8_lit("y"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.y = value.i32;
-		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
-			res.spr = pinb_spr_read(r, value);
-		} else if(str8_match(key.str, str8_lit("reactive_impulse"), 0)) {
-			res.reactive_impulse = pinb_reactive_impulse_read(r, value);
-		} else if(str8_match(key.str, str8_lit("force_field"), 0)) {
-			res.force_field = pinb_force_field_read(r, value);
-		} else if(str8_match(key.str, str8_lit("attractor"), 0)) {
-			res.attractor = pinb_attractor_read(r, value);
-		} else if(str8_match(key.str, str8_lit("reactive_sprite_offset"), 0)) {
-			res.reactive_sprite_offset = pinb_reactive_sprite_offset_read(r, value);
-		} else if(str8_match(key.str, str8_lit("reactive_animation"), 0)) {
-			res.reactive_animation = pinb_reactive_animation_read(r, value);
-		} else if(str8_match(key.str, str8_lit("charged_impulse"), 0)) {
-			res.charged_impulse = pinb_charged_impulse_read(r, value);
-		} else if(str8_match(key.str, str8_lit("plunger"), 0)) {
-			res.plunger = pinb_plunger_read(r, value);
-		} else if(str8_match(key.str, str8_lit("spinner"), 0)) {
-			res.spinner = pinb_spinner_read(r, value);
-		} else if(str8_match(key.str, str8_lit("bucket"), 0)) {
-			res.bucket = pinb_bucket_read(r, value);
-		} else if(str8_match(key.str, str8_lit("ball_saver"), 0)) {
-			res.ball_saver = pinb_ball_saver_read(r, value);
-		} else if(str8_match(key.str, str8_lit("body"), 0)) {
-			res.body = body_read(r, value);
-		} else if(str8_match(key.str, str8_lit("sensor"), 0)) {
-			res.sensor = pinb_sensor_read(r, value);
-		} else if(str8_match(key.str, str8_lit("switch_value"), 0)) {
-			res.switch_value = pinb_switch_value_read(r, value);
-		} else if(str8_match(key.str, str8_lit("switch_list"), 0)) {
-			res.switch_list = pinb_switch_list_read(r, value);
-		} else if(str8_match(key.str, str8_lit("flipper"), 0)) {
-			res.flipper = pinb_flipper_read(r, value);
-		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
-			res.flip = pinb_flip_read(r, value);
-		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
-			res.gravity = pinb_gravity_read(r, value);
-		} else if(str8_match(key.str, str8_lit("counter"), 0)) {
-			res.counter = pinb_counter_read(r, value);
-		} else if(str8_match(key.str, str8_lit("collision_layer"), 0)) {
-			res.collision_layer = pinb_collision_layer_read(r, value);
-		} else if(str8_match(key.str, str8_lit("crank_animation"), 0)) {
-			res.crank_animation = pinb_crank_animation_read(r, value);
-		} else if(str8_match(key.str, str8_lit("reset"), 0)) {
-			res.reset = pinb_reset_read(r, value);
-		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
-			res.score_fx_offset = ser_read_v2_i32(r, value);
-		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
-			res.animator = pinb_animator_read(r, value, alloc);
-		} else if(str8_match(key.str, str8_lit("spawner"), 0)) {
-			res.spawner = pinb_spawner_read(r, value);
-		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
-			res.sfx_sequences = pinb_sfx_sequences_read(r, value, alloc);
-		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
-			res.messages = pinb_messages_read(r, value, alloc);
-		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
-			res.actions = pinb_actions_read(r, value, alloc);
 		}
 	}
 	return res;
