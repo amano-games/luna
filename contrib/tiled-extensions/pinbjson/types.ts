@@ -42,6 +42,7 @@ export interface ChargedImpulse {
   release_speed: number;
   reset_target: boolean;
   auto_shoot: boolean;
+  auto_shoot_hold: number;
 }
 
 export interface Bucket {

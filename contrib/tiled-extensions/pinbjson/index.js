@@ -564,7 +564,8 @@
       charge_speed: value["speed_charge"],
       release_speed: value["speed_release"],
       reset_target: value["reset_target"],
-      auto_shoot: value["auto_shoot"]
+      auto_shoot: value["auto_shoot"],
+      auto_shoot_hold: value["auto_shoot_hold"]
     };
     return res;
   }

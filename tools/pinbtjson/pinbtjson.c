@@ -327,6 +327,8 @@ pinbtjson_handle_charged_impulse(str8 json, jsmntok_t *tokens, i32 index)
 			res.charged_impulse.reset_target = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("auto_shoot")) == 0) {
 			res.charged_impulse.auto_shoot = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("auto_shoot_hold")) == 0) {
+			res.charged_impulse.auto_shoot_hold = json_parse_f32(json, value);
 		}
 	}
 

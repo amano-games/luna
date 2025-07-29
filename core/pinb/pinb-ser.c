@@ -428,6 +428,8 @@ pinb_charged_impulse_write(struct ser_writer *w, struct pinb_charged_impulse val
 	ser_write_i32(w, value.reset_target);
 	ser_write_string(w, str8_lit("auto_shoot"));
 	ser_write_i32(w, value.auto_shoot);
+	ser_write_string(w, str8_lit("auto_shoot_hold"));
+	ser_write_f32(w, value.auto_shoot_hold);
 
 	ser_write_end(w);
 }
@@ -1029,6 +1031,9 @@ pinb_charged_impulse_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("auto_shoot"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.auto_shoot = value.i32;
+		} else if(str8_match(key.str, str8_lit("auto_shoot_hold"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.auto_shoot_hold = value.f32;
 		}
 	}
 	return res;
