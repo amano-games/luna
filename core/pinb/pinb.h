@@ -29,6 +29,7 @@ struct pinb_charged_impulse {
 	f32 release_speed;
 	bool32 reset_target;
 	bool32 auto_shoot;
+	f32 auto_shoot_hold;
 };
 
 struct pinb_plunger {
