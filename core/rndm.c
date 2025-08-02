@@ -88,6 +88,16 @@ rndm_point_out_cir(struct rndm *rndm, i32 x, i32 y, i32 r)
 	return res;
 }
 
+v2
+rndm_point_in_cir(struct rndm *rndm, i32 x, i32 y, i32 r)
+{
+	f32 angle     = rndm_next_f32(rndm) * TURN_TO_RAD;
+	f32 magnitude = rndm_next_f32(rndm) * r;
+	v2 res        = v2_from(angle, magnitude);
+	res           = v2_add((v2){x, y}, res);
+	return res;
+}
+
 i32
 rndm_weighted_choice_i32(
 	struct rndm *rndm,
