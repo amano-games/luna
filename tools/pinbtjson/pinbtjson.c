@@ -883,11 +883,13 @@ pinbtjson_handle_spawn_zone(
 		} else if(json_eq(json, key, str8_lit("capacity")) == 0) {
 			res.spawn_zone.capacity = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
+			++i;
 			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
 			res.spawn_zone.type           = PINB_SPAWN_ZONE_TYPE_CIR;
 			res.spawn_zone.cir            = item_res.cir;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
+			++i;
 			struct pinbtjson_res item_res = pinbtjson_handle_col_aabb(json, tokens, i);
 			res.spawn_zone.type           = PINB_SPAWN_ZONE_TYPE_AABB;
 			res.spawn_zone.aabb           = item_res.aabb;
