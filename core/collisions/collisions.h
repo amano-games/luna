@@ -95,6 +95,34 @@ col_aabb_h(struct col_aabb aabb)
 	return aabb.max.y - aabb.min.y;
 }
 
+static inline v2
+col_aabb_cntr(struct col_aabb aabb)
+{
+	f32 w = col_aabb_w(aabb);
+	f32 h = col_aabb_h(aabb);
+
+	v2 res = {
+		.x = aabb.min.x + (w * 0.5f),
+		.y = aabb.min.y + (h * 0.5f),
+	};
+	return res;
+}
+
+static inline rec_i32
+col_aabb_to_rec_i32(struct col_aabb aabb)
+{
+	f32 w = col_aabb_w(aabb);
+	f32 h = col_aabb_h(aabb);
+
+	rec_i32 res = {
+		.x = aabb.min.x,
+		.y = aabb.min.y,
+		.w = w,
+		.h = h,
+	};
+	return res;
+}
+
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
 struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest);
@@ -119,3 +147,6 @@ void col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, stru
 void col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_manifold *m);
 void col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b, struct col_manifold *m);
 void col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly p, struct col_manifold *m);
+
+v2 col_aabb_cntr(struct col_aabb aabb);
+rec_i32 col_aabb_to_rec_i32(struct col_aabb aabb);

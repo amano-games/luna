@@ -86,34 +86,6 @@ c2manifold_to_manifold(c2Manifold *c2m, struct col_manifold *m)
 	m->contact_points[1] = c2v_to_v2(c2m->contact_points[1]);
 }
 
-static inline v2
-col_aabb_cntr(struct col_aabb aabb)
-{
-	f32 w = col_aabb_w(aabb);
-	f32 h = col_aabb_h(aabb);
-
-	v2 res = {
-		.x = aabb.min.x + (w * 0.5f),
-		.y = aabb.min.y + (h * 0.5f),
-	};
-	return res;
-}
-
-static inline rec_i32
-col_aabb_to_rec_i32(struct col_aabb aabb)
-{
-	f32 w = col_aabb_w(aabb);
-	f32 h = col_aabb_h(aabb);
-
-	rec_i32 res = {
-		.x = aabb.min.x,
-		.y = aabb.min.y,
-		.w = w,
-		.h = h,
-	};
-	return res;
-}
-
 void
 col_poly_init(struct col_poly *p)
 {
