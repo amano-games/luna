@@ -52,6 +52,8 @@ import {
   LayerProps,
   BallSaver,
   Spawner,
+  SpawnZoneRef,
+  SpawnZone,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -128,15 +130,6 @@ function getPos(object: MapObject) {
 function getRigidBody(object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const collisionShape = getCol(object) as CollisionShape;
-  if (object.tile && object.tileFlippedHorizontally) {
-    if (collisionShape.aabb) {
-      const col_w = collisionShape.aabb[2] - collisionShape.aabb[0];
-      const rel_x = collisionShape.aabb[0];
-      const flp_x = object.width - rel_x - col_w;
-      collisionShape.aabb[0] = flp_x;
-      collisionShape.aabb[2] = flp_x + col_w;
-    }
-  }
 
   const res: RigidBody = {
     angular_damping: value["angular_damping"],
@@ -503,8 +496,32 @@ function getSpawner(prop: PropertyValue) {
   const value = prop.value as object;
   const ref = Number(value["ref"]?.id) || 0;
   const res: Spawner = {
-    offset: [value["offset_x"], value["offset_y"]],
     ref: ref,
+    type: value["type"].value,
+    zones: [],
+  };
+  return res;
+}
+
+function getSpawnZoneRef(prop: PropertyValue) {
+  const value = prop.value as object;
+  const ref = Number(value["ref"]?.id) || 0;
+  const res: SpawnZoneRef = {
+    ref: ref,
+  };
+  return res;
+}
+
+function getSpawnZone(object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const collisionShape = getCol(object) as CollisionShape;
+
+  const res: SpawnZone = {
+    mode: value["mode"].value,
+    capacity: value["capacity"],
+    point: collisionShape.point,
+    cir: collisionShape.cir,
+    aabb: collisionShape.aabb,
   };
   return res;
 }
@@ -771,10 +788,47 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 ...acc,
                 score_fx_offset: getScoreFxOffset(item, prop),
               };
+            case "spawn_zone_ref":
+              const zoneRef = getSpawnZoneRef(prop);
+              if (acc.spawner == null) {
+                const spawner: Spawner = {
+                  ref: 0,
+                  type: 0,
+                  zones: [zoneRef.ref],
+                };
+                return {
+                  ...acc,
+                  spawner: spawner,
+                };
+              } else {
+                return {
+                  ...acc,
+                  spawner: {
+                    ...acc.spawner,
+                    zones: [...acc.spawner.zones, zoneRef.ref],
+                  },
+                };
+              }
             case "spawner":
+              const spawner = getSpawner(prop);
+              if (acc.spawner == null) {
+                return {
+                  ...acc,
+                  spawner: spawner,
+                };
+              } else {
+                return {
+                  ...acc,
+                  spawner: {
+                    ...spawner,
+                    zones: [...acc.spawner.zones, ...spawner.zones],
+                  },
+                };
+              }
+            case "spawn_zone":
               return {
                 ...acc,
-                spawner: getSpawner(prop),
+                spawnZone: getSpawnZone(item, prop),
               };
             default: {
               return acc;

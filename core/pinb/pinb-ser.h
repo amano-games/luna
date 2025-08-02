@@ -83,7 +83,10 @@ void pinb_switch_list_write(struct ser_writer *w, struct pinb_switch_list value)
 struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_spawner_write(struct ser_writer *w, struct pinb_spawner value);
-struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+
+void pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone value);
+struct pinb_spawn_zone pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences value);
 

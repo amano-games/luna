@@ -198,9 +198,29 @@ struct pinb_ball_saver {
 	f32 save_delay;
 };
 
+enum pinb_spawn_zone_type {
+	PINB_SPAWN_ZONE_TYPE_NONE,
+	PINB_SPAWN_ZONE_TYPE_CIR,
+	PINB_SPAWN_ZONE_TYPE_AABB,
+	PINB_SPAWN_ZONE_TYPE_POINT,
+};
+
+struct pinb_spawn_zone {
+	i32 mode;
+	i32 capacity;
+	enum pinb_spawn_zone_type type;
+	union {
+		v2 point;
+		struct col_cir cir;
+		struct col_aabb aabb;
+	};
+};
+
 struct pinb_spawner {
-	v2_i32 offset;
 	i32 ref;
+	i32 type;
+	i32 zones_len;
+	i32 *zones;
 };
 
 struct pinb_entity {
@@ -235,6 +255,7 @@ struct pinb_entity {
 	struct v2_i32 score_fx_offset;
 	struct pinb_collision_layer collision_layer;
 	struct pinb_spawner spawner;
+	struct pinb_spawn_zone spawn_zone;
 	struct pinb_messages messages;
 	struct pinb_actions actions;
 };

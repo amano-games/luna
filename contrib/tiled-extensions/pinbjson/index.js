@@ -110,6 +110,13 @@
     };
     return res;
   }
+  function getPoint(object, isTile = false) {
+    if (getColType(object.shape) !== COL_TYPE_POINT) {
+      return void 0;
+    }
+    const res = [isTile ? object.x : 0, isTile ? object.y : 0];
+    return res;
+  }
   function getTileObjects(object) {
     if (!object.tile) {
       return [];
@@ -130,6 +137,13 @@
       return res;
     } else {
       const res = getCol(first, true);
+      if (object.tileFlippedHorizontally && res.aabb) {
+        const col_w = res.aabb[2] - res.aabb[0];
+        const rel_x = res.aabb[0];
+        const flp_x = object.width - rel_x - col_w;
+        res.aabb[0] = flp_x;
+        res.aabb[2] = flp_x + col_w;
+      }
       return res;
     }
   }
@@ -158,6 +172,7 @@
       poly: getPolygon(object, isTile),
       aabb: getAABB(object, isTile),
       cir: getCir(object, isTile),
+      point: getPoint(object, isTile),
       capsule: void 0
     };
     return res;
@@ -463,15 +478,6 @@
   function getRigidBody(object, prop) {
     const value = prop.value;
     const collisionShape = getCol(object);
-    if (object.tile && object.tileFlippedHorizontally) {
-      if (collisionShape.aabb) {
-        const col_w = collisionShape.aabb[2] - collisionShape.aabb[0];
-        const rel_x = collisionShape.aabb[0];
-        const flp_x = object.width - rel_x - col_w;
-        collisionShape.aabb[0] = flp_x;
-        collisionShape.aabb[2] = flp_x + col_w;
-      }
-    }
     const res = {
       angular_damping: value["angular_damping"],
       dynamic_friction: value["dynamic_friction"],
@@ -781,8 +787,30 @@
     const value = prop.value;
     const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
     const res = {
-      offset: [value["offset_x"], value["offset_y"]],
+      ref,
+      type: value["type"].value,
+      zones: []
+    };
+    return res;
+  }
+  function getSpawnZoneRef(prop) {
+    var _a;
+    const value = prop.value;
+    const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
+    const res = {
       ref
+    };
+    return res;
+  }
+  function getSpawnZone(object, prop) {
+    const value = prop.value;
+    const collisionShape = getCol(object);
+    const res = {
+      mode: value["mode"].value,
+      capacity: value["capacity"],
+      point: collisionShape.point,
+      cir: collisionShape.cir,
+      aabb: collisionShape.aabb
     };
     return res;
   }
@@ -1004,9 +1032,40 @@
               return __spreadProps(__spreadValues({}, acc), {
                 score_fx_offset: getScoreFxOffset(item, prop)
               });
+            case "spawn_zone_ref":
+              const zoneRef = getSpawnZoneRef(prop);
+              if (acc.spawner == null) {
+                const spawner2 = {
+                  ref: 0,
+                  type: 0,
+                  zones: [zoneRef.ref]
+                };
+                return __spreadProps(__spreadValues({}, acc), {
+                  spawner: spawner2
+                });
+              } else {
+                return __spreadProps(__spreadValues({}, acc), {
+                  spawner: __spreadProps(__spreadValues({}, acc.spawner), {
+                    zones: [...acc.spawner.zones, zoneRef.ref]
+                  })
+                });
+              }
             case "spawner":
+              const spawner = getSpawner(prop);
+              if (acc.spawner == null) {
+                return __spreadProps(__spreadValues({}, acc), {
+                  spawner
+                });
+              } else {
+                return __spreadProps(__spreadValues({}, acc), {
+                  spawner: __spreadProps(__spreadValues({}, spawner), {
+                    zones: [...acc.spawner.zones, ...spawner.zones]
+                  })
+                });
+              }
+            case "spawn_zone":
               return __spreadProps(__spreadValues({}, acc), {
-                spawner: getSpawner(prop)
+                spawnZone: getSpawnZone(item, prop)
               });
             default: {
               return acc;

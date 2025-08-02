@@ -484,6 +484,24 @@ pinbtjson_handle_col_cir(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_col_aabb(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_ARRAY);
+	dbg_assert(root->size == 4);
+	res.token_count = 5;
+
+	i32 i          = index;
+	res.aabb.min.x = json_parse_f32(json, tokens + index + 1);
+	res.aabb.min.y = json_parse_f32(json, tokens + index + 2);
+	res.aabb.max.x = json_parse_f32(json, tokens + index + 3);
+	res.aabb.max.y = json_parse_f32(json, tokens + index + 4);
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
@@ -678,15 +696,12 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 			}
 
 		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
-			dbg_assert(value->type == JSMN_ARRAY);
-			dbg_assert(value->size == 4);
 			i++;
-			res.col_shapes.count               = 1;
-			res.col_shapes.items[0].type       = COL_TYPE_AABB;
-			res.col_shapes.items[0].aabb.min.x = json_parse_f32(json, tokens + ++i);
-			res.col_shapes.items[0].aabb.min.y = json_parse_f32(json, tokens + ++i);
-			res.col_shapes.items[0].aabb.max.x = json_parse_f32(json, tokens + ++i);
-			res.col_shapes.items[0].aabb.max.y = json_parse_f32(json, tokens + ++i);
+			struct pinbtjson_res item_res = pinbtjson_handle_col_aabb(json, tokens, i);
+			res.col_shapes.count          = 1;
+			res.col_shapes.items[0].type  = COL_TYPE_AABB;
+			res.col_shapes.items[0].aabb  = item_res.aabb;
+			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
 			i++;
 			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
@@ -817,7 +832,7 @@ pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct all
 }
 
 struct pinbtjson_res
-pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index)
+pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -827,12 +842,58 @@ pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index)
 	for(usize i = index + 1; i < index + res.token_count; i += 2) {
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
-		if(json_eq(json, key, str8_lit("offset")) == 0) {
-			dbg_assert(value->type == JSMN_ARRAY);
-			res.spawner.offset.x = json_parse_i32(json, tokens + i + 2);
-			res.spawner.offset.y = json_parse_i32(json, tokens + i + 3);
-		} else if(json_eq(json, key, str8_lit("ref")) == 0) {
+		if(json_eq(json, key, str8_lit("ref")) == 0) {
 			res.spawner.ref = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("type")) == 0) {
+			res.spawner.type = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("zones")) == 0) {
+			dbg_assert(value->type == JSMN_ARRAY);
+			res.spawner.zones = arr_new(res.spawner.zones, value->size, alloc);
+			for(usize j = 0; j < (usize)value->size; ++j) {
+				i32 item_index  = i + j + 2;
+				jsmntok_t *item = tokens + item_index;
+				dbg_assert(item->type == JSMN_PRIMITIVE);
+				res.spawner.zones[res.spawner.zones_len++] = json_parse_i32(json, item);
+			}
+			dbg_assert(res.spawner.zones_len == value->size);
+			i += value->size;
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_spawn_zone(
+	str8 json,
+	jsmntok_t *tokens,
+	i32 index,
+	struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("mode")) == 0) {
+			res.spawn_zone.mode = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("capacity")) == 0) {
+			res.spawn_zone.capacity = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
+			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
+			res.spawn_zone.type           = PINB_SPAWN_ZONE_TYPE_CIR;
+			res.spawn_zone.cir            = item_res.cir;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
+			struct pinbtjson_res item_res = pinbtjson_handle_col_aabb(json, tokens, i);
+			res.spawn_zone.type           = PINB_SPAWN_ZONE_TYPE_AABB;
+			res.spawn_zone.aabb           = item_res.aabb;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("point")) == 0) {
+			res.spawn_zone.type = PINB_SPAWN_ZONE_TYPE_POINT;
 		}
 	}
 
@@ -1018,8 +1079,13 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("spawner")) == 0) {
 			dbg_assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_spawner(json, tokens, i + 1);
+			struct pinbtjson_res item_res = pinbtjson_handle_spawner(json, tokens, i + 1, alloc);
 			res.entity.spawner            = item_res.spawner;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("spawn_zone")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_spawn_zone(json, tokens, i + 1, alloc);
+			res.entity.spawn_zone         = item_res.spawn_zone;
 			i += item_res.token_count - 1;
 		}
 	}

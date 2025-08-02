@@ -54,7 +54,6 @@ col_shape_write(struct ser_writer *w, struct col_shape shape)
 
 error:
 	ser_write_end(w);
-	return;
 }
 
 void
