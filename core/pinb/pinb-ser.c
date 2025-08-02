@@ -726,12 +726,15 @@ pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone value)
 
 	switch(value.type) {
 	case PINB_SPAWN_ZONE_TYPE_POINT: {
+		ser_write_string(w, str8_lit("point"));
 		ser_write_v2(w, value.point);
 	} break;
 	case PINB_SPAWN_ZONE_TYPE_CIR: {
+		ser_write_string(w, str8_lit("cir"));
 		col_cir_write(w, value.cir);
 	} break;
 	case PINB_SPAWN_ZONE_TYPE_AABB: {
+		ser_write_string(w, str8_lit("aabb"));
 		col_aabb_write(w, value.aabb);
 	} break;
 	default: {

@@ -828,7 +828,7 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
             case "spawn_zone":
               return {
                 ...acc,
-                spawnZone: getSpawnZone(item, prop),
+                spawn_zone: getSpawnZone(item, prop),
               };
             default: {
               return acc;

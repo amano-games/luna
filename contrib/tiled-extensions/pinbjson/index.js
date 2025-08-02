@@ -1065,7 +1065,7 @@
               }
             case "spawn_zone":
               return __spreadProps(__spreadValues({}, acc), {
-                spawnZone: getSpawnZone(item, prop)
+                spawn_zone: getSpawnZone(item, prop)
               });
             default: {
               return acc;
