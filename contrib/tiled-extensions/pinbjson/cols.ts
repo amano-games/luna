@@ -111,6 +111,15 @@ function getCir(object: MapObject, isTile = false) {
   return res;
 }
 
+function getPoint(object: MapObject, isTile = false) {
+  if (getColType(object.shape) !== COL_TYPE_POINT) {
+    return undefined;
+  }
+
+  const res: [number, number] = [isTile ? object.x : 0, isTile ? object.y : 0];
+  return res;
+}
+
 export function getTileObjects(object: MapObject) {
   if (!object.tile) {
     return [];
@@ -132,6 +141,13 @@ function getTileCol(object: MapObject) {
     return res;
   } else {
     const res = getCol(first, true);
+    if (object.tileFlippedHorizontally && res.aabb) {
+      const col_w = res.aabb[2] - res.aabb[0];
+      const rel_x = res.aabb[0];
+      const flp_x = object.width - rel_x - col_w;
+      res.aabb[0] = flp_x;
+      res.aabb[2] = flp_x + col_w;
+    }
     return res;
   }
 }
@@ -165,6 +181,7 @@ export function getCol(object: MapObject, isTile = false) {
     poly: getPolygon(object, isTile),
     aabb: getAABB(object, isTile),
     cir: getCir(object, isTile),
+    point: getPoint(object, isTile),
     capsule: undefined,
   };
 

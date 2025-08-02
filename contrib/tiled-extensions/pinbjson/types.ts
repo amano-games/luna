@@ -22,6 +22,7 @@ export interface CollisionShape {
   aabb?: AABB;
   cir?: Cir;
   capsule?: Capsule;
+  point?: [number, number];
 }
 
 export interface RigidBody {
@@ -214,8 +215,21 @@ export interface BallSaver {
   save_delay: number;
 }
 
+export interface SpawnZone {
+  mode: number;
+  capacity: number;
+  aabb?: AABB;
+  cir?: Cir;
+  point?: [number, number];
+}
+
 export interface Spawner {
-  offset: [number, number];
+  ref: number;
+  type: number;
+  zones: number[];
+}
+
+export interface SpawnZoneRef {
   ref: number;
 }
 
@@ -255,6 +269,7 @@ export interface Entity {
   reset?: Reset;
   ball_saver?: BallSaver;
   spawner?: Spawner;
+  spawnZone?: SpawnZone;
 }
 
 export interface LayerProps {
