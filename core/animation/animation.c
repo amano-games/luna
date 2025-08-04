@@ -5,6 +5,7 @@
 #include "dbg.h"
 
 #include "mathfunc.h"
+#include "trace.h"
 
 void
 animation_clip_init(struct animation_clip *data)
@@ -39,8 +40,10 @@ animation_start(struct animation *ani, f32 timestamp)
 bool32 // finished?
 animation_update(struct animation *ani, f32 timestamp)
 {
-	if(ani->is_stopped) { return false; }
-	if(ani->clip.count == -1) { return false; }
+	TRACE_START(__func__);
+	bool32 res = false;
+	if(ani->is_stopped) { goto cleanup; }
+	if(ani->clip.count == -1) { goto cleanup; }
 
 	struct animation_timer *timer = &ani->timer;
 	f32 duration                  = ani->clip.clip_duration * ani->clip.count;
@@ -49,57 +52,79 @@ animation_update(struct animation *ani, f32 timestamp)
 	f32 delta                     = current - start;
 	f32 end                       = start + duration;
 	ani->is_stopped               = current > end;
+	res                           = ani->is_stopped;
 
-	return ani->is_stopped;
+cleanup:
+	TRACE_END();
+	return res;
 }
 
 usize
 animation_get_last_frame(struct animation_track *track)
 {
-	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) return 0;
+	TRACE_START(__func__);
+
+	usize res = 0;
+	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) { goto cleanup; }
 	dbg_assert(track->frames.len > 0);
 	usize frame_index = track->frames.len - 1;
-	usize res         = track->frames.items[frame_index];
+	res               = track->frames.items[frame_index];
+
+cleanup:
+	TRACE_END();
 	return res;
 }
 
 usize
 animation_get_first_frame(struct animation_track *track)
 {
-	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) return 0;
+	TRACE_START(__func__);
+	usize res = 0;
+	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) { goto cleanup; }
 	dbg_assert(track->frames.len > 0);
-	usize res = track->frames.items[0];
+	res = track->frames.items[0];
+
+cleanup:
+	TRACE_END();
 	return res;
 }
 
 usize
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
+	TRACE_START(__func__);
+	usize res = 0;
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
 	usize track_index             = track_type - 1;
 	struct animation_track *track = &ani->clip.tracks[track_index];
 
 	if(ani->is_stopped) {
-		return animation_get_last_frame(track);
+		res = animation_get_last_frame(track);
+		goto cleanup;
 	};
 
 	if(track->frames.len == 0) {
-		return 0;
+		res = 0;
+		goto cleanup;
 	}
 
 	struct animation_timer *timer = &ani->timer;
+	f32 start                     = timer->timestamp;
+	f32 current                   = timestamp;
+	f32 delta                     = current - start;
+	bool32 loop                   = ani->clip.count == -1;
 
-	f32 start   = timer->timestamp;
-	f32 current = timestamp;
-	f32 delta   = current - start;
-	bool32 loop = ani->clip.count == -1;
 	if(!loop) {
 		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
 	}
+
 	i32 frame_index = delta * ani->clip.frame_duration_inv;
 	frame_index     = mod_euc_i32(frame_index, track->frames.len);
-	usize res       = track->frames.items[(usize)frame_index];
+	res             = track->frames.items[(usize)frame_index];
+
+cleanup:
+	TRACE_END();
 	return res;
 }
 

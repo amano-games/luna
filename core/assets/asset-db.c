@@ -276,6 +276,7 @@ i32
 asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 {
 	TRACE_START(__func__);
+	u32 res                 = 0;
 	struct snd_table *table = &db->snds;
 	usize table_len         = arr_len(table->arr);
 	usize table_cap         = arr_cap(table->arr);
@@ -288,17 +289,17 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	bool32 has_key = value != 0;
 
 	if(has_key) {
-		return value;
+		res = value;
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, snd);
-		return value;
+		res = value;
 	}
-	TRACE_END();
 
 error:
-	return 0;
+	TRACE_END();
+	return value;
 }
 
 struct snd
