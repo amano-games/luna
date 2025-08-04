@@ -23,16 +23,16 @@ bool32
 animator_update(struct animator *animator, f32 timestamp)
 {
 	TRACE_START(__func__);
+	bool32 res                   = false;
 	usize current_animation      = animator->index;
 	struct animation *animation  = &animator->animation;
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, animator->clips_handle);
 
 	if(slice.size > 0) {
-		TRACE_END();
-		return animation_update(animation, timestamp);
+		res = animation_update(animation, timestamp);
 	}
 	TRACE_END();
-	return false;
+	return res;
 }
 
 usize
