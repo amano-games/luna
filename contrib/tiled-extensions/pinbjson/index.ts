@@ -32,7 +32,7 @@ import {
   Message,
   Sprite,
   SwitchValue,
-  SwitchList,
+  EntityList,
   TableProperties,
   GameAction,
   ReactiveAnimation,
@@ -413,9 +413,9 @@ function getSwitchValue(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
-function getSwitchList(_object: MapObject, prop: PropertyValue) {
+function getEntityList(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
-  const res: SwitchList = {
+  const res: EntityList = {
     prev: Number(value["prev"].id),
     next: Number(value["next"].id),
   };
@@ -682,7 +682,12 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
             case "switch_list":
               return {
                 ...acc,
-                switch_list: getSwitchList(item, prop),
+                switch_list: getEntityList(item, prop),
+              };
+            case "counter_list":
+              return {
+                ...acc,
+                counter_list: getEntityList(item, prop),
               };
             case "reset":
               return {

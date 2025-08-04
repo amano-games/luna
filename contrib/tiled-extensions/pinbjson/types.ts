@@ -149,7 +149,7 @@ export interface SwitchValue {
   animation_off: number;
 }
 
-export interface SwitchList {
+export interface EntityList {
   next: number;
   prev: number;
 }
@@ -253,7 +253,8 @@ export interface Entity {
   animator?: Animator;
   sensor?: Sensor;
   switch_value?: SwitchValue;
-  switch_list?: SwitchList;
+  switch_list?: EntityList;
+  counter_list?: EntityList;
   counter?: Counter;
   crank_animation?: CrankAnimation;
   score_fx_offset?: ScoreFXOffset;

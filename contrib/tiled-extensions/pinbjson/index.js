@@ -712,7 +712,7 @@
     };
     return res;
   }
-  function getSwitchList(_object, prop) {
+  function getEntityList(_object, prop) {
     const value = prop.value;
     const res = {
       prev: Number(value["prev"].id),
@@ -940,7 +940,11 @@
               });
             case "switch_list":
               return __spreadProps(__spreadValues({}, acc), {
-                switch_list: getSwitchList(item, prop)
+                switch_list: getEntityList(item, prop)
+              });
+            case "counter_list":
+              return __spreadProps(__spreadValues({}, acc), {
+                counter_list: getEntityList(item, prop)
               });
             case "reset":
               return __spreadProps(__spreadValues({}, acc), {
