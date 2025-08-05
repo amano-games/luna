@@ -253,8 +253,7 @@ export interface Entity {
   animator?: Animator;
   sensor?: Sensor;
   switch_value?: SwitchValue;
-  switch_list?: EntityList;
-  counter_list?: EntityList;
+  entity_list?: EntityList;
   counter?: Counter;
   crank_animation?: CrankAnimation;
   score_fx_offset?: ScoreFXOffset;

@@ -679,15 +679,10 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 ...acc,
                 switch_value: getSwitchValue(item, prop),
               };
-            case "switch_list":
+            case "entity_list":
               return {
                 ...acc,
-                switch_list: getEntityList(item, prop),
-              };
-            case "counter_list":
-              return {
-                ...acc,
-                counter_list: getEntityList(item, prop),
+                entity_list: getEntityList(item, prop),
               };
             case "reset":
               return {

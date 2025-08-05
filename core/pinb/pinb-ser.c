@@ -204,9 +204,9 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		pinb_switch_value_write(w, entity.switch_value);
 	}
 
-	if(entity.switch_list.next != 0 || entity.switch_list.next != 0) {
-		ser_write_string(w, str8_lit("switch_list"));
-		pinb_switch_list_write(w, entity.switch_list);
+	if(entity.entity_list.next != 0 || entity.entity_list.next != 0) {
+		ser_write_string(w, str8_lit("entity_list"));
+		pinb_entity_list_write(w, entity.entity_list);
 	}
 
 	if(entity.spawner.ref != 0) {
@@ -285,8 +285,8 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.sensor = pinb_sensor_read(r, value);
 		} else if(str8_match(key.str, str8_lit("switch_value"), 0)) {
 			res.switch_value = pinb_switch_value_read(r, value);
-		} else if(str8_match(key.str, str8_lit("switch_list"), 0)) {
-			res.switch_list = pinb_switch_list_read(r, value);
+		} else if(str8_match(key.str, str8_lit("entity_list"), 0)) {
+			res.entity_list = pinb_entity_list_read(r, value);
 		} else if(str8_match(key.str, str8_lit("flipper"), 0)) {
 			res.flipper = pinb_flipper_read(r, value);
 		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
@@ -648,7 +648,7 @@ pinb_switch_value_write(struct ser_writer *w, struct pinb_switch value)
 }
 
 void
-pinb_switch_list_write(struct ser_writer *w, struct pinb_switch_list value)
+pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list value)
 {
 	ser_write_object(w);
 
@@ -1637,10 +1637,10 @@ pinb_switch_value_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
-struct pinb_switch_list
-pinb_switch_list_read(struct ser_reader *r, struct ser_value obj)
+struct pinb_entity_list
+pinb_entity_list_read(struct ser_reader *r, struct ser_value obj)
 {
-	struct pinb_switch_list res = {0};
+	struct pinb_entity_list res = {0};
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);

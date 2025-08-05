@@ -36,7 +36,7 @@ struct pinbtjson_res {
 		struct pinb_counter counter;
 		struct pinb_sensor sensor;
 		struct pinb_switch switch_value;
-		struct pinb_switch_list switch_list;
+		struct pinb_entity_list entity_list;
 		struct pinb_sfx_sequence sfx_sequence;
 		struct pinb_action action;
 		struct pinb_message message;
