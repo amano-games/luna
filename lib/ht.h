@@ -5,6 +5,7 @@
 #include "mem.h"
 #include "sys-types.h"
 #include "dbg.h"
+#include "trace.h"
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
@@ -48,43 +49,57 @@ struct ht_u32 {
 i32
 ht_lookup(u64 hash, int exp, i32 idx)
 {
+	TRACE_START(__func__);
 	u32 mask = ((u64)1 << exp) - 1;
 	u32 step = (hash >> (64 - exp)) | 1;
-	return (idx + step) & mask;
+	i32 res  = (idx + step) & mask;
+	TRACE_END();
+	return res;
 }
 
 u32
 ht_get_u32(struct ht_u32 *t, u64 key)
 {
+	TRACE_START(__func__);
+	u32 res = 0;
 	for(int32_t i = key;;) {
 		i = ht_lookup(key, t->exp, i);
 		// Empty return 0
 		if(t->ht[i].key == 0) {
-			return 0;
+			goto cleanup;
 		} else if(t->ht[i].key == key) {
-			return t->ht[i].value;
+			res = t->ht[i].value;
+			goto cleanup;
 		}
 	}
-	return 0;
+cleanup:
+	TRACE_END();
+	return res;
 }
 
 u32
 ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
 {
+	TRACE_START(__func__);
+	u32 res = -1;
 	for(int32_t i = key;;) {
 		i = ht_lookup(key, t->exp, i);
 		// empty, insert here
 		if(!t->ht[i].key) {
 			if((uint32_t)t->len + 1 == (uint32_t)1 << t->exp) {
-				return 0; // out of memory
+				res = 0; // out of memory
+				goto cleanup;
 			}
 			t->len++;
 			t->ht[i].key   = key;
 			t->ht[i].value = value;
-			return value;
+			res            = value;
+			goto cleanup;
 		}
 	}
-	return -1;
+cleanup:
+	TRACE_END();
+	return res;
 }
 
 static struct ht_u32
