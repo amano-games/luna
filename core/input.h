@@ -35,7 +35,12 @@ struct inp {
 	struct inp_state prev;
 };
 
-void inp_update(void);
+void inp_upd(void);
+void inp_set_buttons(int buttons);
+int inp_get_buttons(void);
+void inp_set_crank(f32 value);
+void inp_set_crank_docked(int is_docked);
+void inp_set_keys(u8 *keys, usize count);
 
 bool32 inp_pressed(int b);
 bool32 inp_pressed_any(int b);
