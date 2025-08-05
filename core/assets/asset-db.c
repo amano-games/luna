@@ -147,18 +147,22 @@ asset_db_tex_get(struct asset_db *db, struct asset_handle handle)
 i32
 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 {
+	TRACE_START(__func__);
 	struct tex_table *table = &db->textures;
 	u32 res                 = ht_get_u32(&table->ht, handle.path_hash);
+	TRACE_END();
 	return res;
 }
 
 struct tex
 asset_db_tex_get_by_id(struct asset_db *db, i32 id)
 {
+	TRACE_START(__func__);
 	dbg_assert(id > 0);
 	dbg_assert(id < (i32)arr_len(db->textures.arr));
 	struct tex_table *table = &db->textures;
 	struct tex res          = table->arr[id];
+	TRACE_END();
 	return res;
 }
 

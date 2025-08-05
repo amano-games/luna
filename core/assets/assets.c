@@ -41,7 +41,9 @@ error: {
 struct tex
 asset_tex(i32 id)
 {
+	TRACE_START(__func__);
 	struct tex res = asset_db_tex_get_by_id(&ASSETS.db, id);
+	TRACE_END();
 	return res;
 }
 
@@ -158,14 +160,16 @@ asset_snd_get_id(str8 path)
 struct tex_rec
 asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 {
+	TRACE_START(__func__);
+
 	struct tex_rec res = {0};
+	res.t              = asset_db_tex_get_by_id(&ASSETS.db, id);
+	res.r.x            = x;
+	res.r.y            = y;
+	res.r.w            = w;
+	res.r.h            = h;
 
-	res.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
-	res.r.x = x;
-	res.r.y = y;
-	res.r.w = w;
-	res.r.h = h;
-
+	TRACE_END();
 	return res;
 }
 
