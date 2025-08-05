@@ -1,4 +1,5 @@
 #include "input.h"
+#include "dbg.h"
 #include "str.h"
 #include "sys-log.h"
 #include "sys-utils.h"
@@ -7,7 +8,7 @@
 static struct inp INP;
 
 void
-inp_update(void)
+inp_upd(void)
 {
 	TRACE_START(__func__);
 	INP.prev = INP.curr;
@@ -17,6 +18,37 @@ inp_update(void)
 	INP.curr.crank_docked = sys_crank_docked();
 	sys_keys(INP.curr.keys, ARRLEN(INP.curr.keys));
 	TRACE_END();
+}
+
+void
+inp_set_buttons(int value)
+{
+	INP.curr.btn = value;
+}
+
+int
+inp_get_buttons(void)
+{
+	return INP.curr.btn;
+}
+
+void
+inp_set_crank(f32 value)
+{
+	INP.curr.crank = value;
+}
+
+void
+inp_set_crank_docked(int value)
+{
+	INP.curr.crank_docked = value;
+}
+
+void
+inp_set_keys(u8 *keys, usize count)
+{
+	dbg_assert(count < ARRLEN(INP.curr.keys));
+	mcpy(INP.curr.keys, keys, count);
 }
 
 bool32
