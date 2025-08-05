@@ -98,7 +98,7 @@ struct pinb_switch {
 	i32 animation_off;
 };
 
-struct pinb_switch_list {
+struct pinb_entity_list {
 	i32 next;
 	i32 prev;
 };
@@ -245,7 +245,7 @@ struct pinb_entity {
 	struct pinb_flip flip;
 	struct pinb_sensor sensor;
 	struct pinb_switch switch_value;
-	struct pinb_switch_list switch_list;
+	struct pinb_entity_list entity_list;
 	struct pinb_sfx_sequences sfx_sequences;
 	struct pinb_reset reset;
 	struct pinb_counter counter;

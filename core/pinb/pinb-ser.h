@@ -79,8 +79,8 @@ void pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_
 void pinb_switch_value_write(struct ser_writer *w, struct pinb_switch value);
 struct pinb_switch pinb_switch_value_read(struct ser_reader *r, struct ser_value obj);
 
-void pinb_switch_list_write(struct ser_writer *w, struct pinb_switch_list value);
-struct pinb_switch_list pinb_switch_list_read(struct ser_reader *r, struct ser_value obj);
+void pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list value);
+struct pinb_entity_list pinb_entity_list_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_spawner_write(struct ser_writer *w, struct pinb_spawner value);
 struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);

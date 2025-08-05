@@ -938,13 +938,9 @@
               return __spreadProps(__spreadValues({}, acc), {
                 switch_value: getSwitchValue(item, prop)
               });
-            case "switch_list":
+            case "entity_list":
               return __spreadProps(__spreadValues({}, acc), {
-                switch_list: getEntityList(item, prop)
-              });
-            case "counter_list":
-              return __spreadProps(__spreadValues({}, acc), {
-                counter_list: getEntityList(item, prop)
+                entity_list: getEntityList(item, prop)
               });
             case "reset":
               return __spreadProps(__spreadValues({}, acc), {

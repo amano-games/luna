@@ -811,7 +811,7 @@ pinbtjson_handle_switch_value(str8 json, jsmntok_t *tokens, i32 index, struct al
 }
 
 struct pinbtjson_res
-pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+pinbtjson_handle_entity_list(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
 {
 	struct pinbtjson_res res = {0};
 	jsmntok_t *root          = &tokens[index];
@@ -823,9 +823,9 @@ pinbtjson_handle_switch_list(str8 json, jsmntok_t *tokens, i32 index, struct all
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
 		if(json_eq(json, key, str8_lit("next")) == 0) {
-			res.switch_list.next = json_parse_i32(json, value);
+			res.entity_list.next = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("prev")) == 0) {
-			res.switch_list.prev = json_parse_i32(json, value);
+			res.entity_list.prev = json_parse_i32(json, value);
 		}
 	}
 	return res;
@@ -1074,10 +1074,10 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			struct pinbtjson_res item_res = pinbtjson_handle_switch_value(json, tokens, i + 1, alloc);
 			res.entity.switch_value       = item_res.switch_value;
 			i += item_res.token_count - 1;
-		} else if(json_eq(json, key, str8_lit("switch_list")) == 0) {
+		} else if(json_eq(json, key, str8_lit("entity_list")) == 0) {
 			dbg_assert(value->type == JSMN_OBJECT);
-			struct pinbtjson_res item_res = pinbtjson_handle_switch_list(json, tokens, i + 1, alloc);
-			res.entity.switch_list        = item_res.switch_list;
+			struct pinbtjson_res item_res = pinbtjson_handle_entity_list(json, tokens, i + 1, alloc);
+			res.entity.entity_list        = item_res.entity_list;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("spawner")) == 0) {
 			dbg_assert(value->type == JSMN_OBJECT);
