@@ -280,7 +280,7 @@ i32
 asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 {
 	TRACE_START(__func__);
-	u32 res                 = 0;
+	i32 res                 = 0;
 	struct snd_table *table = &db->snds;
 	usize table_len         = arr_len(table->arr);
 	usize table_cap         = arr_cap(table->arr);
@@ -303,7 +303,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 
 error:
 	TRACE_END();
-	return value;
+	return res;
 }
 
 struct snd
@@ -339,6 +339,7 @@ asset_db_snd_get_by_id(struct asset_db *db, i32 id)
 i32
 asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 {
+	i32 res                 = 0;
 	struct fnt_table *table = &db->fonts;
 	usize table_len         = arr_len(table->arr);
 	usize table_cap         = arr_cap(table->arr);
@@ -351,16 +352,16 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 	bool32 has_key = value != 0;
 
 	if(has_key) {
-		return value;
+		res = value;
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, fnt);
-		return value;
+		res = value;
 	}
 
 error:
-	return 0;
+	return res;
 }
 
 struct fnt
