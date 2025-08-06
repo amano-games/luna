@@ -90,6 +90,42 @@ cleanup:
 }
 
 usize
+animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
+{
+	TRACE_START(__func__);
+	usize res = 0;
+	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
+	usize track_index             = track_type - 1;
+	struct animation_track *track = &ani->clip.tracks[track_index];
+
+	if(ani->is_stopped) {
+		res = track->frames.len - 1;
+		goto cleanup;
+	};
+
+	if(track->frames.len == 0) {
+		res = 0;
+		goto cleanup;
+	}
+
+	struct animation_timer *timer = &ani->timer;
+	f32 start                     = timer->timestamp;
+	f32 current                   = timestamp;
+	f32 delta                     = current - start;
+	bool32 loop                   = ani->clip.count == -1;
+
+	if(!loop) {
+		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
+	}
+
+	res = delta * ani->clip.frame_duration_inv;
+
+cleanup:
+	TRACE_END();
+	return res;
+}
+
+usize
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
 	TRACE_START(__func__);
