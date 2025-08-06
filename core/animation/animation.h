@@ -50,6 +50,7 @@ void animation_init(struct animation *animation);
 void animation_clip_init(struct animation_clip *data);
 bool32 animation_update(struct animation *ani, f32 timestamp);
 usize animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
+usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 void animation_start(struct animation *ani, f32 timestamp);
 
 f32 animation_data_get_clip_duration(struct animation_clip *data);
