@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sys-types.h"
-#if defined(AUTO_TRACE)
+#if defined(TRACE_AUTO)
 #define SPALL_AUTO_IMPLEMENTATION
 #include "spall_native_auto.h"
 #else
@@ -16,7 +16,7 @@ void trace_close(void);
 
 double trace_get_time_in_micros(void);
 
-#if DEBUG && !defined(AUTO_TRACE)
+#if defined(TRACE) && !defined(TRACE_AUTO)
 #define TRACE_START(s) spall_buffer_begin( \
 	&SPALL_CTX, \
 	&SPALL_BUFFER, \

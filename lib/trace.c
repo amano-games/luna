@@ -1,7 +1,7 @@
 #include "trace.h"
 #include "sys-io.h"
 
-#if !defined(AUTO_TRACE)
+#if !defined(TRACE_AUTO)
 SPALL_NOINSTRUMENT
 bool
 trace_fwrite(SpallProfile *self, const void *p, size_t length)
@@ -30,14 +30,14 @@ void
 trace_init(str8 file_name, u8 *buffer, usize size)
 {
 
-#if defined(AUTO_TRACE)
+#if defined(TRACE_AUTO)
 	log_info("Trace", "Init (Auto)");
 
 	spall_auto_init(file_name);
 	int thread_id = 0;
 	spall_auto_thread_init(thread_id, SPALL_DEFAULT_BUFFER_SIZE);
 #else
-#if DEBUG
+#if defined(TRACE)
 	log_info("Trace", "Init (Manual)");
 	void *f   = sys_file_open_w(file_name);
 	SPALL_CTX = spall_init_callbacks(1, &trace_fwrite, &trace_fflush, &trace_fclose, f, false);
@@ -54,9 +54,9 @@ trace_init(str8 file_name, u8 *buffer, usize size)
 void
 trace_buffer_close(void)
 {
-#if defined(AUTO_TRACE)
+#if defined(TRACE_AUTO)
 #else
-#if DEBUG
+#if defined(TRACE)
 	spall_buffer_quit(&SPALL_CTX, &SPALL_BUFFER);
 #endif
 #endif
@@ -65,11 +65,11 @@ trace_buffer_close(void)
 void
 trace_close(void)
 {
-#if defined(AUTO_TRACE)
+#if defined(TRACE_AUTO)
 	spall_auto_thread_quit();
 	spall_auto_quit();
 #else
-#if DEBUG
+#if defined(TRACE)
 	spall_quit(&SPALL_CTX);
 #endif
 #endif
@@ -78,7 +78,7 @@ trace_close(void)
 double
 trace_get_time_in_micros(void)
 {
-#if DEBUG
+#if defined(TRACE)
 	return (((double)sys_seconds() * 1000000));
 #else
 	return 0;
