@@ -1,6 +1,7 @@
 #include "gfx-txt.h"
 #include "gfx/gfx-spr.h"
 #include "dbg.h"
+#include "trace.h"
 
 void
 fnt_draw_str(
@@ -13,6 +14,7 @@ fnt_draw_str(
 	i32 leading,
 	i32 mode)
 {
+	TRACE_START(__func__);
 	dbg_assert(fnt.cell_h > 0);
 	dbg_assert(fnt.cell_w > 0);
 	v2_i32 p         = (v2_i32){x, y};
@@ -36,6 +38,7 @@ fnt_draw_str(
 			p.x += move_x;
 		}
 	}
+	TRACE_END();
 }
 
 rec_i32
@@ -50,12 +53,15 @@ fnt_draw_str_pivot(
 	v2 pivot,
 	enum spr_mode mode)
 {
+	TRACE_START(__func__);
+	rec_i32 res = {0};
 	if(fnt.t.px != NULL) {
 		v2_i32 text_size = fnt_size_px(fnt, str, tracking, leading);
 		i32 txt_x        = x - (i32)(text_size.x * pivot.x);
 		i32 txt_y        = y - (i32)(text_size.y * pivot.y);
 		fnt_draw_str(ctx, fnt, str, txt_x, txt_y, tracking, leading, mode);
-		return (rec_i32){txt_x, txt_y, text_size.x, text_size.y};
+		res = (rec_i32){txt_x, txt_y, text_size.x, text_size.y};
 	}
-	return (rec_i32){0};
+	TRACE_END();
+	return res;
 }

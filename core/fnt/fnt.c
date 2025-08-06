@@ -7,11 +7,15 @@
 #include "sys-log.h"
 #include "sys-log.h"
 #include "dbg.h"
+#include "trace.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 {
 	if(a < 32) return 0;
+
+	TRACE_START(__func__);
+
 	i32 x            = 0;
 	i32 is_last_char = (b == '\n') || (b == -1);
 	x += fnt.widths[a] ? fnt.widths[a] : fnt.cell_w;
@@ -20,15 +24,19 @@ fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 	x += has_kern_pairs * (kern_i > 0) * fnt.kern_pairs[kern_i];
 	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
+	TRACE_END();
+
 	return x;
 }
 
 v2_i32
 fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 {
-	i32 x    = 0;
-	i32 maxx = 0;
-	i32 y    = fnt.cell_h + leading;
+	TRACE_START(__func__);
+	v2_i32 res = {0};
+	i32 x      = 0;
+	i32 maxx   = 0;
+	i32 y      = fnt.cell_h + leading;
 	for(usize i = 0; i < str.size; i++) {
 		i32 ci         = str.str[i];
 		i32 cbi        = (i < str.size - 1) ? str.str[i + 1] : -1;
@@ -38,7 +46,9 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 		maxx           = max_i32(maxx, x);
 		y += is_newline * (fnt.cell_h + leading);
 	}
-	return (v2_i32){maxx, y};
+	res = (v2_i32){maxx, y};
+	TRACE_END();
+	return res;
 }
 
 void
