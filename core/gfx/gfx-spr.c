@@ -358,13 +358,13 @@ spr_blit_fwd_x(
 void
 gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
+	TRACE_START(__func__);
 	// area bounds on canvas [x1/y1, x2/y2)
 	int x1 = max_i32(px, ctx.clip_x1);               // inclusive
 	int y1 = max_i32(py, ctx.clip_y1);               // inclusive
 	int x2 = min_i32(px + src.r.w - 1, ctx.clip_x2); // inclusive
 	int y2 = min_i32(py + src.r.h - 1, ctx.clip_y2); // inclusive
-	if(x2 < x1) return;
-	TRACE_START(__func__);
+	if(x2 < x1) goto cleanup;
 
 	struct tex dtex       = ctx.dst;
 	struct tex stex       = src.t;
@@ -434,6 +434,8 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 			}
 		}
 	}
+
+cleanup:
 	TRACE_END();
 }
 
