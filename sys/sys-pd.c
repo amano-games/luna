@@ -263,7 +263,11 @@ sys_1bit_menu_buffer(void)
 void *
 sys_alloc(void *ptr, usize size)
 {
-	return PD_SYSTEM_REALLOC(ptr, size);
+	void *res = PD_SYSTEM_REALLOC(ptr, size);
+	dbg_check(res, "sys-pd", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
+
+error:
+	return res;
 }
 
 void

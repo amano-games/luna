@@ -399,7 +399,11 @@ sys_1bit_buffer(void)
 void *
 sys_alloc(void *ptr, usize size)
 {
-	return malloc(size);
+	void *res = malloc(size);
+	dbg_check(res, "sys-sokol", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
+
+error:
+	return res;
 }
 
 void
