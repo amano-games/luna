@@ -8,6 +8,7 @@
 #endif
 
 #define SYS_MEM_POISON_PATTERN 0xCD
+#define SYS_LOG_LABEL          "sys"
 
 struct sys_data {
 	void *frame_buffer;
@@ -37,15 +38,15 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 	struct sys_mem *sys_mem = &SYS.mem;
 	usize mem_total         = permanent + transient + debug;
 
-	log_info("Sys", "Permanent: %$$u", (uint)permanent);
-	log_info("Sys", "Transient: %$$u", (uint)transient);
-	log_info("Sys", "Debug    : %$$u", (uint)debug);
-	log_info("Sys", "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
-	log_info("Sys", "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
+	log_info(SYS_LOG_LABEL, "Permanent: %$$u", (uint)permanent);
+	log_info(SYS_LOG_LABEL, "Transient: %$$u", (uint)transient);
+	log_info(SYS_LOG_LABEL, "Debug    : %$$u", (uint)debug);
+	log_info(SYS_LOG_LABEL, "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
+	log_info(SYS_LOG_LABEL, "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
 	dbg_assert(mem_total <= mem_max);
 	dbg_check(
 		mem_total <= mem_max,
-		"Sys",
+		SYS_LOG_LABEL,
 		"Not enough sys memory | asked:%$$u available:%$$u missing:%$$u",
 		(uint)mem_total,
 		(uint)mem_max,
@@ -56,7 +57,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
 
 	dbg_check(
 		sys_mem->app_mem.buffer != NULL,
-		"Sys",
+		SYS_LOG_LABEL,
 		"Failed to reserve app memory %$$u: %p",
 		(uint)sys_mem->app_mem.size,
 		sys_mem->app_mem.buffer);
@@ -93,7 +94,6 @@ sys_internal_init(void)
 	SYS.fps          = SYS_UPS;
 	SYS.last_time    = sys_seconds();
 	SYS.frame_buffer = sys_1bit_buffer();
-
 	app_init(SYS_MAX_MEM);
 }
 
