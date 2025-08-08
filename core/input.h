@@ -13,6 +13,7 @@ enum {
 
 enum {
 	INP_DPAD_DIR_NONE,
+
 	INP_DPAD_DIR_N,
 	INP_DPAD_DIR_S,
 	INP_DPAD_DIR_E,
@@ -21,6 +22,8 @@ enum {
 	INP_DPAD_DIR_NW,
 	INP_DPAD_DIR_SE,
 	INP_DPAD_DIR_SW,
+
+	INP_DPAD_DIR_NUM_COUNT,
 };
 
 struct inp_state {
