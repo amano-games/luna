@@ -64,6 +64,12 @@ inp_pressed_any(int b)
 }
 
 bool32
+inp_pressed_except(int b)
+{
+	return (INP.curr.btn & ~b) != 0;
+}
+
+bool32
 inp_pressed_all(int b)
 {
 	return (INP.curr.btn & b) == b;

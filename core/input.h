@@ -44,6 +44,7 @@ void inp_set_keys(u8 *keys, usize count);
 
 bool32 inp_pressed(int b);
 bool32 inp_pressed_any(int b);
+bool32 inp_pressed_except(int b);
 bool32 inp_pressed_all(int b);
 bool32 inp_was_pressed(int b);
 bool32 inp_was_pressed_any(int b);
