@@ -3,6 +3,7 @@
 #include "sys-input.h"
 
 enum {
+	INP_NONE   = 0,
 	INP_A      = SYS_INP_A,
 	INP_B      = SYS_INP_B,
 	INP_DPAD_U = SYS_INP_DPAD_U,
