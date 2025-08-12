@@ -90,6 +90,7 @@ int (*PD_GET_SCORES)(const char *board_id, ScoresCallback callback);
 void (*PD_FREE_SCORES_LIST)(PDScoresList *scores_list);
 void (*PD_FREE_SCORE)(PDScore *score);
 int (*PD_GET_PERSONAL_BEST)(const char *board_id, PersonalBestCallback callback);
+void (*PD_SET_AUTO_LOCK_DISABLED)(int disable);
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
@@ -114,6 +115,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_SYSTEM_GET_BUTTON_STATE        = PD->system->getButtonState;
 		PD_SYSTEM_GET_CRANK_ANGLE         = PD->system->getCrankAngle;
 		PD_SYSTEM_IS_CRANK_DOCKED         = PD->system->isCrankDocked;
+		PD_SET_AUTO_LOCK_DISABLED         = PD->system->setAutoLockDisabled;
 		PD_FILE_READ                      = PD->file->read;
 		PD_FILE_WRITE                     = PD->file->write;
 		PD_ADD_SCORE                      = PD->scoreboards->addScore;
@@ -416,6 +418,12 @@ i32
 sys_file_r(void *f, void *buf, u32 buf_size)
 {
 	return (i32)PD_FILE_READ(f, buf, (uint)buf_size);
+}
+
+void
+sys_set_auto_lock_disabled(int disable)
+{
+	PD_SET_AUTO_LOCK_DISABLED(disable);
 }
 
 void

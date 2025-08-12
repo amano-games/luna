@@ -549,6 +549,11 @@ sys_file_rename(str8 from, str8 to)
 }
 
 void
+sys_set_auto_lock_disabled(int disable)
+{
+}
+
+void
 sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg)
 {
 }
