@@ -312,6 +312,7 @@ function getGravity(_object: MapObject, prop: PropertyValue) {
 function getCounter(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const res: Counter = {
+    type: value["type"].value,
     max: value["max"],
     min: value["min"],
     resolution: value["resolution"],

@@ -113,6 +113,7 @@ struct pinb_gravity {
 };
 
 struct pinb_counter {
+	i32 type;
 	i32 min;
 	i32 max;
 	i32 value;
