@@ -110,6 +110,7 @@ export interface Gravity {
 }
 
 export interface Counter {
+  type: number;
   max: number;
   min: number;
   resolution: number;

@@ -233,7 +233,9 @@ pinbtjson_handle_counter(str8 json, jsmntok_t *tokens, i32 index)
 	for(usize i = index + 1; i < index + res.token_count; i += 2) {
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
-		if(json_eq(json, key, str8_lit("min")) == 0) {
+		if(json_eq(json, key, str8_lit("type")) == 0) {
+			res.counter.type = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("min")) == 0) {
 			res.counter.min = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("max")) == 0) {
 			res.counter.max = json_parse_i32(json, value);

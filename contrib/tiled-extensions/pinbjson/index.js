@@ -629,6 +629,7 @@
   function getCounter(_object, prop) {
     const value = prop.value;
     const res = {
+      type: value["type"].value,
       max: value["max"],
       min: value["min"],
       resolution: value["resolution"],

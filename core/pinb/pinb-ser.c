@@ -325,6 +325,8 @@ pinb_counter_write(struct ser_writer *w, struct pinb_counter value)
 {
 	ser_write_object(w);
 
+	ser_write_string(w, str8_lit("type"));
+	ser_write_i32(w, value.type);
 	ser_write_string(w, str8_lit("min"));
 	ser_write_i32(w, value.min);
 	ser_write_string(w, str8_lit("max"));
@@ -1321,7 +1323,10 @@ pinb_counter_read(struct ser_reader *r, struct ser_value obj)
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("min"), 0)) {
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("min"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.min = value.i32;
 		} else if(str8_match(key.str, str8_lit("max"), 0)) {
