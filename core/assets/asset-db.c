@@ -109,7 +109,7 @@ asset_db_path_get(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
-i32
+u32
 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 {
 	struct tex_table *table = &db->textures;
@@ -144,7 +144,27 @@ asset_db_tex_get(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
-i32
+struct str8
+asset_db_tex_path_get(struct asset_db *db, u32 id)
+{
+	// WARN: I don't like this
+	str8 res                = {0};
+	u64 key                 = 0;
+	struct tex_table *table = &db->textures;
+	for(size i = 0; i < (size)arr_len(table->ht.ht); ++i) {
+		if(table->ht.ht[i].value == id) {
+			key = table->ht.ht[i].key;
+			break;
+		}
+	}
+	if(key != 0) {
+		struct asset_handle handle = {.path_hash = key, .type = 0};
+		res                        = asset_db_path_get(db, handle);
+	}
+	return res;
+}
+
+u32
 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
@@ -155,18 +175,18 @@ asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 }
 
 struct tex
-asset_db_tex_get_by_id(struct asset_db *db, i32 id)
+asset_db_tex_get_by_id(struct asset_db *db, u32 id)
 {
 	TRACE_START(__func__);
 	dbg_assert(id > 0);
-	dbg_assert(id < (i32)arr_len(db->textures.arr));
+	dbg_assert(id < arr_len(db->textures.arr));
 	struct tex_table *table = &db->textures;
 	struct tex res          = table->arr[id];
 	TRACE_END();
 	return res;
 }
 
-i32
+u32
 asset_db_tex_info_push(struct asset_db *db, str8 path, struct tex_info info)
 {
 	struct tex_info_table *table = &db->textures_info;
@@ -202,7 +222,7 @@ asset_db_tex_info_get(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
-i32
+u32
 asset_db_animation_clip_push(struct asset_db *db, struct animation_clip clip)
 {
 	usize index = arr_len(db->animations.data);
@@ -239,7 +259,7 @@ asset_db_animation_slice_gen(struct asset_db *db, usize count)
 	return res;
 }
 
-i32
+u32
 asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_slice slice)
 {
 	struct animation_table *table = &db->animations;
@@ -270,17 +290,17 @@ struct animation_slice
 asset_db_animation_slice_get(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index                  = ht_get_u32(&db->animations.ht, handle.path_hash);
+	u32 index                  = ht_get_u32(&db->animations.ht, handle.path_hash);
 	struct animation_slice res = db->animations.arr[index];
 	TRACE_END();
 	return res;
 }
 
-i32
+u32
 asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 {
 	TRACE_START(__func__);
-	i32 res                 = 0;
+	u32 res                 = 0;
 	struct snd_table *table = &db->snds;
 	usize table_len         = arr_len(table->arr);
 	usize table_cap         = arr_cap(table->arr);
@@ -310,36 +330,36 @@ struct snd
 asset_db_snd_get(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index      = ht_get_u32(&db->snds.ht, handle.path_hash);
+	u32 index      = ht_get_u32(&db->snds.ht, handle.path_hash);
 	struct snd res = db->snds.arr[index];
 	TRACE_END();
 	return res;
 }
 
-i32
+u32
 asset_db_snd_get_id(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 res = ht_get_u32(&db->snds.ht, handle.path_hash);
+	u32 res = ht_get_u32(&db->snds.ht, handle.path_hash);
 	TRACE_END();
 	return res;
 }
 
 struct snd
-asset_db_snd_get_by_id(struct asset_db *db, i32 id)
+asset_db_snd_get_by_id(struct asset_db *db, u32 id)
 {
 	dbg_assert(id > 0);
-	dbg_assert(id < (i32)arr_len(db->snds.arr));
+	dbg_assert(id < arr_len(db->snds.arr));
 	TRACE_START(__func__);
 	struct snd res = db->snds.arr[id];
 	TRACE_END();
 	return res;
 }
 
-i32
+u32
 asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 {
-	i32 res                 = 0;
+	u32 res                 = 0;
 	struct fnt_table *table = &db->fonts;
 	usize table_len         = arr_len(table->arr);
 	usize table_cap         = arr_cap(table->arr);
@@ -368,26 +388,26 @@ struct fnt
 asset_db_fnt_get(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index      = ht_get_u32(&db->fonts.ht, handle.path_hash);
+	u32 index      = ht_get_u32(&db->fonts.ht, handle.path_hash);
 	struct fnt res = db->fonts.arr[index];
 	TRACE_END();
 	return res;
 }
 
-i32
+u32
 asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 res = ht_get_u32(&db->fonts.ht, handle.path_hash);
+	u32 res = ht_get_u32(&db->fonts.ht, handle.path_hash);
 	TRACE_END();
 	return res;
 }
 
 struct fnt
-asset_db_fnt_get_by_id(struct asset_db *db, i32 id)
+asset_db_fnt_get_by_id(struct asset_db *db, u32 id)
 {
 	dbg_assert(id > 0);
-	dbg_assert(id < (i32)arr_len(db->fonts.arr));
+	dbg_assert(id < arr_len(db->fonts.arr));
 	struct fnt res = db->fonts.arr[id];
 	return res;
 }
@@ -430,7 +450,7 @@ struct asset_bet_handle
 asset_db_bet_handle_get(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index                   = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 index                   = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet_handle res = (struct asset_bet_handle){.id = index};
 	TRACE_END();
 	return res;
@@ -440,7 +460,7 @@ struct bet *
 asset_db_bet_get(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
 	return &res->bet;
@@ -451,7 +471,7 @@ asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
 	TRACE_START(__func__);
 	dbg_assert(handle.id < arr_len(db->bets.arr));
-	i32 index             = handle.id;
+	u32 index             = handle.id;
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
 	return &res->bet;
@@ -461,7 +481,7 @@ usize
 asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
-	i32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
 	return res->timestamp;
@@ -472,7 +492,7 @@ asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle ha
 {
 	TRACE_START(__func__);
 	dbg_assert(handle.id < arr_len(db->bets.arr));
-	i32 index             = handle.id;
+	u32 index             = handle.id;
 	struct asset_bet *res = db->bets.arr + index;
 	TRACE_END();
 	return res->timestamp;
