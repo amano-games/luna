@@ -71,7 +71,7 @@ pinbtjson_handle_force_field(str8 json, jsmntok_t *tokens, i32 index)
 		if(json_eq(json, key, str8_lit("magnitude")) == 0) {
 			res.force_field.magnitude = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("angle_degrees")) == 0) {
-			res.force_field.angle = json_parse_f32(json, value) * DEG_TO_TURN;
+			res.force_field.angle_rad = json_parse_f32(json, value) * DEG_TO_RAD;
 		} else if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
 			res.force_field.is_enabled = json_parse_bool32(json, value);
 		}
@@ -318,7 +318,7 @@ pinbtjson_handle_charged_impulse(str8 json, jsmntok_t *tokens, i32 index)
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("angle_degrees")) == 0) {
-			res.charged_impulse.angle = json_parse_f32(json, value) * DEG_TO_TURN;
+			res.charged_impulse.angle_rad = json_parse_f32(json, value) * DEG_TO_RAD;
 		} else if(json_eq(json, key, str8_lit("magnitude")) == 0) {
 			res.charged_impulse.magnitude = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("charge_speed")) == 0) {
@@ -405,7 +405,7 @@ pinbtjson_handle_bucket(str8 json, jsmntok_t *tokens, i32 index)
 		} else if(json_eq(json, key, str8_lit("delay")) == 0) {
 			res.bucket.delay = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("impulse_angle_degrees")) == 0) {
-			res.bucket.impulse_angle = json_parse_f32(json, value) * DEG_TO_RAD;
+			res.bucket.impulse_angle_rad = json_parse_f32(json, value) * DEG_TO_RAD;
 		} else if(json_eq(json, key, str8_lit("impulse_magnitude")) == 0) {
 			res.bucket.impulse_magnitude = json_parse_f32(json, value);
 		}

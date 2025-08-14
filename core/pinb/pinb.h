@@ -23,7 +23,7 @@ struct pinb_reactive_sprite_offset {
 };
 
 struct pinb_charged_impulse {
-	f32 angle;
+	f32 angle_rad;
 	f32 magnitude;
 	f32 charge_speed;
 	f32 release_speed;
@@ -40,7 +40,7 @@ struct pinb_plunger {
 };
 
 struct pinb_force_field {
-	f32 angle;
+	f32 angle_rad;
 	f32 magnitude;
 	bool32 is_enabled;
 };
@@ -181,7 +181,7 @@ struct pinb_bucket {
 	i32 animation_on;
 	i32 animation_off;
 	f32 delay;
-	f32 impulse_angle;
+	f32 impulse_angle_rad;
 	f32 impulse_magnitude;
 };
 

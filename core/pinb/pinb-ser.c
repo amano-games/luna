@@ -371,7 +371,7 @@ pinb_force_field_write(struct ser_writer *w, struct pinb_force_field value)
 	ser_write_string(w, str8_lit("magnitude"));
 	ser_write_f32(w, value.magnitude);
 	ser_write_string(w, str8_lit("angle"));
-	ser_write_f32(w, value.angle);
+	ser_write_f32(w, value.angle_rad);
 	ser_write_string(w, str8_lit("is_enabled"));
 	ser_write_i32(w, value.is_enabled);
 	ser_write_end(w);
@@ -426,7 +426,7 @@ pinb_charged_impulse_write(struct ser_writer *w, struct pinb_charged_impulse val
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("angle"));
-	ser_write_f32(w, value.angle);
+	ser_write_f32(w, value.angle_rad);
 	ser_write_string(w, str8_lit("magnitude"));
 	ser_write_f32(w, value.magnitude);
 	ser_write_string(w, str8_lit("charge_speed"));
@@ -498,7 +498,7 @@ pinb_bucket_write(struct ser_writer *w, struct pinb_bucket value)
 	ser_write_f32(w, value.impulse_magnitude);
 
 	ser_write_string(w, str8_lit("impulse_angle"));
-	ser_write_f32(w, value.impulse_angle);
+	ser_write_f32(w, value.impulse_angle_rad);
 
 	ser_write_string(w, str8_lit("delay"));
 	ser_write_f32(w, value.delay);
@@ -1043,7 +1043,7 @@ pinb_force_field_read(struct ser_reader *r, struct ser_value obj)
 			res.magnitude = value.f32;
 		} else if(str8_match(key.str, str8_lit("angle"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
-			res.angle = value.f32;
+			res.angle_rad = value.f32;
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.is_enabled = value.i32;
@@ -1130,7 +1130,7 @@ pinb_charged_impulse_read(struct ser_reader *r, struct ser_value obj)
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("angle"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
-			res.angle = value.f32;
+			res.angle_rad = value.f32;
 		} else if(str8_match(key.str, str8_lit("magnitude"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.magnitude = value.f32;
@@ -1221,7 +1221,7 @@ pinb_bucket_read(struct ser_reader *r, struct ser_value obj)
 			res.animation_off = value.i32;
 		} else if(str8_match(key.str, str8_lit("impulse_angle"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
-			res.impulse_angle = value.f32;
+			res.impulse_angle_rad = value.f32;
 		} else if(str8_match(key.str, str8_lit("impulse_magnitude"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.impulse_magnitude = value.f32;
