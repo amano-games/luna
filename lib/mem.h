@@ -15,8 +15,9 @@ struct alloc {
 	void *ctx;
 };
 
-#define push_struct(alloc, type) (type *)p_push_size(alloc, sizeof(type))
-#define push_size(alloc, size)   p_push_size(alloc, size)
+#define push_struct(alloc, type)     (type *)p_push_size(alloc, sizeof(type))
+#define push_arr(alloc, type, count) (type *)p_push_size(alloc, sizeof(type) * count)
+#define push_size(alloc, size)       p_push_size(alloc, size)
 
 void *
 p_push_size(struct alloc *alloc, usize size)
