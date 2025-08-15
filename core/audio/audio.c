@@ -423,33 +423,3 @@ sfx_channel_stop(struct sfx_channel *ch)
 	ch->adpcm.data = NULL;
 	ch->snd_id     = 0;
 }
-
-struct snd
-snd_load(const str8 path, struct alloc alloc)
-{
-	struct snd res = {0};
-
-	void *f = sys_file_open_r(path);
-	if(!f) {
-		log_warn("Audio", "Can't open file for snd %s\n", path.str);
-		return res;
-	}
-
-	u32 num_samples = 0;
-	sys_file_r(f, &num_samples, sizeof(u32));
-	u32 bytes = (num_samples + 1) >> 1;
-
-	void *buf = alloc.allocf(alloc.ctx, bytes);
-	if(!buf) {
-		log_error("Audio", "Can't allocate memory for snd %s\n", path.str);
-		sys_file_close(f);
-		return res;
-	}
-
-	sys_file_r(f, buf, bytes);
-	sys_file_close(f);
-
-	res.buf = (u8 *)buf;
-	res.len = num_samples;
-	return res;
-}

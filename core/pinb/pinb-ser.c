@@ -62,14 +62,14 @@ pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc)
 	struct str8_list list = {0};
 	struct ser_value root = ser_read(r);
 	ser_value_push(r, root, 0, &list, alloc);
-	str8 str          = str8_list_join(alloc, &list, NULL);
-	void *inspct_file = NULL;
-	if(!(inspct_file = sys_file_open_w(path))) {
+	str8 data  = str8_list_join(alloc, &list, NULL);
+	void *file = NULL;
+	if(!(file = sys_file_open_w(path))) {
 		log_error("pinb-ser", "can't open file %s for writing!", path.str);
 		return -1;
 	}
-	sys_file_w(inspct_file, str.str, str.size);
-	sys_file_close(inspct_file);
+	sys_file_w(file, data.str, data.size);
+	sys_file_close(file);
 	log_info("pinb-ser", "inspect output: %s", path.str);
 
 	return res;
@@ -786,7 +786,7 @@ pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(usize i = 0; i < value.len; ++i) {
+	for(size i = 0; i < value.len; ++i) {
 		pinb_sfx_sequence_write(w, value.items[i]);
 	}
 	ser_write_end(w);
@@ -811,7 +811,7 @@ pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc
 			while(ser_iter_array(r, value, &item_value)) {
 				arr_push(res.items, pinb_sfx_sequence_read(r, item_value, alloc));
 			}
-			dbg_assert(res.len == arr_len(res.items));
+			dbg_assert(res.len == (size)arr_len(res.items));
 		}
 	}
 	return res;
@@ -839,7 +839,7 @@ pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence value)
 
 	ser_write_string(w, str8_lit("clips"));
 	ser_write_array(w);
-	for(usize i = 0; i < value.clips_len; ++i) {
+	for(size i = 0; i < value.clips_len; ++i) {
 		ser_write_string(w, value.clips[i]);
 	}
 	ser_write_end(w);
@@ -857,7 +857,7 @@ pinb_messages_write(struct ser_writer *w, struct pinb_messages value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(usize i = 0; i < value.len; ++i) {
+	for(size i = 0; i < value.len; ++i) {
 		pinb_message_write(w, value.items[i]);
 	}
 	ser_write_end(w);
@@ -899,7 +899,7 @@ pinb_actions_write(struct ser_writer *w, struct pinb_actions value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(usize i = 0; i < value.len; ++i) {
+	for(size i = 0; i < value.len; ++i) {
 		pinb_action_write(w, value.items[i]);
 	}
 	ser_write_end(w);
@@ -1441,7 +1441,7 @@ pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 			while(ser_iter_array(r, value, &sequence_value)) {
 				arr_push(res.items, pinb_message_read(r, sequence_value, alloc));
 			}
-			dbg_assert(res.len == arr_len(res.items));
+			dbg_assert(res.len == (size)arr_len(res.items));
 		}
 	}
 	return res;
@@ -1464,7 +1464,7 @@ pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 			while(ser_iter_array(r, value, &item_value)) {
 				arr_push(res.items, pinb_action_read(r, item_value));
 			}
-			dbg_assert(res.len == arr_len(res.items));
+			dbg_assert(res.len == (size)arr_len(res.items));
 		}
 	}
 	return res;

@@ -15,14 +15,13 @@ struct alloc {
 	void *ctx;
 };
 
-#define push_struct(alloc, type)     (type *)p_push_size(alloc, sizeof(type))
-#define push_arr(alloc, type, count) (type *)p_push_size(alloc, sizeof(type) * count)
-#define push_size(alloc, size)       p_push_size(alloc, size)
+#define alloc_struct(alloc, type)     (type *)alloc_size(alloc, sizeof(type))
+#define alloc_arr(alloc, type, count) (type *)alloc_size(alloc, sizeof(type) * count)
 
-void *
-p_push_size(struct alloc *alloc, usize size)
+static inline void *
+alloc_size(struct alloc alloc, usize size)
 {
-	return alloc->allocf(alloc->ctx, size);
+	return alloc.allocf(alloc.ctx, size);
 }
 
 // every object of type struct mkilobyte

@@ -131,12 +131,12 @@ struct pinb_sfx_sequence {
 	f32 vol_max;
 	f32 pitch_min;
 	f32 pitch_max;
-	usize clips_len;
+	size clips_len;
 	str8 *clips;
 };
 
 struct pinb_sfx_sequences {
-	usize len;
+	size len;
 	struct pinb_sfx_sequence *items;
 };
 
@@ -149,7 +149,7 @@ struct pinb_message {
 };
 
 struct pinb_messages {
-	usize len;
+	size len;
 	struct pinb_message *items;
 };
 
@@ -166,7 +166,7 @@ struct pinb_action {
 };
 
 struct pinb_actions {
-	usize len;
+	size len;
 	struct pinb_action *items;
 };
 

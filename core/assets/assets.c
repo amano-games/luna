@@ -42,9 +42,9 @@ struct tex
 asset_tex(i32 id)
 {
 	TRACE_START(__func__);
-	struct tex res = asset_db_tex_get_by_id(&ASSETS.db, id);
+	struct asset_tex res = asset_db_tex_get_by_id(&ASSETS.db, id);
 	TRACE_END();
-	return res;
+	return res.tex;
 }
 
 i32
@@ -77,8 +77,8 @@ asset_tex_load(str8 path, struct tex *tex)
 struct fnt
 asset_fnt(i32 id)
 {
-	struct fnt res = asset_db_fnt_get_by_id(&ASSETS.db, id);
-	return res;
+	struct asset_fnt res = asset_db_fnt_get_by_id(&ASSETS.db, id);
+	return res.fnt;
 }
 
 i32
@@ -128,8 +128,8 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 struct snd
 asset_snd(i32 id)
 {
-	struct snd res = asset_db_snd_get_by_id(&ASSETS.db, id);
-	return res;
+	struct asset_snd res = asset_db_snd_get_by_id(&ASSETS.db, id);
+	return res.snd;
 }
 
 i32
@@ -163,7 +163,7 @@ asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 	TRACE_START(__func__);
 
 	struct tex_rec res = {0};
-	res.t              = asset_db_tex_get_by_id(&ASSETS.db, id);
+	res.t              = asset_db_tex_get_by_id(&ASSETS.db, id).tex;
 	res.r.x            = x;
 	res.r.y            = y;
 	res.r.w            = w;
@@ -178,7 +178,7 @@ asset_tex_patch(i32 id, i32 x, i32 y, i32 w, i32 h, i32 ml, i32 mr, i32 mt, i32 
 {
 	struct tex_patch res = {0};
 
-	res.t   = asset_db_tex_get_by_id(&ASSETS.db, id);
+	res.t   = asset_db_tex_get_by_id(&ASSETS.db, id).tex;
 	res.r.x = x;
 	res.r.y = y;
 	res.r.w = w;
