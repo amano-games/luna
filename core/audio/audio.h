@@ -2,7 +2,7 @@
 
 #include "assets/asset-db.h"
 #include "audio/adpcm.h"
-#include "lib/mem.h"
+#include "audio/snd.h"
 #include "sys-types.h"
 
 #define LEN_MUS_NAME      24
@@ -37,11 +37,6 @@ enum {
 };
 
 #define AUD_CMD_PRIORITY_MUS_PLAY 1
-
-struct snd {
-	u8 *buf;
-	u32 len;
-};
 
 struct aud_cmd_snd_play {
 	struct snd snd;
@@ -125,7 +120,7 @@ void aud_allow_playing_new_snd(bool32 enabled);
 void aud_set_lowpass(i32 lp); // 0 for off, otherwise increasing intensity
 void aud_cmd_queue_commit(void);
 
-struct snd snd_load(const str8 path, struct alloc alloc);
+// TODO: Rename to sfx?
 u32 snd_instance_play(struct snd s, f32 vol, f32 pitch, u16 repeat_count); // returns an integer to refer to an active snd instance
 bool32 snd_instance_is_playing(u32 snd_id);
 void snd_instance_stop(u32 snd_id);

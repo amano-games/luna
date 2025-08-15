@@ -1,14 +1,17 @@
 #pragma once
 
+#include "audio/snd.h"
 #include "bet/bet.h"
-#include "gfx/gfx.h"
+#include "fnt/fnt.h"
 #include "ht.h"
 #include "sys-types.h"
 
 #include "animation/animation.h"
+#include "tex/tex.h"
 
 enum asset_type {
 	ASSET_TYPE_NONE,
+
 	ASSET_TYPE_TEXTURE,
 	ASSET_TYPE_TEXTURE_INFO,
 	ASSET_TYPE_ANIMATION_SLICE,
@@ -38,10 +41,31 @@ struct animation_slice {
 	u32 size;
 };
 
-struct tex_info {
+struct asset_tex_info {
 	u64 path_hash;
 	v2_i32 cell_size;
 	v2_i32 tex_size;
+};
+
+struct asset_tex {
+	u64 path_hash;
+	struct tex tex;
+};
+
+struct asset_snd {
+	u64 path_hash;
+	struct snd snd;
+};
+
+struct asset_fnt {
+	u64 path_hash;
+	struct fnt fnt;
+};
+
+struct asset_bet {
+	u64 path_hash;
+	usize timestamp;
+	struct bet bet;
 };
 
 struct path_table {
@@ -52,7 +76,7 @@ struct path_table {
 
 struct tex_info_table {
 	struct ht_u32 ht;
-	struct tex_info *arr;
+	struct asset_tex_info *arr;
 };
 
 struct animation_table {
@@ -63,22 +87,17 @@ struct animation_table {
 
 struct tex_table {
 	struct ht_u32 ht;
-	struct tex *arr;
+	struct asset_tex *arr;
 };
 
 struct fnt_table {
 	struct ht_u32 ht;
-	struct fnt *arr;
+	struct asset_fnt *arr;
 };
 
 struct snd_table {
 	struct ht_u32 ht;
-	struct snd *arr;
-};
-
-struct asset_bet {
-	struct bet bet;
-	usize timestamp;
+	struct asset_snd *arr;
 };
 
 struct bet_table {
@@ -105,12 +124,12 @@ str8 asset_db_path_get(struct asset_db *db, struct asset_handle handle);
 
 u32 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex);
 u32 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle);
-struct tex asset_db_tex_get(struct asset_db *db, struct asset_handle handle);
-struct tex asset_db_tex_get_by_id(struct asset_db *db, u32 id);
+struct asset_tex asset_db_tex_get(struct asset_db *db, struct asset_handle handle);
+struct asset_tex asset_db_tex_get_by_id(struct asset_db *db, u32 id);
 struct str8 asset_db_tex_path_get(struct asset_db *db, u32 id);
 
-u32 asset_db_tex_info_push(struct asset_db *db, str8 path, struct tex_info info);
-struct tex_info asset_db_tex_info_get(struct asset_db *db, struct asset_handle handle);
+u32 asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info info);
+struct asset_tex_info asset_db_tex_info_get(struct asset_db *db, struct asset_handle handle);
 
 u32 asset_db_animation_clip_push(struct asset_db *db, struct animation_clip clip);
 struct animation_clip asset_db_animation_clip_get(struct asset_db *db, struct asset_handle handle, usize index);
@@ -120,19 +139,20 @@ u32 asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animati
 struct animation_slice asset_db_animation_slice_get(struct asset_db *db, struct asset_handle handle);
 
 u32 asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd);
-struct snd asset_db_snd_get(struct asset_db *db, struct asset_handle handle);
-struct snd asset_db_snd_get_by_id(struct asset_db *db, u32 id);
+struct asset_snd asset_db_snd_get(struct asset_db *db, struct asset_handle handle);
+struct asset_snd asset_db_snd_get_by_id(struct asset_db *db, u32 id);
 u32 asset_db_snd_get_id(struct asset_db *db, struct asset_handle handle);
+str8 asset_db_snd_path_get(struct asset_db *db, u32 id);
 
 u32 asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt);
-struct fnt asset_db_fnt_get(struct asset_db *db, struct asset_handle handle);
 u32 asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle);
-struct fnt asset_db_fnt_get_by_id(struct asset_db *db, u32 id);
+struct asset_fnt asset_db_fnt_get(struct asset_db *db, struct asset_handle handle);
+struct asset_fnt asset_db_fnt_get_by_id(struct asset_db *db, u32 id);
 
 struct asset_bet_handle asset_db_bet_load(struct asset_db *db, str8 path, struct alloc alloc, struct alloc scratch);
 struct asset_bet_handle asset_db_bet_handle_get(struct asset_db *db, struct asset_handle handle);
-struct bet *asset_db_bet_get(struct asset_db *db, struct asset_handle handle);
-struct bet *asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle);
+struct asset_bet asset_db_bet_get(struct asset_db *db, struct asset_handle handle);
+struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle);
 
 usize asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
 usize asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);
