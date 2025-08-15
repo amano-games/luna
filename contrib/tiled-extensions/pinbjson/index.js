@@ -633,7 +633,8 @@
       max: value["max"],
       min: value["min"],
       resolution: value["resolution"],
-      value: value["value"]
+      value: value["value"],
+      value_initial: value["value"]
     };
     return res;
   }
@@ -1128,6 +1129,17 @@
     };
     return res;
   }
+  function getTablePropsProps(prop) {
+    const value = prop.value;
+    const res = {
+      balls: value["balls"],
+      balls_max: value["balls_max"],
+      score: value["score"],
+      score_mult: value["score_mult"],
+      score_mult_max: value["score_mult_max"]
+    };
+    return res;
+  }
   function getTableProps(map) {
     const res = Object.entries(map.properties()).reduce(
       (acc, [_key, value]) => {
@@ -1137,6 +1149,9 @@
             return __spreadProps(__spreadValues({}, acc), {
               bg_tex_path: getBgTexPath(prop)
             });
+          case "table_props": {
+            return __spreadValues(__spreadValues({}, acc), getTablePropsProps(prop));
+          }
           case "flippers_props":
             return __spreadProps(__spreadValues({}, acc), {
               flippers_props: getFlippersProps(prop)
