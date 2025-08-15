@@ -241,6 +241,8 @@ pinbtjson_handle_counter(str8 json, jsmntok_t *tokens, i32 index)
 			res.counter.max = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("value")) == 0) {
 			res.counter.value = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("value_initial")) == 0) {
+			res.counter.value_initial = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("resolution")) == 0) {
 			res.counter.resolution = json_parse_i32(json, value);
 		}

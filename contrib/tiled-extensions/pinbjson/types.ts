@@ -115,6 +115,7 @@ export interface Counter {
   min: number;
   resolution: number;
   value: number;
+  value_initial: number;
 }
 
 export interface CrankAnimation {
@@ -297,6 +298,11 @@ export interface TableProperties {
   physics_props?: PhysicsProps;
   flippers_props?: FlipperProps;
   bg_tex_path?: string;
+  balls?: number;
+  balls_max?: number;
+  score?: number;
+  score_mult?: number;
+  score_mult_max?: number;
 }
 
 export interface PinballTable {

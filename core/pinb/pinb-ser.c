@@ -333,6 +333,8 @@ pinb_counter_write(struct ser_writer *w, struct pinb_counter value)
 	ser_write_i32(w, value.max);
 	ser_write_string(w, str8_lit("value"));
 	ser_write_i32(w, value.value);
+	ser_write_string(w, str8_lit("value_initial"));
+	ser_write_i32(w, value.value_initial);
 	ser_write_string(w, str8_lit("resolution"));
 	ser_write_i32(w, value.resolution);
 
@@ -1335,6 +1337,9 @@ pinb_counter_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("value"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.value = value.i32;
+		} else if(str8_match(key.str, str8_lit("value_initial"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.value_initial = value.i32;
 		} else if(str8_match(key.str, str8_lit("resolution"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.resolution = value.i32;

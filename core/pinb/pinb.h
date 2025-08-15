@@ -117,6 +117,7 @@ struct pinb_counter {
 	i32 min;
 	i32 max;
 	i32 value;
+	i32 value_initial;
 	i32 resolution;
 };
 
@@ -278,6 +279,11 @@ struct pinb_flippers_props {
 
 struct pinb_table_props {
 	str8 bg_tex_path;
+	u64 score;
+	i32 balls;
+	i32 balls_max;
+	i32 score_mult;
+	i32 score_mult_max;
 	struct pinb_physics_props physics_props;
 	struct pinb_flippers_props flippers_props;
 };

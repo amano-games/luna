@@ -317,6 +317,7 @@ function getCounter(_object: MapObject, prop: PropertyValue) {
     min: value["min"],
     resolution: value["resolution"],
     value: value["value"],
+    value_initial: value["value"],
   };
   return res;
 }
@@ -898,6 +899,18 @@ function getPhysicsProps(prop: PropertyValue) {
   return res;
 }
 
+function getTablePropsProps(prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: TableProperties = {
+    balls: value["balls"],
+    balls_max: value["balls_max"],
+    score: value["score"],
+    score_mult: value["score_mult"],
+    score_mult_max: value["score_mult_max"],
+  };
+  return res;
+}
+
 function getTableProps(map: TileMap) {
   const res: TableProperties = Object.entries(map.properties()).reduce(
     (acc, [_key, value]) => {
@@ -908,6 +921,12 @@ function getTableProps(map: TileMap) {
             ...acc,
             bg_tex_path: getBgTexPath(prop),
           };
+        case "table_props": {
+          return {
+            ...acc,
+            ...getTablePropsProps(prop),
+          };
+        }
         case "flippers_props":
           return {
             ...acc,
