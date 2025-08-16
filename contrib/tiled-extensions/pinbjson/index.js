@@ -529,6 +529,7 @@
   function getReactiveImpulse(_object, prop) {
     const value = prop.value;
     const res = {
+      cooldown: value["cooldown"],
       magnitude: value["magnitude"],
       normalize: value["normalize"]
     };

@@ -10,6 +10,7 @@ struct pinb_ball {
 struct pinb_reactive_impulse {
 	f32 magnitude;
 	bool32 normalize;
+	f32 cooldown;
 };
 
 struct pinb_reactive_animation {
