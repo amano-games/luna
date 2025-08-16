@@ -361,6 +361,8 @@ pinb_reactive_impulse_write(struct ser_writer *w, struct pinb_reactive_impulse v
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("magnitude"));
 	ser_write_f32(w, value.magnitude);
+	ser_write_string(w, str8_lit("cooldown"));
+	ser_write_f32(w, value.cooldown);
 	ser_write_string(w, str8_lit("normalize"));
 	ser_write_i32(w, value.normalize);
 	ser_write_end(w);
@@ -1024,6 +1026,9 @@ pinb_reactive_impulse_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("magnitude"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.magnitude = value.f32;
+		} else if(str8_match(key.str, str8_lit("cooldown"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.cooldown = value.f32;
 		} else if(str8_match(key.str, str8_lit("normalize"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.normalize = value.i32;

@@ -195,6 +195,7 @@ function getReactiveImpulse(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
   const res: ReactiveImpulse = {
+    cooldown: value["cooldown"],
     magnitude: value["magnitude"],
     normalize: value["normalize"],
   };

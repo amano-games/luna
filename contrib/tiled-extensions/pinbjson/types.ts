@@ -76,6 +76,7 @@ export interface Flipper {
 
 export interface ReactiveImpulse {
   magnitude: number;
+  cooldown: number;
   normalize: boolean;
 }
 

@@ -49,6 +49,8 @@ pinbtjson_handle_reactive_impulse(str8 json, jsmntok_t *tokens, i32 index)
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("magnitude")) == 0) {
 			res.reactive_impulse.magnitude = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("cooldown")) == 0) {
+			res.reactive_impulse.cooldown = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("normalize")) == 0) {
 			res.reactive_impulse.normalize = json_parse_bool32(json, value);
 		}
