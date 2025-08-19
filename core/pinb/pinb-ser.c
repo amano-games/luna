@@ -1,5 +1,6 @@
 #include "pinb-ser.h"
 #include "arr.h"
+#include "dbg.h"
 #include "physics/body-ser.h"
 #include "pinb/pinb.h"
 #include "serialize/serialize-utils.h"
@@ -234,6 +235,11 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
 		pinb_actions_write(w, entity.actions);
 	}
 
+	if(entity.custom_data.len > 0) {
+		ser_write_string(w, str8_lit("custom_data"));
+		pinb_custom_data_write(w, entity.custom_data);
+	}
+
 	ser_write_end(w);
 }
 
@@ -315,6 +321,8 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.messages = pinb_messages_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
 			res.actions = pinb_actions_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("custom_data"), 0)) {
+			res.custom_data = pinb_custom_data_read(r, value, alloc);
 		}
 	}
 	return res;
@@ -1725,10 +1733,10 @@ pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 			res.text     = arr_new(res.text, res.text_len, alloc);
 		} else if(str8_match(key.str, str8_lit("text"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value clip_value;
+			struct ser_value item_value;
 			usize i = 0;
-			while(ser_iter_array(r, value, &clip_value)) {
-				res.text[i++] = clip_value.str;
+			while(ser_iter_array(r, value, &item_value)) {
+				res.text[i++] = item_value.str;
 			}
 		}
 	}
@@ -1786,4 +1794,96 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity)
 	ser_write_v2(w, entity.spr.offset);
 
 	ser_write_end(w);
+}
+
+void
+pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data value)
+{
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("len"));
+	ser_write_i32(w, value.len);
+
+	ser_write_string(w, str8_lit("data"));
+	ser_write_array(w);
+	for(size i = 0; i < value.len; ++i) {
+		pinb_prop_write(w, value.data[i]);
+	}
+	ser_write_end(w);
+
+	ser_write_end(w);
+}
+
+struct pinb_custom_data
+pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+{
+	struct pinb_custom_data res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("len"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.len  = value.i32;
+			res.data = arr_new(res.data, value.i32, alloc);
+		} else if(str8_match(key.str, str8_lit("data"), 0)) {
+			struct ser_value item_value;
+			while(ser_iter_array(r, value, &item_value)) {
+				arr_push(res.data, pinb_prop_read(r, item_value, alloc));
+			}
+			dbg_assert(res.len == (size)arr_len(res.data));
+		}
+	}
+	return res;
+}
+
+void
+pinb_prop_write(struct ser_writer *w, struct pinb_prop value)
+{
+	ser_write_object(w);
+
+	switch(value.type) {
+	case PINB_PROP_TYPE_I32: {
+		ser_write_string(w, str8_lit("i32"));
+		ser_write_i32(w, value.i32);
+	} break;
+	case PINB_PROP_TYPE_F32: {
+		ser_write_string(w, str8_lit("f32"));
+		ser_write_i32(w, value.f32);
+	} break;
+	case PINB_PROP_TYPE_STR: {
+		ser_write_string(w, str8_lit("str"));
+		ser_write_string(w, value.str);
+	} break;
+	default: {
+		dbg_sentinel("pinb-prop");
+	} break;
+	}
+
+error:;
+	ser_write_end(w);
+}
+
+struct pinb_prop
+pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+{
+	struct pinb_prop res = {0};
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("i32"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.type = PINB_PROP_TYPE_I32;
+			res.i32  = value.i32;
+		} else if(str8_match(key.str, str8_lit("f32"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.type = PINB_PROP_TYPE_F32;
+			res.f32  = value.f32;
+		} else if(str8_match(key.str, str8_lit("str"), 0)) {
+			dbg_assert(value.type == SER_TYPE_STRING);
+			res.type = PINB_PROP_TYPE_STR;
+			res.str  = value.str;
+		}
+	}
+	return res;
 }
