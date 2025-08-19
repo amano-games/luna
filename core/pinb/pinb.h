@@ -3,6 +3,30 @@
 #include "physics/physics.h"
 #include "sys-types.h"
 
+enum pinb_prop_type {
+	PINB_PROP_TYPE_NONE,
+
+	PINB_PROP_TYPE_I32,
+	PINB_PROP_TYPE_F32,
+	PINB_PROP_TYPE_STR,
+
+	PINB_PROP_TYPE_NUM_COUNT,
+};
+
+struct pinb_prop {
+	u8 type;
+	union {
+		i32 i32;
+		f32 f32;
+		str8 str;
+	};
+};
+
+struct pinb_custom_data {
+	size len;
+	struct pinb_prop *data;
+};
+
 struct pinb_ball {
 	f32 debug_linear_damping;
 };
@@ -261,6 +285,7 @@ struct pinb_entity {
 	struct pinb_spawn_zone spawn_zone;
 	struct pinb_messages messages;
 	struct pinb_actions actions;
+	struct pinb_custom_data custom_data;
 };
 
 struct pinb_physics_props {

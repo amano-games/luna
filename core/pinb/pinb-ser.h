@@ -107,4 +107,10 @@ struct pinb_actions pinb_actions_read(struct ser_reader *r, struct ser_value obj
 void pinb_action_write(struct ser_writer *w, struct pinb_action value);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 
+void pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data value);
+struct pinb_custom_data pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+
+void pinb_prop_write(struct ser_writer *w, struct pinb_prop value);
+struct pinb_prop pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+
 struct pinb_table_props pinb_table_props_read(struct ser_reader *r, struct ser_value obj);
