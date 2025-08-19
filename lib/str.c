@@ -681,3 +681,72 @@ wrapped_lines_from_str(
 	}
 	return list;
 }
+
+str8
+str_from_week_day(enum week_day week_day)
+{
+	static const str8 strings[] = {
+		str8_lit_comp("Sun"),
+		str8_lit_comp("Mon"),
+		str8_lit_comp("Tue"),
+		str8_lit_comp("Wed"),
+		str8_lit_comp("Thu"),
+		str8_lit_comp("Fri"),
+		str8_lit_comp("Sat"),
+	};
+	str8 res = str8_lit("error");
+	if((u32)week_day < WEEK_DAY_NUM_COUNT) {
+		res = strings[week_day];
+	}
+	return res;
+}
+
+str8
+str_from_month(enum month month)
+{
+	static const str8 strings[] = {
+		str8_lit_comp("Jan"),
+		str8_lit_comp("Feb"),
+		str8_lit_comp("Mar"),
+		str8_lit_comp("Apr"),
+		str8_lit_comp("May"),
+		str8_lit_comp("Jun"),
+		str8_lit_comp("Jul"),
+		str8_lit_comp("Aug"),
+		str8_lit_comp("Sep"),
+		str8_lit_comp("Oct"),
+		str8_lit_comp("Nov"),
+		str8_lit_comp("Dec"),
+	};
+
+	str8 res = str8_lit("Err");
+	if((u32)month < MONTH_NUM_COUNT) {
+		res = strings[month];
+	}
+	return res;
+}
+
+str8
+str_date_time_push(struct alloc alloc, struct date_time *date_time)
+{
+	char *mon_str     = (char *)str_from_month(date_time->month).str;
+	u32 adjusted_hour = date_time->hour % 12;
+	if(adjusted_hour == 0) {
+		adjusted_hour = 12;
+	}
+	char *ampm = "am";
+	if(date_time->hour >= 12) {
+		ampm = "pm";
+	}
+	str8 result = str8_fmt_push(
+		alloc,
+		"%02d %s %02d, %02d:%02d:%02d%s GMT",
+		date_time->day,
+		mon_str,
+		date_time->year % 100,
+		adjusted_hour,
+		date_time->min,
+		date_time->sec,
+		ampm);
+	return result;
+}

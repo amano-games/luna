@@ -1,5 +1,6 @@
 #pragma once
 
+#include "date-time.h"
 #include "sys-types.h"
 #include "sys-log.h"
 #include "mem.h"
@@ -59,6 +60,7 @@ usize cstr8_len(u8 *c);
 
 // String Constructors
 #define str8_lit(S)         string8((u8 *)(S), sizeof(S) - 1)
+#define str8_lit_comp(S)    {(u8 *)(S), sizeof(S) - 1}
 #define str8_array(S, C)    string8((u8 *)(S), sizeof(*(S)) * (C))
 #define str8_array_fixed(S) string8((u8 *)(S), sizeof(S))
 
@@ -113,9 +115,8 @@ struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize
 struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
 str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params);
 
-#define S_(x)   #x
-#define S(x)    S_(x)
-#define PBWIDTH 20
-#define PBCHAR  '#'
-
 struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize first_line_max_width, usize max_width, usize wrap_indent);
+
+str8 str_from_week_day(enum week_day week_day);
+str8 str_from_month(enum month month);
+str8 str_date_time_push(struct alloc alloc, struct date_time *date_time);

@@ -77,7 +77,7 @@ void sys_free(void *ptr);
 void sys_blit_text(char *str, i32 tile_x, i32 tile_y);
 f32 sys_seconds(void);
 u32 sys_time(void);
-u32 sys_epoch(u32 *milliseconds);
+u32 sys_epoch_2000(u32 *milliseconds);
 
 void sys_1bit_invert(bool32 i);
 void *sys_1bit_buffer(void);

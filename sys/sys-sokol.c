@@ -375,7 +375,7 @@ sys_seconds(void)
 
 // TODO: Make sure it works
 u32
-sys_epoch(u32 *milliseconds)
+sys_epoch_2000(u32 *milliseconds)
 {
 	u64 epoch = 1730405055;
 	return stm_sec(stm_since(epoch));
