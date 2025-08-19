@@ -44,7 +44,7 @@ struct sokol_state {
 	struct gfx_ctx debug_ctx;
 
 	u8 keys[SYS_KEYS_LEN];
-	bool32 crank_docked;
+	b32 crank_docked;
 	f32 crank;
 	f32 volume;
 };
@@ -87,7 +87,7 @@ static void
 stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
 	dbg_assert(1 == num_channels);
-	bool32 is_mono = (num_channels == 1);
+	b32 is_mono = (num_channels == 1);
 
 	static i16 lbuf[0x1000];
 	static i16 rbuf[0x1000];
@@ -382,7 +382,7 @@ sys_epoch_2000(u32 *milliseconds)
 }
 
 void
-sys_1bit_invert(bool32 i)
+sys_1bit_invert(b32 i)
 {
 	dbg_not_implemeneted("sokol");
 
@@ -536,13 +536,13 @@ sys_file_seek_end(void *f, i32 pos)
 	return (i32)fseek((FILE *)f, pos, SEEK_END);
 }
 
-bool32
+b32
 sys_file_del(str8 path)
 {
 	return 0;
 }
 
-bool32
+b32
 sys_file_rename(str8 from, str8 to)
 {
 	return (rename((char *)from.str, (char *)to.str) == 0);

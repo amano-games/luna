@@ -10,7 +10,7 @@ enum debug_shape_type {
 };
 
 struct debug_shape_cir {
-	bool32 filled;
+	b32 filled;
 	v2_i32 p;
 	i32 d;
 };
@@ -21,7 +21,7 @@ struct debug_shape_lin {
 };
 
 struct debug_shape_rec {
-	bool32 filled;
+	b32 filled;
 	i32 x, y, w, h;
 };
 

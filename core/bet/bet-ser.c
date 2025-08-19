@@ -60,7 +60,7 @@ bet_prop_write(struct ser_writer *w, struct bet_prop prop)
 		ser_write_string(w, str);
 	} break;
 	case BET_PROP_BOOL32: {
-		ser_write_i32(w, prop.bool32);
+		ser_write_i32(w, prop.b32);
 	} break;
 	}
 	ser_write_end(w);

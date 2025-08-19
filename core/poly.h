@@ -81,7 +81,7 @@ poly_centroid(v2 *verts, size verts_count)
 	return res;
 }
 
-bool32
+b32
 poly_is_convex(const v2 *verts, size count)
 {
 	if(count < 3) return false;
@@ -108,7 +108,7 @@ poly_is_convex(const v2 *verts, size count)
 	return true;
 }
 
-static inline bool32
+static inline b32
 poly_make_ccw(v2 *verts, size count)
 {
 	size br = 0;
@@ -135,7 +135,7 @@ poly_make_ccw(v2 *verts, size count)
 
 // Check if three points are collinear
 // Threshold angle to use when comparing the vectors. The function will return true if the angle between the resulting vectors is less than this value. Use zero for max precision.
-static inline bool32
+static inline b32
 poly_collinear(v2 a, v2 b, v2 c, f32 threshold_ang)
 {
 	if(!threshold_ang) {
@@ -196,7 +196,7 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch
 
 	// keep removing verts until just a triangle left;
 	while(count > 3) {
-		bool32 is_ear = true;
+		b32 is_ear = true;
 
 		// An ear must be convex (here counterclockwise)
 		if(tri_is_ccw(verts[prev[i]], verts[i], verts[next[i]])) {
@@ -264,7 +264,7 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch
 static inline struct mesh
 poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 {
-	bool32 *merged = scratch.allocf(scratch.ctx, sizeof(*merged) * mesh.count);
+	b32 *merged = scratch.allocf(scratch.ctx, sizeof(*merged) * mesh.count);
 	mclr(merged, sizeof(*merged) * mesh.count);
 
 	struct mesh res = {

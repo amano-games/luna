@@ -368,8 +368,8 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 
 	struct tex dtex       = ctx.dst;
 	struct tex stex       = src.t;
-	bool32 fx             = (flip & SPR_FLIP_X) != 0;                                              // flipped x
-	bool32 fy             = (flip & SPR_FLIP_Y) != 0;                                              // flipped y
+	b32 fx                = (flip & SPR_FLIP_X) != 0;                                              // flipped x
+	b32 fy                = (flip & SPR_FLIP_Y) != 0;                                              // flipped y
 	int sign_flip_y       = fy ? -1 : +1;                                                          // sign flip x
 	int sign_flip_x       = fx ? -1 : +1;                                                          // sign flip y
 	int bits_in_row       = (x2 + 1) - x1;                                                         // number of bits in a row

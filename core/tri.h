@@ -20,7 +20,7 @@ tri_barycentric(v2 p, v2 a, v2 b, v2 c, f32 *u, f32 *v, f32 *w)
 	*u        = 1.0f - *v - *w;
 }
 
-bool32
+b32
 tri_is_point_inside(v2 p, v2 a, v2 b, v2 c)
 {
 	f32 u = 0;
@@ -43,7 +43,7 @@ tri_signed_2d_area(v2 a, v2 b, v2 c)
 	return res;
 }
 
-static inline bool32
+static inline b32
 tri_is_ccw(v2 a, v2 b, v2 c)
 {
 	f32 area = tri_signed_2d_area(a, b, c);

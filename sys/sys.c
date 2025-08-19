@@ -31,7 +31,7 @@ struct sys_data {
 struct sys_data SYS;
 
 struct app_mem
-sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear)
+sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 {
 	struct app_mem res      = {0};
 	usize mem_max           = SYS_MAX_MEM;
@@ -117,7 +117,7 @@ sys_internal_update(void)
 	f32 tu1 = sys_seconds();
 #endif
 
-	bool32 updated = 0;
+	b32 updated = 0;
 
 	while(SYS_UPS_DT_TEST <= SYS.ups_time_acc) {
 		SYS.ups_time_acc -= SYS_UPS_DT;

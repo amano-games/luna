@@ -29,7 +29,7 @@ typedef double f64;
 
 typedef i8 b8;
 typedef i16 b16;
-typedef i32 bool32;
+typedef i32 b32;
 
 typedef uintptr_t uptr;
 typedef intptr_t iptr;

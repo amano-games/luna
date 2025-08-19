@@ -38,7 +38,7 @@ struct sys_score_arr {
 struct sys_scores_res_get {
 	str8 board_id;
 	u32 last_updated;
-	bool32 player_included;
+	b32 player_included;
 	struct sys_score_arr entries;
 };
 

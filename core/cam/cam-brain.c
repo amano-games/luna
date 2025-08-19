@@ -38,7 +38,7 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, i32 r, v2 vel, f32 dt)
 	if(index == -1) { index = index_prev; }
 	struct cam_data data = brain->areas[index].data;
 	struct cam *cam      = brain->c;
-	bool32 do_change_cam = index_prev != index;
+	b32 do_change_cam    = index_prev != index;
 
 	if(do_change_cam) {
 		f32 dt_inv                = dt / 1;
@@ -108,7 +108,7 @@ cam_brain_query_circle(struct cam_brain *brain, f32 x, f32 y, f32 r)
 	for(usize i = 0; i < ARRLEN(brain->areas); ++i) {
 		struct cam_area c_area = brain->areas[i];
 		struct col_aabb aabb   = c_area.aabb;
-		bool32 is_inside_area  = col_circle_to_aabb(
+		b32 is_inside_area     = col_circle_to_aabb(
             x,
             y,
             r,

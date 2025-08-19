@@ -54,7 +54,7 @@ struct pd_scores_req {
 };
 
 struct pd_scores_state {
-	bool32 busy;
+	b32 busy;
 	u8 start;
 	u8 end;
 	struct pd_scores_req reqs[10];
@@ -62,7 +62,7 @@ struct pd_scores_state {
 
 struct pd_state {
 	PDButtons b;
-	bool32 acc_active;
+	b32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
 	LCDBitmap *menu_bitmap;
 	PDMenuItem *menu_items[5];
@@ -162,10 +162,10 @@ sys_pd_crank_deg(void)
 	return PD->system->getCrankAngle();
 }
 
-bool32
+b32
 sys_pd_reduce_flicker(void)
 {
-	return (bool32)PD->system->getReduceFlashing();
+	return (b32)PD->system->getReduceFlashing();
 }
 
 void
@@ -232,7 +232,7 @@ sys_epoch_2000(u32 *milliseconds)
 }
 
 void
-sys_1bit_invert(bool32 i)
+sys_1bit_invert(b32 i)
 {
 	PD->display->setInverted(i);
 }
@@ -355,19 +355,19 @@ sys_file_open_a(str8 path)
 	return PD->file->open((char *)path.str, kFileAppend);
 }
 
-bool32
+b32
 sys_file_close(void *f)
 {
 	return (PD->file->close(f) == 0);
 }
 
-bool32
+b32
 sys_file_del(str8 path)
 {
 	return (PD->file->unlink((char *)path.str, 1) == 0);
 }
 
-bool32
+b32
 sys_file_rename(str8 from, str8 to)
 {
 	i32 res = PD->file->rename((char *)from.str, (char *)to.str);
@@ -378,7 +378,7 @@ sys_file_rename(str8 from, str8 to)
 	return res == 0;
 }
 
-bool32
+b32
 sys_file_flush(void *f)
 {
 	return (PD->file->flush(f) == 0);

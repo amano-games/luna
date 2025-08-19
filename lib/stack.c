@@ -8,7 +8,7 @@ stack_u8_init(struct stack_u8 *stack)
 	mclr(stack, sizeof(struct stack_u8));
 }
 
-bool32
+b32
 stack_u8_push(struct stack_u8 *stack, u8 value)
 {
 	dbg_assert(!stack_u8_is_full(stack));
@@ -36,13 +36,13 @@ stack_u8_peek(struct stack_u8 *stack)
 	return stack->data[stack->count - 1];
 }
 
-bool32
+b32
 stack_u8_is_full(struct stack_u8 *stack)
 {
 	return stack->count == STACK_MAX_ITEMS;
 }
 
-bool32
+b32
 stack_u8_is_empty(struct stack_u8 *stack)
 {
 	return stack->count == 0;

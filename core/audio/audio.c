@@ -172,7 +172,7 @@ aud_push_cmd(struct aud_cmd aud_cmd)
 	// peek new position and see if the queue is full
 	u32 i = aud_cmd_next_index(AUDIO.i_cmd_w_tmp);
 	sys_audio_lock();
-	bool32 is_full = (i == AUDIO.i_cmd_r);
+	b32 is_full = (i == AUDIO.i_cmd_r);
 	sys_audio_unlock();
 
 	if(is_full) { // temporary read index
@@ -213,7 +213,7 @@ mus_play(
 	const struct asset_handle handle,
 	enum mus_channel_id channel_id,
 	f32 vol,
-	bool32 loop)
+	b32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct aud_cmd cmd = {
@@ -233,7 +233,7 @@ mus_play_by_path(
 	const str8 path,
 	enum mus_channel_id channel_id,
 	f32 vol,
-	bool32 loop)
+	b32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	log_info("Audio", "play music %s", path.str);
@@ -243,7 +243,7 @@ mus_play_by_path(
 	mus_play(handle, channel_id, vol, loop);
 }
 
-bool32
+b32
 mus_is_playing(enum mus_channel_id channel_id)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
@@ -403,7 +403,7 @@ sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i32 len)
 	}
 }
 
-bool32
+b32
 snd_instance_is_playing(u32 snd_id)
 {
 	if(snd_id == 0) return false;

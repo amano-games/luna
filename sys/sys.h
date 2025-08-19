@@ -79,13 +79,13 @@ f32 sys_seconds(void);
 u32 sys_time(void);
 u32 sys_epoch_2000(u32 *milliseconds);
 
-void sys_1bit_invert(bool32 i);
+void sys_1bit_invert(b32 i);
 void *sys_1bit_buffer(void);
 void *sys_1bit_menu_buffer(void);
 
-void sys_accelerometer_set(bool32 enabled);
+void sys_accelerometer_set(b32 enabled);
 void sys_accelerometer(f32 *x, f32 *y, f32 *z);
-struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, bool32 clear);
+struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, b32 clear);
 
 void sys_internal_init(void);
 i32 sys_internal_update(void);

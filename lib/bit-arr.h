@@ -13,7 +13,7 @@ bit_arr_u32_new(usize count, struct alloc alloc)
 	return res;
 }
 
-static bool32
+static b32
 bit_arr_u32_exists_and_set(u32 *arr, usize count, usize index)
 {
 	// Calculate the index of the integer in the array
@@ -38,7 +38,7 @@ bit_pairs_arr_u32_new(usize count, struct alloc alloc)
 	return bit_arr_u32_new(max_pairs_count, alloc);
 }
 
-static bool32
+static b32
 bit_pair_arr_exists_and_set(u32 *arr, usize count, usize index_a, usize index_b)
 {
 	dbg_assert(index_a != index_b);

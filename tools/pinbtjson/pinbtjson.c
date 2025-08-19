@@ -674,7 +674,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				log_info("pinb-gen", "Removed points from polygon from %d -> %d", (int)vert_count, (int)vert_count_n);
 			}
 			vert_count       = vert_count_n;
-			bool32 is_convex = poly_is_convex(verts, vert_count);
+			b32 is_convex    = poly_is_convex(verts, vert_count);
 			struct mesh mesh = {0};
 			if(is_convex) {
 				if(vert_count > POLY_MAX_VERTS) {

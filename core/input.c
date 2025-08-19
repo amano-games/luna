@@ -51,58 +51,58 @@ inp_set_keys(u8 *keys, usize count)
 	mcpy(INP.curr.keys, keys, count);
 }
 
-bool32
+b32
 inp_pressed(int b)
 {
 	return (INP.curr.btn & b);
 }
 
-bool32
+b32
 inp_pressed_any(int b)
 {
 	return (INP.curr.btn & b) != 0;
 }
 
-bool32
+b32
 inp_pressed_except(int b)
 {
 	return (INP.curr.btn & ~b) != 0;
 }
 
-bool32
+b32
 inp_pressed_all(int b)
 {
 	return (INP.curr.btn & b) == b;
 }
 
-bool32
+b32
 inp_was_pressed(int b)
 {
 	return (INP.prev.btn & b);
 }
 
-bool32
+b32
 inp_was_pressed_any(int b)
 {
 	return (INP.prev.btn & b) != 0;
 }
 
-bool32
+b32
 inp_was_pressed_all(int b)
 {
 	return (INP.prev.btn & b) == b;
 }
 
-bool32
+b32
 inp_just_pressed(int b)
 {
 	return inp_pressed(b) && !inp_was_pressed(b);
 }
 
-bool32
+b32
 inp_just_released(int b)
 {
-	bool32 res = !inp_pressed(b) && inp_was_pressed(b);
+	b32 res = !inp_pressed(b) && inp_was_pressed(b);
 	return res;
 }
 
@@ -194,31 +194,31 @@ inp_crank_just_undocked(void)
 	return !inp_crank_docked() && inp_crank_was_docked();
 }
 
-bool32
+b32
 inp_key_pressed(int key)
 {
 	i32 upper = char_to_upper(key);
 	return INP.curr.keys[upper] == 1;
 }
 
-bool32
+b32
 inp_key_was_pressed(int key)
 {
 	i32 upper = char_to_upper(key);
 	return INP.prev.keys[upper] == 1;
 }
 
-bool32
+b32
 inp_key_just_pressed(int key)
 {
 	i32 upper = char_to_upper(key);
 	return inp_key_pressed(upper) && !inp_key_was_pressed(upper);
 }
 
-bool32
+b32
 inp_key_just_released(int key)
 {
-	i32 upper  = char_to_upper(key);
-	bool32 res = !inp_key_pressed(upper) && inp_key_was_pressed(upper);
+	i32 upper = char_to_upper(key);
+	b32 res   = !inp_key_pressed(upper) && inp_key_was_pressed(upper);
 	return res;
 }

@@ -90,7 +90,7 @@ struct mus_channel {
 	u8 chunk[256];
 	struct asset_handle path_handle;
 	i32 trg_vol_q8;
-	bool32 looping;
+	b32 looping;
 };
 
 struct sfx_channel {
@@ -108,7 +108,7 @@ struct aud {
 	u32 i_cmd_r;
 	struct aud_cmd cmds[NUM_AUD_CMD_QUEUE];
 	u32 snd_id; // unique snd instance ID counter
-	bool32 snd_playing_disabled;
+	b32 snd_playing_disabled;
 	i32 lowpass;
 	i32 lowpass_acc;
 };
@@ -116,19 +116,19 @@ struct aud {
 static struct aud AUDIO;
 
 void aud_do(i16 *lbuf, i16 *rbuf, i32 len);
-void aud_allow_playing_new_snd(bool32 enabled);
+void aud_allow_playing_new_snd(b32 enabled);
 void aud_set_lowpass(i32 lp); // 0 for off, otherwise increasing intensity
 void aud_cmd_queue_commit(void);
 
 // TODO: Rename to sfx?
 u32 snd_instance_play(struct snd s, f32 vol, f32 pitch, u16 repeat_count); // returns an integer to refer to an active snd instance
-bool32 snd_instance_is_playing(u32 snd_id);
+b32 snd_instance_is_playing(u32 snd_id);
 void snd_instance_stop(u32 snd_id);
 void snd_instance_set_repeat_count(u32 snd_id, u16 repeat_count);
 void snd_instance_set_vol(u32 snd_id, f32 vol);
 
-void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol, bool32 loop);
-void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol, bool32 loop);
-bool32 mus_is_playing(enum mus_channel_id channel_id);
+void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol, b32 loop);
+void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol, b32 loop);
+b32 mus_is_playing(enum mus_channel_id channel_id);
 void mus_set_vol(enum mus_channel_id channel_id, f32 vol);
 void mus_stop(enum mus_channel_id channel_id);

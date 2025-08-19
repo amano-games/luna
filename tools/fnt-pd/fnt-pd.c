@@ -13,7 +13,7 @@
 #include <jsmn.h>
 #include <tinydir.h>
 
-bool32
+b32
 fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 {
 	void *f = sys_file_open_r(path);

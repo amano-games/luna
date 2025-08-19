@@ -42,14 +42,14 @@ enum {
 	str_split_flag_keep_empties = (1 << 0),
 };
 
-bool32 char_is_space(u8 c);
-bool32 char_is_upper(u8 c);
-bool32 char_is_lower(u8 c);
-bool32 char_is_alpha(u8 c);
-bool32 char_is_slash(u8 c);
-bool32 char_is_digit(u8 c, u32 base);
-bool32 char_is_ascii(u8 c);
-bool32 char_is_utf8(u8 c);
+b32 char_is_space(u8 c);
+b32 char_is_upper(u8 c);
+b32 char_is_lower(u8 c);
+b32 char_is_alpha(u8 c);
+b32 char_is_slash(u8 c);
+b32 char_is_digit(u8 c, u32 base);
+b32 char_is_ascii(u8 c);
+b32 char_is_utf8(u8 c);
 
 u8 char_to_lower(u8 c);
 u8 char_to_upper(u8 c);
@@ -70,9 +70,9 @@ str8 str8_zero(void);
 str8 str8_cstr(char *c);
 str8 str8_cstr_cappend(void *cstr, void *cap);
 
-bool32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
-bool32 str8_starts_with(str8 str, str8 start, str_match_flags flags);
-bool32 str8_match(str8 a, str8 b, str_match_flags flags);
+b32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
+b32 str8_starts_with(str8 str, str8 start, str_match_flags flags);
+b32 str8_match(str8 a, str8 b, str_match_flags flags);
 usize str8_find_needle(str8 str, usize start_pos, str8 needle, str_match_flags flags);
 usize str8_find_needle_reverse(str8 str, usize start_pos, str8 needle, str_match_flags flags);
 
@@ -100,7 +100,7 @@ str8 str8_skip_last_dot(str8 str);
 
 i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
-bool32 str8_to_bool32(str8 str);
+b32 str8_to_bool32(str8 str);
 
 // String List Construction Functions
 

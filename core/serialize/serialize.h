@@ -35,7 +35,7 @@ struct ser_value {
 		u8 u8;
 		i32 i32;
 		f32 f32;
-		bool32 bool32;
+		b32 b32;
 		i32 depth;
 	};
 };
@@ -63,7 +63,7 @@ ser_write(struct ser_writer *w, struct ser_value val)
 		sys_file_w(w->f, &null, 1); // write null-terminator
 	} break;
 	case SER_TYPE_BOOL: {
-		sys_file_w(w->f, &val.bool32, 1);
+		sys_file_w(w->f, &val.b32, 1);
 	} break;
 	default: {
 	}
@@ -89,9 +89,9 @@ ser_write_f32(struct ser_writer *w, f32 f32)
 }
 
 void
-ser_write_bool(struct ser_writer *w, bool32 bool32)
+ser_write_bool(struct ser_writer *w, b32 bool32)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .bool32 = bool32});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .b32 = bool32});
 }
 
 void
@@ -154,7 +154,7 @@ ser_read(struct ser_reader *r)
 		ok &= ser_safe_read(r, &res.f32, sizeof(res.f32));
 		break;
 	case SER_TYPE_BOOL:
-		ok &= ser_safe_read(r, &res.bool32, 1);
+		ok &= ser_safe_read(r, &res.b32, 1);
 		break;
 	case SER_TYPE_STRING:
 		ok &= ser_safe_read(r, &res.str.size, sizeof(res.str.size));
@@ -180,7 +180,7 @@ ser_discard_until_depth(struct ser_reader *r, int depth)
 	}
 }
 
-bool32
+b32
 ser_iter_object(struct ser_reader *r, struct ser_value obj, struct ser_value *key, struct ser_value *val)
 {
 	ser_discard_until_depth(r, obj.depth);
@@ -246,7 +246,7 @@ ser_value_push(struct ser_reader *r, struct ser_value val, int depth, struct str
 		str8_list_pushf(alloc, list, "%.14g", (double)val.f32);
 		break;
 	case SER_TYPE_BOOL:
-		str8_list_push(alloc, list, val.bool32 ? str8_lit("true") : str8_lit("false"));
+		str8_list_push(alloc, list, val.b32 ? str8_lit("true") : str8_lit("false"));
 		break;
 	case SER_TYPE_STRING:
 		str8_list_push(alloc, list, str8_lit("\""));

@@ -19,7 +19,7 @@ static inline void bet_set_index(struct bet *bet, struct bet_ctx *ctx, u8 node_i
 static inline void bet_set_child(struct bet *bet, struct bet_ctx *ctx, u8 node_index, i32 i);
 static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
-static inline bool32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
+static inline b32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
 void
 bet_init(struct bet *bet, struct alloc alloc)
@@ -144,7 +144,7 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 				// Step 02: don't inmediatly return when a node is running, let us evaluate the tree upwards until root
 				// Step 03: handle comp or deco getting a running response, override the running_index depedenly
 				// Only on root return save the running index to the context
-				bool32 parent_is_parallel = bet_node_parent_is_parallel(bet, ctx, curr_index);
+				b32 parent_is_parallel = bet_node_parent_is_parallel(bet, ctx, curr_index);
 
 				// If parallel parent and one of the nodes is
 				// running we want the parallel parent to continue running
@@ -563,7 +563,7 @@ bet_find_child(struct bet *bet, u8 parent_index, u8 child_index)
 	return -1;
 }
 
-bool32
+b32
 bet_push_child(struct bet *bet, usize parent_index, usize child_index)
 {
 	struct bet_node *parent = bet_get_node(bet, parent_index);
@@ -578,7 +578,7 @@ bet_push_child(struct bet *bet, usize parent_index, usize child_index)
 	return true;
 }
 
-bool32
+b32
 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
 {
 	struct bet_node *node = bet_get_node(bet, node_index);
@@ -607,23 +607,23 @@ bet_prop_i32_get(struct bet_prop prop, i32 fallback)
 	return res;
 }
 
-bool32
+b32
 bet_prop_bool32_get(struct bet_prop prop)
 {
-	bool32 res = false;
+	b32 res = false;
 	dbg_assert(prop.type == BET_PROP_BOOL32 || prop.type == BET_PROP_NONE);
-	res = prop.bool32;
+	res = prop.b32;
 	return res;
 }
 
-static inline bool32
+static inline b32
 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 {
-	bool32 res            = false;
+	b32 res               = false;
 	struct bet_node *node = bet_get_node(bet, node_index);
 
-	bool32 has_parallel_parent = false;
-	u8 parent_index            = node->parent;
+	b32 has_parallel_parent = false;
+	u8 parent_index         = node->parent;
 
 	if(parent_index > 0) {
 		struct bet_node *parent_node    = bet_get_node(bet, parent_index);

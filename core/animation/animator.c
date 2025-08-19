@@ -19,11 +19,11 @@ animator_init(struct animator *animator, f32 timestamp)
 	}
 }
 
-bool32
+b32
 animator_update(struct animator *animator, f32 timestamp)
 {
 	TRACE_START(__func__);
-	bool32 res                   = false;
+	b32 res                      = false;
 	usize current_animation      = animator->index;
 	struct animation *animation  = &animator->animation;
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, animator->clips_handle);

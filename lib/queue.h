@@ -12,9 +12,9 @@ struct queue_u8 {
 };
 
 void queue_u8_init(struct queue_u8 *queue);
-bool32 enqueue_u8(struct queue_u8 *queue, u8 value);
+b32 enqueue_u8(struct queue_u8 *queue, u8 value);
 u8 dequeue_u8(struct queue_u8 *queue);
 u8 queue_u8_peek(struct queue_u8 *queue);
-bool32 queue_u8_is_empty(struct queue_u8 *queue);
-bool32 queue_u8_is_full(struct queue_u8 *queue);
+b32 queue_u8_is_empty(struct queue_u8 *queue);
+b32 queue_u8_is_full(struct queue_u8 *queue);
 void queue_u8_print(struct queue_u8 *queue);
