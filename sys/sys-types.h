@@ -27,8 +27,8 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
-typedef i8 bool8;
-typedef i16 bool16;
+typedef i8 b8;
+typedef i16 b16;
 typedef i32 bool32;
 
 typedef uintptr_t uptr;
