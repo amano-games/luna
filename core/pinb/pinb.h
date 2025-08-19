@@ -315,6 +315,7 @@ struct pinb_table_props {
 };
 
 struct pinb_table {
+	u32 flags;
 	usize version;
 	struct pinb_table_props props;
 	usize entities_count;
