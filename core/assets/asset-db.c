@@ -76,9 +76,9 @@ asset_db_path_push(struct asset_db *db, str8 path)
 	// Can we add the string?
 	dbg_check(table_len + path.size <= table_cap, "AssetsDB", "Out of memory");
 
-	u64 key        = hash_string(path);
-	u32 value      = ht_get_u32(&table->ht, key);
-	bool32 has_key = value != 0;
+	u64 key     = hash_string(path);
+	u32 value   = ht_get_u32(&table->ht, key);
+	b32 has_key = value != 0;
 
 	if(has_key) {
 		return table->arr[value];
@@ -119,7 +119,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex");
 	u64 key                    = hash_string(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
-	bool32 has_key             = value != 0;
+	b32 has_key                = value != 0;
 	struct asset_tex asset_tex = {.path_hash = key, .tex = tex};
 
 	if(has_key) {
@@ -191,9 +191,9 @@ asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info inf
 	// Can we add the string?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex info");
 
-	u64 key        = hash_string(path);
-	u32 value      = ht_get_u32(&table->ht, key);
-	bool32 has_key = value != 0;
+	u64 key     = hash_string(path);
+	u32 value   = ht_get_u32(&table->ht, key);
+	b32 has_key = value != 0;
 
 	if(has_key) {
 		return value;
@@ -264,9 +264,9 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Cant push animation slice");
 
-	u64 key        = hash_string(path);
-	u32 value      = ht_get_u32(&table->ht, key);
-	bool32 has_key = value != 0;
+	u64 key     = hash_string(path);
+	u32 value   = ht_get_u32(&table->ht, key);
+	b32 has_key = value != 0;
 
 	if(has_key) {
 		return value;
@@ -305,7 +305,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 
 	u64 key                    = hash_string(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
-	bool32 has_key             = value != 0;
+	b32 has_key                = value != 0;
 	struct asset_snd asset_snd = {.path_hash = key, .snd = snd};
 
 	if(has_key) {
@@ -380,7 +380,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 
 	u64 key                    = hash_string(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
-	bool32 has_key             = value != 0;
+	b32 has_key                = value != 0;
 	struct asset_fnt asset_fnt = {.path_hash = key, .fnt = fnt};
 
 	if(has_key) {
@@ -440,7 +440,7 @@ asset_db_bet_load(
 
 	u64 key         = hash_string(path);
 	u32 value       = ht_get_u32(&table->ht, key);
-	bool32 has_key  = value != 0;
+	b32 has_key     = value != 0;
 	usize timestamp = sys_file_modified(path);
 
 	if(has_key) {

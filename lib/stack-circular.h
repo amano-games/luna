@@ -20,19 +20,19 @@ stack_cir_u8_init(struct stack_cir_u8 *stack)
 	stack->capacity = ARRLEN(stack->data);
 }
 
-bool32
+b32
 stack_cir_u8_is_empty(struct stack_cir_u8 *stack)
 {
 	return stack->count == 0;
 }
 
-bool32
+b32
 stack_cir_u8_is_full(struct stack_cir_u8 *stack)
 {
 	return stack->count == stack->capacity;
 }
 
-bool32
+b32
 stack_cir_u8_push(struct stack_cir_u8 *stack, u8 value)
 {
 	if(stack_cir_u8_is_full(stack)) {

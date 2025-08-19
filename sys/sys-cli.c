@@ -119,7 +119,7 @@ sys_file_seek_end(void *f, i32 pos)
 	return (i32)fseek((FILE *)f, pos, SEEK_END);
 }
 
-bool32
+b32
 sys_file_del(str8 path)
 {
 	return 0;

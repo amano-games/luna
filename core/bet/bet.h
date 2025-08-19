@@ -96,7 +96,7 @@ enum bet_prop_type {
 struct bet_prop {
 	enum bet_prop_type type;
 	union {
-		bool32 bool32;
+		b32 b32;
 		i32 i32;
 		f32 f32;
 		u8 u8_arr[4];
@@ -132,7 +132,7 @@ struct bet_node_ctx {
 struct bet_ctx {
 	u8 current;
 	u8 initial;
-	bool32 debug;
+	b32 debug;
 
 	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
 	void (*action_init)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
@@ -146,9 +146,9 @@ enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
 
 struct bet_node *bet_get_node(struct bet *bet, usize node_index);
 i32 bet_push_node(struct bet *bet, struct bet_node node);
-bool32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
-bool32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
+b32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
+b32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
 i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
-bool32 bet_prop_bool32_get(struct bet_prop prop);
+b32 bet_prop_bool32_get(struct bet_prop prop);

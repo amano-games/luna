@@ -17,19 +17,19 @@ queue_u8_init(struct queue_u8 *queue)
 	queue->count = 0;
 }
 
-bool32
+b32
 queue_u8_is_full(struct queue_u8 *queue)
 {
 	return queue->count == QUEUE_MAX_ITEMS;
 }
 
-bool32
+b32
 queue_u8_is_empty(struct queue_u8 *queue)
 {
 	return queue->count == 0;
 }
 
-bool32
+b32
 enqueue_u8(struct queue_u8 *queue, u8 value)
 {
 	// dbg_assert(!queue_u8_is_full(queue));

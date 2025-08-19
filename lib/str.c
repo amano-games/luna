@@ -10,40 +10,40 @@ u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
 
 u8 INTEGER_SYMBOL_REVERSE[128] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-inline bool32
+inline b32
 char_is_space(u8 c)
 {
 	return (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\f' || c == '\v');
 }
 
-inline bool32
+inline b32
 char_is_upper(u8 c)
 {
 	return ('A' <= c && c <= 'Z');
 }
 
-inline bool32
+inline b32
 char_is_lower(u8 c)
 {
 	return ('a' <= c && c <= 'z');
 }
 
-inline bool32
+inline b32
 char_is_alpha(u8 c)
 {
 	return (char_is_upper(c) || char_is_lower(c));
 }
 
-inline bool32
+inline b32
 char_is_slash(u8 c)
 {
 	return (c == '/' || c == '\\');
 }
 
-inline bool32
+inline b32
 char_is_digit(u8 c, u32 base)
 {
-	bool32 result = 0;
+	b32 result = 0;
 	if(0 < base && base <= 16) {
 		u8 val = INTEGER_SYMBOL_REVERSE[c];
 		if(val < base) {
@@ -53,14 +53,14 @@ char_is_digit(u8 c, u32 base)
 	return (result);
 }
 
-inline bool32
+inline b32
 char_is_ascii(u8 c)
 {
 	if((c & 0x80) == 0x00) return true;
 	return false;
 }
 
-inline bool32
+inline b32
 char_is_utf8(u8 c)
 {
 	if((c & 0x80) == 0x00) {
@@ -150,15 +150,15 @@ str8_cstr_capped(void *cstr, void *cap)
 	return (result);
 }
 
-inline bool32
+inline b32
 str8_match(str8 a, str8 b, str_match_flags flags)
 {
-	bool32 result = 0;
+	b32 result = 0;
 	if(a.size == b.size || (flags & str_match_flag_right_side_sloppy)) {
-		bool32 case_insensitive  = (flags & str_match_flag_case_insensitive);
-		bool32 slash_insensitive = (flags & str_match_flag_slash_insensitive);
-		u64 size                 = MIN(a.size, b.size);
-		result                   = 1;
+		b32 case_insensitive  = (flags & str_match_flag_case_insensitive);
+		b32 slash_insensitive = (flags & str_match_flag_slash_insensitive);
+		u64 size              = MIN(a.size, b.size);
+		result                = 1;
 
 		for(u64 i = 0; i < size; i += 1) {
 			u8 at = a.str[i];
@@ -300,19 +300,19 @@ str8_skip_chop_whitespace(str8 str)
 	return (result);
 }
 
-bool32
+b32
 str8_ends_with(str8 str, str8 end, str_match_flags flags)
 {
-	str8 postfix    = str8_postfix(str, end.size);
-	bool32 is_match = str8_match(end, postfix, flags);
+	str8 postfix = str8_postfix(str, end.size);
+	b32 is_match = str8_match(end, postfix, flags);
 	return is_match;
 }
 
-bool32
+b32
 str8_starts_with(str8 str, str8 start, str_match_flags flags)
 {
 	str_match_flags adjusted_flags = flags | str_match_flag_right_side_sloppy;
-	bool32 is_match                = str8_match(str, start, adjusted_flags);
+	b32 is_match                   = str8_match(str, start, adjusted_flags);
 	return is_match;
 }
 
@@ -385,7 +385,7 @@ str8_to_i32(str8 str)
 	return res;
 }
 
-bool32
+b32
 str8_to_bool32(str8 str)
 {
 	if(str.size == 0) return false;
@@ -551,15 +551,15 @@ struct str8_list
 str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags)
 {
 	struct str8_list list = {0};
-	bool32 keep_empties   = (flags & str_split_flag_keep_empties);
+	b32 keep_empties      = (flags & str_split_flag_keep_empties);
 
 	u8 *ptr = str.str;
 	u8 *opl = str.str + str.size;
 	for(; ptr < opl;) {
 		u8 *first = ptr;
 		for(; ptr < opl; ptr += 1) {
-			u8 c            = *ptr;
-			bool32 is_split = 0;
+			u8 c         = *ptr;
+			b32 is_split = 0;
 			for(usize i = 0; i < split_char_count; i += 1) {
 				if(split_chars[i] == c) {
 					is_split = 1;

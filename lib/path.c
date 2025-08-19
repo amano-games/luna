@@ -175,7 +175,7 @@ path_relative_dst_from_absolute_dst_src(struct alloc alloc, str8 dst, str8 src, 
 
 		// rjf: build parts of dst which are unique from src
 		{
-			bool32 unique_from_src = false;
+			b32 unique_from_src = false;
 			for(struct str8_node *src_n = src_folders.first, *bp_n = dst_folders.first;
 				bp_n != 0;
 				bp_n = bp_n->next) {

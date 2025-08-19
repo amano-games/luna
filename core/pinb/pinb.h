@@ -9,7 +9,7 @@ struct pinb_ball {
 
 struct pinb_reactive_impulse {
 	f32 magnitude;
-	bool32 normalize;
+	b32 normalize;
 	f32 cooldown;
 };
 
@@ -28,8 +28,8 @@ struct pinb_charged_impulse {
 	f32 magnitude;
 	f32 charge_speed;
 	f32 release_speed;
-	bool32 reset_target;
-	bool32 auto_shoot;
+	b32 reset_target;
+	b32 auto_shoot;
 	f32 auto_shoot_hold;
 };
 
@@ -43,7 +43,7 @@ struct pinb_plunger {
 struct pinb_force_field {
 	f32 angle_rad;
 	f32 magnitude;
-	bool32 is_enabled;
+	b32 is_enabled;
 };
 
 struct pinb_attractor {
@@ -60,7 +60,7 @@ struct pinb_spr {
 	i32 flip;
 	i32 layer;
 	i32 y_sort_offset;
-	bool32 y_sort;
+	b32 y_sort;
 	v2 offset;
 };
 
@@ -75,7 +75,7 @@ struct pinb_animator_transitions {
 };
 
 struct pinb_animator {
-	bool32 play_on_start;
+	b32 play_on_start;
 	i32 initial_animation;
 	struct pinb_animator_transitions transitions;
 };
@@ -89,12 +89,12 @@ struct pinb_flipper {
 
 struct pinb_flip {
 	i32 type;
-	bool32 is_enabled;
+	b32 is_enabled;
 };
 
 struct pinb_switch {
-	bool32 is_enabled;
-	bool32 value;
+	b32 is_enabled;
+	b32 value;
 	i32 animation_on;
 	i32 animation_off;
 };
@@ -105,7 +105,7 @@ struct pinb_entity_list {
 };
 
 struct pinb_sensor {
-	bool32 is_enabled;
+	b32 is_enabled;
 	struct col_shapes shapes;
 };
 
@@ -156,7 +156,7 @@ struct pinb_messages {
 };
 
 struct pinb_action {
-	bool32 debug;
+	b32 debug;
 	i32 event_type;
 	i32 event_condition; // NOTE: should events be an array?
 	i32 event_condition_type;
@@ -196,7 +196,7 @@ struct pinb_collision_layer {
 };
 
 struct pinb_ball_saver {
-	bool32 is_enabled;
+	b32 is_enabled;
 	f32 duration;
 	f32 save_delay;
 };

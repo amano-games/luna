@@ -7,7 +7,7 @@
 
 // mask is almost always = 1
 struct tex
-tex_create_internal(i32 w, i32 h, bool32 mask, struct alloc alloc)
+tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
 {
 	struct tex t = {0};
 

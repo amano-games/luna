@@ -6,7 +6,7 @@
 #include "str.h"
 #include "dbg.h"
 
-bool32
+b32
 json_load(const str8 path, struct alloc alloc, str8 *out)
 {
 	void *f = sys_file_open_r(path);
@@ -54,7 +54,7 @@ json_parse_i32(str8 json, jsmntok_t *tok)
 	return res;
 }
 
-static bool32
+static b32
 json_parse_bool32(str8 json, jsmntok_t *tok)
 {
 	dbg_assert(tok->type == JSMN_PRIMITIVE);

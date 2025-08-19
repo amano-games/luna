@@ -46,20 +46,20 @@ void inp_set_crank(f32 value);
 void inp_set_crank_docked(int is_docked);
 void inp_set_keys(u8 *keys, usize count);
 
-bool32 inp_pressed(int b);
-bool32 inp_pressed_any(int b);
-bool32 inp_pressed_except(int b);
-bool32 inp_pressed_all(int b);
-bool32 inp_was_pressed(int b);
-bool32 inp_was_pressed_any(int b);
-bool32 inp_was_pressed_all(int b);
-bool32 inp_just_pressed(int b);
-bool32 inp_just_released(int b);
+b32 inp_pressed(int b);
+b32 inp_pressed_any(int b);
+b32 inp_pressed_except(int b);
+b32 inp_pressed_all(int b);
+b32 inp_was_pressed(int b);
+b32 inp_was_pressed_any(int b);
+b32 inp_was_pressed_all(int b);
+b32 inp_just_pressed(int b);
+b32 inp_just_released(int b);
 
-bool32 inp_key_pressed(int key);
-bool32 inp_key_was_pressed(int key);
-bool32 inp_key_just_pressed(int key);
-bool32 inp_key_just_released(int key);
+b32 inp_key_pressed(int key);
+b32 inp_key_was_pressed(int key);
+b32 inp_key_just_pressed(int key);
+b32 inp_key_just_released(int key);
 
 int inp_dpad_x(void);
 int inp_dpad_y(void);
