@@ -161,7 +161,7 @@ init(void)
 		.width        = SYS_DISPLAY_W,
 		.height       = SYS_DISPLAY_H,
 		.pixel_format = SG_PIXELFORMAT_RGBA8,
-		.usage        = SG_USAGE_STREAM,
+		.usage        = {.stream_update = true},
 	};
 
 	SOKOL_STATE.bind.images[SOKOL_APP_IMG_SLOT] = sg_make_image(&img_desc);
@@ -188,7 +188,7 @@ init(void)
 	});
 
 	SOKOL_STATE.bind.index_buffer = sg_make_buffer(&(sg_buffer_desc){
-		.type  = SG_BUFFERTYPE_INDEXBUFFER,
+		.usage = {.index_buffer = true},
 		.data  = SG_RANGE(indices),
 		.label = "quad-indices",
 	});
