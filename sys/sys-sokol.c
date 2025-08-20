@@ -1,6 +1,8 @@
 #include "sys-sokol.h"
 #include "sys-debug-draw.h"
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
 #if !defined(TARGET_WASM)
 #include "whereami.h"
 #endif
@@ -373,12 +375,25 @@ sys_seconds(void)
 	return stm_sec(stm_since(0));
 }
 
-// TODO: Make sure it works
+#define SECONDS_BETWEEN_1970_AND_2000 946684800LL
+
+// TODO: Win32 support
+// Returns seconds since 2000-01-01 UTC.
+// If milliseconds != NULL, stores the 0–999 ms remainder.
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
-	u64 epoch = 1730405055;
-	return stm_sec(stm_since(epoch));
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+
+	u64 unix_seconds = (u64)ts.tv_sec;
+	u64 seconds      = unix_seconds - SECONDS_BETWEEN_1970_AND_2000;
+
+	if(milliseconds) {
+		*milliseconds = (u32)(ts.tv_nsec / 1000000ULL); // 0–999 ms
+	}
+
+	return seconds;
 }
 
 void
