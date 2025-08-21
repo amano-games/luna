@@ -597,6 +597,13 @@
     };
     return res;
   }
+  function getTableSwitcher(_object, prop) {
+    const value = prop.value;
+    const res = {
+      table: value["table"].value
+    };
+    return res;
+  }
   function getFlip(_object, prop) {
     const value = prop.value;
     const res = {
@@ -873,6 +880,10 @@
             case "bucket":
               return __spreadProps(__spreadValues({}, acc), {
                 bucket: getBucket(item, prop)
+              });
+            case "table_switcher":
+              return __spreadProps(__spreadValues({}, acc), {
+                table_switcher: getTableSwitcher(item, prop)
               });
             case "flipper":
               return __spreadProps(__spreadValues({}, acc), {

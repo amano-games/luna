@@ -110,6 +110,10 @@ export interface Gravity {
   value: number;
 }
 
+export interface TableSwitcher {
+  table: number;
+}
+
 export interface Counter {
   type: number;
   max: number;
@@ -262,6 +266,7 @@ export interface Entity {
   score_fx_offset?: ScoreFXOffset;
   spinner?: Spinner;
   bucket?: Bucket;
+  table_switcher?: TableSwitcher;
   force_field?: ForceField;
   attractor?: Attractor;
   actions?: GameAction[];

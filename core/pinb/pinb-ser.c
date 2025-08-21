@@ -239,6 +239,11 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_actions_write(w, &entity->actions);
 	}
 
+	if(entity->table_switcher.table > 0) {
+		ser_write_string(w, str8_lit("table_switcher"));
+		pinb_table_switcher_write(w, &entity->table_switcher);
+	}
+
 	if(entity->custom_data.len > 0) {
 		ser_write_string(w, str8_lit("custom_data"));
 		pinb_custom_data_write(w, &entity->custom_data);
@@ -325,6 +330,8 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.messages = pinb_messages_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
 			res.actions = pinb_actions_read(r, value, alloc);
+		} else if(str8_match(key.str, str8_lit("table_switcher"), 0)) {
+			res.table_switcher = pinb_table_switcher_read(r, value);
 		} else if(str8_match(key.str, str8_lit("custom_data"), 0)) {
 			res.custom_data = pinb_custom_data_read(r, value, alloc);
 		}
@@ -1925,6 +1932,32 @@ pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			dbg_assert(value.type == SER_TYPE_STRING);
 			res.type = PINB_PROP_TYPE_STR;
 			res.str  = value.str;
+		}
+	}
+	return res;
+}
+
+void
+pinb_table_switcher_write(struct ser_writer *w, struct pinb_table_switcher *value)
+{
+	dbg_assert(value != NULL);
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("table"));
+	ser_write_i32(w, value->table);
+	ser_write_end(w);
+}
+
+struct pinb_table_switcher
+pinb_table_switcher_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_table_switcher res = {0};
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	struct ser_value key, value;
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("table"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.table = value.i32;
 		}
 	}
 	return res;

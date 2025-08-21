@@ -243,6 +243,10 @@ struct pinb_spawn_zone {
 	};
 };
 
+struct pinb_table_switcher {
+	i32 table;
+};
+
 struct pinb_spawner {
 	i32 ref;
 	i32 type;
@@ -279,6 +283,7 @@ struct pinb_entity {
 	struct pinb_crank_animation crank_animation;
 	struct pinb_bucket bucket;
 	struct pinb_ball_saver ball_saver;
+	struct pinb_table_switcher table_switcher;
 	struct v2_i32 score_fx_offset;
 	struct pinb_collision_layer collision_layer;
 	struct pinb_spawner spawner;
