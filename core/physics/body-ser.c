@@ -6,40 +6,40 @@
 #include "collisions/collisions-ser.h"
 
 void
-body_write(struct ser_writer *w, struct body body)
+body_write(struct ser_writer *w, struct body *body)
 {
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("flags"));
-	ser_write_i32(w, body.flags);
+	ser_write_i32(w, body->flags);
 
 	ser_write_string(w, str8_lit("x"));
-	ser_write_f32(w, body.p.x);
+	ser_write_f32(w, body->p.x);
 	ser_write_string(w, str8_lit("y"));
-	ser_write_f32(w, body.p.y);
+	ser_write_f32(w, body->p.y);
 
 	ser_write_string(w, str8_lit("restitution"));
-	ser_write_f32(w, body.restitution);
+	ser_write_f32(w, body->restitution);
 	ser_write_string(w, str8_lit("dynamic_friction"));
-	ser_write_f32(w, body.dynamic_friction);
+	ser_write_f32(w, body->dynamic_friction);
 	ser_write_string(w, str8_lit("static_friction"));
-	ser_write_f32(w, body.static_friction);
+	ser_write_f32(w, body->static_friction);
 	ser_write_string(w, str8_lit("mass"));
-	ser_write_f32(w, body.mass);
+	ser_write_f32(w, body->mass);
 	ser_write_string(w, str8_lit("mass_inv"));
-	ser_write_f32(w, body.mass_inv);
+	ser_write_f32(w, body->mass_inv);
 	ser_write_string(w, str8_lit("inertia"));
-	ser_write_f32(w, body.inertia);
+	ser_write_f32(w, body->inertia);
 	ser_write_string(w, str8_lit("inertia_inv"));
-	ser_write_f32(w, body.inertia_inv);
+	ser_write_f32(w, body->inertia_inv);
 	ser_write_string(w, str8_lit("linear_damping"));
-	ser_write_f32(w, body.linear_damping);
+	ser_write_f32(w, body->linear_damping);
 	ser_write_string(w, str8_lit("ang_damping"));
-	ser_write_f32(w, body.ang_damping);
+	ser_write_f32(w, body->ang_damping);
 
-	dbg_assert(body.shapes.count > 0);
+	dbg_assert(body->shapes.count > 0);
 	ser_write_string(w, str8_lit("shapes"));
-	col_shapes_write(w, body.shapes);
+	col_shapes_write(w, &body->shapes);
 
 	ser_write_end(w);
 }

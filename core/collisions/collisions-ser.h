@@ -3,8 +3,8 @@
 #include "serialize/serialize.h"
 #include "collisions.h"
 
-void col_shapes_write(struct ser_writer *w, struct col_shapes shapes);
-void col_shape_write(struct ser_writer *w, struct col_shape shape);
+void col_shapes_write(struct ser_writer *w, struct col_shapes *shapes);
+void col_shape_write(struct ser_writer *w, struct col_shape *shape);
 void col_cir_write(struct ser_writer *w, struct col_cir col);
 void col_aabb_write(struct ser_writer *w, struct col_aabb col);
 void col_poly_write(struct ser_writer *w, struct col_poly col);
