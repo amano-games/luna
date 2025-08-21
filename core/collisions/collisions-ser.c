@@ -8,17 +8,17 @@
 #define DBG_ONLY_W_FIRST
 
 void
-col_shapes_write(struct ser_writer *w, struct col_shapes shapes)
+col_shapes_write(struct ser_writer *w, struct col_shapes *shapes)
 {
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("count"));
-	ser_write_i32(w, shapes.count);
+	ser_write_i32(w, shapes->count);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < shapes.count; ++i) {
-		col_shape_write(w, shapes.items[i]);
+	for(size i = 0; i < shapes->count; ++i) {
+		col_shape_write(w, shapes->items + i);
 	}
 	ser_write_end(w);
 
@@ -26,26 +26,26 @@ col_shapes_write(struct ser_writer *w, struct col_shapes shapes)
 }
 
 void
-col_shape_write(struct ser_writer *w, struct col_shape shape)
+col_shape_write(struct ser_writer *w, struct col_shape *shape)
 {
 	ser_write_object(w);
 
-	switch(shape.type) {
+	switch(shape->type) {
 	case COL_TYPE_AABB: {
 		ser_write_string(w, str8_lit("aabb"));
-		col_aabb_write(w, shape.aabb);
+		col_aabb_write(w, shape->aabb);
 	} break;
 	case COL_TYPE_CIR: {
 		ser_write_string(w, str8_lit("cir"));
-		col_cir_write(w, shape.cir);
+		col_cir_write(w, shape->cir);
 	} break;
 	case COL_TYPE_POLY: {
 		ser_write_string(w, str8_lit("poly"));
-		col_poly_write(w, shape.poly);
+		col_poly_write(w, shape->poly);
 	} break;
 	case COL_TYPE_CAPSULE: {
 		ser_write_string(w, str8_lit("capsule"));
-		col_capsule_write(w, shape.capsule);
+		col_capsule_write(w, shape->capsule);
 	} break;
 	default: {
 		dbg_sentinel("col");

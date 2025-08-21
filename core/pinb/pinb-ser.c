@@ -80,167 +80,168 @@ pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc)
 }
 
 void
-pinb_entity_write(struct ser_writer *w, struct pinb_entity entity)
+pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 {
+	dbg_assert(entity != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("id"));
-	ser_write_i32(w, entity.id);
+	ser_write_i32(w, entity->id);
 	ser_write_string(w, str8_lit("flags"));
-	ser_write_i32(w, entity.flags);
+	ser_write_i32(w, entity->flags);
 	ser_write_string(w, str8_lit("x"));
-	ser_write_i32(w, entity.x);
+	ser_write_i32(w, entity->x);
 	ser_write_string(w, str8_lit("y"));
-	ser_write_i32(w, entity.y);
+	ser_write_i32(w, entity->y);
 
-	if(entity.spr.path.size > 0) {
+	if(entity->spr.path.size > 0) {
 		ser_write_string(w, str8_lit("spr"));
-		pinb_entity_spr_write(w, entity);
+		pinb_entity_spr_write(w, &entity->spr);
 	}
 
-	if(entity.body.shapes.count > 0) {
+	if(entity->body.shapes.count > 0) {
 		ser_write_string(w, str8_lit("body"));
-		body_write(w, entity.body);
+		body_write(w, &entity->body);
 	}
 
-	if(entity.sensor.shapes.count > 0) {
+	if(entity->sensor.shapes.count > 0) {
 		ser_write_string(w, str8_lit("sensor"));
-		pinb_sensor_write(w, entity.sensor);
+		pinb_sensor_write(w, &entity->sensor);
 	}
 
-	if(entity.reactive_impulse.magnitude != 0) {
+	if(entity->reactive_impulse.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_impulse"));
-		pinb_reactive_impulse_write(w, entity.reactive_impulse);
+		pinb_reactive_impulse_write(w, &entity->reactive_impulse);
 	}
 
-	if(entity.force_field.magnitude != 0) {
+	if(entity->force_field.magnitude != 0) {
 		ser_write_string(w, str8_lit("force_field"));
-		pinb_force_field_write(w, entity.force_field);
+		pinb_force_field_write(w, &entity->force_field);
 	}
 
-	if(entity.attractor.force != 0) {
+	if(entity->attractor.force != 0) {
 		ser_write_string(w, str8_lit("attractor"));
-		pinb_attractor_write(w, entity.attractor);
+		pinb_attractor_write(w, &entity->attractor);
 	}
 
-	if(entity.reactive_sprite_offset.magnitude != 0) {
+	if(entity->reactive_sprite_offset.magnitude != 0) {
 		ser_write_string(w, str8_lit("reactive_sprite_offset"));
-		pinb_reactive_sprite_offset_write(w, entity.reactive_sprite_offset);
+		pinb_reactive_sprite_offset_write(w, &entity->reactive_sprite_offset);
 	}
 
-	if(entity.reactive_animation.animation_index != 0) {
+	if(entity->reactive_animation.animation_index != 0) {
 		ser_write_string(w, str8_lit("reactive_animation"));
-		pinb_reactive_animation_write(w, entity.reactive_animation);
+		pinb_reactive_animation_write(w, &entity->reactive_animation);
 	}
 
-	if(entity.charged_impulse.magnitude != 0) {
+	if(entity->charged_impulse.magnitude != 0) {
 		ser_write_string(w, str8_lit("charged_impulse"));
-		pinb_charged_impulse_write(w, entity.charged_impulse);
+		pinb_charged_impulse_write(w, &entity->charged_impulse);
 	}
 
-	if(entity.plunger.charge_force_max != 0) {
+	if(entity->plunger.charge_force_max != 0) {
 		ser_write_string(w, str8_lit("plunger"));
-		pinb_plunger_write(w, entity.plunger);
+		pinb_plunger_write(w, &entity->plunger);
 	}
 
-	if(entity.spinner.spin_force != 0) {
+	if(entity->spinner.spin_force != 0) {
 		ser_write_string(w, str8_lit("spinner"));
-		pinb_spinner_write(w, entity.spinner);
+		pinb_spinner_write(w, &entity->spinner);
 	}
 
-	if(entity.bucket.impulse_magnitude != 0) {
+	if(entity->bucket.impulse_magnitude != 0) {
 		ser_write_string(w, str8_lit("bucket"));
-		pinb_bucket_write(w, entity.bucket);
+		pinb_bucket_write(w, &entity->bucket);
 	}
 
-	if(entity.ball_saver.duration > 0) {
+	if(entity->ball_saver.duration > 0) {
 		ser_write_string(w, str8_lit("ball_saver"));
-		pinb_ball_saver_write(w, entity.ball_saver);
+		pinb_ball_saver_write(w, &entity->ball_saver);
 	}
 
-	if(entity.flipper.velocity_scale != 0) {
+	if(entity->flipper.velocity_scale != 0) {
 		ser_write_string(w, str8_lit("flipper"));
-		pinb_flipper_write(w, entity.flipper);
+		pinb_flipper_write(w, &entity->flipper);
 	}
 
-	if(entity.flip.type != 0) {
+	if(entity->flip.type != 0) {
 		ser_write_string(w, str8_lit("flip"));
-		pinb_flip_write(w, entity.flip);
+		pinb_flip_write(w, &entity->flip);
 	}
 
-	if(entity.gravity.value != 0) {
+	if(entity->gravity.value != 0) {
 		ser_write_string(w, str8_lit("gravity"));
-		pinb_gravity_write(w, entity.gravity);
+		pinb_gravity_write(w, &entity->gravity);
 	}
 
-	if(entity.counter.resolution != 0) {
+	if(entity->counter.resolution != 0) {
 		ser_write_string(w, str8_lit("counter"));
-		pinb_counter_write(w, entity.counter);
+		pinb_counter_write(w, &entity->counter);
 	}
 
-	if(entity.collision_layer.layer > 0) {
+	if(entity->collision_layer.layer > 0) {
 		ser_write_string(w, str8_lit("collision_layer"));
-		pinb_collision_layer_write(w, entity.collision_layer);
+		pinb_collision_layer_write(w, &entity->collision_layer);
 	}
 
-	if(entity.crank_animation.interval != 0) {
+	if(entity->crank_animation.interval != 0) {
 		ser_write_string(w, str8_lit("crank_animation"));
-		pinb_crank_animation_write(w, entity.crank_animation);
+		pinb_crank_animation_write(w, &entity->crank_animation);
 	}
 
-	if(entity.reset.flags != 0) {
+	if(entity->reset.flags != 0) {
 		ser_write_string(w, str8_lit("reset"));
-		pinb_reset_write(w, entity.reset);
+		pinb_reset_write(w, &entity->reset);
 	}
 
-	if(entity.animator.initial_animation != 0) {
+	if(entity->animator.initial_animation != 0) {
 		ser_write_string(w, str8_lit("animator"));
-		pinb_animator_write(w, entity.animator);
+		pinb_animator_write(w, &entity->animator);
 	}
 
-	if(entity.score_fx_offset.x != 0 || entity.score_fx_offset.y != 0) {
+	if(entity->score_fx_offset.x != 0 || entity->score_fx_offset.y != 0) {
 		ser_write_string(w, str8_lit("score_fx_offset"));
-		ser_write_v2_i32(w, entity.score_fx_offset);
+		ser_write_v2_i32(w, entity->score_fx_offset);
 	}
 
-	if(entity.switch_value.is_enabled) {
+	if(entity->switch_value.is_enabled) {
 		ser_write_string(w, str8_lit("switch_value"));
-		pinb_switch_value_write(w, entity.switch_value);
+		pinb_switch_value_write(w, &entity->switch_value);
 	}
 
-	if(entity.entity_list.next != 0 || entity.entity_list.next != 0) {
+	if(entity->entity_list.next != 0 || entity->entity_list.next != 0) {
 		ser_write_string(w, str8_lit("entity_list"));
-		pinb_entity_list_write(w, entity.entity_list);
+		pinb_entity_list_write(w, &entity->entity_list);
 	}
 
-	if(entity.spawner.ref != 0) {
+	if(entity->spawner.ref != 0) {
 		ser_write_string(w, str8_lit("spawner"));
-		pinb_spawner_write(w, entity.spawner);
+		pinb_spawner_write(w, &entity->spawner);
 	}
 
-	if(entity.spawn_zone.mode != 0) {
+	if(entity->spawn_zone.mode != 0) {
 		ser_write_string(w, str8_lit("spawn_zone"));
-		pinb_spawn_zone_write(w, entity.spawn_zone);
+		pinb_spawn_zone_write(w, &entity->spawn_zone);
 	}
 
-	if(entity.sfx_sequences.len > 0) {
+	if(entity->sfx_sequences.len > 0) {
 		ser_write_string(w, str8_lit("sfx_sequences"));
-		pinb_sfx_sequences_write(w, entity.sfx_sequences);
+		pinb_sfx_sequences_write(w, &entity->sfx_sequences);
 	}
 
-	if(entity.messages.len > 0) {
+	if(entity->messages.len > 0) {
 		ser_write_string(w, str8_lit("messages"));
-		pinb_messages_write(w, entity.messages);
+		pinb_messages_write(w, &entity->messages);
 	}
 
-	if(entity.actions.len > 0) {
+	if(entity->actions.len > 0) {
 		ser_write_string(w, str8_lit("actions"));
-		pinb_actions_write(w, entity.actions);
+		pinb_actions_write(w, &entity->actions);
 	}
 
-	if(entity.custom_data.len > 0) {
+	if(entity->custom_data.len > 0) {
 		ser_write_string(w, str8_lit("custom_data"));
-		pinb_custom_data_write(w, entity.custom_data);
+		pinb_custom_data_write(w, &entity->custom_data);
 	}
 
 	ser_write_end(w);
@@ -332,315 +333,335 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 }
 
 void
-pinb_counter_write(struct ser_writer *w, struct pinb_counter value)
+pinb_counter_write(struct ser_writer *w, struct pinb_counter *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, value.type);
+	ser_write_i32(w, value->type);
 	ser_write_string(w, str8_lit("min"));
-	ser_write_i32(w, value.min);
+	ser_write_i32(w, value->min);
 	ser_write_string(w, str8_lit("max"));
-	ser_write_i32(w, value.max);
+	ser_write_i32(w, value->max);
 	ser_write_string(w, str8_lit("value"));
-	ser_write_i32(w, value.value);
+	ser_write_i32(w, value->value);
 	ser_write_string(w, str8_lit("value_initial"));
-	ser_write_i32(w, value.value_initial);
+	ser_write_i32(w, value->value_initial);
 	ser_write_string(w, str8_lit("resolution"));
-	ser_write_i32(w, value.resolution);
+	ser_write_i32(w, value->resolution);
 
 	ser_write_end(w);
 }
 
 void
-pinb_sensor_write(struct ser_writer *w, struct pinb_sensor value)
+pinb_sensor_write(struct ser_writer *w, struct pinb_sensor *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("is_enabled"));
-	ser_write_i32(w, value.is_enabled);
+	ser_write_i32(w, value->is_enabled);
 
 	ser_write_string(w, str8_lit("shapes"));
-	col_shapes_write(w, value.shapes);
+	col_shapes_write(w, &value->shapes);
 
 	ser_write_end(w);
 }
 
 void
-pinb_reactive_impulse_write(struct ser_writer *w, struct pinb_reactive_impulse value)
+pinb_reactive_impulse_write(struct ser_writer *w, struct pinb_reactive_impulse *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("magnitude"));
-	ser_write_f32(w, value.magnitude);
+	ser_write_f32(w, value->magnitude);
 	ser_write_string(w, str8_lit("cooldown"));
-	ser_write_f32(w, value.cooldown);
+	ser_write_f32(w, value->cooldown);
 	ser_write_string(w, str8_lit("normalize"));
-	ser_write_i32(w, value.normalize);
+	ser_write_i32(w, value->normalize);
 	ser_write_end(w);
 }
 
 void
-pinb_force_field_write(struct ser_writer *w, struct pinb_force_field value)
+pinb_force_field_write(struct ser_writer *w, struct pinb_force_field *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("magnitude"));
-	ser_write_f32(w, value.magnitude);
+	ser_write_f32(w, value->magnitude);
 	ser_write_string(w, str8_lit("angle"));
-	ser_write_f32(w, value.angle_rad);
+	ser_write_f32(w, value->angle_rad);
 	ser_write_string(w, str8_lit("is_enabled"));
-	ser_write_i32(w, value.is_enabled);
+	ser_write_i32(w, value->is_enabled);
 	ser_write_end(w);
 }
 
 void
-pinb_attractor_write(struct ser_writer *w, struct pinb_attractor value)
+pinb_attractor_write(struct ser_writer *w, struct pinb_attractor *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("flags"));
-	ser_write_i32(w, value.flags);
+	ser_write_i32(w, value->flags);
 	ser_write_string(w, str8_lit("offset"));
-	ser_write_v2(w, value.offset);
+	ser_write_v2(w, value->offset);
 	ser_write_string(w, str8_lit("radius"));
-	ser_write_f32(w, value.radius);
+	ser_write_f32(w, value->radius);
 	ser_write_string(w, str8_lit("force"));
-	ser_write_f32(w, value.force);
+	ser_write_f32(w, value->force);
 	ser_write_string(w, str8_lit("damping"));
-	ser_write_f32(w, value.damping);
+	ser_write_f32(w, value->damping);
 	ser_write_string(w, str8_lit("distance_threshold"));
-	ser_write_f32(w, value.distance_threshold);
+	ser_write_f32(w, value->distance_threshold);
 	ser_write_end(w);
 }
 
 void
-pinb_reactive_sprite_offset_write(struct ser_writer *w, struct pinb_reactive_sprite_offset value)
+pinb_reactive_sprite_offset_write(struct ser_writer *w, struct pinb_reactive_sprite_offset *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("delay"));
-	ser_write_f32(w, value.delay);
+	ser_write_f32(w, value->delay);
 	ser_write_string(w, str8_lit("magnitude"));
-	ser_write_f32(w, value.magnitude);
+	ser_write_f32(w, value->magnitude);
 	ser_write_string(w, str8_lit("ref"));
-	ser_write_i32(w, value.ref);
+	ser_write_i32(w, value->ref);
 
 	ser_write_end(w);
 }
 
 void
-pinb_reactive_animation_write(struct ser_writer *w, struct pinb_reactive_animation value)
+pinb_reactive_animation_write(struct ser_writer *w, struct pinb_reactive_animation *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("animation_index"));
-	ser_write_i32(w, value.animation_index);
+	ser_write_i32(w, value->animation_index);
 	ser_write_end(w);
 }
 
 void
-pinb_charged_impulse_write(struct ser_writer *w, struct pinb_charged_impulse value)
+pinb_charged_impulse_write(struct ser_writer *w, struct pinb_charged_impulse *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("angle"));
-	ser_write_f32(w, value.angle_rad);
+	ser_write_f32(w, value->angle_rad);
 	ser_write_string(w, str8_lit("magnitude"));
-	ser_write_f32(w, value.magnitude);
+	ser_write_f32(w, value->magnitude);
 	ser_write_string(w, str8_lit("charge_speed"));
-	ser_write_f32(w, value.charge_speed);
+	ser_write_f32(w, value->charge_speed);
 	ser_write_string(w, str8_lit("release_speed"));
-	ser_write_f32(w, value.release_speed);
+	ser_write_f32(w, value->release_speed);
 	ser_write_string(w, str8_lit("reset_target"));
-	ser_write_i32(w, value.reset_target);
+	ser_write_i32(w, value->reset_target);
 	ser_write_string(w, str8_lit("auto_shoot"));
-	ser_write_i32(w, value.auto_shoot);
+	ser_write_i32(w, value->auto_shoot);
 	ser_write_string(w, str8_lit("auto_shoot_hold"));
-	ser_write_f32(w, value.auto_shoot_hold);
+	ser_write_f32(w, value->auto_shoot_hold);
 
 	ser_write_end(w);
 }
 
 void
-pinb_plunger_write(struct ser_writer *w, struct pinb_plunger value)
+pinb_plunger_write(struct ser_writer *w, struct pinb_plunger *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("charge_force_min"));
-	ser_write_f32(w, value.charge_force_min);
+	ser_write_f32(w, value->charge_force_min);
 
 	ser_write_string(w, str8_lit("charge_force_max"));
-	ser_write_f32(w, value.charge_force_max);
+	ser_write_f32(w, value->charge_force_max);
 
 	ser_write_string(w, str8_lit("release_force_min"));
-	ser_write_f32(w, value.release_force_min);
+	ser_write_f32(w, value->release_force_min);
 
 	ser_write_string(w, str8_lit("release_force_max"));
-	ser_write_f32(w, value.release_force_max);
+	ser_write_f32(w, value->release_force_max);
 
 	ser_write_end(w);
 }
 
 void
-pinb_spinner_write(struct ser_writer *w, struct pinb_spinner value)
+pinb_spinner_write(struct ser_writer *w, struct pinb_spinner *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("damping"));
-	ser_write_f32(w, value.damping);
+	ser_write_f32(w, value->damping);
 
 	ser_write_string(w, str8_lit("spin_force"));
-	ser_write_f32(w, value.spin_force);
+	ser_write_f32(w, value->spin_force);
 
 	ser_write_string(w, str8_lit("stop_threshold"));
-	ser_write_f32(w, value.stop_threshold);
+	ser_write_f32(w, value->stop_threshold);
 
 	ser_write_end(w);
 }
 
 void
-pinb_bucket_write(struct ser_writer *w, struct pinb_bucket value)
+pinb_bucket_write(struct ser_writer *w, struct pinb_bucket *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("animation_shoot"));
-	ser_write_i32(w, value.animation_shoot);
+	ser_write_i32(w, value->animation_shoot);
 
 	ser_write_string(w, str8_lit("animation_on"));
-	ser_write_i32(w, value.animation_on);
+	ser_write_i32(w, value->animation_on);
 
 	ser_write_string(w, str8_lit("animation_off"));
-	ser_write_i32(w, value.animation_off);
+	ser_write_i32(w, value->animation_off);
 
 	ser_write_string(w, str8_lit("impulse_magnitude"));
-	ser_write_f32(w, value.impulse_magnitude);
+	ser_write_f32(w, value->impulse_magnitude);
 
 	ser_write_string(w, str8_lit("impulse_angle"));
-	ser_write_f32(w, value.impulse_angle_rad);
+	ser_write_f32(w, value->impulse_angle_rad);
 
 	ser_write_string(w, str8_lit("delay"));
-	ser_write_f32(w, value.delay);
+	ser_write_f32(w, value->delay);
 
 	ser_write_end(w);
 }
 
 void
-pinb_ball_saver_write(struct ser_writer *w, struct pinb_ball_saver value)
+pinb_ball_saver_write(struct ser_writer *w, struct pinb_ball_saver *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("is_enabled"));
-	ser_write_i32(w, value.is_enabled);
+	ser_write_i32(w, value->is_enabled);
 
 	ser_write_string(w, str8_lit("duration"));
-	ser_write_f32(w, value.duration);
+	ser_write_f32(w, value->duration);
 
 	ser_write_string(w, str8_lit("save_delay"));
-	ser_write_f32(w, value.save_delay);
+	ser_write_f32(w, value->save_delay);
 
 	ser_write_end(w);
 }
 
 void
-pinb_flipper_write(struct ser_writer *w, struct pinb_flipper value)
+pinb_flipper_write(struct ser_writer *w, struct pinb_flipper *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("velocity_easing_function"));
-	ser_write_i32(w, value.velocity_easing_function);
+	ser_write_i32(w, value->velocity_easing_function);
 	ser_write_string(w, str8_lit("velocity_radius_max"));
-	ser_write_f32(w, value.velocity_radius_max);
+	ser_write_f32(w, value->velocity_radius_max);
 	ser_write_string(w, str8_lit("velocity_radius_min"));
-	ser_write_f32(w, value.velocity_radius_min);
+	ser_write_f32(w, value->velocity_radius_min);
 	ser_write_string(w, str8_lit("velocity_scale"));
-	ser_write_f32(w, value.velocity_scale);
+	ser_write_f32(w, value->velocity_scale);
 
 	ser_write_end(w);
 }
 
 void
-pinb_flip_write(struct ser_writer *w, struct pinb_flip value)
+pinb_flip_write(struct ser_writer *w, struct pinb_flip *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, value.type);
+	ser_write_i32(w, value->type);
 	ser_write_string(w, str8_lit("is_enabled"));
-	ser_write_i32(w, value.is_enabled);
+	ser_write_i32(w, value->is_enabled);
 
 	ser_write_end(w);
 }
 
 void
-pinb_gravity_write(struct ser_writer *w, struct pinb_gravity value)
+pinb_gravity_write(struct ser_writer *w, struct pinb_gravity *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("value"));
-	ser_write_f32(w, value.value);
+	ser_write_f32(w, value->value);
 
 	ser_write_end(w);
 }
 
 void
-pinb_collision_layer_write(struct ser_writer *w, struct pinb_collision_layer value)
+pinb_collision_layer_write(struct ser_writer *w, struct pinb_collision_layer *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("layer"));
-	ser_write_i32(w, value.layer);
+	ser_write_i32(w, value->layer);
 	ser_write_end(w);
 }
 
 void
-pinb_crank_animation_write(struct ser_writer *w, struct pinb_crank_animation value)
+pinb_crank_animation_write(struct ser_writer *w, struct pinb_crank_animation *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("interval"));
-	ser_write_f32(w, value.interval);
+	ser_write_f32(w, value->interval);
 
 	ser_write_end(w);
 }
 
 void
-pinb_reset_write(struct ser_writer *w, struct pinb_reset value)
+pinb_reset_write(struct ser_writer *w, struct pinb_reset *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("flags"));
-	ser_write_i32(w, value.flags);
+	ser_write_i32(w, value->flags);
 
 	ser_write_end(w);
 }
 
 void
-pinb_animator_write(struct ser_writer *w, struct pinb_animator value)
+pinb_animator_write(struct ser_writer *w, struct pinb_animator *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("play_on_start"));
-	ser_write_i32(w, value.play_on_start);
+	ser_write_i32(w, value->play_on_start);
 	ser_write_string(w, str8_lit("initial_animation"));
-	ser_write_i32(w, value.initial_animation);
+	ser_write_i32(w, value->initial_animation);
 
-	if(value.transitions.len > 0) {
+	if(value->transitions.len > 0) {
 		ser_write_string(w, str8_lit("transitions"));
-		pinb_animator_transitions_write(w, value.transitions);
+		pinb_animator_transitions_write(w, &value->transitions);
 	}
 	ser_write_end(w);
 }
 
 void
-pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_transitions value)
+pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_transitions *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("len"));
-	ser_write_i32(w, value.len);
+	ser_write_i32(w, value->len);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value.len; ++i) {
+	for(size i = 0; i < value->len; ++i) {
 		ser_write_array(w);
-		ser_write_i32(w, value.items[i].from);
-		ser_write_i32(w, value.items[i].to);
+		ser_write_i32(w, value->items[i].from);
+		ser_write_i32(w, value->items[i].to);
 		ser_write_end(w);
 	}
 	ser_write_end(w);
@@ -648,53 +669,56 @@ pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_trans
 }
 
 void
-pinb_switch_value_write(struct ser_writer *w, struct pinb_switch value)
+pinb_switch_value_write(struct ser_writer *w, struct pinb_switch *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("is_enabled"));
-	ser_write_i32(w, value.is_enabled);
+	ser_write_i32(w, value->is_enabled);
 	ser_write_string(w, str8_lit("value"));
-	ser_write_i32(w, value.value);
+	ser_write_i32(w, value->value);
 	ser_write_string(w, str8_lit("animation_on"));
-	ser_write_i32(w, value.animation_on);
+	ser_write_i32(w, value->animation_on);
 	ser_write_string(w, str8_lit("animation_off"));
-	ser_write_i32(w, value.animation_off);
+	ser_write_i32(w, value->animation_off);
 
 	ser_write_end(w);
 }
 
 void
-pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list value)
+pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("next"));
-	ser_write_i32(w, value.next);
+	ser_write_i32(w, value->next);
 	ser_write_string(w, str8_lit("prev"));
-	ser_write_i32(w, value.prev);
+	ser_write_i32(w, value->prev);
 
 	ser_write_end(w);
 }
 
 void
-pinb_spawner_write(struct ser_writer *w, struct pinb_spawner value)
+pinb_spawner_write(struct ser_writer *w, struct pinb_spawner *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("ref"));
-	ser_write_i32(w, value.ref);
+	ser_write_i32(w, value->ref);
 
 	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, value.type);
+	ser_write_i32(w, value->type);
 
 	ser_write_string(w, str8_lit("zones_len"));
-	ser_write_i32(w, value.zones_len);
+	ser_write_i32(w, value->zones_len);
 
 	ser_write_string(w, str8_lit("zones"));
 	ser_write_array(w);
-	for(size i = 0; i < value.zones_len; ++i) {
-		ser_write_i32(w, value.zones[i]);
+	for(size i = 0; i < value->zones_len; ++i) {
+		ser_write_i32(w, value->zones[i]);
 	}
 	ser_write_end(w);
 
@@ -732,27 +756,28 @@ pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 }
 
 void
-pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone value)
+pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("mode"));
-	ser_write_i32(w, value.mode);
+	ser_write_i32(w, value->mode);
 	ser_write_string(w, str8_lit("capacity"));
-	ser_write_i32(w, value.capacity);
+	ser_write_i32(w, value->capacity);
 
-	switch(value.type) {
+	switch(value->type) {
 	case PINB_SPAWN_ZONE_TYPE_POINT: {
 		ser_write_string(w, str8_lit("point"));
-		ser_write_v2(w, value.point);
+		ser_write_v2(w, value->point);
 	} break;
 	case PINB_SPAWN_ZONE_TYPE_CIR: {
 		ser_write_string(w, str8_lit("cir"));
-		col_cir_write(w, value.cir);
+		col_cir_write(w, value->cir);
 	} break;
 	case PINB_SPAWN_ZONE_TYPE_AABB: {
 		ser_write_string(w, str8_lit("aabb"));
-		col_aabb_write(w, value.aabb);
+		col_aabb_write(w, value->aabb);
 	} break;
 	default: {
 		dbg_sentinel("pinb spawn zone");
@@ -792,17 +817,17 @@ pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj)
 }
 
 void
-pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences value)
+pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences *value)
 {
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("len"));
-	ser_write_i32(w, value.len);
+	ser_write_i32(w, value->len);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value.len; ++i) {
-		pinb_sfx_sequence_write(w, value.items[i]);
+	for(size i = 0; i < value->len; ++i) {
+		pinb_sfx_sequence_write(w, value->items + i);
 	}
 	ser_write_end(w);
 
@@ -833,29 +858,30 @@ pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc
 }
 
 void
-pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence value)
+pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("type"));
-	ser_write_i32(w, value.type);
+	ser_write_i32(w, value->type);
 	ser_write_string(w, str8_lit("reset_time"));
-	ser_write_f32(w, value.reset_time);
+	ser_write_f32(w, value->reset_time);
 	ser_write_string(w, str8_lit("vol_min"));
-	ser_write_f32(w, value.vol_min);
+	ser_write_f32(w, value->vol_min);
 	ser_write_string(w, str8_lit("vol_max"));
-	ser_write_f32(w, value.vol_max);
+	ser_write_f32(w, value->vol_max);
 	ser_write_string(w, str8_lit("pitch_min"));
-	ser_write_f32(w, value.pitch_min);
+	ser_write_f32(w, value->pitch_min);
 	ser_write_string(w, str8_lit("pitch_max"));
-	ser_write_f32(w, value.pitch_max);
+	ser_write_f32(w, value->pitch_max);
 	ser_write_string(w, str8_lit("clips_len"));
-	ser_write_i32(w, value.clips_len);
+	ser_write_i32(w, value->clips_len);
 
 	ser_write_string(w, str8_lit("clips"));
 	ser_write_array(w);
-	for(size i = 0; i < value.clips_len; ++i) {
-		ser_write_string(w, value.clips[i]);
+	for(size i = 0; i < value->clips_len; ++i) {
+		ser_write_string(w, value->clips[i]);
 	}
 	ser_write_end(w);
 
@@ -863,17 +889,17 @@ pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence value)
 }
 
 void
-pinb_messages_write(struct ser_writer *w, struct pinb_messages value)
+pinb_messages_write(struct ser_writer *w, struct pinb_messages *value)
 {
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("len"));
-	ser_write_i32(w, value.len);
+	ser_write_i32(w, value->len);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value.len; ++i) {
-		pinb_message_write(w, value.items[i]);
+	for(size i = 0; i < value->len; ++i) {
+		pinb_message_write(w, value->items + i);
 	}
 	ser_write_end(w);
 
@@ -881,23 +907,24 @@ pinb_messages_write(struct ser_writer *w, struct pinb_messages value)
 }
 
 void
-pinb_message_write(struct ser_writer *w, struct pinb_message value)
+pinb_message_write(struct ser_writer *w, struct pinb_message *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("sequence_type"));
-	ser_write_i32(w, value.sequence_type);
+	ser_write_i32(w, value->sequence_type);
 	ser_write_string(w, str8_lit("sequence_reset_time"));
-	ser_write_f32(w, value.sequence_reset_time);
+	ser_write_f32(w, value->sequence_reset_time);
 	ser_write_string(w, str8_lit("hide_time"));
-	ser_write_f32(w, value.hide_time);
+	ser_write_f32(w, value->hide_time);
 	ser_write_string(w, str8_lit("text_len"));
-	ser_write_i32(w, value.text_len);
+	ser_write_i32(w, value->text_len);
 
 	ser_write_string(w, str8_lit("text"));
 	ser_write_array(w);
-	for(usize i = 0; i < value.text_len; ++i) {
-		ser_write_string(w, value.text[i]);
+	for(usize i = 0; i < value->text_len; ++i) {
+		ser_write_string(w, value->text[i]);
 	}
 	ser_write_end(w);
 
@@ -905,17 +932,18 @@ pinb_message_write(struct ser_writer *w, struct pinb_message value)
 }
 
 void
-pinb_actions_write(struct ser_writer *w, struct pinb_actions value)
+pinb_actions_write(struct ser_writer *w, struct pinb_actions *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("len"));
-	ser_write_i32(w, value.len);
+	ser_write_i32(w, value->len);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value.len; ++i) {
-		pinb_action_write(w, value.items[i]);
+	for(size i = 0; i < value->len; ++i) {
+		pinb_action_write(w, value->items + i);
 	}
 	ser_write_end(w);
 
@@ -923,105 +951,110 @@ pinb_actions_write(struct ser_writer *w, struct pinb_actions value)
 }
 
 void
-pinb_action_write(struct ser_writer *w, struct pinb_action value)
+pinb_action_write(struct ser_writer *w, struct pinb_action *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("action_type"));
-	ser_write_i32(w, value.action_type);
+	ser_write_i32(w, value->action_type);
 	ser_write_string(w, str8_lit("action_ref"));
-	ser_write_i32(w, value.action_ref);
+	ser_write_i32(w, value->action_ref);
 	ser_write_string(w, str8_lit("action_arg"));
-	ser_write_i32(w, value.action_arg);
+	ser_write_i32(w, value->action_arg);
 	ser_write_string(w, str8_lit("action_delay"));
-	ser_write_f32(w, value.action_delay);
+	ser_write_f32(w, value->action_delay);
 	ser_write_string(w, str8_lit("action_cooldown"));
-	ser_write_f32(w, value.action_cooldown);
+	ser_write_f32(w, value->action_cooldown);
 	ser_write_string(w, str8_lit("event_type"));
-	ser_write_i32(w, value.event_type);
+	ser_write_i32(w, value->event_type);
 	ser_write_string(w, str8_lit("event_condition_type"));
-	ser_write_i32(w, value.event_condition_type);
+	ser_write_i32(w, value->event_condition_type);
 	ser_write_string(w, str8_lit("event_condition"));
-	ser_write_i32(w, value.event_condition);
+	ser_write_i32(w, value->event_condition);
 	ser_write_string(w, str8_lit("debug"));
-	ser_write_i32(w, value.debug);
+	ser_write_i32(w, value->debug);
 
 	ser_write_end(w);
 }
 
 void
-pinb_physics_props_write(struct ser_writer *w, struct pinb_physics_props props)
+pinb_physics_props_write(struct ser_writer *w, struct pinb_physics_props *props)
 {
+	dbg_assert(props != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("steps"));
-	ser_write_i32(w, props.steps);
+	ser_write_i32(w, props->steps);
 	ser_write_string(w, str8_lit("max_translation"));
-	ser_write_f32(w, props.max_translation);
+	ser_write_f32(w, props->max_translation);
 	ser_write_string(w, str8_lit("max_rotation"));
-	ser_write_f32(w, props.max_rotation);
+	ser_write_f32(w, props->max_rotation);
 	ser_write_string(w, str8_lit("penetration_correction"));
-	ser_write_f32(w, props.penetration_correction);
+	ser_write_f32(w, props->penetration_correction);
 	ser_write_string(w, str8_lit("penetration_allowance"));
-	ser_write_f32(w, props.penetration_allowance);
+	ser_write_f32(w, props->penetration_allowance);
 	ser_write_end(w);
 }
 
 void
-pinb_flippers_props_write(struct ser_writer *w, struct pinb_flippers_props props)
+pinb_flippers_props_write(struct ser_writer *w, struct pinb_flippers_props *props)
 {
+	dbg_assert(props != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("flip_velocity"));
-	ser_write_f32(w, props.flip_velocity);
+	ser_write_f32(w, props->flip_velocity);
 	ser_write_string(w, str8_lit("rotation_max_degrees"));
-	ser_write_f32(w, props.rotation_max_turns);
+	ser_write_f32(w, props->rotation_max_turns);
 	ser_write_string(w, str8_lit("rotation_min_degrees"));
-	ser_write_f32(w, props.rotation_min_turns);
+	ser_write_f32(w, props->rotation_min_turns);
 	ser_write_string(w, str8_lit("release_velocity"));
-	ser_write_f32(w, props.release_velocity);
+	ser_write_f32(w, props->release_velocity);
 	ser_write_end(w);
 }
 
 void
-pinb_table_props_write(struct ser_writer *w, struct pinb_table_props props)
+pinb_table_props_write(struct ser_writer *w, struct pinb_table_props *props)
 {
+	dbg_assert(props != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("physics_props"));
-	pinb_physics_props_write(w, props.physics_props);
+	pinb_physics_props_write(w, &props->physics_props);
 	ser_write_string(w, str8_lit("flippers_props"));
-	pinb_flippers_props_write(w, props.flippers_props);
+	pinb_flippers_props_write(w, &props->flippers_props);
 	ser_write_string(w, str8_lit("bg_tex_path"));
-	ser_write_string(w, props.bg_tex_path);
+	ser_write_string(w, props->bg_tex_path);
 	ser_write_end(w);
 }
 
 i32
-pinb_write(struct ser_writer *w, struct pinb_table pinb)
+pinb_write(struct ser_writer *w, struct pinb_table *pinb)
 {
+	dbg_assert(pinb != NULL);
 	i32 res = 0;
 	ser_write_object(w);
 
-	dbg_assert(pinb.version == 1);
-	dbg_assert(pinb.entities_count == arr_len(pinb.entities));
+	dbg_assert(pinb->version == 1);
+	dbg_assert(pinb->entities_count == arr_len(pinb->entities));
 	ser_write_string(w, str8_lit("version"));
-	ser_write_i32(w, pinb.version);
+	ser_write_i32(w, pinb->version);
 
 	ser_write_string(w, str8_lit("flags"));
-	ser_write_i32(w, pinb.flags);
+	ser_write_i32(w, pinb->flags);
 
 	ser_write_string(w, str8_lit("entities_count"));
-	ser_write_i32(w, pinb.entities_count);
+	ser_write_i32(w, pinb->entities_count);
 
 	ser_write_string(w, str8_lit("entities_max_id"));
-	ser_write_i32(w, pinb.entities_max_id);
+	ser_write_i32(w, pinb->entities_max_id);
 
 	ser_write_string(w, str8_lit("props"));
-	pinb_table_props_write(w, pinb.props);
+	pinb_table_props_write(w, &pinb->props);
 
 	ser_write_string(w, str8_lit("entities"));
 	ser_write_array(w);
-	for(usize i = 0; i < pinb.entities_count; ++i) {
-		pinb_entity_write(w, pinb.entities[i]);
+	for(usize i = 0; i < pinb->entities_count; ++i) {
+		pinb_entity_write(w, pinb->entities + i);
 	}
 	ser_write_end(w);
 
@@ -1781,38 +1814,40 @@ pinb_action_read(struct ser_reader *r, struct ser_value obj)
 }
 
 void
-pinb_entity_spr_write(struct ser_writer *w, struct pinb_entity entity)
+pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr)
 {
+	dbg_assert(spr != NULL);
 	ser_write_object(w);
 
 	ser_write_string(w, str8_lit("path"));
-	ser_write_string(w, entity.spr.path);
+	ser_write_string(w, spr->path);
 	ser_write_string(w, str8_lit("flip"));
-	ser_write_i32(w, entity.spr.flip);
+	ser_write_i32(w, spr->flip);
 	ser_write_string(w, str8_lit("layer"));
-	ser_write_i32(w, entity.spr.layer);
+	ser_write_i32(w, spr->layer);
 	ser_write_string(w, str8_lit("y_sort"));
-	ser_write_i32(w, entity.spr.y_sort);
+	ser_write_i32(w, spr->y_sort);
 	ser_write_string(w, str8_lit("y_sort_offset"));
-	ser_write_i32(w, entity.spr.y_sort_offset);
+	ser_write_i32(w, spr->y_sort_offset);
 
 	ser_write_string(w, str8_lit("offset"));
-	ser_write_v2(w, entity.spr.offset);
+	ser_write_v2(w, spr->offset);
 
 	ser_write_end(w);
 }
 
 void
-pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data value)
+pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("len"));
-	ser_write_i32(w, value.len);
+	ser_write_i32(w, value->len);
 
 	ser_write_string(w, str8_lit("data"));
 	ser_write_array(w);
-	for(size i = 0; i < value.len; ++i) {
-		pinb_prop_write(w, value.data[i]);
+	for(size i = 0; i < value->len; ++i) {
+		pinb_prop_write(w, value->data + i);
 	}
 	ser_write_end(w);
 
@@ -1843,22 +1878,23 @@ pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc a
 }
 
 void
-pinb_prop_write(struct ser_writer *w, struct pinb_prop value)
+pinb_prop_write(struct ser_writer *w, struct pinb_prop *value)
 {
+	dbg_assert(value != NULL);
 	ser_write_object(w);
 
-	switch(value.type) {
+	switch(value->type) {
 	case PINB_PROP_TYPE_I32: {
 		ser_write_string(w, str8_lit("i32"));
-		ser_write_i32(w, value.i32);
+		ser_write_i32(w, value->i32);
 	} break;
 	case PINB_PROP_TYPE_F32: {
 		ser_write_string(w, str8_lit("f32"));
-		ser_write_i32(w, value.f32);
+		ser_write_i32(w, value->f32);
 	} break;
 	case PINB_PROP_TYPE_STR: {
 		ser_write_string(w, str8_lit("str"));
-		ser_write_string(w, value.str);
+		ser_write_string(w, value->str);
 	} break;
 	default: {
 		dbg_sentinel("pinb-prop");
