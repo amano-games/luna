@@ -47,6 +47,7 @@ struct pinbtjson_res {
 		struct pinb_ball_saver ball_saver;
 		struct pinb_spawner spawner;
 		struct pinb_spawn_zone spawn_zone;
+		struct pinb_table_switcher table_switcher;
 	};
 };
 

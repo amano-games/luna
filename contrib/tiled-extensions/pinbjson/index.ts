@@ -54,6 +54,7 @@ import {
   Spawner,
   SpawnZoneRef,
   SpawnZone,
+  TableSwitcher,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -271,6 +272,15 @@ function getBucket(_object: MapObject, prop: PropertyValue) {
     impulse_angle_degrees: value["impulse_angle_degrees"],
     impulse_magnitude: value["impulse_magnitude"],
     delay: value["delay"],
+  };
+  return res;
+}
+
+function getTableSwitcher(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+
+  const res: TableSwitcher = {
+    table: value["table"].value,
   };
   return res;
 }
@@ -596,6 +606,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               return {
                 ...acc,
                 bucket: getBucket(item, prop),
+              };
+            case "table_switcher":
+              return {
+                ...acc,
+                table_switcher: getTableSwitcher(item, prop),
               };
             case "flipper":
               return {
