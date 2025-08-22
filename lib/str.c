@@ -424,6 +424,36 @@ str8_to_f32(str8 str)
 }
 
 str8
+str8_to_upper(struct alloc alloc, str8 str)
+{
+	str = str8_cpy_push(alloc, str);
+	for(u64 idx = 0; idx < str.size; idx += 1) {
+		str.str[idx] = char_to_upper(str.str[idx]);
+	}
+	return str;
+}
+
+str8
+str8_to_lower(struct alloc alloc, str8 str)
+{
+	str = str8_cpy_push(alloc, str);
+	for(u64 idx = 0; idx < str.size; idx += 1) {
+		str.str[idx] = char_to_lower(str.str[idx]);
+	}
+	return str;
+}
+
+str8
+str8_to_backslashed(struct alloc alloc, str8 str)
+{
+	str = str8_cpy_push(alloc, str);
+	for(u64 idx = 0; idx < str.size; idx += 1) {
+		str.str[idx] = char_is_slash(str.str[idx]) ? '\\' : str.str[idx];
+	}
+	return str;
+}
+
+str8
 str8_chop_last_slash(str8 str)
 {
 	if(str.size > 0) {
