@@ -101,6 +101,12 @@ i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
 b32 str8_to_bool32(str8 str);
 
+// String Stylization
+
+str8 str8_to_upper(struct alloc alloc, str8 str);
+str8 str8_to_lower(struct alloc alloc, str8 str);
+str8 str8_to_backslashed(struct alloc alloc, str8 str);
+
 // String List Construction Functions
 
 struct str8_node *str8_list_push_node(struct str8_list *list, struct str8_node *node);
