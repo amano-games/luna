@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
 #include "sys-types.h"
+
 #define SECONDS_IN_A_DAY 86400
 
 enum week_day {
@@ -29,56 +29,6 @@ enum month {
 	MONTH_NOV,
 	MONTH_DEC,
 	MONTH_NUM_COUNT,
-};
-
-static char *WEEK_DAY_SHORT_EN[WEEK_DAY_NUM_COUNT] = {
-	[WEEK_DAY_SUN] = "Sun",
-	[WEEK_DAY_MON] = "Mon",
-	[WEEK_DAY_TUE] = "Tue",
-	[WEEK_DAY_WED] = "Wed",
-	[WEEK_DAY_THU] = "Thu",
-	[WEEK_DAY_FRI] = "Fri",
-	[WEEK_DAY_SAT] = "Sat",
-};
-
-static char *WEEK_DAY_LONG_EN[WEEK_DAY_NUM_COUNT] = {
-	[WEEK_DAY_SUN] = "Sunday",
-	[WEEK_DAY_MON] = "Monday",
-	[WEEK_DAY_TUE] = "Tueday",
-	[WEEK_DAY_WED] = "Wendsday",
-	[WEEK_DAY_THU] = "Thusday",
-	[WEEK_DAY_FRI] = "Friday",
-	[WEEK_DAY_SAT] = "Saturday",
-};
-
-static char *MONTH_SHORT_EN[MONTH_NUM_COUNT] = {
-	[MONTH_JAN] = "Jan",
-	[MONTH_FEB] = "Feb",
-	[MONTH_MAR] = "Mar",
-	[MONTH_APR] = "Apr",
-	[MONTH_MAY] = "May",
-	[MONTH_JUN] = "Jun",
-	[MONTH_JUL] = "Jul",
-	[MONTH_AUG] = "Aug",
-	[MONTH_SEP] = "Sep",
-	[MONTH_OCT] = "Oct",
-	[MONTH_NOV] = "Nov",
-	[MONTH_DEC] = "Dec",
-};
-
-static char *MONTH_LONG_EN[MONTH_NUM_COUNT] = {
-	[MONTH_JAN] = "January",
-	[MONTH_FEB] = "February",
-	[MONTH_MAR] = "March",
-	[MONTH_APR] = "April",
-	[MONTH_MAY] = "May",
-	[MONTH_JUN] = "June",
-	[MONTH_JUL] = "July",
-	[MONTH_AUG] = "August",
-	[MONTH_SEP] = "September",
-	[MONTH_OCT] = "October",
-	[MONTH_NOV] = "November",
-	[MONTH_DEC] = "December",
 };
 
 typedef u64 dense_time;

@@ -2,7 +2,6 @@
 
 #include "date-time.h"
 #include "sys-types.h"
-#include "sys-log.h"
 #include "mem.h"
 
 #include <stdarg.h>
