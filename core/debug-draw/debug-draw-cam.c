@@ -59,7 +59,9 @@ debug_draw_cam(struct cam *c)
 		}
 
 		// Drag top hard
-		debug_draw_line(0, half.y - hard.min.y, SYS_DISPLAY_W, half.y - hard.min.y);
+		if(hard.min.y != 0) {
+			debug_draw_line(0, half.y - hard.min.y, SYS_DISPLAY_W, half.y - hard.min.y);
+		}
 	}
 
 	{
@@ -71,7 +73,9 @@ debug_draw_cam(struct cam *c)
 		}
 
 		// Drag right hard
-		debug_draw_line(half.x - hard.min.x, 0, half.x - hard.min.x, CAM_H);
+		if(hard.min.x != 0) {
+			debug_draw_line(half.x - hard.min.x, 0, half.x - hard.min.x, CAM_H);
+		}
 	}
 
 	{
@@ -83,7 +87,9 @@ debug_draw_cam(struct cam *c)
 		}
 
 		// Drag bottom hard
-		debug_draw_line(0, half.y + hard.max.y, CAM_W, half.y + hard.max.y);
+		if(hard.max.y != 0) {
+			debug_draw_line(0, half.y + hard.max.y, CAM_W, half.y + hard.max.y);
+		}
 	}
 
 	{
@@ -95,7 +101,9 @@ debug_draw_cam(struct cam *c)
 		}
 
 		// Drag right hard
-		debug_draw_line(half.x + hard.max.x, 0, half.x + hard.max.x, CAM_H);
+		if(hard.max.x != 0) {
+			debug_draw_line(half.x + hard.max.x, 0, half.x + hard.max.x, CAM_H);
+		}
 	}
 
 	debug_draw_set_offset(og_offset.x, og_offset.y);

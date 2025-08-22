@@ -86,7 +86,15 @@ cam_update(struct cam *c, int tx, int ty, f32 dt)
 
 	// apply hard drag margin and if there it modifies the camera position
 	// 	set the camera position to that position without lerp
-	v2 hard_pos = cam_drag_position(c, tx, ty, data.hard.min, data.hard.max);
+	v2 hard_pos = cam_pos;
+	if(
+		data.hard.min.x != 0 ||
+		data.hard.min.y != 0 ||
+		data.hard.max.x != 0 ||
+		data.hard.max.y != 0) {
+		hard_pos = cam_drag_position(c, tx, ty, data.hard.min, data.hard.max);
+	}
+
 	if(hard_pos.y != cam_pos.y || hard_pos.x != cam_pos.x) {
 		cam_pos    = hard_pos;
 		c->p_final = hard_pos;

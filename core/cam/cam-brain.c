@@ -18,15 +18,13 @@ cam_brain_init(
 	i32 r,
 	f32 drag_lerp_speed,
 	f32 lerp_speed,
-	f32 limits_speed,
-	f32 speed_scale)
+	f32 limits_speed)
 {
 
 	brain->c               = c;
 	brain->drag_lerp_speed = drag_lerp_speed;
 	brain->lerp_speed      = lerp_speed;
 	brain->limits_speed    = limits_speed;
-	brain->speed_scale     = speed_scale;
 	cam_brain_set_pos(brain, tx, ty, r);
 }
 
@@ -66,7 +64,7 @@ cam_brain_update(struct cam_brain *brain, f32 tx, f32 ty, i32 r, v2 vel, f32 dt)
 			f32 cam_vel             = brain->initial.drag_vel;
 			f32 target_vel          = abs_f32(vel.y) / dt;
 			brain->initial.drag_vel = max_f32(cam_vel, target_vel);
-			brain->final.drag_vel   = data.drag_vel * brain->speed_scale;
+			brain->final.drag_vel   = data.drag_vel;
 		}
 	}
 
