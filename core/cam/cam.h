@@ -47,3 +47,4 @@ void cam_set_pos_px(struct cam *c, int x, int y);
 void cam_update(struct cam *c, int tx, int ty, f32 dt);
 void cam_shake(struct cam *c, i32 ticks, i32 str);
 void cam_shake_xy(struct cam *c, i32 ticks, i32 str_x, i32 str_y);
+v2 cam_limit_position(v2 p, struct col_aabb limits);

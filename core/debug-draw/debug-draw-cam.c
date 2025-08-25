@@ -8,7 +8,11 @@ debug_draw_cam_brain(struct cam_brain *brain)
 	struct cam_area area = brain->areas[brain->active_index];
 	struct col_aabb aabb = area.aabb;
 
-	debug_draw_rec(aabb.min.x, aabb.min.y, aabb.max.x - aabb.min.x, aabb.max.y - aabb.min.y);
+	debug_draw_rec(
+		aabb.min.x,
+		aabb.min.y,
+		aabb.max.x - aabb.min.x,
+		aabb.max.y - aabb.min.y);
 }
 
 void

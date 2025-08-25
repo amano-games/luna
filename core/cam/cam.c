@@ -4,8 +4,6 @@
 #include "sys-log.h"
 #include "v2.h"
 
-static v2 cam_limit_position(v2 p, struct col_aabb limits);
-
 rec_i32
 cam_rec_px(struct cam *c)
 {
@@ -53,7 +51,7 @@ cam_drag_position(struct cam *c, int tx, int ty, v2 min, v2 max)
 	return res;
 }
 
-static v2
+v2
 cam_limit_position(v2 p, struct col_aabb limits)
 {
 
