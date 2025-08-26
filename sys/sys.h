@@ -22,8 +22,7 @@
 #if defined(DEBUG)
 #define SYS_MAX_MEM MMEGABYTE(100)
 #else
-// #define SYS_MAX_MEM MMEGABYTE(7.0)
-#define SYS_MAX_MEM 11534336
+#define SYS_MAX_MEM MMEGABYTE(13)
 #endif
 
 #if defined(BACKEND_SOKOL)
