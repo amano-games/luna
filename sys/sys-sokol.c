@@ -32,8 +32,14 @@
 #include "sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
-#define SOKOL_APP_IMG_SLOT 0
-#define SOKOL_DBG_IMG_SLOT 1
+#define SOKOL_APP_IMG_SLOT  0
+#define SOKOL_DBG_IMG_SLOT  1
+#define SOKOL_TOUCH_INVALID U8_MAX
+
+struct touch_point_mouse_emu {
+	uintptr_t id;
+	sapp_mousebutton btn;
+};
 
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
 
@@ -66,6 +72,7 @@ struct sokol_state {
 	f32 mouse_dx;
 	f32 mouse_dy;
 	u32 mouse_btns;
+	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -74,6 +81,7 @@ const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 static void sokol_exe_path_set(void);
 
+<<<<<<< HEAD
 void init(void);
 void frame(void);
 void event(const sapp_event *ev);
@@ -88,6 +96,74 @@ sokol_main(i32 argc, char **argv)
 		void *mem      = sys_alloc(NULL, mem_size);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
+=======
+static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
+static inline b32 sokol_touch_remove(sapp_touchpoint point);
+
+void
+event(const sapp_event *ev)
+{
+	switch(ev->type) {
+	case SAPP_EVENTTYPE_KEY_DOWN: {
+		SOKOL_STATE.keys[ev->key_code] = 1;
+		switch(ev->key_code) {
+		case SAPP_KEYCODE_ESCAPE: {
+			sapp_request_quit();
+		} break;
+		case SAPP_KEYCODE_R: {
+			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
+				sys_internal_init();
+			}
+		} break;
+		default: {
+		} break;
+		}
+	} break;
+	case SAPP_EVENTTYPE_KEY_UP: {
+		SOKOL_STATE.keys[ev->key_code] = 0;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_SCROLL: {
+		SOKOL_STATE.crank_docked = false;
+		SOKOL_STATE.crank += ev->scroll_y * -SOKOL_STATE.mouse_scroll_sensitivity;
+		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_MOVE: {
+		f32 scale_factor_x   = (f32)ev->window_width / (f32)SYS_DISPLAY_W;
+		f32 scale_factor_y   = (f32)ev->window_height / (f32)SYS_DISPLAY_H;
+		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
+		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
+		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
+		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_DOWN: {
+		SOKOL_STATE.mouse_btns |= 1 << ev->mouse_button;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_UP: {
+		SOKOL_STATE.mouse_btns &= ~(1 << ev->mouse_button);
+	} break;
+	case SAPP_EVENTTYPE_TOUCHES_BEGAN: {
+		for(size i = 0; i < ev->num_touches; ++i) {
+			struct sapp_touchpoint touch = ev->touches[i];
+			if(touch.pos_y > ev->window_height * 0.8f) {
+				sokol_touch_add(touch, SAPP_MOUSEBUTTON_MIDDLE);
+			} else {
+				if(touch.pos_x < ev->window_width * 0.5f) {
+					sokol_touch_add(touch, SAPP_MOUSEBUTTON_LEFT);
+				} else {
+					sokol_touch_add(touch, SAPP_MOUSEBUTTON_RIGHT);
+				}
+			}
+		}
+	} break;
+	case SAPP_EVENTTYPE_TOUCHES_ENDED: {
+		for(size i = 0; i < ev->num_touches; ++i) {
+			struct sapp_touchpoint touch = ev->touches[i];
+			sokol_touch_remove(touch);
+		}
+	} break;
+	default: {
+	} break;
+>>>>>>> 2526423 (fix: add touch)
 	}
 
 	sokol_exe_path_set();
@@ -155,6 +231,9 @@ init(void)
 	SOKOL_STATE.debug_ctx.clip_x2 = SOKOL_STATE.debug_t.w - 1;
 	SOKOL_STATE.debug_ctx.clip_y2 = SOKOL_STATE.debug_t.h - 1;
 	mset(&SOKOL_STATE.debug_ctx.pat, 0xFF, sizeof(struct gfx_pattern));
+	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+		SOKOL_STATE.touches_mouse[i].id = SOKOL_TOUCH_INVALID;
+	}
 
 	stm_setup();
 	sg_setup(&(sg_desc){
@@ -811,6 +890,7 @@ error:
 	return 0;
 }
 
+<<<<<<< HEAD
 static void
 sokol_exe_path_set(void)
 {
@@ -874,4 +954,50 @@ sokol_exe_path_set(void)
 		SOKOL_STATE.base_path = (str8){0};
 #endif
 	}
+=======
+static inline b32
+sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button)
+{
+	b32 res = false;
+
+	// Make sure the point doesn't already exist
+	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
+		dbg_check(emu.id != point.identifier, "sokol", "Touch point already exists %" PRIxPTR "", emu.id);
+	}
+
+	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
+		if(emu.id == SOKOL_TOUCH_INVALID) {
+			SOKOL_STATE.touches_mouse[i].id  = point.identifier;
+			SOKOL_STATE.touches_mouse[i].btn = button;
+			SOKOL_STATE.mouse_btns |= 1 << button;
+			res = true;
+			break;
+		}
+	}
+
+error:;
+	return res;
+}
+
+static inline b32
+sokol_touch_remove(sapp_touchpoint point)
+{
+	b32 res = false;
+	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
+		sapp_mousebutton btn             = SOKOL_STATE.touches_mouse[i].btn;
+		if(emu.id == point.identifier) {
+			SOKOL_STATE.mouse_btns &= ~(1 << btn);
+			SOKOL_STATE.touches_mouse[i].id = SOKOL_TOUCH_INVALID;
+			SOKOL_STATE.touches_mouse[i]
+				.btn = 0;
+			res      = true;
+			break;
+		}
+	}
+
+	return res;
+>>>>>>> 2526423 (fix: add touch)
 }
