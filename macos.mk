@@ -10,7 +10,7 @@ TARGET       := $(GAME_NAME)
 BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/macos
 
-LDLIBS := -lm
+LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
 LDFLAGS :=
 
 WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
@@ -41,7 +41,7 @@ else
 CFLAGS := $(RELEASE_CFLAGS)
 endif
 
-CFLAGS += $(CDEFS)
+CFLAGS += $(CDEFS) -ObjC -x objective-c
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJS         := $(BUILD_DIR)/$(TARGET)
