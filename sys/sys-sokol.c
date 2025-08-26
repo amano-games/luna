@@ -49,10 +49,12 @@ struct sokol_state {
 	b32 crank_docked;
 	f32 crank;
 	f32 volume;
+
 	f32 mouse_x;
 	f32 mouse_y;
 	f32 mouse_dx;
 	f32 mouse_dy;
+	u32 mouse_btns;
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -88,12 +90,18 @@ event(const sapp_event *ev)
 		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_MOVE: {
-		f32 scale_factor_x   = ev->window_width / SYS_DISPLAY_W;
-		f32 scale_factor_y   = ev->window_height / SYS_DISPLAY_H;
+		f32 scale_factor_x   = (f32)ev->window_width / (f32)SYS_DISPLAY_W;
+		f32 scale_factor_y   = (f32)ev->window_height / (f32)SYS_DISPLAY_H;
 		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
 		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
 		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
 		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_DOWN: {
+		SOKOL_STATE.mouse_btns |= 1 << ev->mouse_button;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_UP: {
+		SOKOL_STATE.mouse_btns &= ~(1 << ev->mouse_button);
 	} break;
 	default: {
 	} break;
@@ -358,6 +366,17 @@ sys_inp(void)
 
 	if(keys[SAPP_KEYCODE_Q]) b |= SYS_INP_A;
 	if(keys[SAPP_KEYCODE_E]) b |= SYS_INP_B;
+
+	u32 mouse_btns = SOKOL_STATE.mouse_btns;
+	if((SOKOL_STATE.mouse_btns & (1 << SAPP_MOUSEBUTTON_LEFT)) == (1 << SAPP_MOUSEBUTTON_LEFT)) {
+		b |= SYS_INP_MOUSE_LEFT;
+	}
+	if((SOKOL_STATE.mouse_btns & (1 << SAPP_MOUSEBUTTON_RIGHT)) == (1 << SAPP_MOUSEBUTTON_RIGHT)) {
+		b |= SYS_INP_MOUSE_RIGHT;
+	}
+	if((SOKOL_STATE.mouse_btns & (1 << SAPP_MOUSEBUTTON_MIDDLE)) == (1 << SAPP_MOUSEBUTTON_MIDDLE)) {
+		b |= SYS_INP_MOUSE_MIDDLE;
+	}
 
 	return b;
 }
