@@ -1,4 +1,5 @@
 #include "sys-sokol.h"
+#include "mem-arena.h"
 #include "sys-debug-draw.h"
 #include <stdio.h>
 #include <time.h>
@@ -9,6 +10,7 @@
 
 #include "gfx/gfx.h"
 #include "gfx/gfx-defs.h"
+#include "path.h"
 #include "str.h"
 #include "sys-utils.h"
 #include "sys-input.h"
@@ -34,6 +36,13 @@
 #define SOKOL_DBG_IMG_SLOT 1
 
 struct sokol_state {
+	struct marena scratch_marena;
+	struct alloc scratch;
+
+	str8 exe_path;
+	str8 module_path;
+	str8 base_path;
+
 	sg_pipeline pip;
 	sg_bindings bind;
 	sg_pass_action pass_action;
@@ -61,6 +70,7 @@ static struct sokol_state SOKOL_STATE;
 const u32 SOKOL_BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
 const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
+static void sokol_exe_path_set(void);
 
 void
 event(const sapp_event *ev)
@@ -278,33 +288,48 @@ frame(void)
 void
 cleanup(void)
 {
+	if(SOKOL_STATE.scratch_marena.buf_og != NULL) { sys_free(SOKOL_STATE.scratch_marena.buf_og); }
+	if(SOKOL_STATE.exe_path.size > 0) { sys_free(SOKOL_STATE.exe_path.str); }
+	if(SOKOL_STATE.module_path.size > 0) { sys_free(SOKOL_STATE.module_path.str); }
+	if(SOKOL_STATE.base_path.size > 0) { sys_free(SOKOL_STATE.base_path.str); }
 	sg_shutdown();
 	saudio_shutdown();
 	sys_internal_close();
 }
 
-static const char *STEAM_RUNTIME_RELATIVE_PATH = "steam-runtime";
+static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
+
 sapp_desc
 sokol_main(i32 argc, char **argv)
 {
-	struct alloc alloc = {.allocf = sys_alloc};
-	struct str8 where  = sys_where(alloc);
+	{
+		usize mem_size = MMEGABYTE(1);
+		void *mem      = sys_alloc(NULL, mem_size);
+		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
+		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
+	}
+
+	sokol_exe_path_set();
+
+	struct str8 exe_path = SOKOL_STATE.exe_path;
+	str8 base_name       = str8_chop_last_slash(exe_path);
+	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
+	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
+
+#if defined TARGET_LINUX || 1
 	if(!getenv("STEAM_RUNTIME")) {
-		if(where.size != 0) {
-
-			str8 base_name        = str8_chop_last_slash(where);
-			i32 runtime_path_size = 1 + where.size + strlen(STEAM_RUNTIME_RELATIVE_PATH) + 1 /* for the nul byte */;
-			char *runtime_path    = (char *)malloc(runtime_path_size);
-			sys_snprintf(runtime_path, runtime_path_size, "%.*s/%s", (i32)where.size, where.str, STEAM_RUNTIME_RELATIVE_PATH);
-
-			log_info("SYS", "dirname:  %.*s", (i32)where.size, where.str);
-			log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
-			log_info("SYS", "STEAM_RUNTIME %s", runtime_path);
-
-			setenv("STEAM_RUNTIME", runtime_path, 1);
-			sys_free(where.str);
+		marena_reset(&SOKOL_STATE.scratch_marena);
+		struct alloc alloc = SOKOL_STATE.scratch;
+		if(exe_path.size != 0) {
+			struct str8_list path_list = {0};
+			str8_list_push(alloc, &path_list, exe_path);
+			str8_list_push(alloc, &path_list, STEAM_RUNTIME_RELATIVE_PATH);
+			str8 runtime_path = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
+			log_info("SYS", "STEAM_RUNTIME %s", runtime_path.str);
+			setenv("STEAM_RUNTIME", (char *)runtime_path.str, 1);
 		}
 	}
+#endif
 
 	return (sapp_desc){
 		.width              = SYS_DISPLAY_W * 2,
@@ -320,26 +345,16 @@ sokol_main(i32 argc, char **argv)
 	};
 }
 
-str8
-sys_where(struct alloc alloc)
+struct str8
+sys_base_path(void)
 {
-	i32 dirname_len = 0;
-	str8 res        = {0};
+	return SOKOL_STATE.base_path;
+}
 
-#if !defined(TARGET_WASM)
-	res.size = wai_getExecutablePath(NULL, 0, &dirname_len);
-#endif
-
-	if(res.size > 0) {
-		res.str = (u8 *)alloc.allocf(alloc.ctx, res.size + 1);
-#if !defined(TARGET_WASM)
-		wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
-#endif
-
-		res.str[res.size] = '\0';
-	}
-
-	return res;
+str8
+sys_exe_path(void)
+{
+	return SOKOL_STATE.exe_path;
 }
 
 i32
@@ -457,6 +472,16 @@ void *
 sys_1bit_buffer(void)
 {
 	return (u32 *)SOKOL_STATE.frame_buffer;
+}
+
+struct alloc
+sys_allocator(void)
+{
+	struct alloc alloc = {
+		.allocf = sys_alloc,
+		.ctx    = NULL,
+	};
+	return alloc;
 }
 
 void *
@@ -767,4 +792,69 @@ sys_scores_get(str8 board_id)
 
 error:
 	return 0;
+}
+
+static void
+sokol_exe_path_set(void)
+{
+	{
+		str8 res        = {0};
+		i32 dirname_len = 0;
+
+#if !defined(TARGET_WASM)
+		res.size = wai_getExecutablePath(NULL, 0, &dirname_len);
+#endif
+
+		if(res.size > 0) {
+			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
+#if !defined(TARGET_WASM)
+			wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
+#endif
+
+			res.str[res.size] = '\0';
+		}
+		SOKOL_STATE.exe_path = res;
+	}
+	{
+		str8 res        = {0};
+		i32 dirname_len = 0;
+
+#if !defined(TARGET_WASM)
+		res.size = wai_getModulePath(NULL, 0, &dirname_len);
+#endif
+
+		if(res.size > 0) {
+			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
+#if !defined(TARGET_WASM)
+			wai_getModulePath((char *)res.str, res.size, &dirname_len);
+#endif
+
+			res.str[res.size] = '\0';
+		}
+		SOKOL_STATE.module_path = res;
+	}
+
+	{
+#if defined(TARGET_MACOS)
+		marena_reset(&SOKOL_STATE.scratch_marena);
+		struct alloc scratch = SOKOL_STATE.scratch;
+		struct alloc alloc   = sys_allocator();
+		str8 exe_path        = SOKOL_STATE.exe_path;
+		if(exe_path.size > 0) {
+			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents/MacOS/devils-on-the-moon-pinball
+			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents/MacOS
+			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents
+			str8 macos                 = str8_chop_last_slash(exe_path);
+			str8 contents              = str8_chop_last_slash(macos);
+			str8 resources_rel         = str8_lit("Resources");
+			struct str8_list path_list = {0};
+			str8_list_push(scratch, &path_list, contents);
+			str8_list_push(scratch, &path_list, resources_rel);
+			str8 resources_path   = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
+			SOKOL_STATE.base_path = resources_path;
+		}
+#else
+		SOKOL_STATE.base_path = (str8){0};
+#endif
+	}
 }

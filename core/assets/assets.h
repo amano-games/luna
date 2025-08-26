@@ -12,6 +12,9 @@ struct assets {
 	struct asset_db db;
 	struct tex display;
 
+	struct marena scratch_marena;
+	struct alloc scratch_alloc;
+
 	struct marena marena;
 	struct alloc alloc;
 };
@@ -36,3 +39,4 @@ i32 asset_snd_get_id(str8 path);
 struct tex_rec asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h);
 struct tex_patch asset_tex_patch(i32 id, i32 x, i32 y, i32 w, i32 h, i32 ml, i32 mr, i32 mt, i32 mb);
 enum asset_type asset_path_get_type(str8 path);
+str8 asset_path_to_full_path(struct str8 path);

@@ -71,6 +71,7 @@ void app_pause(void);
 void app_resume(void);
 
 void *sys_alloc(void *ptr, usize size);
+struct alloc sys_allocator(void);
 void sys_free(void *ptr);
 
 void sys_blit_text(char *str, i32 tile_x, i32 tile_y);

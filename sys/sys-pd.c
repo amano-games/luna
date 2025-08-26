@@ -274,6 +274,16 @@ sys_1bit_menu_buffer(void)
 	return data;
 }
 
+struct alloc
+sys_allocator(void)
+{
+	struct alloc alloc = {
+		.allocf = sys_alloc,
+		.ctx    = NULL,
+	};
+	return alloc;
+}
+
 void *
 sys_alloc(void *ptr, usize size)
 {
@@ -539,10 +549,17 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 #endif
 }
 
-str8
-sys_where(struct alloc alloc)
+struct str8
+sys_base_path(void)
 {
-	str8 res = str8_lit("/");
+	str8 res = {0};
+	return res;
+}
+
+str8
+sys_exe_path(void)
+{
+	str8 res = {0};
 	return res;
 }
 
