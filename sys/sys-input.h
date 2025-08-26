@@ -19,3 +19,5 @@ f32 sys_crank(void); // [0,1]
 int sys_crank_docked(void);
 int sys_key(int k);
 void sys_keys(u8 *dest, usize count);
+f32 sys_mouse_x(void);
+f32 sys_mouse_y(void);

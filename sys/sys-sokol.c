@@ -49,6 +49,10 @@ struct sokol_state {
 	b32 crank_docked;
 	f32 crank;
 	f32 volume;
+	f32 mouse_x;
+	f32 mouse_y;
+	f32 mouse_dx;
+	f32 mouse_dy;
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -57,30 +61,42 @@ const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 
 void
-event(const sapp_event *e)
+event(const sapp_event *ev)
 {
-	if(e->type == SAPP_EVENTTYPE_KEY_DOWN) {
-		SOKOL_STATE.keys[e->key_code] = 1;
-		switch(e->key_code) {
+	switch(ev->type) {
+	case SAPP_EVENTTYPE_KEY_DOWN: {
+		SOKOL_STATE.keys[ev->key_code] = 1;
+		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
 			sapp_request_quit();
 		} break;
 		case SAPP_KEYCODE_R: {
-			if(e->modifiers & SAPP_MODIFIER_CTRL) {
-				// sys_close();
-				// sys_init();
+			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
+				sys_internal_init();
 			}
 		} break;
 		default: {
 		} break;
 		}
-
-	} else if(e->type == SAPP_EVENTTYPE_KEY_UP) {
-		SOKOL_STATE.keys[e->key_code] = 0;
-	} else if(e->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
+	} break;
+	case SAPP_EVENTTYPE_KEY_UP: {
+		SOKOL_STATE.keys[ev->key_code] = 0;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_SCROLL: {
 		SOKOL_STATE.crank_docked = false;
-		SOKOL_STATE.crank += e->scroll_y * -SOKOL_STATE.mouse_scroll_sensitivity;
+		SOKOL_STATE.crank += ev->scroll_y * -SOKOL_STATE.mouse_scroll_sensitivity;
 		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_MOVE: {
+		f32 scale_factor_x   = ev->window_width / SYS_DISPLAY_W;
+		f32 scale_factor_y   = ev->window_height / SYS_DISPLAY_H;
+		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
+		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
+		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
+		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
+	} break;
+	default: {
+	} break;
 	}
 }
 
@@ -342,6 +358,7 @@ sys_inp(void)
 
 	if(keys[SAPP_KEYCODE_Q]) b |= SYS_INP_A;
 	if(keys[SAPP_KEYCODE_E]) b |= SYS_INP_B;
+
 	return b;
 }
 
@@ -367,6 +384,18 @@ i32
 sys_crank_docked(void)
 {
 	return SOKOL_STATE.crank_docked;
+}
+
+f32
+sys_mouse_x(void)
+{
+	return SOKOL_STATE.mouse_x;
+}
+
+f32
+sys_mouse_y(void)
+{
+	return SOKOL_STATE.mouse_y;
 }
 
 f32

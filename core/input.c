@@ -1,7 +1,6 @@
 #include "input.h"
 #include "dbg.h"
 #include "str.h"
-#include "sys-log.h"
 #include "sys-utils.h"
 #include "trace.h"
 
@@ -16,6 +15,8 @@ inp_upd(void)
 	INP.curr.btn          = sys_inp();
 	INP.curr.crank        = sys_crank();
 	INP.curr.crank_docked = sys_crank_docked();
+	INP.curr.mouse_x      = sys_mouse_x();
+	INP.curr.mouse_y      = sys_mouse_y();
 	sys_keys(INP.curr.keys, ARRLEN(INP.curr.keys));
 	TRACE_END();
 }
@@ -220,5 +221,19 @@ inp_key_just_released(int key)
 {
 	i32 upper = char_to_upper(key);
 	b32 res   = !inp_key_pressed(upper) && inp_key_was_pressed(upper);
+	return res;
+}
+
+f32
+inp_mouse_x(void)
+{
+	f32 res = INP.curr.mouse_x;
+	return res;
+}
+
+f32
+inp_mouse_y(void)
+{
+	f32 res = INP.curr.mouse_y;
 	return res;
 }
