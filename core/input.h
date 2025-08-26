@@ -32,6 +32,10 @@ struct inp_state {
 	int crank_docked;
 	f32 crank;
 	u8 keys[SYS_KEYS_LEN];
+	f32 mouse_x;
+	f32 mouse_y;
+	f32 mouse_dx;
+	f32 mouse_dy;
 };
 
 struct inp {
@@ -72,3 +76,6 @@ int inp_crank_docked(void);
 int inp_crank_was_docked(void);
 int inp_crank_just_docked(void);
 int inp_crank_just_undocked(void);
+
+f32 inp_mouse_x(void);
+f32 inp_mouse_y(void);

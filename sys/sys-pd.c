@@ -220,6 +220,18 @@ sys_crank_docked(void)
 }
 
 f32
+sys_mouse_x(void)
+{
+	return 0;
+}
+
+f32
+sys_mouse_y(void)
+{
+	return 0;
+}
+
+f32
 sys_seconds(void)
 {
 	return PD_SYSTEM_GET_ELAPSED_TIME();
