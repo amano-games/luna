@@ -275,8 +275,8 @@ col_ellipsis_write(struct ser_writer *w, struct col_ellipsis value)
 	ser_write_array(w);
 	ser_write_f32(w, value.p.x);
 	ser_write_f32(w, value.p.y);
-	ser_write_f32(w, value.ra);
-	ser_write_f32(w, value.rb);
+	ser_write_f32(w, value.rx);
+	ser_write_f32(w, value.ry);
 	ser_write_end(w);
 }
 
@@ -297,11 +297,11 @@ col_ellipsis_read(struct ser_reader *r, struct ser_value arr)
 
 	ser_iter_array(r, arr, &value);
 	dbg_assert(value.type == SER_TYPE_F32);
-	res.ra = value.f32;
+	res.rx = value.f32;
 
 	ser_iter_array(r, arr, &value);
 	dbg_assert(value.type == SER_TYPE_F32);
-	res.rb = value.f32;
+	res.ry = value.f32;
 
 	return res;
 }
