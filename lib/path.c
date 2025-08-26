@@ -91,7 +91,7 @@ path_normalized_list_from_string(
 	// prepend current path to convert relative -> absolute
 	enum path_style path_style_full = path_style;
 	if(path.node_count != 0 && path_style == path_style_relative) {
-		str8 where = sys_where(scratch);
+		str8 where = sys_exe_path();
 
 		enum path_style current_path_style = path_style_from_str8(where);
 		dbg_assert(current_path_style != path_style_relative);

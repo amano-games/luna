@@ -5,7 +5,7 @@ include $(ROOT_DIR)/common.mk
 
 DESTDIR      ?=
 PREFIX       ?=
-BINDIR       ?= ${PREFIX}macos
+BINDIR       ?= ${PREFIX}macos/$(GAME_NAME).app
 TARGET       := $(GAME_NAME)
 BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/macos
@@ -24,7 +24,7 @@ INC_DIRS       += $(LUNA_DIR) $(LUNA_DIR)/sys $(LUNA_DIR)/lib $(LUNA_DIR)/core
 INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
 INC_FLAGS      += $(EXTERNAL_FLAGS)
 
-override CDEFS := $(CDEFS) -DBACKEND_SOKOL=1 -DSOKOL_DEBUG=1 -DSOKOL_METAL
+override CDEFS := $(CDEFS) -DBACKEND_SOKOL=1 -DSOKOL_DEBUG=1 -DSOKOL_METAL -DTARGET_MACOS
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11
@@ -43,8 +43,9 @@ endif
 
 CFLAGS += $(CDEFS) -ObjC -x objective-c
 
-ASSETS_OUT   := $(BUILD_DIR)/assets
-OBJS         := $(BUILD_DIR)/$(TARGET)
+# TODO: Move assets to resources
+ASSETS_OUT   := $(BUILD_DIR)/Contents/Resources/assets
+OBJS         := $(BUILD_DIR)/Contents/MacOS/$(TARGET)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
 .PHONY: all clean build run publish
@@ -58,7 +59,10 @@ $(ASSETS_OUT): $(ASSETS_BIN)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/Contents/MacOS
+	mkdir -p $(BUILD_DIR)/Contents/Resources
+	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/Contents
+	cp -r $(PLATFORM_DIR)/Resources/* $(BUILD_DIR)/Contents/Resources
 
 $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
 	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
@@ -67,7 +71,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 run: build
-	cd $(BUILD_DIR)
+	open $(BUILD_DIR)
 
 build: $(OBJS)
 release: clean $(PUBLISH_OBJS)

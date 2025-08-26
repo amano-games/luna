@@ -424,6 +424,7 @@ asset_db_fnt_get_by_id(struct asset_db *db, u32 id)
 	return res;
 }
 
+// TODO: Handle full paths
 struct asset_bet_handle
 asset_db_bet_load(
 	struct asset_db *db,
