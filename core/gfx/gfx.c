@@ -1,8 +1,6 @@
 #include "gfx.h"
-#include "sys-log.h"
 #include "sys.h"
 #include "sys-intrin.h"
-#include "sys-io.h"
 #include "mathfunc.h"
 #include "trace.h"
 

@@ -12,6 +12,7 @@ import {
   COL_TYPE_POLY,
   CollisionShape,
   Poly,
+  Ellipsis,
 } from "./types";
 
 export function getObjectColType(object: MapObject) {
@@ -97,11 +98,32 @@ function getAABB(object: MapObject, isTile = false) {
   return res;
 }
 
-function getCir(object: MapObject, isTile = false) {
+function getEllipsis(object: MapObject, isTile = false) {
   if (getColType(object.shape) !== COL_TYPE_CIR) {
     return undefined;
   }
 
+  if (object.width == object.height) {
+    return undefined;
+  }
+  const ra = object.width / 2;
+  const rb = object.height / 2;
+  const res: Ellipsis = {
+    x: isTile ? ra + object.x : 0,
+    y: isTile ? rb + object.y : 0,
+    ra: ra,
+    rb: rb,
+  };
+  return res;
+}
+
+function getCir(object: MapObject, isTile = false) {
+  if (getColType(object.shape) !== COL_TYPE_CIR) {
+    return undefined;
+  }
+  if (object.width != object.height) {
+    return undefined;
+  }
   const r = object.width / 2;
   const res: Cir = {
     x: isTile ? r + object.x : 0,
@@ -181,6 +203,7 @@ export function getCol(object: MapObject, isTile = false) {
     poly: getPolygon(object, isTile),
     aabb: getAABB(object, isTile),
     cir: getCir(object, isTile),
+    ellipsis: getEllipsis(object, isTile),
     point: getPoint(object, isTile),
     capsule: undefined,
   };

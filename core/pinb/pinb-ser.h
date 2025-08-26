@@ -88,6 +88,12 @@ struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj
 void pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone *value);
 struct pinb_spawn_zone pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj);
 
+void pinb_mover_write(struct ser_writer *w, struct pinb_mover *value);
+struct pinb_mover pinb_mover_read(struct ser_reader *r, struct ser_value obj);
+
+void pinb_mover_path_write(struct ser_writer *w, struct pinb_mover_path *value);
+struct pinb_mover_path pinb_mover_path_read(struct ser_reader *r, struct ser_value obj);
+
 void pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences *value);
 
 struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);

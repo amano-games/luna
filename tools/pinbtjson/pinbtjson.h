@@ -14,6 +14,8 @@ struct pinbtjson_res {
 		struct pinb_entity entity;
 		struct body body;
 		struct col_cir cir;
+		struct col_ellipsis ellipsis;
+		struct col_line line;
 		struct col_aabb aabb;
 		struct pinb_flipper flipper;
 		struct pinb_physics_props physics_props;
@@ -47,6 +49,8 @@ struct pinbtjson_res {
 		struct pinb_ball_saver ball_saver;
 		struct pinb_spawner spawner;
 		struct pinb_spawn_zone spawn_zone;
+		struct pinb_mover mover;
+		struct pinb_mover_path mover_path;
 		struct pinb_table_switcher table_switcher;
 	};
 };

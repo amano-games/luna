@@ -47,6 +47,10 @@ col_shape_write(struct ser_writer *w, struct col_shape *shape)
 		ser_write_string(w, str8_lit("capsule"));
 		col_capsule_write(w, shape->capsule);
 	} break;
+	case COL_TYPE_ELLIPSIS: {
+		ser_write_string(w, str8_lit("ellipsis"));
+		col_ellipsis_write(w, shape->ellipsis);
+	} break;
 	default: {
 		dbg_sentinel("col");
 	} break;
@@ -146,21 +150,20 @@ col_shape_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("aabb"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type = COL_TYPE_AABB;
 			res.aabb = col_aabb_read(r, value);
 		} else if(str8_match(key.str, str8_lit("cir"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type = COL_TYPE_CIR;
 			res.cir  = col_cir_read(r, value);
 		} else if(str8_match(key.str, str8_lit("poly"), 0)) {
-			dbg_assert(value.type == SER_TYPE_OBJECT);
 			res.type = COL_TYPE_POLY;
 			res.poly = col_poly_read(r, value);
 		} else if(str8_match(key.str, str8_lit("capsule"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.type    = COL_TYPE_CAPSULE;
 			res.capsule = col_capsule_read(r, value);
+		} else if(str8_match(key.str, str8_lit("ellipsis"), 0)) {
+			res.type     = COL_TYPE_ELLIPSIS;
+			res.ellipsis = col_ellipsis_read(r, value);
 		}
 	}
 	return res;
@@ -262,6 +265,80 @@ col_capsule_read(struct ser_reader *r, struct ser_value arr)
 
 	ser_iter_array(r, arr, &value);
 	res.cirs[1] = col_cir_read(r, value);
+
+	return res;
+}
+
+void
+col_ellipsis_write(struct ser_writer *w, struct col_ellipsis value)
+{
+	ser_write_array(w);
+	ser_write_f32(w, value.p.x);
+	ser_write_f32(w, value.p.y);
+	ser_write_f32(w, value.ra);
+	ser_write_f32(w, value.rb);
+	ser_write_end(w);
+}
+
+struct col_ellipsis
+col_ellipsis_read(struct ser_reader *r, struct ser_value arr)
+{
+	dbg_assert(arr.type == SER_TYPE_ARRAY);
+	struct col_ellipsis res = {0};
+	struct ser_value value  = {0};
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.p.x = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.p.y = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.ra = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.rb = value.f32;
+
+	return res;
+}
+
+void
+col_line_write(struct ser_writer *w, struct col_line value)
+{
+	ser_write_array(w);
+	ser_write_f32(w, value.a.x);
+	ser_write_f32(w, value.a.y);
+	ser_write_f32(w, value.b.x);
+	ser_write_f32(w, value.b.y);
+	ser_write_end(w);
+}
+
+struct col_line
+col_line_read(struct ser_reader *r, struct ser_value arr)
+{
+	dbg_assert(arr.type == SER_TYPE_ARRAY);
+	struct col_line res    = {0};
+	struct ser_value value = {0};
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.a.x = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.a.y = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.b.x = value.f32;
+
+	ser_iter_array(r, arr, &value);
+	dbg_assert(value.type == SER_TYPE_F32);
+	res.b.y = value.f32;
 
 	return res;
 }

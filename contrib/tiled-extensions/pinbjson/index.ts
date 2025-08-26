@@ -55,6 +55,8 @@ import {
   SpawnZoneRef,
   SpawnZone,
   TableSwitcher,
+  MoverPath,
+  Mover,
 } from "./types";
 import { getImgPath } from "./utils";
 
@@ -152,6 +154,37 @@ function getSensor(object: MapObject, prop: PropertyValue) {
     is_enabled: value["is_enabled"],
     collision_shape: getCol(object),
   };
+  return res;
+}
+
+function getMover(object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const ref = Number(value["ref"]?.id) || 0;
+
+  const res: Mover = {
+    speed: value["speed"],
+    ref: ref,
+  };
+  return res;
+}
+
+function getMoverPath(object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const collisionShape = getCol(object) as CollisionShape;
+
+  const res: MoverPath = {
+    point: collisionShape.point,
+    cir: collisionShape.cir,
+    aabb: collisionShape.aabb,
+    ellipsis: collisionShape.ellipsis,
+  };
+  if (collisionShape.poly) {
+    let poly = collisionShape.poly;
+    res.line = [0, 0, 0, 0];
+    for (let i = 0; i < Math.min(poly.length, 4); i++) {
+      res.line[i] = poly[i];
+    }
+  }
   return res;
 }
 
@@ -691,6 +724,16 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               return {
                 ...acc,
                 sensor: getSensor(item, prop),
+              };
+            case "mover":
+              return {
+                ...acc,
+                mover: getMover(item, prop),
+              };
+            case "mover_path":
+              return {
+                ...acc,
+                mover_path: getMoverPath(item, prop),
               };
             case "switch_value":
               return {
