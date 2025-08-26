@@ -5,6 +5,7 @@
 #include "mem-arena.h"
 #include "path.h"
 #include "pinb/pinb-ser.h"
+#include "pinb/pinb.h"
 #include "poly.h"
 #include "serialize/serialize.h"
 #include "str.h"
@@ -509,6 +510,49 @@ pinbtjson_handle_col_cir(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_col_line(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_ARRAY);
+	dbg_assert(root->size == 4);
+	res.token_count = 5;
+
+	i32 i        = index;
+	res.line.a.x = json_parse_f32(json, tokens + index + 1);
+	res.line.a.y = json_parse_f32(json, tokens + index + 2);
+	res.line.b.x = json_parse_f32(json, tokens + index + 3);
+	res.line.b.y = json_parse_f32(json, tokens + index + 4);
+
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_col_ellipsis(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("x")) == 0) {
+			res.ellipsis.p.x = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("y")) == 0) {
+			res.ellipsis.p.y = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("ra")) == 0) {
+			res.ellipsis.ra = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("rb")) == 0) {
+			res.ellipsis.rb = json_parse_f32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_col_aabb(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -734,6 +778,13 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 			res.col_shapes.items[0].type  = COL_TYPE_CIR;
 			res.col_shapes.items[0].cir   = item_res.cir;
 			i += item_res.token_count;
+		} else if(json_eq(json, key, str8_lit("ellipsis")) == 0) {
+			i++;
+			struct pinbtjson_res item_res    = pinbtjson_handle_col_ellipsis(json, tokens, i);
+			res.col_shapes.count             = 1;
+			res.col_shapes.items[0].type     = COL_TYPE_ELLIPSIS;
+			res.col_shapes.items[0].ellipsis = item_res.ellipsis;
+			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("capsule")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			i += 2;
@@ -928,6 +979,78 @@ pinbtjson_handle_spawn_zone(
 }
 
 struct pinbtjson_res
+pinbtjson_handle_mover(
+	str8 json,
+	jsmntok_t *tokens,
+	i32 index,
+	struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("speed")) == 0) {
+			res.mover.speed = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("ref")) == 0) {
+			res.mover.ref = json_parse_i32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
+pinbtjson_handle_mover_path(
+	str8 json,
+	jsmntok_t *tokens,
+	i32 index,
+	struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("point")) == 0) {
+			res.mover_path.type = PINB_MOVER_PATH_TYPE_POINT;
+		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
+			++i;
+			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
+			res.mover_path.type           = PINB_MOVER_PATH_TYPE_CIR;
+			res.mover_path.cir            = item_res.cir;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
+			++i;
+			struct pinbtjson_res item_res = pinbtjson_handle_col_aabb(json, tokens, i);
+			res.mover_path.type           = PINB_MOVER_PATH_TYPE_AABB;
+			res.mover_path.aabb           = item_res.aabb;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("ellipsis")) == 0) {
+			++i;
+			struct pinbtjson_res item_res = pinbtjson_handle_col_ellipsis(json, tokens, i);
+			res.mover_path.type           = PINB_MOVER_PATH_TYPE_ELLIPSIS;
+			res.mover_path.ellipsis       = item_res.ellipsis;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("line")) == 0) {
+			++i;
+			struct pinbtjson_res item_res = pinbtjson_handle_col_line(json, tokens, i);
+			res.mover_path.type           = PINB_MOVER_PATH_TYPE_LINE;
+			res.mover_path.line           = item_res.line;
+			i += item_res.token_count - 1;
+		}
+	}
+
+return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
@@ -1118,6 +1241,16 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			dbg_assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_spawn_zone(json, tokens, i + 1, alloc);
 			res.entity.spawn_zone         = item_res.spawn_zone;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("mover_path")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_mover_path(json, tokens, i + 1, alloc);
+			res.entity.mover_path         = item_res.mover_path;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("mover")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_mover(json, tokens, i + 1, alloc);
+			res.entity.mover              = item_res.mover;
 			i += item_res.token_count - 1;
 		}
 	}

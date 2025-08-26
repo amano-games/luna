@@ -11,6 +11,13 @@ export interface Cir {
   y: number;
 }
 
+export interface Ellipsis {
+  ra: number;
+  rb: number;
+  x: number;
+  y: number;
+}
+
 export type Capsule = [Cir, Cir];
 
 export type AABB = [number, number, number, number];
@@ -21,6 +28,7 @@ export interface CollisionShape {
   poly?: Poly;
   aabb?: AABB;
   cir?: Cir;
+  ellipsis?: Ellipsis;
   capsule?: Capsule;
   point?: [number, number];
 }
@@ -240,6 +248,19 @@ export interface SpawnZoneRef {
   ref: number;
 }
 
+export interface Mover {
+  speed: number;
+  ref: number;
+}
+
+export interface MoverPath {
+  point?: [number, number];
+  cir?: Cir;
+  aabb?: AABB;
+  ellipsis?: Ellipsis;
+  line?: [number, number, number, number];
+}
+
 export interface Entity {
   _name: string;
   _layer: number;
@@ -278,6 +299,8 @@ export interface Entity {
   ball_saver?: BallSaver;
   spawner?: Spawner;
   spawnZone?: SpawnZone;
+  mover?: Mover;
+  mover_path?: MoverPath;
 }
 
 export interface LayerProps {

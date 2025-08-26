@@ -225,6 +225,32 @@ struct pinb_ball_saver {
 	f32 save_delay;
 };
 
+struct pinb_mover {
+	i32 ref;
+	f32 speed;
+};
+
+enum pinb_mover_path_type {
+	PINB_MOVER_PATH_TYPE_NONE,
+
+	PINB_MOVER_PATH_TYPE_POINT,
+	PINB_MOVER_PATH_TYPE_CIR,
+	PINB_MOVER_PATH_TYPE_AABB,
+	PINB_MOVER_PATH_TYPE_ELLIPSIS,
+	PINB_MOVER_PATH_TYPE_LINE,
+};
+
+struct pinb_mover_path {
+	enum pinb_mover_path_type type;
+	union {
+		v2 point;
+		struct col_cir cir;
+		struct col_aabb aabb;
+		struct col_ellipsis ellipsis;
+		struct col_line line;
+	};
+};
+
 enum pinb_spawn_zone_type {
 	PINB_SPAWN_ZONE_TYPE_NONE,
 	PINB_SPAWN_ZONE_TYPE_CIR,
@@ -284,6 +310,8 @@ struct pinb_entity {
 	struct pinb_bucket bucket;
 	struct pinb_ball_saver ball_saver;
 	struct pinb_table_switcher table_switcher;
+	struct pinb_mover mover;
+	struct pinb_mover_path mover_path;
 	struct v2_i32 score_fx_offset;
 	struct pinb_collision_layer collision_layer;
 	struct pinb_spawner spawner;

@@ -224,6 +224,16 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_spawn_zone_write(w, &entity->spawn_zone);
 	}
 
+	if(entity->mover.speed != 0) {
+		ser_write_string(w, str8_lit("mover"));
+		pinb_mover_write(w, &entity->mover);
+	}
+
+	if(entity->mover_path.type != 0) {
+		ser_write_string(w, str8_lit("mover_path"));
+		pinb_mover_path_write(w, &entity->mover_path);
+	}
+
 	if(entity->sfx_sequences.len > 0) {
 		ser_write_string(w, str8_lit("sfx_sequences"));
 		pinb_sfx_sequences_write(w, &entity->sfx_sequences);
@@ -324,6 +334,10 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.spawner = pinb_spawner_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("spawn_zone"), 0)) {
 			res.spawn_zone = pinb_spawn_zone_read(r, value);
+		} else if(str8_match(key.str, str8_lit("mover"), 0)) {
+			res.mover = pinb_mover_read(r, value);
+		} else if(str8_match(key.str, str8_lit("mover_path"), 0)) {
+			res.mover_path = pinb_mover_path_read(r, value);
 		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
 			res.sfx_sequences = pinb_sfx_sequences_read(r, value, alloc);
 		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
@@ -820,6 +834,112 @@ pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj)
 			res.point = ser_read_v2(r, value);
 		}
 	}
+	return res;
+}
+
+void
+pinb_mover_write(struct ser_writer *w, struct pinb_mover *value)
+{
+	dbg_assert(value != NULL);
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("ref"));
+	ser_write_i32(w, value->ref);
+
+	ser_write_string(w, str8_lit("speed"));
+	ser_write_f32(w, value->speed);
+
+	ser_write_end(w);
+}
+
+struct pinb_mover
+pinb_mover_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_mover res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("ref"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.ref = value.i32;
+		} else if(str8_match(key.str, str8_lit("speed"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.speed = value.f32;
+		}
+	}
+
+	return res;
+}
+
+void
+pinb_mover_path_write(struct ser_writer *w, struct pinb_mover_path *value)
+{
+	dbg_assert(value != NULL);
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("type"));
+	ser_write_i32(w, value->type);
+
+	switch(value->type) {
+	case PINB_MOVER_PATH_TYPE_POINT: {
+		ser_write_string(w, str8_lit("point"));
+		ser_write_v2(w, value->point);
+	} break;
+	case PINB_MOVER_PATH_TYPE_CIR: {
+		ser_write_string(w, str8_lit("cir"));
+		col_cir_write(w, value->cir);
+	} break;
+	case PINB_MOVER_PATH_TYPE_AABB: {
+		ser_write_string(w, str8_lit("aabb"));
+		col_aabb_write(w, value->aabb);
+	} break;
+	case PINB_MOVER_PATH_TYPE_ELLIPSIS: {
+		ser_write_string(w, str8_lit("ellipsis"));
+		col_ellipsis_write(w, value->ellipsis);
+	} break;
+	case PINB_MOVER_PATH_TYPE_LINE: {
+		ser_write_string(w, str8_lit("line"));
+		col_line_write(w, value->line);
+	} break;
+	default: {
+	} break;
+	}
+
+	ser_write_end(w);
+}
+
+struct pinb_mover_path
+pinb_mover_path_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_mover_path res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.type = value.i32;
+		} else if(str8_match(key.str, str8_lit("point"), 0)) {
+			res.type  = PINB_MOVER_PATH_TYPE_POINT;
+			res.point = ser_read_v2(r, value);
+		} else if(str8_match(key.str, str8_lit("cir"), 0)) {
+			res.type = PINB_MOVER_PATH_TYPE_CIR;
+			res.cir  = col_cir_read(r, value);
+		} else if(str8_match(key.str, str8_lit("aabb"), 0)) {
+			res.type = PINB_MOVER_PATH_TYPE_AABB;
+			res.aabb = col_aabb_read(r, value);
+		} else if(str8_match(key.str, str8_lit("ellipsis"), 0)) {
+			res.type     = PINB_MOVER_PATH_TYPE_ELLIPSIS;
+			res.ellipsis = col_ellipsis_read(r, value);
+		} else if(str8_match(key.str, str8_lit("line"), 0)) {
+			res.type = PINB_MOVER_PATH_TYPE_LINE;
+			res.line = col_line_read(r, value);
+		}
+	}
+
 	return res;
 }
 

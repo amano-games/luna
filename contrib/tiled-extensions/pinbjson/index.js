@@ -98,8 +98,28 @@
     ];
     return res;
   }
+  function getEllipsis(object, isTile = false) {
+    if (getColType(object.shape) !== COL_TYPE_CIR) {
+      return void 0;
+    }
+    if (object.width == object.height) {
+      return void 0;
+    }
+    const ra = object.width / 2;
+    const rb = object.height / 2;
+    const res = {
+      x: isTile ? ra + object.x : 0,
+      y: isTile ? rb + object.y : 0,
+      ra,
+      rb
+    };
+    return res;
+  }
   function getCir(object, isTile = false) {
     if (getColType(object.shape) !== COL_TYPE_CIR) {
+      return void 0;
+    }
+    if (object.width != object.height) {
       return void 0;
     }
     const r = object.width / 2;
@@ -172,6 +192,7 @@
       poly: getPolygon(object, isTile),
       aabb: getAABB(object, isTile),
       cir: getCir(object, isTile),
+      ellipsis: getEllipsis(object, isTile),
       point: getPoint(object, isTile),
       capsule: void 0
     };
@@ -496,6 +517,34 @@
       is_enabled: value["is_enabled"],
       collision_shape: getCol(object)
     };
+    return res;
+  }
+  function getMover(object, prop) {
+    var _a;
+    const value = prop.value;
+    const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
+    const res = {
+      speed: value["speed"],
+      ref
+    };
+    return res;
+  }
+  function getMoverPath(object, prop) {
+    const value = prop.value;
+    const collisionShape = getCol(object);
+    const res = {
+      point: collisionShape.point,
+      cir: collisionShape.cir,
+      aabb: collisionShape.aabb,
+      ellipsis: collisionShape.ellipsis
+    };
+    if (collisionShape.poly) {
+      let poly = collisionShape.poly;
+      res.line = [0, 0, 0, 0];
+      for (let i = 0; i < Math.min(poly.length, 4); i++) {
+        res.line[i] = poly[i];
+      }
+    }
     return res;
   }
   function getSprite(object, x, y, layerProps) {
@@ -947,6 +996,14 @@
             case "sensor":
               return __spreadProps(__spreadValues({}, acc), {
                 sensor: getSensor(item, prop)
+              });
+            case "mover":
+              return __spreadProps(__spreadValues({}, acc), {
+                mover: getMover(item, prop)
+              });
+            case "mover_path":
+              return __spreadProps(__spreadValues({}, acc), {
+                mover_path: getMoverPath(item, prop)
               });
             case "switch_value":
               return __spreadProps(__spreadValues({}, acc), {

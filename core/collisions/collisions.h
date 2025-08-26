@@ -10,10 +10,12 @@
 
 enum col_type {
 	COL_TYPE_NONE,
+
 	COL_TYPE_CIR,
 	COL_TYPE_AABB,
 	COL_TYPE_POLY,
 	COL_TYPE_CAPSULE,
+	COL_TYPE_ELLIPSIS,
 };
 
 struct col_manifold {
@@ -68,6 +70,12 @@ struct col_capsule {
 	struct col_tangents tangents;
 };
 
+struct col_ellipsis {
+	v2 p;
+	f32 ra;
+	f32 rb;
+};
+
 struct col_shape {
 	enum col_type type;
 	union {
@@ -75,6 +83,7 @@ struct col_shape {
 		struct col_aabb aabb;
 		struct col_capsule capsule;
 		struct col_poly poly;
+		struct col_ellipsis ellipsis;
 	};
 };
 
