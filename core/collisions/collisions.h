@@ -72,8 +72,8 @@ struct col_capsule {
 
 struct col_ellipsis {
 	v2 p;
-	f32 ra;
-	f32 rb;
+	f32 rx;
+	f32 ry;
 };
 
 struct col_shape {
