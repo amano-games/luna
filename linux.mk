@@ -28,15 +28,14 @@ override CDEFS := $(CDEFS) -DBACKEND_SOKOL=1 -DSOKOL_GLCORE -DTARGET_LINUX
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g3
-RELEASE_CFLAGS += -fomit-frame-pointer
 RELEASE_CFLAGS += -DNDEBUG
 RELEASE_CFLAGS += $(WARN_FLAGS)
+RELEASE_CFLAGS += -fno-omit-frame-pointer
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
-RELEASE_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
 
 DEBUG ?= 0

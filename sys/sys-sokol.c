@@ -35,6 +35,8 @@
 #define SOKOL_APP_IMG_SLOT 0
 #define SOKOL_DBG_IMG_SLOT 1
 
+static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
+
 struct sokol_state {
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -72,81 +74,67 @@ const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 static void sokol_exe_path_set(void);
 
-void
-event(const sapp_event *ev)
+void init(void);
+void frame(void);
+void event(const sapp_event *ev);
+static void stream_cb(f32 *buffer, int num_frames, int num_channels);
+void cleanup(void);
+
+sapp_desc
+sokol_main(i32 argc, char **argv)
 {
-	switch(ev->type) {
-	case SAPP_EVENTTYPE_KEY_DOWN: {
-		SOKOL_STATE.keys[ev->key_code] = 1;
-		switch(ev->key_code) {
-		case SAPP_KEYCODE_ESCAPE: {
-			sapp_request_quit();
-		} break;
-		case SAPP_KEYCODE_R: {
-			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
-				sys_internal_init();
-			}
-		} break;
-		default: {
-		} break;
-		}
-	} break;
-	case SAPP_EVENTTYPE_KEY_UP: {
-		SOKOL_STATE.keys[ev->key_code] = 0;
-	} break;
-	case SAPP_EVENTTYPE_MOUSE_SCROLL: {
-		SOKOL_STATE.crank_docked = false;
-		SOKOL_STATE.crank += ev->scroll_y * -SOKOL_STATE.mouse_scroll_sensitivity;
-		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
-	} break;
-	case SAPP_EVENTTYPE_MOUSE_MOVE: {
-		f32 scale_factor_x   = (f32)ev->window_width / (f32)SYS_DISPLAY_W;
-		f32 scale_factor_y   = (f32)ev->window_height / (f32)SYS_DISPLAY_H;
-		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
-		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
-		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
-		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
-	} break;
-	case SAPP_EVENTTYPE_MOUSE_DOWN: {
-		SOKOL_STATE.mouse_btns |= 1 << ev->mouse_button;
-	} break;
-	case SAPP_EVENTTYPE_MOUSE_UP: {
-		SOKOL_STATE.mouse_btns &= ~(1 << ev->mouse_button);
-	} break;
-	default: {
-	} break;
+	{
+		usize mem_size = MMEGABYTE(1);
+		void *mem      = sys_alloc(NULL, mem_size);
+		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
+		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
-}
 
-#define F32_SCALE (1.0f / I16_MAX)
-static void
-stream_cb(f32 *buffer, int num_frames, int num_channels)
-{
-	dbg_assert(1 == num_channels);
-	b32 is_mono = (num_channels == 1);
+	sokol_exe_path_set();
 
-	static i16 lbuf[0x1000];
-	static i16 rbuf[0x1000];
-	mclr_array(lbuf);
-	mclr_array(rbuf);
+	struct str8 exe_path = SOKOL_STATE.exe_path;
+	str8 base_name       = str8_chop_last_slash(exe_path);
+	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
+	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
 
-	sys_internal_audio(lbuf, rbuf, num_frames);
-
-	f32 *s     = buffer;
-	i16 *l     = lbuf;
-	i16 *r     = rbuf;
-	f32 volume = 0.1f;
-
-	for(i32 n = 0; n < num_frames; n++) {
-		f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
-		f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
-
-		// Store the f32 values in the output stream buffer
-		*s++ = vl; // Left channel
-		if(num_channels == 2) {
-			*s++ = vr; // Right channel, only if stereo
+#if defined TARGET_LINUX || 1
+	if(!getenv("STEAM_RUNTIME")) {
+		marena_reset(&SOKOL_STATE.scratch_marena);
+		struct alloc alloc = SOKOL_STATE.scratch;
+		if(exe_path.size != 0) {
+			struct str8_list path_list = {0};
+			str8_list_push(alloc, &path_list, exe_path);
+			str8_list_push(alloc, &path_list, STEAM_RUNTIME_RELATIVE_PATH);
+			str8 runtime_path = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
+			log_info("SYS", "STEAM_RUNTIME %s", runtime_path.str);
+			setenv("STEAM_RUNTIME", (char *)runtime_path.str, 1);
 		}
 	}
+#endif
+
+	const uint32_t small[16][16]  = {0};
+	const uint32_t medium[32][32] = {0};
+	const uint32_t big[64][64]    = {0};
+
+	const sapp_icon_desc icon_desc = {
+		.images = {
+			{.width = 16, .height = 16, .pixels = SAPP_RANGE(small)},
+			{.width = 32, .height = 32, .pixels = SAPP_RANGE(medium)},
+			// ...or without the SAPP_RANGE helper macro:
+			{.width = 64, .height = 64, .pixels = {.ptr = big, .size = sizeof(big)}}}};
+
+	return (sapp_desc){
+		.width              = SYS_DISPLAY_W * 2,
+		.height             = SYS_DISPLAY_H * 2,
+		.init_cb            = init,
+		.frame_cb           = frame,
+		.cleanup_cb         = cleanup,
+		.event_cb           = event,
+		.logger.func        = slog_func,
+		.icon.sokol_default = true,
+		.window_title       = "Devils on the Moon Pinball",
+
+	};
 }
 
 void
@@ -247,6 +235,83 @@ init(void)
 }
 
 void
+event(const sapp_event *ev)
+{
+	switch(ev->type) {
+	case SAPP_EVENTTYPE_KEY_DOWN: {
+		SOKOL_STATE.keys[ev->key_code] = 1;
+		switch(ev->key_code) {
+		case SAPP_KEYCODE_ESCAPE: {
+			sapp_request_quit();
+		} break;
+		case SAPP_KEYCODE_R: {
+			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
+				sys_internal_init();
+			}
+		} break;
+		default: {
+		} break;
+		}
+	} break;
+	case SAPP_EVENTTYPE_KEY_UP: {
+		SOKOL_STATE.keys[ev->key_code] = 0;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_SCROLL: {
+		SOKOL_STATE.crank_docked = false;
+		SOKOL_STATE.crank += ev->scroll_y * -SOKOL_STATE.mouse_scroll_sensitivity;
+		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_MOVE: {
+		f32 scale_factor_x   = (f32)ev->window_width / (f32)SYS_DISPLAY_W;
+		f32 scale_factor_y   = (f32)ev->window_height / (f32)SYS_DISPLAY_H;
+		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
+		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
+		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
+		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_DOWN: {
+		SOKOL_STATE.mouse_btns |= 1 << ev->mouse_button;
+	} break;
+	case SAPP_EVENTTYPE_MOUSE_UP: {
+		SOKOL_STATE.mouse_btns &= ~(1 << ev->mouse_button);
+	} break;
+	default: {
+	} break;
+	}
+}
+
+#define F32_SCALE (1.0f / I16_MAX)
+static void
+stream_cb(f32 *buffer, int num_frames, int num_channels)
+{
+	dbg_assert(1 == num_channels);
+	b32 is_mono = (num_channels == 1);
+
+	static i16 lbuf[0x1000];
+	static i16 rbuf[0x1000];
+	mclr_array(lbuf);
+	mclr_array(rbuf);
+
+	sys_internal_audio(lbuf, rbuf, num_frames);
+
+	f32 *s     = buffer;
+	i16 *l     = lbuf;
+	i16 *r     = rbuf;
+	f32 volume = 0.1f;
+
+	for(i32 n = 0; n < num_frames; n++) {
+		f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
+		f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
+
+		// Store the f32 values in the output stream buffer
+		*s++ = vl; // Left channel
+		if(num_channels == 2) {
+			*s++ = vr; // Right channel, only if stereo
+		}
+	}
+}
+
+void
 frame(void)
 {
 	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
@@ -295,54 +360,6 @@ cleanup(void)
 	sg_shutdown();
 	saudio_shutdown();
 	sys_internal_close();
-}
-
-static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
-
-sapp_desc
-sokol_main(i32 argc, char **argv)
-{
-	{
-		usize mem_size = MMEGABYTE(1);
-		void *mem      = sys_alloc(NULL, mem_size);
-		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
-		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
-	}
-
-	sokol_exe_path_set();
-
-	struct str8 exe_path = SOKOL_STATE.exe_path;
-	str8 base_name       = str8_chop_last_slash(exe_path);
-	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
-	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
-
-#if defined TARGET_LINUX || 1
-	if(!getenv("STEAM_RUNTIME")) {
-		marena_reset(&SOKOL_STATE.scratch_marena);
-		struct alloc alloc = SOKOL_STATE.scratch;
-		if(exe_path.size != 0) {
-			struct str8_list path_list = {0};
-			str8_list_push(alloc, &path_list, exe_path);
-			str8_list_push(alloc, &path_list, STEAM_RUNTIME_RELATIVE_PATH);
-			str8 runtime_path = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
-			log_info("SYS", "STEAM_RUNTIME %s", runtime_path.str);
-			setenv("STEAM_RUNTIME", (char *)runtime_path.str, 1);
-		}
-	}
-#endif
-
-	return (sapp_desc){
-		.width              = SYS_DISPLAY_W * 2,
-		.height             = SYS_DISPLAY_H * 2,
-		.init_cb            = init,
-		.frame_cb           = frame,
-		.cleanup_cb         = cleanup,
-		.event_cb           = event,
-		.logger.func        = slog_func,
-		.icon.sokol_default = true,
-		.window_title       = "Devils on the Moon Pinball",
-
-	};
 }
 
 struct str8
