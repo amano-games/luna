@@ -3,13 +3,16 @@
 #include "sys-input.h"
 
 enum {
-	INP_NONE   = 0,
-	INP_A      = SYS_INP_A,
-	INP_B      = SYS_INP_B,
-	INP_DPAD_U = SYS_INP_DPAD_U,
-	INP_DPAD_D = SYS_INP_DPAD_D,
-	INP_DPAD_L = SYS_INP_DPAD_L,
-	INP_DPAD_R = SYS_INP_DPAD_R,
+	INP_NONE         = 0,
+	INP_A            = SYS_INP_A,
+	INP_B            = SYS_INP_B,
+	INP_DPAD_U       = SYS_INP_DPAD_U,
+	INP_DPAD_D       = SYS_INP_DPAD_D,
+	INP_DPAD_L       = SYS_INP_DPAD_L,
+	INP_DPAD_R       = SYS_INP_DPAD_R,
+	INP_MOUSE_LEFT   = SYS_INP_MOUSE_LEFT,
+	INP_MOUSE_RIGHT  = SYS_INP_MOUSE_RIGHT,
+	INP_MOUSE_MIDDLE = SYS_INP_MOUSE_MIDDLE,
 };
 
 enum {
