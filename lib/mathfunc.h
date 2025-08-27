@@ -16,6 +16,15 @@
 #define EPSILON     0.000001f
 
 static const i32 COS_TABLE[256];
+#define i32_mul(A, B) i32_mul_checked(A, B)
+
+static inline i32
+i32_mul_checked(i32 a, i32 b)
+{
+	i64 r = (i64)a * (i64)b;
+	dbg_assert(I32_MIN <= r && r <= I32_MAX);
+	return (i32)r;
+}
 
 static inline u64
 min_u64(u64 a, u64 b)
@@ -269,6 +278,22 @@ static i32
 acos_q16(i32 x)
 {
 	return 0x10000 - asin_q16(x);
+}
+
+static inline i32
+pow_i32(i32 v, i32 power)
+{
+	i32 r = v;
+	for(i32 n = 1; n < power; n++) {
+		r = i32_mul(r, v);
+	}
+	return r;
+}
+
+static inline i32
+pow2_i32(i32 v)
+{
+	return i32_mul(v, v);
 }
 
 static f32

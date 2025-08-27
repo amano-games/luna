@@ -330,6 +330,27 @@ cleanup:
 }
 
 void
+gfx_rrec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 r, i32 mode)
+{
+	i32 rr = r < 0 ? h / 2 : min_i32(r, h / 2);
+	i32 y1 = max_i32(ctx.clip_y1 - y, 0);
+	i32 y2 = min_i32(ctx.clip_y2 - y, h - 1);
+
+	for(i32 y0 = y1; y0 < rr; y0++) {
+		i32 dx = rr - sqrt_u32(pow2_i32(rr) - pow2_i32(rr - y0) + 1);
+		gfx_rec_fill(ctx, x + dx, y0 + y, w - (dx << 1), 1, mode);
+	}
+
+	gfx_rec_fill(ctx, x, y + rr, w, h - (rr << 1), mode);
+
+	i32 t = h - rr - 1;
+	for(i32 y0 = t + 1; y0 <= y2; y0++) {
+		i32 dx = rr - sqrt_u32(pow2_i32(rr) - pow2_i32(y0 - t) + 1);
+		gfx_rec_fill(ctx, x + dx, y0 + y, w - (dx << 1), 1, mode);
+	}
+}
+
+void
 gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2)
 {
 	dbg_assert(0 <= y1 && y2 <= dst.h);
