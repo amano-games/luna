@@ -55,6 +55,7 @@ CFLAGS += -s USE_WEBGL2
 CFLAGS += -s NO_EXIT_RUNTIME=1
 CFLAGS += --shell-file=$(PLATFORM_DIR)/index.html
 CFLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
+CFLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJS         := $(BUILD_DIR)/$(TARGET)
