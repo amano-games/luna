@@ -892,10 +892,11 @@ sokol_exe_path_set(void)
 			str8 macos                 = str8_chop_last_slash(exe_path);
 			str8 contents              = str8_chop_last_slash(macos);
 			str8 resources_rel         = str8_lit("Resources");
+			enum path_style path_style = path_style_from_str8(resources_rel);
 			struct str8_list path_list = {0};
 			str8_list_push(scratch, &path_list, contents);
 			str8_list_push(scratch, &path_list, resources_rel);
-			str8 resources_path   = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
+			str8 resources_path   = path_join_by_style(alloc, &path_list, path_style);
 			SOKOL_STATE.base_path = resources_path;
 		}
 #else
@@ -1018,7 +1019,7 @@ sokol_path_to_res_path(struct str8 path)
 	if(base_path.size == 0) { return res; }
 
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	enum path_style path_style = path_style_from_str8(base_path);
+	enum path_style path_style = path_style_from_str8(path);
 	struct alloc scratch       = SOKOL_STATE.scratch;
 	struct str8_list path_list = {0};
 	str8_list_push(scratch, &path_list, base_path);
