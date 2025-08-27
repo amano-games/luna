@@ -570,6 +570,96 @@ gfx_poly(
 	}
 }
 
+// https : //github.com/olikraus/u8g2/blob/a549a13b13b5fd568111557c1dd7ca3d06fbe21a/csrc/u8g2_circle.c#L244
+void
+gfx_ellipsis(struct gfx_ctx ctx,
+	i32 x0,
+	i32 y0,
+	i32 rx,
+	i32 ry,
+	enum prim_mode mode)
+{
+	i32 x, y;
+	i32 xchg, ychg;
+	i32 err;
+	i32 rxrx2;
+	i32 ryry2;
+	i32 stopx, stopy;
+
+	rxrx2 = rx;
+	rxrx2 *= rx;
+	rxrx2 *= 2;
+
+	ryry2 = ry;
+	ryry2 *= ry;
+	ryry2 *= 2;
+
+	x = rx;
+	y = 0;
+
+	xchg = 1;
+	xchg -= rx;
+	xchg -= rx;
+	xchg *= ry;
+	xchg *= ry;
+
+	ychg = rx;
+	ychg *= rx;
+
+	err = 0;
+
+	stopx = ryry2;
+	stopx *= rx;
+	stopy = 0;
+
+	while(stopx >= stopy) {
+		// u8g2_draw_ellipse_section(u8g2, x, y, x0, y0, option);
+		y++;
+		stopy += rxrx2;
+		err += ychg;
+		ychg += rxrx2;
+		if(2 * err + xchg > 0) {
+			x--;
+			stopx -= ryry2;
+			err += xchg;
+			xchg += ryry2;
+		}
+	}
+
+	x = 0;
+	y = ry;
+
+	xchg = ry;
+	xchg *= ry;
+
+	ychg = 1;
+	ychg -= ry;
+	ychg -= ry;
+	ychg *= rx;
+	ychg *= rx;
+
+	err = 0;
+
+	stopx = 0;
+
+	stopy = rxrx2;
+	stopy *= ry;
+
+	while(stopx <= stopy) {
+		// u8g2_draw_ellipse_section(u8g2, x, y, x0, y0, option);
+		x++;
+		stopx += ryry2;
+		err += xchg;
+		xchg += ryry2;
+		if(2 * err + ychg > 0) {
+			y--;
+			stopy -= rxrx2;
+			err += ychg;
+			ychg += rxrx2;
+		}
+	}
+}
+
 // https://github.com/olikraus/u8g2/issues/2243
 // https://motla.github.io/arc-algorithm/
 void
