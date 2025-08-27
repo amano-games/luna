@@ -74,6 +74,7 @@ $(ASSETS_OUT): $(ASSETS_BIN) $(BUILD_DIR) $(OBJS)
 $(EXE_OUT): $(SRC_DIR)/main.c $(SHADER_OBJS) $(ASSETS_OUT) $(WATCH_SRC)
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents
 	cp -r $(PLATFORM_DIR)/Resources/* $(BUILD_DIR)/$(TARGET)/Contents/Resources
+	cp -r $(PLATFORM_DIR)/icons $(BUILD_DIR)/$(TARGET)/Contents/Resources
 	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
 
 $(PUBLISH_OBJS): $(EXE_OUT)
