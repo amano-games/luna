@@ -869,7 +869,7 @@ pinb_mover_read(struct ser_reader *r, struct ser_value obj)
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.ref = value.i32;
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
+			dbg_assert(value.type == SER_TYPE_I32);
 			res.flags = value.i32;
 		} else if(str8_match(key.str, str8_lit("speed"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
