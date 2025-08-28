@@ -226,6 +226,7 @@ struct pinb_ball_saver {
 };
 
 struct pinb_mover {
+	i32 flags;
 	i32 ref;
 	f32 speed;
 };
