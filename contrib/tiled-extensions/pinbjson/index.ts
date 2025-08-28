@@ -162,6 +162,7 @@ function getMover(object: MapObject, prop: PropertyValue) {
   const ref = Number(value["ref"]?.id) || 0;
 
   const res: Mover = {
+    flags: value["flags"].value,
     speed: value["speed"],
     ref: ref,
   };

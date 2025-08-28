@@ -249,6 +249,7 @@ export interface SpawnZoneRef {
 }
 
 export interface Mover {
+  flags: number;
   speed: number;
   ref: number;
 }
