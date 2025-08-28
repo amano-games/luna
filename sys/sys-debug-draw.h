@@ -6,7 +6,8 @@ enum debug_shape_type {
 	DEBUG_CIR,
 	DEBUG_REC,
 	DEBUG_POLY,
-	DEBUG_LIN
+	DEBUG_LIN,
+	DEBUG_ELLIPSIS,
 };
 
 struct debug_shape_cir {
@@ -30,6 +31,11 @@ struct debug_shape_poly {
 	v2_i32 verts[8];
 };
 
+struct debug_shape_ellipsis {
+	i32 x, y;
+	i32 rx, ry;
+};
+
 struct debug_shape {
 	enum debug_shape_type type;
 	union {
@@ -37,6 +43,7 @@ struct debug_shape {
 		struct debug_shape_lin lin;
 		struct debug_shape_rec rec;
 		struct debug_shape_poly poly;
+		struct debug_shape_ellipsis ellipsis;
 	};
 };
 

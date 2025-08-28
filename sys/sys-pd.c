@@ -543,6 +543,18 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 			struct debug_shape_lin lin = shape->lin;
 			PD->graphics->drawLine(lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1, kColorWhite);
 		} break;
+		case DEBUG_ELLIPSIS: {
+			struct debug_shape_ellipsis ellipsis = shape->ellipsis;
+			PD->graphics->drawEllipse(
+				ellipsis.x - ellipsis.rx,
+				ellipsis.y - ellipsis.ry,
+				(ellipsis.rx * 2) + 2,
+				(ellipsis.ry * 2) + 2,
+				1,
+				0,
+				0,
+				kColorWhite);
+		} break;
 		}
 	}
 	PD->graphics->popContext();
