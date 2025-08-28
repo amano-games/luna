@@ -1,3 +1,4 @@
+#include "pinb/pinb-ser.h"
 #include "pinb-ser.h"
 #include "arr.h"
 #include "dbg.h"

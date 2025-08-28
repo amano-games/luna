@@ -12,8 +12,8 @@ export interface Cir {
 }
 
 export interface Ellipsis {
-  ra: number;
-  rb: number;
+  rx: number;
+  ry: number;
   x: number;
   y: number;
 }
