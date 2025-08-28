@@ -995,6 +995,8 @@ pinbtjson_handle_mover(
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("speed")) == 0) {
 			res.mover.speed = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.mover.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("ref")) == 0) {
 			res.mover.ref = json_parse_i32(json, value);
 		}
