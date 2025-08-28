@@ -542,10 +542,10 @@ pinbtjson_handle_col_ellipsis(str8 json, jsmntok_t *tokens, i32 index)
 			res.ellipsis.p.x = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("y")) == 0) {
 			res.ellipsis.p.y = json_parse_f32(json, value);
-		} else if(json_eq(json, key, str8_lit("ra")) == 0) {
-			res.ellipsis.ra = json_parse_f32(json, value);
-		} else if(json_eq(json, key, str8_lit("rb")) == 0) {
-			res.ellipsis.rb = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("rx")) == 0) {
+			res.ellipsis.rx = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("ry")) == 0) {
+			res.ellipsis.ry = json_parse_f32(json, value);
 		}
 	}
 
@@ -1047,7 +1047,7 @@ pinbtjson_handle_mover_path(
 		}
 	}
 
-return res;
+	return res;
 }
 
 struct pinbtjson_res

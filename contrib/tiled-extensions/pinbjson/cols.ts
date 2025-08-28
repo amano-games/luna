@@ -106,13 +106,13 @@ function getEllipsis(object: MapObject, isTile = false) {
   if (object.width == object.height) {
     return undefined;
   }
-  const ra = object.width / 2;
-  const rb = object.height / 2;
+  const rx = object.width / 2;
+  const ry = object.height / 2;
   const res: Ellipsis = {
-    x: isTile ? ra + object.x : 0,
-    y: isTile ? rb + object.y : 0,
-    ra: ra,
-    rb: rb,
+    x: isTile ? rx + object.x : 0,
+    y: isTile ? ry + object.y : 0,
+    rx: rx,
+    ry: ry,
   };
   return res;
 }
