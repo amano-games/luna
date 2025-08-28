@@ -524,6 +524,7 @@
     const value = prop.value;
     const ref = Number((_a = value["ref"]) == null ? void 0 : _a.id) || 0;
     const res = {
+      flags: value["flags"].value,
       speed: value["speed"],
       ref
     };
