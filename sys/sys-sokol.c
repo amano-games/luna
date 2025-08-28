@@ -750,6 +750,10 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 			struct debug_shape_lin lin = shape->lin;
 			gfx_lin(ctx, lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1);
 		} break;
+		case DEBUG_ELLIPSIS: {
+			struct debug_shape_ellipsis ellipsis = shape->ellipsis;
+			gfx_ellipsis(ctx, ellipsis.x, ellipsis.y, ellipsis.rx, ellipsis.ry, 1);
+		} break;
 		default: {
 		} break;
 		}

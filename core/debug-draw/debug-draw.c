@@ -79,6 +79,18 @@ debug_draw_cir(f32 x, f32 y, f32 d)
 }
 
 void
+debug_draw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
+{
+	struct debug_shape d_shape = {0};
+	d_shape.type               = DEBUG_ELLIPSIS;
+	d_shape.ellipsis.x         = x + DEBUG_STATE.draw_offset.x;
+	d_shape.ellipsis.y         = y + DEBUG_STATE.draw_offset.y;
+	d_shape.ellipsis.rx        = rx;
+	d_shape.ellipsis.ry        = ry;
+	debug_draw_push_shape(d_shape);
+}
+
+void
 debug_draw_poly(struct v2 *verts, size count)
 {
 	for(size i = 0; i < count; ++i) {

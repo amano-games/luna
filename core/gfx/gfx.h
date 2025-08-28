@@ -90,6 +90,7 @@ void gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 r, en
 void gfx_poly(struct gfx_ctx ctx, v2_i32 *verts, i32 count, i32 r, enum prim_mode mode);
 void gfx_arc(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, enum prim_mode mode);
 void gfx_arc_thick(struct gfx_ctx ctx, i32 x0, i32 y0, u8 start, u8 end, i32 rad, i32 thick, enum prim_mode mode);
+void gfx_ellipsis(struct gfx_ctx ctx, i32 x0, i32 y0, i32 rx, i32 ry, enum prim_mode mode);
 
 struct gfx_ctx gfx_ctx_display(void);
 struct gfx_ctx gfx_ctx_default(struct tex dst);
