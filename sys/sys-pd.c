@@ -575,31 +575,51 @@ sys_exe_path(void)
 	return res;
 }
 
+// void pltf_pd_menu_image_upd(u32 *p, i32 ww, i32 w, i32 h)
 void
-sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
+sys_set_menu_image(void *p, int h, int wbyte, i32 x_offset)
 {
-	if(px == NULL) {
+	if(p == NULL) {
 		PD->system->setMenuImage(NULL, x_offset);
 		return;
 	}
 
-	int wid, hei, byt;
-	u8 *p;
+	int bw, bh, bb;
+	u8 *mk = NULL;
+	u8 *px = NULL;
+
 	PD->graphics->getBitmapData(
 		PD_STATE.menu_bitmap,
-		&wid,
-		&hei,
-		&byt,
-		NULL,
-		&p);
+		&bw,
+		&bh,
+		&bb,
+		&mk,
+		&px);
 
-	int y2 = MIN(hei, h);
-	int b2 = MIN(byt, wbyte);
+	int y2 = MIN(bh, h);
+	int x2 = MIN(bb, wbyte);
 	for(int y = 0; y < y2; y++) {
-		for(int b = 0; b < b2; b++)
-			p[b + y * byt] = ((u8 *)px)[b + y * wbyte];
+		for(int x = 0; x < x2; x++)
+			px[x + y * bb] = ((u8 *)p)[x + y * wbyte];
 	}
 	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
+
+#if 0
+    // Transparency?
+    int bw, bh, bb;
+    u8 *mk = 0;
+    u8 *px = 0;
+    PD->graphics->getBitmapData(g_PD.menubm, &bw, &bh, &bb, &mk, &px);
+
+    i32 y2 = h < bh ? h : bh;
+    i32 x2 = (ww << 2) < bb ? (ww << 2) : bb;
+
+    for (i32 y = 0; y < y2; y++) {
+        for (i32 x = 0; x < x2; x++) {
+            px[x + y * bb] = ((u8 *)p)[x + ((y * ww) << 2)];
+        }
+    }
+#endif
 }
 
 void
