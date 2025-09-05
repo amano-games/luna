@@ -1084,9 +1084,17 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	if(win_aspect > app_aspect) {
 		// window is wider -> fit height
 		scale = res.win_size.y / res.app_size.y;
+#if defined(SOKOL_PIXEL_PERFECT)
+		scale = floor_f32(scale);
+		scale = max_f32(scale, 1.0f);
+#endif
 	} else {
 		// window is taller/narrower -> fit width
 		scale = res.win_size.x / res.app_size.x;
+#if defined(SOKOL_PIXEL_PERFECT)
+		scale = floor_f32(scale);
+#endif
+		scale = max_f32(scale, 1.0f);
 	}
 	res.scale.x  = scale;
 	res.scale.y  = scale;
