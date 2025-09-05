@@ -14,6 +14,8 @@ handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch)
 	int w, h, n;
 	uint32_t *data = (uint32_t *)stbi_load((char *)in_path.str, &w, &h, &n, 4);
 
+	dbg_check(data != NULL, "tex", "Failed to load image with path %s: %s", in_path.str, stbi_failure_reason());
+
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 
 	int width_aligned = (w + 31) - ((w + 31) % 32);
@@ -81,5 +83,9 @@ handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch)
 
 	fclose(file);
 	log_info("tex-gen", "%s -> %s\n", in_path.str, out_file_path.str);
-	stbi_image_free(data);
+error:;
+	if(data != NULL) {
+		stbi_image_free(data);
+	}
+	return;
 }
