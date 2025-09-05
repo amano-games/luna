@@ -37,6 +37,7 @@
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
+// #define SOKOL_PIXEL_PERFECT
 
 struct touch_point_mouse_emu {
 	uintptr_t id;
@@ -76,8 +77,8 @@ struct sokol_state {
 };
 
 static struct sokol_state SOKOL_STATE;
-// const u32 SOKOL_BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
-const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
+const u32 SOKOL_BW_PAL[2] = {0xA2A5A5, 0x0D0B11};
+// const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
 const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
 const f32 COL_WHITE[3]       = {0.64f, 0.64f, 0.64f};
 const f32 COL_BLACK[3]       = {0.05f, 0.04f, 0.06f};
@@ -97,7 +98,7 @@ static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u3
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 str8 sokol_path_to_res_path(struct str8 path);
-static inline s_params_t sokol_get_shader_params(f32 win_w, f32 win_h);
+static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 
 sapp_desc
 sokol_main(i32 argc, char **argv)
@@ -186,12 +187,12 @@ sokol_init(void)
 
 	SOKOL_STATE.bind.samplers[0] = sg_make_sampler(&(sg_sampler_desc){
 		.label = "sampler",
-#if 0
-		.min_filter = SG_FILTER_LINEAR,
-		.mag_filter = SG_FILTER_LINEAR,
-#else
+#if defined(SOKOL_PIXEL_PERFECT)
 		.min_filter = SG_FILTER_NEAREST,
 		.mag_filter = SG_FILTER_NEAREST,
+#else
+		.min_filter = SG_FILTER_LINEAR,
+		.mag_filter = SG_FILTER_LINEAR,
 #endif
 	});
 
@@ -279,13 +280,13 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_MOVE: {
-		f32 mx                   = ev->mouse_x;
-		f32 my                   = ev->mouse_y;
-		f32 win_w                = ev->window_width;
-		f32 win_h                = ev->window_height;
-		struct s_params_t params = sokol_get_shader_params(win_w, win_h);
-		f32 rel_x                = clamp_f32((mx - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
-		f32 rel_y                = clamp_f32((my - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
+		f32 mx                          = ev->mouse_x;
+		f32 my                          = ev->mouse_y;
+		f32 win_w                       = ev->window_width;
+		f32 win_h                       = ev->window_height;
+		struct s_buffer_params_t params = sokol_get_buffer_params(win_w, win_h);
+		f32 rel_x                       = clamp_f32((mx - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
+		f32 rel_y                       = clamp_f32((my - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
 
 		SOKOL_STATE.mouse_x = rel_x;
 		SOKOL_STATE.mouse_y = rel_y;
@@ -357,7 +358,8 @@ sokol_frame(void)
 {
 	f32 win_w                                            = sapp_widthf();
 	f32 win_h                                            = sapp_heightf();
-	s_params_t params                                    = sokol_get_shader_params(win_w, win_h);
+	s_params_t params                                    = {.time = sys_seconds()};
+	s_buffer_params_t buffer_params                      = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors                                    = {0};
 	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
 	u32 *pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
@@ -366,6 +368,12 @@ sokol_frame(void)
 	mcpy_array(colors.color_black, COL_BLACK);
 	mcpy_array(colors.color_white, COL_WHITE);
 	mcpy_array(colors.color_debug, COL_RED);
+
+#if defined SOKOL_PIXEL_PERFECT
+	params.pixel_perfect = true;
+#else
+	params.pixel_perfect = false;
+#endif
 
 	// mcpy_array(colors.color_black, COL_PURPLE);
 	// mcpy_array(colors.color_white, COL_PURPLE);
@@ -398,8 +406,9 @@ sokol_frame(void)
 	});
 	sg_apply_pipeline(SOKOL_STATE.pip);
 	sg_apply_bindings(&SOKOL_STATE.bind);
-	sg_apply_uniforms(UB_s_colors, &SG_RANGE(colors));
 	sg_apply_uniforms(UB_s_params, &SG_RANGE(params));
+	sg_apply_uniforms(UB_s_colors, &SG_RANGE(colors));
+	sg_apply_uniforms(UB_s_buffer_params, &SG_RANGE(buffer_params));
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
@@ -1061,17 +1070,17 @@ sokol_path_to_res_path(struct str8 path)
 	return res;
 }
 
-static inline s_params_t
-sokol_get_shader_params(f32 win_w, f32 win_h)
+static inline s_buffer_params_t
+sokol_get_buffer_params(f32 win_w, f32 win_h)
 {
-	s_params_t res = {0};
-	res.win_size.x = win_w;
-	res.win_size.y = win_h;
-	res.app_size.x = SYS_DISPLAY_W;
-	res.app_size.y = SYS_DISPLAY_H;
-	f32 win_aspect = res.win_size.x / res.win_size.y;
-	f32 app_aspect = res.app_size.x / res.app_size.y;
-	f32 scale      = 1.0f;
+	s_buffer_params_t res = {0};
+	res.win_size.x        = win_w;
+	res.win_size.y        = win_h;
+	res.app_size.x        = SYS_DISPLAY_W;
+	res.app_size.y        = SYS_DISPLAY_H;
+	f32 win_aspect        = res.win_size.x / res.win_size.y;
+	f32 app_aspect        = res.app_size.x / res.app_size.y;
+	f32 scale             = 1.0f;
 	if(win_aspect > app_aspect) {
 		// window is wider -> fit height
 		scale = res.win_size.y / res.app_size.y;
