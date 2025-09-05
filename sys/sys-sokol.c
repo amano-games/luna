@@ -185,9 +185,14 @@ sokol_init(void)
 	};
 
 	SOKOL_STATE.bind.samplers[0] = sg_make_sampler(&(sg_sampler_desc){
-		.label      = "sampler",
+		.label = "sampler",
+#if 0
+		.min_filter = SG_FILTER_LINEAR,
+		.mag_filter = SG_FILTER_LINEAR,
+#else
 		.min_filter = SG_FILTER_NEAREST,
 		.mag_filter = SG_FILTER_NEAREST,
+#endif
 	});
 
 	sg_image_desc img_desc = {
