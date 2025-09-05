@@ -1,6 +1,8 @@
 #include "sys-sokol.h"
+#include "mathfunc.h"
 #include "mem-arena.h"
 #include "sys-debug-draw.h"
+#include "sys-types.h"
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
@@ -34,8 +36,6 @@
 #include "sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
-#define SOKOL_APP_IMG_SLOT  0
-#define SOKOL_DBG_IMG_SLOT  1
 #define SOKOL_TOUCH_INVALID U8_MAX
 
 struct touch_point_mouse_emu {
@@ -71,15 +71,19 @@ struct sokol_state {
 
 	f32 mouse_x;
 	f32 mouse_y;
-	f32 mouse_dx;
-	f32 mouse_dy;
 	u32 mouse_btns;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
 
 static struct sokol_state SOKOL_STATE;
-const u32 SOKOL_BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
+// const u32 SOKOL_BW_PAL[2]    = {0xA2A5A5, 0x0D0B11};
+const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
 const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
+const f32 COL_WHITE[3]       = {0.64f, 0.64f, 0.64f};
+const f32 COL_BLACK[3]       = {0.05f, 0.04f, 0.06f};
+const f32 COL_RED[3]         = {1.0f, 0.0f, 0.0f};
+const f32 COL_YELLOW[3]      = {1.0f, 0.784f, 0.2f};
+const f32 COL_PURPLE[3]      = {0.424f, 0.0f, 1.0f};
 
 void sokol_init(void);
 void sokol_frame(void);
@@ -93,6 +97,7 @@ static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u3
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 str8 sokol_path_to_res_path(struct str8 path);
+static inline s_params_t sokol_get_shader_params(f32 win_w, f32 win_h);
 
 sapp_desc
 sokol_main(i32 argc, char **argv)
@@ -137,7 +142,6 @@ sokol_main(i32 argc, char **argv)
 		.logger.func        = slog_func,
 		.icon.sokol_default = true,
 		.window_title       = "Devils on the Moon Pinball",
-
 	};
 }
 
@@ -193,8 +197,8 @@ sokol_init(void)
 		.usage        = {.stream_update = true},
 	};
 
-	SOKOL_STATE.bind.images[SOKOL_APP_IMG_SLOT] = sg_make_image(&img_desc);
-	SOKOL_STATE.bind.images[SOKOL_DBG_IMG_SLOT] = sg_make_image(&img_desc);
+	SOKOL_STATE.bind.images[IMG_tex]       = sg_make_image(&img_desc);
+	SOKOL_STATE.bind.images[IMG_tex_debug] = sg_make_image(&img_desc);
 
 	// clang-format off
     const float vertices[] = {
@@ -205,7 +209,7 @@ sokol_init(void)
         -1.0f, -1.0f,   0.0, 0.0,
     };
 	// We need 2 triangles for a square, this makes 6 indexes.
-	u16 indices[] = {
+	const u16 indices[] = {
         0, 1, 2,
         0, 2, 3
     };
@@ -270,12 +274,16 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_MOVE: {
-		f32 scale_factor_x   = (f32)ev->window_width / (f32)SYS_DISPLAY_W;
-		f32 scale_factor_y   = (f32)ev->window_height / (f32)SYS_DISPLAY_H;
-		SOKOL_STATE.mouse_x  = ev->mouse_x / scale_factor_x;
-		SOKOL_STATE.mouse_y  = ev->mouse_y / scale_factor_y;
-		SOKOL_STATE.mouse_dx = ev->mouse_dx / scale_factor_x;
-		SOKOL_STATE.mouse_dy = ev->mouse_dy / scale_factor_y;
+		f32 mx                   = ev->mouse_x;
+		f32 my                   = ev->mouse_y;
+		f32 win_w                = ev->window_width;
+		f32 win_h                = ev->window_height;
+		struct s_params_t params = sokol_get_shader_params(win_w, win_h);
+		f32 rel_x                = clamp_f32((mx - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
+		f32 rel_y                = clamp_f32((my - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
+
+		SOKOL_STATE.mouse_x = rel_x;
+		SOKOL_STATE.mouse_y = rel_y;
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_DOWN: {
 		SOKOL_STATE.mouse_btns |= 1 << ev->mouse_button;
@@ -342,14 +350,27 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 void
 sokol_frame(void)
 {
+	f32 win_w                                            = sapp_widthf();
+	f32 win_h                                            = sapp_heightf();
+	s_params_t params                                    = sokol_get_shader_params(win_w, win_h);
+	s_colors_t colors                                    = {0};
 	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
 	u32 *pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
 	usize size                                           = ARRLEN(pixels);
+
+	mcpy_array(colors.color_black, COL_BLACK);
+	mcpy_array(colors.color_white, COL_WHITE);
+	mcpy_array(colors.color_debug, COL_RED);
+
+	// mcpy_array(colors.color_black, COL_PURPLE);
+	// mcpy_array(colors.color_white, COL_PURPLE);
+	// mcpy_array(colors.color_debug, COL_RED);
+
 	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)pixels, size, SOKOL_BW_PAL);
 	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)pixels_debug, size, SOKOL_DEBUG_PAL);
 
 	sg_update_image(
-		SOKOL_STATE.bind.images[SOKOL_APP_IMG_SLOT],
+		SOKOL_STATE.bind.images[IMG_tex],
 		&(sg_image_data){
 			.subimage[0][0] = {
 				.ptr  = pixels,
@@ -358,7 +379,7 @@ sokol_frame(void)
 		});
 
 	sg_update_image(
-		SOKOL_STATE.bind.images[SOKOL_DBG_IMG_SLOT],
+		SOKOL_STATE.bind.images[IMG_tex_debug],
 		&(sg_image_data){
 			.subimage[0][0] = {
 				.ptr  = pixels_debug,
@@ -372,6 +393,8 @@ sokol_frame(void)
 	});
 	sg_apply_pipeline(SOKOL_STATE.pip);
 	sg_apply_bindings(&SOKOL_STATE.bind);
+	sg_apply_uniforms(UB_s_colors, &SG_RANGE(colors));
+	sg_apply_uniforms(UB_s_params, &SG_RANGE(params));
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
@@ -1030,5 +1053,35 @@ sokol_path_to_res_path(struct str8 path)
 	str8_list_push(scratch, &path_list, path);
 	res = path_join_by_style(scratch, &path_list, path_style);
 
+	return res;
+}
+
+static inline s_params_t
+sokol_get_shader_params(f32 win_w, f32 win_h)
+{
+	s_params_t res = {0};
+	res.win_size.x = win_w;
+	res.win_size.y = win_h;
+	res.app_size.x = SYS_DISPLAY_W;
+	res.app_size.y = SYS_DISPLAY_H;
+	f32 win_aspect = res.win_size.x / res.win_size.y;
+	f32 app_aspect = res.app_size.x / res.app_size.y;
+	f32 scale      = 1.0f;
+	if(win_aspect > app_aspect) {
+		// window is wider -> fit height
+		scale = res.win_size.y / res.app_size.y;
+	} else {
+		// window is taller/narrower -> fit width
+		scale = res.win_size.x / res.app_size.x;
+	}
+	res.scale.x  = scale;
+	res.scale.y  = scale;
+	res.size.x   = res.app_size.x * res.scale.x;
+	res.size.y   = res.app_size.y * res.scale.y;
+	res.offset.x = (res.win_size.x - res.size.x) * 0.5f;
+	res.offset.y = (res.win_size.y - res.size.y) * 0.5f;
+
+	dbg_assert(res.scale.x != 0.0f);
+	dbg_assert(res.scale.y != 0.0f);
 	return res;
 }
