@@ -2,7 +2,8 @@
 
 // shared code for all shaders
 @block uniforms
-layout(binding=2) uniform s_time {
+layout(binding=2) uniform s_params {
+  int pixel_perfect;
   float time;
 };
 layout(binding=3) uniform s_colors {
@@ -10,7 +11,7 @@ layout(binding=3) uniform s_colors {
   vec3 color_white;
   vec3 color_debug;
 };
-layout(binding=4) uniform s_params {
+layout(binding=4) uniform s_buffer_params {
   vec2 offset;
   vec2 size;
   vec2 app_size;
@@ -71,10 +72,13 @@ void main() {
 
   vec2 tex_uv = rel / size;
   tex_uv.y = 1.0 - tex_uv.y;
-  tex_uv = uv_iq(tex_uv, ivec2(app_size));
+  if(pixel_perfect != 1){
+    tex_uv = uv_iq(tex_uv, ivec2(app_size));
+  }
   vec4 app_sample = texture(sampler2D(tex, smp), tex_uv);
   vec4 debug_sample = texture(sampler2D(tex_debug, smp), tex_uv);
-  vec3 app_color = (app_sample.r > 0.0) ? color_white : color_black;
+  // vec3 app_color = (app_sample.r > 0.0) ? color_white : color_black;
+  vec3 app_color = app_sample.rgb;
   vec4 col = mix(vec4(app_color, 1.0), vec4(color_debug, 1.0), debug_sample.r > 0.0 ? 0.5 : 0.0);
   frag_color = col;
 }
