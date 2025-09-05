@@ -263,9 +263,20 @@ sokol_event(const sapp_event *ev)
 			sapp_request_quit();
 		} break;
 		case SAPP_KEYCODE_R: {
+#if defined(TARGET_MACOS)
+			if(ev->modifiers & SAPP_MODIFIER_SUPER) {
+#else
 			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
+#endif
 				sys_internal_init();
 			}
+		} break;
+		case SAPP_KEYCODE_Q: {
+#if defined(TARGET_MACOS)
+			if(ev->modifiers & SAPP_MODIFIER_SUPER) {
+				sapp_request_quit();
+			}
+#endif
 		} break;
 		default: {
 		} break;
