@@ -260,7 +260,6 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.keys[ev->key_code] = 1;
 		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
-			sapp_request_quit();
 		} break;
 		case SAPP_KEYCODE_R: {
 #if defined(TARGET_MACOS)
