@@ -77,7 +77,10 @@ $(EXE_OUT): $(SRC_DIR)/main.c $(SHADER_OBJS) $(ASSETS_OUT) $(WATCH_SRC)
 	cp -r $(PLATFORM_DIR)/icons $(BUILD_DIR)/$(TARGET)/Contents/Resources
 	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
 
-$(PUBLISH_OBJS): $(EXE_OUT)
+sign: $(OBJS)
+	codesign --force --deep -s - $(OBJS)
+
+$(PUBLISH_OBJS): $(EXE_OUT) sign
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
 
 clean:

@@ -37,7 +37,7 @@
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
-// #define SOKOL_PIXEL_PERFECT
+#define SOKOL_PIXEL_PERFECT
 
 struct touch_point_mouse_emu {
 	uintptr_t id;
@@ -117,7 +117,7 @@ sokol_main(i32 argc, char **argv)
 	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
 
 	{
-#if defined TARGET_LINUX || 1
+#if defined TARGET_LINUX
 		if(!getenv("STEAM_RUNTIME")) {
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc alloc = SOKOL_STATE.scratch;
@@ -447,6 +447,12 @@ str8
 sys_exe_path(void)
 {
 	return SOKOL_STATE.exe_path;
+}
+
+str8
+sys_pref_path(void)
+{
+	return str8_lit("");
 }
 
 i32

@@ -564,14 +564,21 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 struct str8
 sys_base_path(void)
 {
-	str8 res = {0};
+	str8 res = str8_lit("");
 	return res;
 }
 
 str8
 sys_exe_path(void)
 {
-	str8 res = {0};
+	str8 res = str8_lit("");
+	return res;
+}
+
+str8
+sys_pref_path(void)
+{
+	str8 res = str8_lit("");
 	return res;
 }
 
