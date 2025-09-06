@@ -449,6 +449,7 @@ sys_exe_path(void)
 	return SOKOL_STATE.exe_path;
 }
 
+// https://wiki.libsdl.org/SDL3/SDL_GetPrefPath
 str8
 sys_pref_path(void)
 {
