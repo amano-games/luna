@@ -36,11 +36,13 @@ debug_draw_get_offset(void)
 	return DEBUG_STATE.draw_offset;
 }
 
-void
+v2_i32
 debug_draw_set_offset(i32 x, i32 y)
 {
+	v2_i32 res                = DEBUG_STATE.draw_offset;
 	DEBUG_STATE.draw_offset.x = x;
 	DEBUG_STATE.draw_offset.y = y;
+	return res;
 }
 
 void
