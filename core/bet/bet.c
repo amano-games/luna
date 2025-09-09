@@ -1,9 +1,9 @@
 #include "bet.h"
-#include "arr.h"
-#include "mem.h"
-#include "rndm.h"
-#include "sys-types.h"
-#include "dbg.h"
+#include "lib/arr.h"
+#include "lib/mem.h"
+#include "core/rndm.h"
+#include "sys/sys-types.h"
+#include "lib/dbg.h"
 
 void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 void bet_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);

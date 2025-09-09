@@ -1,7 +1,7 @@
 #pragma once
 
-#include "assets/asset-db.h"
-#include "animation/animation.h"
+#include "core/assets/asset-db.h"
+#include "core/animation/animation.h"
 
 #define MAX_ANIMATIONS 10
 

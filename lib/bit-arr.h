@@ -1,8 +1,9 @@
 #pragma once
 
-#include "arr.h"
-#include "mem.h"
-#include "sys-types.h"
+#include "lib/arr.h"
+#include "lib/mem.h"
+
+#include "sys/sys-types.h"
 
 static u32 *
 bit_arr_u32_new(usize count, struct alloc alloc)

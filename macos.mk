@@ -19,11 +19,11 @@ LDFLAGS :=
 WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
 WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 
-EXTERNAL_DIRS  := $(LUNA_DIR)/external $(LUNA_DIR)/external/sokol
+EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
 
-INC_DIRS       := $(shell find $(SRC_DIR) -type d)
-INC_DIRS       += $(LUNA_DIR) $(LUNA_DIR)/sys $(LUNA_DIR)/lib $(LUNA_DIR)/core
+INC_DIRS       := src
+INC_DIRS       += $(LUNA_DIR)
 INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
 INC_FLAGS      += $(EXTERNAL_FLAGS)
 

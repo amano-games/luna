@@ -1,7 +1,7 @@
 #pragma once
 
-#include "physics/physics.h"
-#include "sys-types.h"
+#include "sys/sys-types.h"
+#include "core/physics/physics.h"
 
 enum pinb_prop_type {
 	PINB_PROP_TYPE_NONE,

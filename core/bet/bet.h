@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
-#include "sys-types.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
 
 #define MAX_BET_NODES      150
 #define MAX_BET_CHILDREN   10

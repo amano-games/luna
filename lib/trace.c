@@ -1,5 +1,5 @@
 #include "trace.h"
-#include "sys-io.h"
+#include "sys/sys-io.h"
 
 #if !defined(TRACE_AUTO)
 SPALL_NOINSTRUMENT

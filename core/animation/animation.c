@@ -1,11 +1,11 @@
 #include "animation.h"
 
-#include "sys-types.h"
-#include "sys-utils.h"
-#include "dbg.h"
+#include "sys/sys-types.h"
+#include "sys/sys-utils.h"
+#include "lib/dbg.h"
 
-#include "mathfunc.h"
-#include "trace.h"
+#include "lib/mathfunc.h"
+#include "lib/trace.h"
 
 void
 animation_clip_init(struct animation_clip *data)

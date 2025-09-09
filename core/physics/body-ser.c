@@ -1,9 +1,10 @@
 #include "body-ser.h"
-#include "dbg.h"
-#include "serialize/serialize.h"
-#include "str.h"
-#include "sys-log.h"
-#include "collisions/collisions-ser.h"
+
+#include "lib/dbg.h"
+#include "lib/str.h"
+
+#include "core/serialize/serialize.h"
+#include "core/collisions/collisions-ser.h"
 
 void
 body_write(struct ser_writer *w, struct body *body)

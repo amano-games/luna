@@ -1,7 +1,6 @@
 #include "rndm.h"
-#include "dbg.h"
-#include "sys-log.h"
-#include "v2.h"
+#include "lib/dbg.h"
+#include "lib/v2.h"
 
 struct rndm RNDM;
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sys-types.h"
-#include "collisions/collisions.h"
+#include "sys/sys-types.h"
+#include "core/collisions/collisions.h"
 
 struct physics {
 	u8 steps;

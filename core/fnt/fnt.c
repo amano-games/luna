@@ -1,13 +1,13 @@
 #include "fnt.h"
 
-#include "arr.h"
-#include "mathfunc.h"
-#include "serialize/serialize.h"
-#include "str.h"
-#include "sys-log.h"
-#include "sys-log.h"
-#include "dbg.h"
-#include "trace.h"
+#include "lib/arr.h"
+#include "lib/mathfunc.h"
+#include "core/serialize/serialize.h"
+#include "lib/str.h"
+#include "sys/sys-log.h"
+#include "sys/sys-log.h"
+#include "lib/dbg.h"
+#include "lib/trace.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)

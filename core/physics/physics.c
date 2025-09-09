@@ -1,10 +1,11 @@
 #include "physics.h"
 
-#include "mathfunc.h"
-#include "poly.h"
-#include "dbg.h"
-#include "sys-types.h"
-#include "v2.h"
+#include "core/poly.h"
+#include "sys/sys-types.h"
+
+#include "lib/mathfunc.h"
+#include "lib/dbg.h"
+#include "lib/v2.h"
 
 void
 body_init(struct body *body)

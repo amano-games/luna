@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cam.h"
-#include "sys-types.h"
+#include "sys/sys-types.h"
 
 #define MAX_CAM_AREAS 20
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "collisions/collisions.h"
-#include "sys.h"
-#include "sys-types.h"
+#include "core/collisions/collisions.h"
+#include "sys/sys.h"
+#include "sys/sys-types.h"
 
 #define CAM_W      SYS_DISPLAY_W
 #define CAM_H      SYS_DISPLAY_H

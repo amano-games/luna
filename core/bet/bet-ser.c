@@ -1,10 +1,10 @@
 #include "bet-ser.h"
 
-#include "serialize/serialize.h"
-#include "str.h"
-#include "sys-io.h"
-#include "sys-log.h"
-#include "sys-utils.h"
+#include "core/serialize/serialize.h"
+#include "lib/str.h"
+#include "sys/sys-io.h"
+#include "sys/sys-log.h"
+#include "sys/sys-utils.h"
 
 struct bet
 bet_load(str8 path, struct alloc alloc, struct alloc scratch)

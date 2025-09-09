@@ -1,13 +1,13 @@
 #include "asset-db.h"
 
-#include "animation/animation.h"
-#include "arr.h"
-#include "fnt/fnt.h"
-#include "bet/bet.h"
-#include "bet/bet-ser.h"
-#include "ht.h"
-#include "sys-log.h"
-#include "trace.h"
+#include "core/animation/animation.h"
+#include "lib/arr.h"
+#include "core/fnt/fnt.h"
+#include "core/bet/bet.h"
+#include "core/bet/bet-ser.h"
+#include "lib/ht.h"
+#include "sys/sys-log.h"
+#include "lib/trace.h"
 
 void
 asset_db_init(

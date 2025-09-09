@@ -1,8 +1,8 @@
 #include "debug-draw.h"
 
-#include "arr.h"
-#include "v2.h"
-#include "sys-debug-draw.h"
+#include "lib/arr.h"
+#include "lib/v2.h"
+#include "sys/sys-debug-draw.h"
 
 void
 debug_draw_init(void *mem, usize size)

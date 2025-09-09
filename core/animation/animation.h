@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-types.h"
+#include "sys/sys-types.h"
 
 #define ANIMATION_MAX_FRAMES 50
 

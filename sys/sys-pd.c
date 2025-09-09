@@ -1,14 +1,15 @@
 
-#include "mathfunc.h"
-#include "str.h"
-#include "sys-debug-draw.h"
-#include "sys-scoreboards.h"
-#include "sys.h"
-#include "sys-types.h"
-#include "sys-log.h"
-#include "sys-io.h"
-#include "sys-input.h"
-#include "dbg.h"
+#include "lib/mathfunc.h"
+#include "lib/str.h"
+#include "lib/dbg.h"
+
+#include "sys/sys-debug-draw.h"
+#include "sys/sys-scoreboards.h"
+#include "sys/sys.h"
+#include "sys/sys-types.h"
+#include "sys/sys-log.h"
+#include "sys/sys-io.h"
+#include "sys/sys-input.h"
 
 PlaydateAPI *PD;
 

@@ -2,8 +2,8 @@
 
 #include <math.h>
 
-#include "sys-types.h"
-#include "sys-utils.h"
+#include "sys/sys-types.h"
+#include "sys/sys-utils.h"
 #include "dbg.h"
 
 #define PI_FLOAT    3.1415927f

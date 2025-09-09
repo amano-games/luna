@@ -1,13 +1,13 @@
 #include "assets.h"
-#include "assets/asset-db.h"
-#include "dbg.h"
-#include "fnt/fnt.h"
-#include "gfx/gfx.h"
-#include "mem-arena.h"
-#include "path.h"
-#include "sys-log.h"
-#include "str.h"
-#include "sys-types.h"
+#include "core/assets/asset-db.h"
+#include "lib/dbg.h"
+#include "core/fnt/fnt.h"
+#include "core/gfx/gfx.h"
+#include "lib/mem-arena.h"
+#include "lib/path.h"
+#include "sys/sys-log.h"
+#include "lib/str.h"
+#include "sys/sys-types.h"
 
 void *asset_allocf(void *ctx, usize s);
 

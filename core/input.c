@@ -1,8 +1,8 @@
 #include "input.h"
-#include "dbg.h"
-#include "str.h"
-#include "sys-utils.h"
-#include "trace.h"
+#include "lib/dbg.h"
+#include "lib/str.h"
+#include "lib/trace.h"
+#include "sys/sys-utils.h"
 
 static struct inp INP;
 

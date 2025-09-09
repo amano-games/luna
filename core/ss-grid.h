@@ -1,8 +1,8 @@
 #pragma once
 
-#include "collisions/collisions.h"
-#include "mem.h"
-#include "sys-types.h"
+#include "core/collisions/collisions.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
 
 struct ss_cell {
 	i16 x;

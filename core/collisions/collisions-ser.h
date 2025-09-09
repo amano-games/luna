@@ -1,7 +1,7 @@
 #pragma once
 
-#include "serialize/serialize.h"
-#include "collisions.h"
+#include "core/serialize/serialize.h"
+#include "core/collisions/collisions.h"
 
 void col_shapes_write(struct ser_writer *w, struct col_shapes *shapes);
 struct col_shapes col_shapes_read(struct ser_reader *r, struct ser_value obj);
