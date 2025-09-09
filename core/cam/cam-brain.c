@@ -1,12 +1,12 @@
 #include "cam-brain.h"
 #include "cam.h"
 
-#include "sys-types.h"
-#include "sys-utils.h"
+#include "sys/sys-types.h"
+#include "sys/sys-utils.h"
 
-#include "collisions/collisions.h"
-#include "mathfunc.h"
-#include "v2.h"
+#include "core/collisions/collisions.h"
+#include "lib/mathfunc.h"
+#include "lib/v2.h"
 
 // TODO: remove the automatic cam bran set pos
 void

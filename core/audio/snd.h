@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
-#include "sys-types.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
 
 struct snd {
 	u8 *buf;

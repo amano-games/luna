@@ -1,10 +1,10 @@
 #include "str.h"
 #include "link_list.h"
 #include "mathfunc.h"
-#include "sys-str.h"
-#include "sys-types.h"
-#include "sys-utils.h"
-#include "dbg.h"
+#include "sys/sys-str.h"
+#include "sys/sys-types.h"
+#include "sys/sys-utils.h"
+#include "lib/dbg.h"
 
 u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 

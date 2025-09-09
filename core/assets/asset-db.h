@@ -1,13 +1,13 @@
 #pragma once
 
-#include "audio/snd.h"
-#include "bet/bet.h"
-#include "fnt/fnt.h"
-#include "ht.h"
-#include "sys-types.h"
+#include "core/audio/snd.h"
+#include "core/bet/bet.h"
+#include "core/fnt/fnt.h"
+#include "lib/ht.h"
+#include "sys/sys-types.h"
 
-#include "animation/animation.h"
-#include "tex/tex.h"
+#include "core/animation/animation.h"
+#include "core/tex/tex.h"
 
 enum asset_type {
 	ASSET_TYPE_NONE,

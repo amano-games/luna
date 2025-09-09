@@ -1,8 +1,8 @@
 #pragma once
 
-#include "assets/asset-db.h"
-#include "sys-types.h"
-#include "serialize/serialize.h"
+#include "core/assets/asset-db.h"
+#include "sys/sys-types.h"
+#include "core/serialize/serialize.h"
 
 struct ani_db {
 	struct ani_db_asset *assets;

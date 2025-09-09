@@ -1,6 +1,6 @@
 #pragma once
 
-#include "serialize/serialize.h"
+#include "core/serialize/serialize.h"
 
 void
 ser_write_v2(struct ser_writer *w, v2 v2)

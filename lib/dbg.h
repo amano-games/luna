@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-log.h"
+#include "sys/sys-log.h"
 
 #if defined(TARGET_PLAYDATE) // assertions don't work on hardware - disable
 #define dbg_assert(X)

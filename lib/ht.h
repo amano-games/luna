@@ -2,10 +2,10 @@
 
 // https://nullprogram.com/blog/2022/08/08/
 
-#include "mem.h"
-#include "sys-types.h"
-#include "dbg.h"
-#include "trace.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
+#include "lib/dbg.h"
+#include "lib/trace.h"
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)

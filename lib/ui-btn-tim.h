@@ -1,7 +1,7 @@
 #pragma once
 
-#include "input.h"
-#include "sys-types.h"
+#include "core/input.h"
+#include "sys/sys-types.h"
 
 #define UI_BTN_TIM_M_COUNT 5
 #define UI_BTN_TIM_L_COUNT 10

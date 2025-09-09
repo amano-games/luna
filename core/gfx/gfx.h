@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sys-types.h"
-#include "tex/tex.h"
+#include "sys/sys-types.h"
+#include "core/tex/tex.h"
 
 #define GFX_PATTERN_NUM 17
 #define GFX_PATTERN_MAX (GFX_PATTERN_NUM - 1)

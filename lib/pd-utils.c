@@ -1,8 +1,8 @@
 #include "pd-utils.h"
 #include "dbg.h"
 #include "str.h"
-#include "sys-io.h"
-#include "sys-types.h"
+#include "sys/sys-io.h"
+#include "sys/sys-types.h"
 
 void
 pdxinfo_extract_value_str(str8 line, str8 key, char *dest, size_t max_len)

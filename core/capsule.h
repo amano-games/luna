@@ -1,8 +1,8 @@
 #pragma once
 
-#include "collisions/collisions.h"
-#include "sys-types.h"
-#include "v2.h"
+#include "sys/sys-types.h"
+#include "lib/v2.h"
+#include "core/collisions/collisions.h"
 
 v2
 capsule_get_end(f32 ax, f32 ay, f32 len, rot2 rot)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-input.h"
+#include "sys/sys-input.h"
 
 enum {
 	INP_NONE         = 0,

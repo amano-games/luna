@@ -1,8 +1,8 @@
 #include "gfx.h"
-#include "sys.h"
-#include "sys-intrin.h"
-#include "mathfunc.h"
-#include "trace.h"
+#include "sys/sys.h"
+#include "sys/sys-intrin.h"
+#include "lib/mathfunc.h"
+#include "lib/trace.h"
 
 struct span_blit {
 	u32 *dp;  // pixel

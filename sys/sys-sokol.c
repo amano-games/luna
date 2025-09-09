@@ -1,6 +1,6 @@
 #include "sys-sokol.h"
-#include "mathfunc.h"
-#include "mem-arena.h"
+#include "lib/mathfunc.h"
+#include "lib/mem-arena.h"
 #include "sys-debug-draw.h"
 #include "sys-types.h"
 #include <stdio.h>
@@ -11,16 +11,16 @@
 #include "whereami.h"
 #endif
 
-#include "gfx/gfx.h"
-#include "gfx/gfx-defs.h"
-#include "path.h"
-#include "str.h"
+#include "core/gfx/gfx.h"
+#include "core/gfx/gfx-defs.h"
+#include "lib/path.h"
+#include "lib/str.h"
 #include "sys-utils.h"
 #include "sys-input.h"
 #include "sys-io.h"
 #include "sys-log.h"
 #include "sys.h"
-#include "dbg.h"
+#include "lib/dbg.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -28,12 +28,12 @@
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 
-#include "sokol_gfx.h"
-#include "sokol_app.h"
-#include "sokol_time.h"
-#include "sokol_glue.h"
-#include "sokol_log.h"
-#include "sokol_audio.h"
+#include "sokol/sokol_gfx.h"
+#include "sokol/sokol_app.h"
+#include "sokol/sokol_time.h"
+#include "sokol/sokol_glue.h"
+#include "sokol/sokol_log.h"
+#include "sokol/sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX

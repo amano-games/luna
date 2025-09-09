@@ -1,12 +1,11 @@
 #pragma once
 
-#include "audio/audio.h"
-#include "sys-types.h"
-#include "assets/asset-db.h"
+#include "sys/sys-types.h"
+#include "core/assets/asset-db.h"
 
-#include "gfx/gfx.h"
-#include "mem.h"
-#include "mem-arena.h"
+#include "core/gfx/gfx.h"
+#include "lib/mem.h"
+#include "lib/mem-arena.h"
 
 struct assets {
 	struct asset_db db;

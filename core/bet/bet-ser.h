@@ -1,7 +1,7 @@
 #pragma once
 
-#include "bet/bet.h"
-#include "serialize/serialize.h"
+#include "core/bet/bet.h"
+#include "core/serialize/serialize.h"
 
 // TODO: Move to assets
 struct bet bet_load(str8 path, struct alloc alloc, struct alloc scratch);

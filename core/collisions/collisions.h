@@ -3,7 +3,7 @@
 #define CUTE_C2_IMPLEMENTATION
 #include "cute_c2.h"
 
-#include "sys-types.h"
+#include "sys/sys-types.h"
 
 #define COL_MAX_POLYGON_VERTS 8
 #define COL_SHAPES_MAX        10

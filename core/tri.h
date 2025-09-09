@@ -1,7 +1,7 @@
 #pragma once
 
-#include "sys-types.h"
-#include "v2.h"
+#include "sys/sys-types.h"
+#include "lib/v2.h"
 
 static inline void
 tri_barycentric(v2 p, v2 a, v2 b, v2 c, f32 *u, f32 *v, f32 *w)

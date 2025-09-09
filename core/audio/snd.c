@@ -1,6 +1,6 @@
 #include "snd.h"
-#include "sys-io.h"
-#include "sys-log.h"
+#include "sys/sys-io.h"
+#include "sys/sys-log.h"
 
 struct snd
 snd_load(const str8 path, struct alloc alloc)

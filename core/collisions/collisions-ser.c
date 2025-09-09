@@ -1,9 +1,9 @@
 #include "collisions-ser.h"
 #include "collisions.h"
-#include "dbg.h"
-#include "serialize/serialize-utils.h"
-#include "str.h"
-#include "sys-utils.h"
+#include "lib/dbg.h"
+#include "core/serialize/serialize-utils.h"
+#include "lib/str.h"
+#include "sys/sys-utils.h"
 
 #define DBG_ONLY_W_FIRST
 

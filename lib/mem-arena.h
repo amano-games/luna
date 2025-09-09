@@ -1,8 +1,8 @@
 #pragma once
 
 #include "mem.h"
-#include "sys-log.h"
-#include "sys-types.h"
+#include "sys/sys-log.h"
+#include "sys/sys-types.h"
 #include "dbg.h"
 
 struct marena {

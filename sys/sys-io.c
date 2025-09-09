@@ -1,5 +1,5 @@
 #include "sys-io.h"
-#include "dbg.h"
+#include "lib/dbg.h"
 #include "sys-log.h"
 
 void *

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-types.h"
+#include "sys/sys-types.h"
 
 struct adpcm {
 	u8 *data;        // pointer to sample data (2x 4 bit samples per byte)

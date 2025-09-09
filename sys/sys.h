@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sys-types.h"
-#include "mem.h"
+#include "lib/mem.h"
 
 #define SYS_UPS            50
 #define SYS_DISPLAY_W      400

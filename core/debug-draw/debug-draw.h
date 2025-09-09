@@ -1,10 +1,10 @@
 #pragma once
 
-#include "collisions/collisions.h"
-#include "layout.h"
-#include "mem-arena.h"
-#include "mem.h"
-#include "sys-types.h"
+#include "core/collisions/collisions.h"
+#include "lib/layout.h"
+#include "lib/mem-arena.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
 
 struct debug_draw DEBUG_STATE;
 

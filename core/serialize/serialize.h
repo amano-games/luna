@@ -1,9 +1,9 @@
 #pragma once
 
-#include "dbg.h"
-#include "str.h"
-#include "sys-io.h"
-#include "sys-types.h"
+#include "lib/dbg.h"
+#include "lib/str.h"
+#include "sys/sys-io.h"
+#include "sys/sys-types.h"
 
 struct ser_reader {
 	char *data;

@@ -1,7 +1,7 @@
 #include "animation-db.h"
-#include "arr.h"
-#include "str.h"
-#include "sys-utils.h"
+#include "lib/arr.h"
+#include "lib/str.h"
+#include "sys/sys-utils.h"
 
 void
 ani_db_write_clip(struct ser_writer *w, struct animation_clip clip)

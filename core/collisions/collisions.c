@@ -1,12 +1,12 @@
 #include "collisions.h"
 
-#include "dbg.h"
-#include "sys-types.h"
+#include "lib/dbg.h"
+#include "sys/sys-types.h"
 
-#include "trace.h"
-#include "mathfunc.h"
-#include "tri.h"
-#include "v2.h"
+#include "lib/trace.h"
+#include "lib/mathfunc.h"
+#include "core/tri.h"
+#include "lib/v2.h"
 
 static inline c2v
 v2_to_c2v(v2 v)

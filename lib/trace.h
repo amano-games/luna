@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-types.h"
+#include "sys/sys-types.h"
 #if defined(TRACE_AUTO)
 #define SPALL_AUTO_IMPLEMENTATION
 #include "spall_native_auto.h"

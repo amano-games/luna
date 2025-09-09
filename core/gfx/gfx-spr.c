@@ -1,10 +1,10 @@
 #include "gfx-spr.h"
 
 #include "gfx.h"
-#include "sys-intrin.h"
-#include "mathfunc.h"
-#include "trace.h"
-#include "dbg.h"
+#include "sys/sys-intrin.h"
+#include "lib/mathfunc.h"
+#include "lib/trace.h"
+#include "lib/dbg.h"
 
 static void
 spr_blit(u32 *restrict dp, u32 *restrict dm, u32 sp, u32 sm, int mode)

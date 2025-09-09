@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mem.h"
-#include "sys-types.h"
+#include "sys/sys-types.h"
 
 enum path_style {
 	path_style_none,

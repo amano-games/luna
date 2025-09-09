@@ -1,14 +1,16 @@
-#include "pinb/pinb-ser.h"
 #include "pinb-ser.h"
-#include "arr.h"
-#include "dbg.h"
-#include "physics/body-ser.h"
-#include "pinb/pinb.h"
-#include "serialize/serialize-utils.h"
-#include "serialize/serialize.h"
-#include "str.h"
-#include "sys-log.h"
-#include "collisions/collisions-ser.h"
+
+#include "sys/sys-log.h"
+
+#include "lib/arr.h"
+#include "lib/dbg.h"
+#include "lib/str.h"
+
+#include "core/pinb/pinb.h"
+#include "core/physics/body-ser.h"
+#include "core/serialize/serialize-utils.h"
+#include "core/serialize/serialize.h"
+#include "core/collisions/collisions-ser.h"
 
 i32
 pinb_read(

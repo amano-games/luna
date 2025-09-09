@@ -1,9 +1,9 @@
 #pragma once
 
-#include "assets/asset-db.h"
-#include "audio/adpcm.h"
-#include "audio/snd.h"
-#include "sys-types.h"
+#include "core/assets/asset-db.h"
+#include "core/audio/adpcm.h"
+#include "core/audio/snd.h"
+#include "sys/sys-types.h"
 
 #define LEN_MUS_NAME      24
 #define NUM_SND_CHANNEL   12

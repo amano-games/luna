@@ -1,8 +1,8 @@
 #pragma once
 
-#include "trace.h"
-#include "sys-types.h"
-#include "mathfunc.h"
+#include "lib/trace.h"
+#include "sys/sys-types.h"
+#include "lib/mathfunc.h"
 
 static inline b32
 v2_eq(v2 a, v2 b)

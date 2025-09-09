@@ -1,10 +1,10 @@
 #include "animator.h"
 
-#include "assets/asset-db.h"
-#include "animation/animation.h"
+#include "core/assets/asset-db.h"
+#include "core/animation/animation.h"
 
-#include "assets/assets.h"
-#include "trace.h"
+#include "core/assets/assets.h"
+#include "lib/trace.h"
 
 void animator_set_animation(struct animator *animator, usize index);
 

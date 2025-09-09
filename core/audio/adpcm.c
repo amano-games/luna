@@ -1,7 +1,7 @@
 #include "adpcm.h"
-#include "mathfunc.h"
-#include "sys-intrin.h"
-#include "sys-utils.h"
+#include "lib/mathfunc.h"
+#include "sys/sys-intrin.h"
+#include "sys/sys-utils.h"
 
 static inline i32 adpcm_advance_step(struct adpcm *adpcm);
 static inline i32 adpcm_step(u8 step, i16 *history, i16 *step_size);

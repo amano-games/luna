@@ -1,8 +1,7 @@
-#include "cam/cam.h"
-#include "mathfunc.h"
-#include "rndm.h"
-#include "sys-log.h"
-#include "v2.h"
+#include "core/cam/cam.h"
+#include "lib/mathfunc.h"
+#include "core/rndm.h"
+#include "lib/v2.h"
 
 rec_i32
 cam_rec_px(struct cam *c)

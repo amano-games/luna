@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
-#include "sys-types.h"
+#include "lib/mem.h"
+#include "sys/sys-types.h"
 
 enum {
 	TEX_FMT_OPAQUE, // only color pixels

@@ -1,9 +1,9 @@
 #include "ss-grid.h"
 
-#include "arr.h"
-#include "collisions/collisions.h"
-#include "mathfunc.h"
-#include "sys-log.h"
+#include "lib/arr.h"
+#include "core/collisions/collisions.h"
+#include "lib/mathfunc.h"
+#include "sys/sys-log.h"
 
 static inline int ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape);
 

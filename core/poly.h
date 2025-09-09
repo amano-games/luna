@@ -1,9 +1,10 @@
 #pragma once
 
-#include "arr.h"
-#include "sys-types.h"
-#include "tri.h"
-#include "v2.h"
+#include "sys/sys-types.h"
+
+#include "lib/v2.h"
+#include "lib/arr.h"
+#include "core/tri.h"
 
 #define POLY_MAX_VERTS 8
 

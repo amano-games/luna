@@ -1,9 +1,9 @@
 #include "tex.h"
-#include "gfx/gfx-defs.h"
-#include "sys-intrin.h"
-#include "sys-io.h"
-#include "sys-log.h"
-#include "trace.h"
+#include "core/gfx/gfx-defs.h"
+#include "sys/sys-intrin.h"
+#include "sys/sys-io.h"
+#include "sys/sys-log.h"
+#include "lib/trace.h"
 
 // mask is almost always = 1
 struct tex

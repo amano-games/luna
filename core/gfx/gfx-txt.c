@@ -1,7 +1,7 @@
 #include "gfx-txt.h"
-#include "gfx/gfx-spr.h"
-#include "dbg.h"
-#include "trace.h"
+#include "core/gfx/gfx-spr.h"
+#include "lib/dbg.h"
+#include "lib/trace.h"
 
 void
 fnt_draw_str(
