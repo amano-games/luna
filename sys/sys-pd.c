@@ -1,13 +1,13 @@
 
-#include "lib/mathfunc.h"
-#include "lib/str.h"
-#include "lib/dbg.h"
+#include "base/mathfunc.h"
+#include "base/str.h"
+#include "base/dbg.h"
 
 #include "sys/sys-debug-draw.h"
 #include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
-#include "sys/sys-types.h"
-#include "sys/sys-log.h"
+#include "base/types.h"
+#include "base/log.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
 

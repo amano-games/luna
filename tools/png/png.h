@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
-#include "sys-types.h"
+#include "base/mem.h"
+#include "base/types.h"
 
 struct pixel {
 	uint8_t red;

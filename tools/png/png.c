@@ -1,8 +1,8 @@
 #include "png.h"
-#include "path.h"
-#include "str.h"
+#include "base/path.h"
+#include "base/str.h"
 #include "sys-io.h"
-#include "sys-log.h"
+#include "base/log.h"
 #include "tools/utils.h"
 
 #define STB_IMAGE_IMPLEMENTATION

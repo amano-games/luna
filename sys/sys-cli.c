@@ -3,9 +3,9 @@
 #include "whereami.h"
 
 #include "sys-io.h"
-#include "sys-log.h"
+#include "base/log.h"
 #include "sys.h"
-#include "dbg.h"
+#include "base/dbg.h"
 
 #define SOKOL_LOG_IMPL
 #include "sokol/sokol_log.h"

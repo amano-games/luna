@@ -1,7 +1,7 @@
 #include "sys.h"
 #include "sys-font.h"
-#include "sys-log.h"
-#include "lib/dbg.h"
+#include "base/log.h"
+#include "base/dbg.h"
 
 #if !defined(SYS_SHOW_FPS)
 #define SYS_SHOW_FPS 1 // enable fps/ups counter

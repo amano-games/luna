@@ -1,7 +1,7 @@
 #pragma once
 
 #include "bet/bet.h"
-#include "sys-types.h"
+#include "base/types.h"
 
 struct prop_res {
 	usize token_count;
