@@ -66,7 +66,11 @@ $(BUILD_DIR):
 	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
 
 $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
+	$(CC) \
+		$(CFLAGS) \
+		$(INC_FLAGS) $< \
+		$(LDLIBS) $(LDFLAGS) \
+		-o $@
 
 $(BUILD_DIR)/steam-runtime:
 	$(LUNA_DIR)/update_runtime.sh
