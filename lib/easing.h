@@ -1,7 +1,7 @@
 #pragma once
 
 #include "easing-type.h"
-#include "mathfunc.h"
+#include "base/mathfunc.h"
 
 static inline f32 ease_sine_in(f32 t);
 static inline f32 ease_sine_out(f32 t);

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "lib/mem.h"
-#include "sys/sys-types.h"
+#include "base/mem.h"
+#include "base/types.h"
 
 enum sys_scores_req_state {
 	SYS_SCORE_REQ_STATE_NONE,

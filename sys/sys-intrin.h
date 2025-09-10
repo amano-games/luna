@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sys-types.h"
+#include "base/types.h"
 
 #if defined(TARGET_PLAYDATE)
 #define bswap32 __builtin_bswap32

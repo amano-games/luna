@@ -1,6 +1,6 @@
 #include "sys-io.h"
-#include "lib/dbg.h"
-#include "sys-log.h"
+#include "base/dbg.h"
+#include "base/log.h"
 
 void *
 sys_file_open(str8 path, i32 sys_file_mode)

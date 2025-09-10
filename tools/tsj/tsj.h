@@ -1,7 +1,7 @@
 #pragma once
 
-#include "animation/animation.h"
-#include "animation/animation-db.h"
+#include "engine/animation/animation.h"
+#include "engine/animation/animation-db.h"
 
 struct tsj_tile_res {
 	usize token_count;

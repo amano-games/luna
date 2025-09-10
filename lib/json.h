@@ -2,9 +2,9 @@
 
 #include "jsmn.h"
 #include "sys-io.h"
-#include "sys-types.h"
-#include "str.h"
-#include "dbg.h"
+#include "base/types.h"
+#include "base/str.h"
+#include "base/dbg.h"
 
 b32
 json_load(const str8 path, struct alloc alloc, str8 *out)

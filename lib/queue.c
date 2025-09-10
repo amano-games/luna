@@ -1,7 +1,7 @@
 #include "queue.h"
-#include "sys-log.h"
+#include "base/log.h"
 #include "dbg.h"
-#include "sys-utils.h"
+#include "base/utils.h"
 
 void
 queue_u8_init(struct queue_u8 *queue)

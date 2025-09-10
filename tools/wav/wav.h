@@ -1,7 +1,7 @@
 #pragma once
 
-#include "mem.h"
-#include "sys-types.h"
+#include "base/mem.h"
+#include "base/types.h"
 
 #define SND_FILE_EXT           "snd"
 #define WAVE_FORMAT_PCM        0x1

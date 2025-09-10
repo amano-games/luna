@@ -1,15 +1,15 @@
 #include "fnt-pd.h"
-#include "arr.h"
+#include "base/arr.h"
 #include "fnt/fnt.h"
 #include "json.h"
-#include "mem-arena.h"
-#include "str.h"
+#include "base/marena.h"
+#include "base/str.h"
 #include "sys-io.h"
-#include "sys-log.h"
-#include "sys-types.h"
-#include "sys-utils.h"
+#include "base/log.h"
+#include "base/types.h"
+#include "base/utils.h"
 #include "sys.h"
-#include "str.h"
+#include "base/str.h"
 #include <jsmn.h>
 #include <tinydir.h>
 

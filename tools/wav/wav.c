@@ -1,8 +1,8 @@
 #include "wav.h"
-#include "audio/adpcm.h"
-#include "dbg.h"
-#include "path.h"
-#include "str.h"
+#include "engine/audio/adpcm.h"
+#include "base/dbg.h"
+#include "base/path.h"
+#include "base/str.h"
 #include "sys.h"
 #include "tools/utils.h"
 #include <stdio.h>

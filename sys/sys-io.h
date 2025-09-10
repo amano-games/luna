@@ -1,7 +1,7 @@
 #pragma once
 
-#include "lib/mem.h"
-#include "sys-types.h"
+#include "base/mem.h"
+#include "base/types.h"
 
 enum {
 	SYS_FILE_MODE_R,

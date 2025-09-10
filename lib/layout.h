@@ -1,7 +1,7 @@
 #pragma once
 
-#include "dbg.h"
-#include "mathfunc.h"
+#include "base/dbg.h"
+#include "base/mathfunc.h"
 
 enum ui_cut_side {
 	UI_CUT_NONE,

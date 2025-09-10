@@ -1,8 +1,8 @@
 #include "sys-sokol.h"
-#include "lib/mathfunc.h"
-#include "lib/mem-arena.h"
+#include "base/mathfunc.h"
+#include "base/marena.h"
 #include "sys-debug-draw.h"
-#include "sys-types.h"
+#include "base/types.h"
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
@@ -11,16 +11,16 @@
 #include "whereami.h"
 #endif
 
-#include "core/gfx/gfx.h"
-#include "core/gfx/gfx-defs.h"
-#include "lib/path.h"
-#include "lib/str.h"
-#include "sys-utils.h"
+#include "engine/gfx/gfx.h"
+#include "engine/gfx/gfx-defs.h"
+#include "base/path.h"
+#include "base/str.h"
+#include "base/utils.h"
 #include "sys-input.h"
 #include "sys-io.h"
-#include "sys-log.h"
+#include "base/log.h"
 #include "sys.h"
-#include "lib/dbg.h"
+#include "base/dbg.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
