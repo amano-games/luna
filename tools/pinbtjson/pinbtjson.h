@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/types.h"
-#include "pinb/pinb.h"
+#include "lib/pinb/pinb.h"
 
 struct pinb_col_shapes {
 	usize count;

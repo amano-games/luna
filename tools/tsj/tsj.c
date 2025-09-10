@@ -1,17 +1,17 @@
 #include "tsj.h"
 
 #include "base/arr.h"
-#include "json.h"
+#include "lib/json.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"
-#include "serialize/serialize.h"
+#include "lib/serialize/serialize.h"
 #include "base/str.h"
-#include "sys-io.h"
+#include "sys/sys-io.h"
 #include "base/log.h"
 #include "base/types.h"
 #include "base/utils.h"
-#include "sys.h"
+#include "sys/sys.h"
 
 #define ANIMATION_DB_EXT "lunidb"
 

@@ -4,8 +4,6 @@
 #include "sys-debug-draw.h"
 #include "base/types.h"
 #include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
 #include <tinydir.h>
 #if !defined(TARGET_WASM)
 #include "whereami.h"
@@ -38,6 +36,7 @@
 
 #define SOKOL_TOUCH_INVALID U8_MAX
 #define SOKOL_PIXEL_PERFECT
+#define SOKOL_DISABLE_AUDIO
 
 struct touch_point_mouse_emu {
 	uintptr_t id;
@@ -77,6 +76,9 @@ struct sokol_state {
 };
 
 static struct sokol_state SOKOL_STATE;
+static u32 *sokol_pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
+static u32 *sokol_pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
+
 const u32 SOKOL_BW_PAL[2] = {0xA2A5A5, 0x0D0B11};
 // const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
 const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
@@ -133,7 +135,7 @@ sokol_main(i32 argc, char **argv)
 #endif
 	}
 
-	return (sapp_desc){
+	sapp_desc res = {
 		.width              = SYS_DISPLAY_W * 2,
 		.height             = SYS_DISPLAY_H * 2,
 		.init_cb            = sokol_init,
@@ -144,6 +146,8 @@ sokol_main(i32 argc, char **argv)
 		.icon.sokol_default = true,
 		.window_title       = "Devils on the Moon Pinball",
 	};
+	log_info("SYS", "init");
+	return res;
 }
 
 void
@@ -174,11 +178,13 @@ sokol_init(void)
 		.logger.func = slog_func,
 	});
 
+#if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_setup(&(saudio_desc){
 		.buffer_frames = 256,
 		.stream_cb     = sokol_stream_cb,
 		.logger.func   = slog_func,
 	});
+#endif
 
 	/* a pass action to framebuffer to black */
 	SOKOL_STATE.pass_action = (sg_pass_action){
@@ -371,9 +377,7 @@ sokol_frame(void)
 	s_params_t params                                    = {.time = sys_seconds()};
 	s_buffer_params_t buffer_params                      = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors                                    = {0};
-	u32 *pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
-	u32 *pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
-	usize size                                           = ARRLEN(pixels);
+	usize size                                           = ARRLEN(sokol_pixels);
 
 	mcpy_array(colors.color_black, COL_BLACK);
 	mcpy_array(colors.color_white, COL_WHITE);
@@ -389,14 +393,14 @@ sokol_frame(void)
 	// mcpy_array(colors.color_white, COL_PURPLE);
 	// mcpy_array(colors.color_debug, COL_RED);
 
-	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)pixels, size, SOKOL_BW_PAL);
-	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)pixels_debug, size, SOKOL_DEBUG_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)sokol_pixels, size, SOKOL_BW_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)sokol_pixels_debug, size, SOKOL_DEBUG_PAL);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = pixels,
+				.ptr  = sokol_pixels,
 				.size = size,
 			},
 		});
@@ -405,7 +409,7 @@ sokol_frame(void)
 		SOKOL_STATE.bind.images[IMG_tex_debug],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = pixels_debug,
+				.ptr  = sokol_pixels_debug,
 				.size = size,
 			},
 		});
@@ -433,7 +437,9 @@ sokol_cleanup(void)
 	if(SOKOL_STATE.module_path.size > 0) { sys_free(SOKOL_STATE.module_path.str); }
 	if(SOKOL_STATE.base_path.size > 0) { sys_free(SOKOL_STATE.base_path.str); }
 	sg_shutdown();
-	saudio_shutdown();
+	#if !defined(SOKOL_DISABLE_AUDIO)
+		saudio_shutdown();
+	#endif
 	sys_internal_close();
 }
 
@@ -538,13 +544,17 @@ sys_seconds(void)
 }
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL
-
+#if !defined(TARGET_WIN)
+#include <time.h>
+#include <sys/time.h>
+#endif
 // TODO: Win32 support
 // Returns seconds since 2000-01-01 UTC.
 // If milliseconds != NULL, stores the 0–999 ms remainder.
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
+	#if !defined(TARGET_WIN)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -556,6 +566,9 @@ sys_epoch_2000(u32 *milliseconds)
 	}
 
 	return seconds;
+	#else
+	return 0;
+	#endif
 }
 
 void

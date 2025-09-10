@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bet/bet.h"
+#include "lib/bet/bet.h"
 #include "base/types.h"
 
 struct prop_res {
