@@ -16,7 +16,7 @@ struct ser_writer {
 	void *f;
 };
 
-enum set_value_type {
+enum ser_value_type {
 	SER_TYPE_ERROR,
 	SER_TYPE_END,
 	SER_TYPE_OBJECT,
@@ -45,8 +45,9 @@ ser_write(struct ser_writer *w, struct ser_value val)
 {
 	// write tag byte
 	sys_file_w(w->f, &val.type, 1);
+	enum ser_value_type type = (enum ser_value_type)val.type;
 	// write value
-	switch(val.type) {
+	switch(type) {
 	case SER_TYPE_U8: {
 		sys_file_w(w->f, &val.u8, sizeof(val.u8));
 	} break;
@@ -133,9 +134,10 @@ ser_read(struct ser_reader *r)
 {
 	struct ser_value res = {0};
 	// read type
-	bool ok = ser_safe_read(r, &res.type, 1);
+	bool ok                  = ser_safe_read(r, &res.type, 1);
+	enum ser_value_type type = (enum ser_value_type)res.type;
 	// read value
-	switch(res.type) {
+	switch(type) {
 	case SER_TYPE_END:
 		r->depth--;
 		break;

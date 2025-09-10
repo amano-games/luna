@@ -194,6 +194,7 @@ ani_db_read(struct ser_reader *r, struct alloc alloc)
 	struct ani_db res   = {0};
 	struct ser_value db = ser_read(r);
 	struct ser_value key, value;
+	dbg_assert(db.type == SER_TYPE_OBJECT);
 
 	while(ser_iter_object(r, db, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
