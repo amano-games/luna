@@ -36,7 +36,9 @@
 
 #define SOKOL_TOUCH_INVALID U8_MAX
 #define SOKOL_PIXEL_PERFECT
+#if defined(TARGET_WIN) || 1
 #define SOKOL_DISABLE_AUDIO
+#endif
 
 struct touch_point_mouse_emu {
 	uintptr_t id;
@@ -372,12 +374,12 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 void
 sokol_frame(void)
 {
-	f32 win_w                                            = sapp_widthf();
-	f32 win_h                                            = sapp_heightf();
-	s_params_t params                                    = {.time = sys_seconds()};
-	s_buffer_params_t buffer_params                      = sokol_get_buffer_params(win_w, win_h);
-	s_colors_t colors                                    = {0};
-	usize size                                           = ARRLEN(sokol_pixels);
+	f32 win_w                       = sapp_widthf();
+	f32 win_h                       = sapp_heightf();
+	s_params_t params               = {.time = sys_seconds()};
+	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
+	s_colors_t colors               = {0};
+	usize size                      = ARRLEN(sokol_pixels);
 
 	mcpy_array(colors.color_black, COL_BLACK);
 	mcpy_array(colors.color_white, COL_WHITE);
@@ -437,9 +439,9 @@ sokol_cleanup(void)
 	if(SOKOL_STATE.module_path.size > 0) { sys_free(SOKOL_STATE.module_path.str); }
 	if(SOKOL_STATE.base_path.size > 0) { sys_free(SOKOL_STATE.base_path.str); }
 	sg_shutdown();
-	#if !defined(SOKOL_DISABLE_AUDIO)
-		saudio_shutdown();
-	#endif
+#if !defined(SOKOL_DISABLE_AUDIO)
+	saudio_shutdown();
+#endif
 	sys_internal_close();
 }
 
@@ -554,7 +556,7 @@ sys_seconds(void)
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
-	#if !defined(TARGET_WIN)
+#if !defined(TARGET_WIN)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -566,9 +568,9 @@ sys_epoch_2000(u32 *milliseconds)
 	}
 
 	return seconds;
-	#else
+#else
 	return 0;
-	#endif
+#endif
 }
 
 void
@@ -1071,6 +1073,7 @@ sokol_set_icon(void)
 		icon_desc.images[icon_count++] = img;
 		log_info("sokol", "Loaded icon of size %d loaded: %.*s", icon_size, (i32)full_path.size, full_path.str);
 	}
+	tinydir_close(&dir);
 
 	if(icon_count > 0) {
 		icon_desc.sokol_default = false;

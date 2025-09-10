@@ -3,8 +3,8 @@
 #include "whereami.c"
 
 #include "base/arr.h"
-#include "json.h"
-#include "sys-cli.c"
+#include "lib/json.h"
+#include "sys/sys-cli.c"
 #include "base/marena.c"
 #include "base/mem.c"
 
@@ -13,10 +13,10 @@
 #include "base/path.c"
 
 #include "base/marena.h"
-#include "sys-io.h"
+#include "sys/sys-io.h"
 #include "base/log.h"
 #include "base/utils.h"
-#include "sys.h"
+#include "sys/sys.h"
 
 #define TABLE_EXT ".luntable"
 #define LOG_ID    "MetaGen"
