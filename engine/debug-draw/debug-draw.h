@@ -6,8 +6,6 @@
 #include "base/mem.h"
 #include "base/types.h"
 
-struct debug_draw DEBUG_STATE;
-
 #define MAX_DEBUG_SHAPES 10000
 
 struct debug_draw {
@@ -18,6 +16,8 @@ struct debug_draw {
 	struct marena marena;
 	alignas(8) char *mem;
 };
+
+struct debug_draw DEBUG_STATE;
 
 void *debug_mem_alloc(usize s);
 
