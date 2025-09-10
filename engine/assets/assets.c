@@ -72,11 +72,11 @@ asset_tex_load(str8 path, struct tex *tex)
 	struct tex t   = tex_load(full_path, ASSETS.alloc);
 
 	if(t.px == NULL) {
-		log_warn("Assets", "Lod failed %s", full_path.str);
+		log_warn("Assets", "Tex loading failed: %s", full_path.str);
 		return -1;
 	}
 
-	log_info("Assets", "Load tex %s", path.str);
+	log_info("Assets", "Tex loaded: %s", path.str);
 	res = asset_db_tex_push(&ASSETS.db, path, t);
 	if(tex) *tex = t;
 	return res;
