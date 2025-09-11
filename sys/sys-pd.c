@@ -431,10 +431,11 @@ sys_file_seek_end(void *f, i32 pos)
 	return (i32)PD->file->seek(f, pos, SEEK_END);
 }
 
-i32
+size
 sys_file_w(void *f, const void *buf, u32 buf_size)
 {
-	return (i32)PD_FILE_WRITE(f, buf, (uint)buf_size);
+	size res = PD_FILE_WRITE(f, buf, (uint)buf_size);
+	return res;
 }
 
 i32

@@ -352,12 +352,10 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 #if 0
 	{
 		struct sys_full_file_res file_res = sys_load_full_file(out_file_path, scratch);
-		struct ser_reader r               = {
-						  .data = file_res.data,
-						  .len  = file_res.size,
-        };
-		struct ser_value db = ser_read(&r);
-		ser_print_value(&r, db, 0);
+		struct ser_reader r               = {.data = file_res.data, .len = file_res.size};
+		struct ser_value root             = ser_read(&r);
+		str8 str                          = ser_value_to_str(scratch, &r, root);
+		sys_printf("%s", str.str);
 	}
 
 #endif

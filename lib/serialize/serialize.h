@@ -209,48 +209,50 @@ ser_indent_push(int depth, struct str8_list *list, struct alloc alloc)
 }
 
 void
-ser_value_push(struct ser_reader *r, struct ser_value val, int depth, struct str8_list *list, struct alloc alloc)
+ser_value_push_str8_list(struct ser_reader *r, struct ser_value val, int depth, struct str8_list *list, struct alloc alloc)
 {
 	struct ser_value k, v;
-	int count = 0;
-	switch(val.type) {
-	case SER_TYPE_OBJECT:
+	int count                = 0;
+	enum ser_value_type type = (enum ser_value_type)val.type;
+	switch(type) {
+	case SER_TYPE_OBJECT: {
 		str8_list_push(alloc, list, str8_lit("{\n"));
 		while(ser_iter_object(r, val, &k, &v)) {
+			dbg_assert(k.type == SER_TYPE_STRING);
 			if(count++ > 0) { str8_list_push(alloc, list, str8_lit(",\n")); }
 			ser_indent_push(depth + 1, list, alloc);
-			ser_value_push(r, k, depth + 1, list, alloc);
+			ser_value_push_str8_list(r, k, depth + 1, list, alloc);
 			str8_list_push(alloc, list, str8_lit(": "));
-			ser_value_push(r, v, depth + 1, list, alloc);
+			ser_value_push_str8_list(r, v, depth + 1, list, alloc);
 		}
 		if(count > 0) { str8_list_push(alloc, list, str8_lit("\n")); }
 		ser_indent_push(depth, list, alloc);
 		str8_list_push(alloc, list, str8_lit("}"));
-		break;
-	case SER_TYPE_ARRAY:
+	} break;
+	case SER_TYPE_ARRAY: {
 		str8_list_push(alloc, list, str8_lit("[\n"));
 		while(ser_iter_array(r, val, &v)) {
 			if(count++ > 0) { str8_list_push(alloc, list, str8_lit(",\n")); }
 			ser_indent_push(depth + 1, list, alloc);
-			ser_value_push(r, v, depth + 1, list, alloc);
+			ser_value_push_str8_list(r, v, depth + 1, list, alloc);
 		}
 		if(count > 0) { str8_list_push(alloc, list, str8_lit("\n")); }
 		ser_indent_push(depth, list, alloc);
 		str8_list_push(alloc, list, str8_lit("]"));
-		break;
-	case SER_TYPE_U8:
+	} break;
+	case SER_TYPE_U8: {
 		str8_list_pushf(alloc, list, "%d", val.u8);
-		break;
-	case SER_TYPE_I32:
+	} break;
+	case SER_TYPE_I32: {
 		str8_list_pushf(alloc, list, "%" PRId32 "", val.i32);
-		break;
-	case SER_TYPE_F32:
+	} break;
+	case SER_TYPE_F32: {
 		str8_list_pushf(alloc, list, "%.14g", (double)val.f32);
-		break;
-	case SER_TYPE_BOOL:
+	} break;
+	case SER_TYPE_BOOL: {
 		str8_list_push(alloc, list, val.b32 ? str8_lit("true") : str8_lit("false"));
-		break;
-	case SER_TYPE_STRING:
+	} break;
+	case SER_TYPE_STRING: {
 		str8_list_push(alloc, list, str8_lit("\""));
 		for(usize i = 0; i < val.str.size; i++) {
 			if(val.str.str[i] == '"') {
@@ -260,12 +262,22 @@ ser_value_push(struct ser_reader *r, struct ser_value val, int depth, struct str
 			}
 		}
 		str8_list_push(alloc, list, str8_lit("\""));
-		break;
+	} break;
 
-	default: // bad type
+	default: {
 		dbg_sentinel("Ser");
+	} break;
 	}
 
 error:
 	return;
+}
+
+str8
+ser_value_to_str(struct alloc alloc, struct ser_reader *r, struct ser_value value)
+{
+	struct str8_list list = {0};
+	ser_value_push_str8_list(r, value, 0, &list, alloc);
+	str8 res = str8_list_join(alloc, &list, NULL);
+	return res;
 }
