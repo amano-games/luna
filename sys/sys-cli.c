@@ -68,7 +68,7 @@ sys_file_open_r(const str8 path)
 void *
 sys_file_open_w(const str8 path)
 {
-	void *res = (void *)fopen((char *)path.str, "w");
+	void *res = (void *)fopen((char *)path.str, "wb");
 	return res;
 }
 
@@ -103,12 +103,12 @@ sys_file_r(void *f, void *buf, u32 buf_size)
 	return (i32)s;
 }
 
-i32
+size
 sys_file_w(void *f, const void *buf, u32 buf_size)
 {
 	int count = 1;
-	usize s   = fwrite(buf, buf_size, count, (FILE *)f);
-	return (i32)s;
+	size res  = fwrite(buf, buf_size, count, (FILE *)f);
+	return res;
 }
 
 i32
