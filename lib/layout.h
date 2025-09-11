@@ -98,7 +98,7 @@ error:
 }
 
 struct v2_i32
-ui_rect_get_cntr(const struct ui_rec *rect)
+ui_cntr_get(const struct ui_rec *rect)
 {
 	v2_i32 res = {
 		.x = rect->minx + ((rect->maxx - rect->minx) * 0.5),
