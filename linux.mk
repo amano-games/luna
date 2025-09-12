@@ -63,7 +63,7 @@ $(ASSETS_OUT): $(ASSETS_BIN)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
-	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
+	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
 $(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
 	$(CC) \
