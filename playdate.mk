@@ -175,7 +175,7 @@ run: build_sim
 	open "$(abspath $(OBJS))"
 endif
 
-$(PUBLISH_OBJS): $(OBJS)
+$(PUBLISH_OBJS): clean $(ELF_OUT) $(OBJS) $(ASSETS_OUT)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
 
 publish: $(PUBLISH_OBJS)
