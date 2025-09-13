@@ -920,3 +920,8 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	pd_scores_start_next();
 	PD_FREE_SCORE(score);
 }
+
+void
+sys_set_app_name(str8 value)
+{
+}

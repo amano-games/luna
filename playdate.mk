@@ -66,6 +66,7 @@ endif
 CFLAGS += $(CDEFS)
 
 OBJS         := $(BUILD_DIR)/$(TARGET)
+PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 ASSETS_OUT   := $(OBJS)/assets
 
 PDC         := $(SDK)/bin/pdc
@@ -173,3 +174,9 @@ ifeq ($(DETECTED_OS), Darwin)
 run: build_sim
 	open "$(abspath $(OBJS))"
 endif
+
+$(PUBLISH_OBJS): $(OBJS)
+	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
+
+publish: $(PUBLISH_OBJS)
+	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):playdate
