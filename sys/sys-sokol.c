@@ -146,7 +146,7 @@ sokol_main(i32 argc, char **argv)
 		.event_cb           = sokol_event,
 		.logger.func        = slog_func,
 		.icon.sokol_default = true,
-		.window_title       = "Devils on the Moon Pinball",
+		.window_title       = "Luna Game",
 	};
 	log_info("SYS", "init");
 	return res;
@@ -1139,4 +1139,10 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	dbg_assert(res.scale.x != 0.0f);
 	dbg_assert(res.scale.y != 0.0f);
 	return res;
+}
+
+void
+sys_set_app_name(str8 value)
+{
+	sapp_set_window_title((const char *)value.str);
 }
