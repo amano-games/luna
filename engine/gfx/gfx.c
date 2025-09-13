@@ -676,6 +676,65 @@ gfx_ellipse_section(
 	tex_px(ctx.dst, x0 - x, y0 + y, mode);
 }
 
+void
+gfx_tri(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy, i32 r, i32 mode)
+{
+	gfx_lin_thick(ctx, ax, ay, bx, by, mode, r);
+	gfx_lin_thick(ctx, ax, ay, cx, cy, mode, r);
+	gfx_lin_thick(ctx, bx, by, cx, cy, mode, r);
+}
+
+void
+gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy, i32 mode)
+{
+	v2_i32 t0 = {ax, ay};
+	v2_i32 t1 = {bx, by};
+	v2_i32 t2 = {cx, cy};
+
+	if(t0.y > t1.y) SWAP(v2_i32, t0, t1);
+	if(t0.y > t2.y) SWAP(v2_i32, t0, t2);
+	if(t1.y > t2.y) SWAP(v2_i32, t1, t2);
+
+	i32 th = t2.y - t0.y;
+
+	if(th == 0) return;
+
+	i32 h1  = t1.y - t0.y + 1;
+	i32 h2  = t2.y - t1.y + 1;
+	i32 d0  = t2.x - t0.x;
+	i32 d1  = t1.x - t0.x;
+	i32 d2  = t2.x - t1.x;
+	i32 ya0 = max_i32(ctx.clip_y1, t0.y);
+	i32 ya1 = min_i32(ctx.clip_y2, t1.y);
+
+	for(i32 y = ya0; y <= ya1; y++) {
+		dbg_assert(ctx.clip_y1 <= y && y <= ctx.clip_y2);
+		i32 x1 = t0.x + (d0 * (y - t0.y)) / th;
+		i32 x2 = t0.x + (d1 * (y - t0.y)) / h1;
+		if(x2 < x1) SWAP(i32, x1, x2);
+		x1 = max_i32(x1, ctx.clip_x1);
+		x2 = min_i32(x2, ctx.clip_x2);
+		if(x2 < x1) continue;
+		struct span_blit info = span_blit_gen(ctx, y, x1, x2, mode);
+		prim_blit_span(info);
+	}
+
+	i32 yb0 = max_i32(ctx.clip_y1, t1.y);
+	i32 yb1 = min_i32(ctx.clip_y2, t2.y);
+
+	for(i32 y = yb0; y <= yb1; y++) {
+		dbg_assert(ctx.clip_y1 <= y && y <= ctx.clip_y2);
+		i32 x1 = t0.x + (d0 * (y - t0.y)) / th;
+		i32 x2 = t1.x + (d2 * (y - t1.y)) / h2;
+		if(x2 < x1) SWAP(i32, x1, x2);
+		x1 = max_i32(x1, ctx.clip_x1);
+		x2 = min_i32(x2, ctx.clip_x2);
+		if(x2 < x1) continue;
+		struct span_blit info = span_blit_gen(ctx, y, x1, x2, mode);
+		prim_blit_span(info);
+	}
+}
+
 // https : //github.com/olikraus/u8g2/blob/a549a13b13b5fd568111557c1dd7ca3d06fbe21a/csrc/u8g2_circle.c#L244
 void
 gfx_ellipsis(struct gfx_ctx ctx,
