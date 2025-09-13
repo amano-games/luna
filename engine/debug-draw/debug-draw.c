@@ -50,6 +50,7 @@ debug_draw_clear(void)
 {
 	arr_reset(DEBUG_STATE.shapes);
 }
+
 void
 debug_draw_push_shape(struct debug_shape shape)
 {
