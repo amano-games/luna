@@ -126,6 +126,12 @@ debug_draw_cir_fill(f32 x, f32 y, f32 d)
 }
 
 void
+debug_draw_rec_i32(struct rec_i32 r)
+{
+	debug_draw_rec(r.x, r.y, r.w, r.h);
+}
+
+void
 debug_draw_rec(f32 x, f32 y, f32 w, f32 h)
 {
 	struct debug_shape d_shape = {0};
@@ -161,12 +167,6 @@ void
 debug_draw_aabb(f32 x1, f32 y1, f32 x2, f32 y2)
 {
 	debug_draw_rec(x1, y1, x2 - x1, y2 - y1);
-}
-
-void
-debug_draw_ui_rec(struct ui_rec rec)
-{
-	debug_draw_aabb(rec.minx, rec.miny, rec.maxx, rec.maxy);
 }
 
 // TODO: Re-do all of this

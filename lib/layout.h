@@ -1,8 +1,8 @@
 #pragma once
 
+#if defined(LUNA_OLD_UI)
 #include "base/dbg.h"
 #include "base/mathfunc.h"
-
 enum ui_cut_side {
 	UI_CUT_NONE,
 	UI_CUT_LEFT,
@@ -134,9 +134,4 @@ ui_get_bottom(const struct ui_rec *rect, i32 a)
 	i32 miny = max_i32(rect->miny, rect->maxy - a);
 	return (struct ui_rec){rect->minx, miny, rect->maxy, rect->maxy};
 }
-
-void
-print_rect_ui(char *label, struct ui_rec *rect)
-{
-	sys_printf("%s [%d, %d, %d, %d]", label, rect->minx, rect->miny, rect->maxx, rect->maxy);
-}
+#endif
