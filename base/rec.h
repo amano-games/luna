@@ -11,6 +11,8 @@ enum rec_cut_side {
 	REC_CUT_BOTTOM,
 };
 
+#define REC_UNPACK(r) r.x, r.y, r.w, r.h
+
 static inline struct rec_i32
 rec_i32_inset(struct rec_i32 r, i32 a)
 {
