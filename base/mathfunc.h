@@ -26,6 +26,12 @@ i32_mul_checked(i32 a, i32 b)
 	return (i32)r;
 }
 
+static inline i32
+div_i32_floor(i32 a, i32 b)
+{
+	return (a >= 0) ? (a / b) : -((-a + b - 1) / b);
+}
+
 static inline u64
 min_u64(u64 a, u64 b)
 {
