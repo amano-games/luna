@@ -127,7 +127,8 @@ aud_cmds_flush(void)
 				break;
 			}
 
-			void *f = sys_file_open_r(path);
+			str8 full_path = asset_path_to_full_path(path);
+			void *f        = sys_file_open_r(full_path);
 			if(!f) {
 				log_warn("Audio", "Can't open music file: %s", path.str);
 				break;
