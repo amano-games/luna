@@ -149,6 +149,18 @@ rec_i32_cntr(struct rec_i32 r)
 	return res;
 }
 
+static inline rec_i32
+rec_i32_pivot(struct rec_i32 r, v2 pivot)
+{
+	rec_i32 res = {
+		.x = r.x - (r.w * pivot.x),
+		.y = r.y - (r.h * pivot.y),
+		.w = r.w,
+		.h = r.h,
+	};
+	return res;
+}
+
 static inline struct rec_i32
 rec_i32_anchor(struct rec_i32 parent, struct rec_i32 r, struct v2 pivot)
 {
