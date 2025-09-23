@@ -1248,13 +1248,15 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 	int w              = SYS_DISPLAY_W;
 	int h              = SYS_DISPLAY_H;
 	int row_bytes      = SYS_DISPLAY_WBYTES;
+	FILE *pipe         = NULL;
 	u8 *scanline       = alloc.allocf(alloc.ctx, w);
-	if(!scanline) return;
+
+	dbg_check(scanline, "sokol", "Failed to get memory for recording scanline");
 
 	// Generate timestamped output path
 	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
 	str8 path           = str8_fmt_push(
-        SOKOL_STATE.scratch,
+        alloc,
         "luna-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
         dt.year,
         dt.month,
@@ -1264,24 +1266,27 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
         dt.sec);
 
 	// Construct ffmpeg command
-	int fps  = SYS_UPS;
-	str8 cmd = str8_fmt_push(
-		SOKOL_STATE.scratch,
-		"ffmpeg -y "
-		"-f rawvideo -pix_fmt gray -s %dx%d -r %d -i - "
-		"-c:v libx264 -preset veryfast -crf 0 -pix_fmt yuv420p "
-		"\"%s\"",
-		w,
-		h,
-		fps,
-		path.str);
+	int fps                   = SYS_UPS;
+	struct str8_list cmd_list = {0};
+	str8_list_pushf(alloc, &cmd_list, "ffmpeg");
+	str8_list_pushf(alloc, &cmd_list, "-y");
+	str8_list_pushf(alloc, &cmd_list, "-f rawvideo");
+	str8_list_pushf(alloc, &cmd_list, "-pix_fmt gray");
+	str8_list_pushf(alloc, &cmd_list, "-s %dx%d", w, h);
+	str8_list_pushf(alloc, &cmd_list, "-r %d", fps);
+	str8_list_pushf(alloc, &cmd_list, "-i -");
+	str8_list_pushf(alloc, &cmd_list, "-c:v libx264");
+	str8_list_pushf(alloc, &cmd_list, "-preset veryfast");
+	str8_list_pushf(alloc, &cmd_list, "-crf 0");
+	str8_list_pushf(alloc, &cmd_list, "-pix_fmt yuv420p");
+	str8_list_pushf(alloc, &cmd_list, "\"%s\"", path.str);
 
-	FILE *pipe = popen((char *)cmd.str, "w");
-	if(!pipe) {
-		perror("popen");
-		free(scanline);
-		return;
-	}
+	struct str_join params = {.sep = str8_lit(" ")};
+	str8 cmd               = str8_list_join(alloc, &cmd_list, &params);
+
+	pipe = popen((char *)cmd.str, "w");
+
+	dbg_check(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
 
 	// Write frames in chronological order (handles circular buffer)
 	size oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
@@ -1303,5 +1308,8 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 		}
 	}
 
-	pclose(pipe);
+error:;
+	if(pipe) {
+		pclose(pipe);
+	}
 }
