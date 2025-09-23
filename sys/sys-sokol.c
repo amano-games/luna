@@ -20,6 +20,9 @@
 #include "sys.h"
 #include "base/dbg.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -35,14 +38,27 @@
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
-// #define SOKOL_PIXEL_PERFECT
+#define SOKOL_PIXEL_PERFECT
 #if defined(TARGET_WIN)
 #define SOKOL_DISABLE_AUDIO
 #endif
 
+#define SOKOL_RECORDING_SECONDS 120
+
 struct touch_point_mouse_emu {
 	uintptr_t id;
 	sapp_mousebutton btn;
+};
+
+struct sokol_1bit_frame_buffer {
+	u8 data[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
+};
+
+struct sokol_1bit_recording {
+	size idx;
+	size len;
+	size cap;
+	struct sokol_1bit_frame_buffer *frames;
 };
 
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
@@ -60,8 +76,8 @@ struct sokol_state {
 	sg_pass_action pass_action;
 
 	f32 mouse_scroll_sensitivity;
-	u8 frame_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
-	u8 debug_buffer[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
+	struct sokol_1bit_frame_buffer frame_buffer;
+	struct sokol_1bit_frame_buffer debug_buffer;
 
 	struct tex debug_t;
 	struct gfx_ctx debug_ctx;
@@ -74,12 +90,14 @@ struct sokol_state {
 	f32 mouse_x;
 	f32 mouse_y;
 	u32 mouse_btns;
+
+	struct sokol_1bit_recording recording;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
 
 static struct sokol_state SOKOL_STATE;
-static u32 *sokol_pixels[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
-static u32 *sokol_pixels_debug[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
+static u32 *SOKOL_PIXELS[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
+static u32 *SOKOL_PIXELS_DEBUG[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
 
 const u32 SOKOL_BW_PAL[2] = {0xA2A5A5, 0x0D0B11};
 // const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
@@ -101,6 +119,8 @@ static void sokol_set_icon(void);
 static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
+static void sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer);
+static void sokol_write_recording(struct sokol_1bit_recording *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 
@@ -137,6 +157,15 @@ sokol_main(i32 argc, char **argv)
 #endif
 	}
 
+	{
+		SOKOL_STATE.recording.cap    = SYS_UPS * SOKOL_RECORDING_SECONDS;
+		SOKOL_STATE.recording.len    = 0;
+		SOKOL_STATE.recording.idx    = 0;
+		SOKOL_STATE.recording.frames = sys_alloc(NULL, sizeof(*SOKOL_STATE.recording.frames) * SOKOL_STATE.recording.cap);
+		dbg_check_warn(SOKOL_STATE.recording.frames != NULL, "sokol", "Failed to reserve recording memory");
+	}
+
+error:;
 	sapp_desc res = {
 		.width              = SYS_DISPLAY_W * 2,
 		.height             = SYS_DISPLAY_H * 2,
@@ -160,7 +189,7 @@ sokol_init(void)
 
 	SOKOL_STATE.debug_t       = (struct tex){0};
 	SOKOL_STATE.debug_t.fmt   = TEX_FMT_OPAQUE;
-	SOKOL_STATE.debug_t.px    = (u32 *)SOKOL_STATE.debug_buffer;
+	SOKOL_STATE.debug_t.px    = (u32 *)SOKOL_STATE.debug_buffer.data;
 	SOKOL_STATE.debug_t.w     = SYS_DISPLAY_W;
 	SOKOL_STATE.debug_t.h     = SYS_DISPLAY_H;
 	SOKOL_STATE.debug_t.wword = SYS_DISPLAY_WWORDS;
@@ -268,6 +297,12 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.keys[ev->key_code] = 1;
 		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
+		} break;
+		case SAPP_KEYCODE_F6: {
+			sokol_screenshot_save(&SOKOL_STATE.frame_buffer);
+		} break;
+		case SAPP_KEYCODE_F8: {
+			sokol_write_recording(&SOKOL_STATE.recording);
 		} break;
 		case SAPP_KEYCODE_R: {
 #if defined(TARGET_MACOS)
@@ -379,7 +414,7 @@ sokol_frame(void)
 	s_params_t params               = {.time = sys_seconds()};
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
-	usize size                      = ARRLEN(sokol_pixels);
+	usize size                      = ARRLEN(SOKOL_PIXELS);
 
 	mcpy_array(colors.color_black, COL_BLACK);
 	mcpy_array(colors.color_white, COL_WHITE);
@@ -395,14 +430,24 @@ sokol_frame(void)
 	// mcpy_array(colors.color_white, COL_PURPLE);
 	// mcpy_array(colors.color_debug, COL_RED);
 
-	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer, (u32 *)sokol_pixels, size, SOKOL_BW_PAL);
-	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer, (u32 *)sokol_pixels_debug, size, SOKOL_DEBUG_PAL);
+#if 1
+	{
+		struct sokol_1bit_recording *recording = &SOKOL_STATE.recording;
+		struct sokol_1bit_frame_buffer *src    = &SOKOL_STATE.frame_buffer;
+		struct sokol_1bit_frame_buffer *dst    = recording->frames + recording->idx;
+		mcpy_struct(dst, src);
+		recording->idx = (recording->idx + 1) % recording->cap;
+		recording->len = MIN(recording->len + 1, recording->cap);
+	}
+#endif
+	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer.data, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL);
+	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer.data, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = sokol_pixels,
+				.ptr  = SOKOL_PIXELS,
 				.size = size,
 			},
 		});
@@ -411,7 +456,7 @@ sokol_frame(void)
 		SOKOL_STATE.bind.images[IMG_tex_debug],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = sokol_pixels_debug,
+				.ptr  = SOKOL_PIXELS_DEBUG,
 				.size = size,
 			},
 		});
@@ -585,7 +630,7 @@ error:
 void *
 sys_1bit_buffer(void)
 {
-	return (u32 *)SOKOL_STATE.frame_buffer;
+	return (u32 *)SOKOL_STATE.frame_buffer.data;
 }
 
 struct alloc
@@ -876,11 +921,11 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 	u32 *pixels = out;
 	for(i32 y = 0; y < SYS_DISPLAY_H; y++) {
 		for(i32 x = 0; x < SYS_DISPLAY_W; x++) {
-			i32 i     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
-			i32 k     = x + y * SYS_DISPLAY_W;
-			i32 byt   = in[i];
-			i32 bit   = !!(byt & 0x80 >> (x & 7));
-			pixels[k] = pal[!bit];
+			i32 src     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
+			i32 dst     = x + y * SYS_DISPLAY_W;
+			i32 byt     = in[src];
+			i32 bit     = !!(byt & 0x80 >> (x & 7));
+			pixels[dst] = pal[!bit];
 		}
 	}
 }
@@ -1145,4 +1190,118 @@ void
 sys_set_app_name(str8 value)
 {
 	sapp_set_window_title((const char *)value.str);
+}
+
+#define SOKOL_SCREENSHOT_FORMAT 1
+
+static void
+sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer)
+{
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	static u32 *data[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
+	usize size                                          = ARRLEN(data);
+	struct alloc alloc                                  = SOKOL_STATE.scratch;
+	struct date_time date_time                          = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+	i32 w                                               = SYS_DISPLAY_W;
+	i32 h                                               = SYS_DISPLAY_H;
+	i32 comp                                            = 4;
+	i32 stride_in_bytes                                 = w * comp;
+
+	sokol_tex_to_rgb(buffer->data, (u32 *)data, size, SOKOL_BW_PAL);
+	for(int i = 0; i < w * h; i++) {
+		((u8 *)data)[i * 4 + 3] = 255; // set alpha = 255
+	}
+
+#if SOKOL_SCREENSHOT_FORMAT == 1
+	str8 path = str8_fmt_push(
+		alloc,
+		"luna-%04d-%02d-%02d_%02d:%02d:%02d.png",
+		date_time.year,
+		date_time.month,
+		date_time.day,
+		date_time.hour,
+		date_time.min,
+		date_time.sec);
+	stbi_write_png((char *)path.str, w, h, comp, data, stride_in_bytes);
+#else
+	str8 path = str8_fmt_push(
+		alloc,
+		"luna-%04d-%02d-%02d_%02d:%02d:%02d.bmp",
+		date_time.year,
+		date_time.month,
+		date_time.day,
+		date_time.hour,
+		date_time.min,
+		date_time.sec);
+	stbi_write_bmp((char *)path.str, w, h, comp, data);
+#endif
+	log_info("sokol", "screentshor saved: %s", path.str);
+}
+
+static void
+sokol_write_recording(struct sokol_1bit_recording *recording)
+{
+	if(!recording || recording->len == 0) return;
+	marena_reset(&SOKOL_STATE.scratch_marena);
+
+	struct alloc alloc = SOKOL_STATE.scratch;
+	int w              = SYS_DISPLAY_W;
+	int h              = SYS_DISPLAY_H;
+	int row_bytes      = SYS_DISPLAY_WBYTES;
+	u8 *scanline       = alloc.allocf(alloc.ctx, w);
+	if(!scanline) return;
+
+	// Generate timestamped output path
+	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+	str8 path           = str8_fmt_push(
+        SOKOL_STATE.scratch,
+        "luna-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
+        dt.year,
+        dt.month,
+        dt.day,
+        dt.hour,
+        dt.min,
+        dt.sec);
+
+	// Construct ffmpeg command
+	int fps  = SYS_UPS;
+	str8 cmd = str8_fmt_push(
+		SOKOL_STATE.scratch,
+		"ffmpeg -y "
+		"-f rawvideo -pix_fmt gray -s %dx%d -r %d -i - "
+		"-c:v libx264 -preset veryfast -crf 0 -pix_fmt yuv420p "
+		"\"%s\"",
+		w,
+		h,
+		fps,
+		path.str);
+
+	FILE *pipe = popen((char *)cmd.str, "w");
+	if(!pipe) {
+		perror("popen");
+		free(scanline);
+		return;
+	}
+
+	// Write frames in chronological order (handles circular buffer)
+	size oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
+	for(size i = 0; i < (size)recording->len; i++) {
+		size f              = (oldest + i) % recording->cap;
+		const u8 *src_frame = recording->frames[f].data;
+		for(int y = 0; y < h; y++) {
+			const uint8_t *src_row = src_frame + y * row_bytes;
+			u8 *dst_row            = scanline;
+
+			for(int x = 0; x < w; x++) {
+				int byte_index = x >> 3;
+				int bit_index  = 7 - (x & 7);
+				int bit        = (src_row[byte_index] >> bit_index) & 1;
+				dst_row[x]     = bit ? 255 : 0;
+			}
+
+			fwrite(dst_row, 1, w, pipe);
+		}
+	}
+
+	pclose(pipe);
 }
