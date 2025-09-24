@@ -1,6 +1,7 @@
 #include "sys-sokol.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"
+#include "base/mem.h"
 #include "sys-debug-draw.h"
 #include "base/types.h"
 #include <stdio.h>
@@ -116,7 +117,7 @@ void sokol_cleanup(void);
 
 static void sokol_exe_path_set(void);
 static void sokol_set_icon(void);
-static inline void sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal);
+static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 static void sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer);
@@ -440,8 +441,8 @@ sokol_frame(void)
 		recording->len = MIN(recording->len + 1, recording->cap);
 	}
 #endif
-	sokol_tex_to_rgb(SOKOL_STATE.frame_buffer.data, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL);
-	sokol_tex_to_rgb(SOKOL_STATE.debug_buffer.data, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL);
+	sokol_tex_to_rgba(SOKOL_STATE.frame_buffer.data, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL);
+	sokol_tex_to_rgba(SOKOL_STATE.debug_buffer.data, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -916,7 +917,7 @@ error:
 }
 
 static inline void
-sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
+sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal)
 {
 	u32 *pixels = out;
 	for(i32 y = 0; y < SYS_DISPLAY_H; y++) {
@@ -925,7 +926,7 @@ sokol_tex_to_rgb(const u8 *in, u32 *out, usize size, const u32 *pal)
 			i32 dst     = x + y * SYS_DISPLAY_W;
 			i32 byt     = in[src];
 			i32 bit     = !!(byt & 0x80 >> (x & 7));
-			pixels[dst] = pal[!bit];
+			pixels[dst] = pal[!bit] | 0xFF000000;
 		}
 	}
 }
@@ -1198,19 +1199,16 @@ static void
 sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	static u32 *data[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
-	usize size                                          = ARRLEN(data);
-	struct alloc alloc                                  = SOKOL_STATE.scratch;
-	struct date_time date_time                          = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-	i32 w                                               = SYS_DISPLAY_W;
-	i32 h                                               = SYS_DISPLAY_H;
-	i32 comp                                            = 4;
-	i32 stride_in_bytes                                 = w * comp;
+	static u32 data[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
+	usize size                                     = ARRLEN(data);
+	struct alloc alloc                             = SOKOL_STATE.scratch;
+	struct date_time date_time                     = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+	i32 w                                          = SYS_DISPLAY_W;
+	i32 h                                          = SYS_DISPLAY_H;
+	i32 comp                                       = 4;
+	i32 stride_in_bytes                            = w * comp;
 
-	sokol_tex_to_rgb(buffer->data, (u32 *)data, size, SOKOL_BW_PAL);
-	for(int i = 0; i < w * h; i++) {
-		((u8 *)data)[i * 4 + 3] = 255; // set alpha = 255
-	}
+	sokol_tex_to_rgba(buffer->data, (u32 *)data, size, SOKOL_BW_PAL);
 
 #if SOKOL_SCREENSHOT_FORMAT == 1
 	str8 path = str8_fmt_push(
@@ -1249,9 +1247,6 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 	int h              = SYS_DISPLAY_H;
 	int row_bytes      = SYS_DISPLAY_WBYTES;
 	FILE *pipe         = NULL;
-	u8 *scanline       = alloc.allocf(alloc.ctx, w);
-
-	dbg_check(scanline, "sokol", "Failed to get memory for recording scanline");
 
 	// Generate timestamped output path
 	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
@@ -1271,10 +1266,11 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 	str8_list_pushf(alloc, &cmd_list, "ffmpeg");
 	str8_list_pushf(alloc, &cmd_list, "-y");
 	str8_list_pushf(alloc, &cmd_list, "-f rawvideo");
-	str8_list_pushf(alloc, &cmd_list, "-pix_fmt gray");
+	str8_list_pushf(alloc, &cmd_list, "-pix_fmt rgba");
 	str8_list_pushf(alloc, &cmd_list, "-s %dx%d", w, h);
 	str8_list_pushf(alloc, &cmd_list, "-r %d", fps);
 	str8_list_pushf(alloc, &cmd_list, "-i -");
+
 	str8_list_pushf(alloc, &cmd_list, "-c:v libx264");
 	str8_list_pushf(alloc, &cmd_list, "-preset veryfast");
 	str8_list_pushf(alloc, &cmd_list, "-crf 0");
@@ -1288,24 +1284,16 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 
 	dbg_check(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
 
+	static u32 dst[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
+	usize dst_size                                = ARRLEN(dst);
 	// Write frames in chronological order (handles circular buffer)
 	size oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
+	u32 pal[2]  = {0xA2A5A5, 0x0D0B11};
 	for(size i = 0; i < (size)recording->len; i++) {
-		size f              = (oldest + i) % recording->cap;
-		const u8 *src_frame = recording->frames[f].data;
-		for(int y = 0; y < h; y++) {
-			const uint8_t *src_row = src_frame + y * row_bytes;
-			u8 *dst_row            = scanline;
-
-			for(int x = 0; x < w; x++) {
-				int byte_index = x >> 3;
-				int bit_index  = 7 - (x & 7);
-				int bit        = (src_row[byte_index] >> bit_index) & 1;
-				dst_row[x]     = bit ? 255 : 0;
-			}
-
-			fwrite(dst_row, 1, w, pipe);
-		}
+		size f                             = (oldest + i) % recording->cap;
+		struct sokol_1bit_frame_buffer src = recording->frames[f];
+		sokol_tex_to_rgba(src.data, (u32 *)dst, dst_size, SOKOL_BW_PAL);
+		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 
 error:;
