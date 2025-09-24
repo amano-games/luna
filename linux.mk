@@ -84,10 +84,11 @@ steam: $(BUILD_DIR)/steam-runtime
 clean:
 	rm -rf $(BUILD_DIR)
 
+build: $(OBJS)
+
 run: build
 	cd $(BUILD_DIR) && LD_PRELOAD=/usr/lib/libasan.so ./$(TARGET)
 
-build: $(OBJS)
 release: clean $(PUBLISH_OBJS)
 publish: $(PUBLISH_OBJS)
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux
