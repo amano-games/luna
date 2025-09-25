@@ -88,7 +88,7 @@ rndm_point_out_cir(struct rndm *rndm, i32 x, i32 y, i32 r)
 }
 
 v2
-rndm_point_in_cir(struct rndm *rndm, i32 x, i32 y, i32 r)
+rndm_point_in_cir(struct rndm *rndm, f32 x, f32 y, f32 r)
 {
 	f32 angle     = rndm_next_f32(rndm) * TURN_TO_RAD;
 	f32 magnitude = rndm_next_f32(rndm) * r;
