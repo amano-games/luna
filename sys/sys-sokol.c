@@ -87,6 +87,9 @@ struct sokol_state {
 	f32 mouse_y;
 	u32 mouse_btns;
 
+	struct gfx_col_pallete pallete;
+	struct gfx_col_pallete pallete_dbg;
+
 	struct sokol_1bit_recording recording;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
@@ -95,14 +98,16 @@ static struct sokol_state SOKOL_STATE;
 static u32 *SOKOL_PIXELS[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
 static u32 *SOKOL_PIXELS_DEBUG[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
 
-const u32 SOKOL_BW_PAL[2] = {0xA2A5A5, 0x0D0B11};
-// const u32 SOKOL_BW_PAL[2]    = {0xFFFFFF, 0x000000};
-const u32 SOKOL_DEBUG_PAL[2] = {0xFFFFFF, 0x000000};
-const f32 COL_WHITE[3]       = {0.64f, 0.64f, 0.64f};
-const f32 COL_BLACK[3]       = {0.05f, 0.04f, 0.06f};
-const f32 COL_RED[3]         = {1.0f, 0.0f, 0.0f};
-const f32 COL_YELLOW[3]      = {1.0f, 0.784f, 0.2f};
-const f32 COL_PURPLE[3]      = {0.424f, 0.0f, 1.0f};
+#define SOKOL_WHITE     "#A2A5A5"
+#define SOKOL_BLACK     "#0D0B11"
+#define SOKOL_DBG_WHITE "FFFFFF00"
+#define SOKOL_DBG_BLACK "00000000"
+
+const f32 COL_WHITE[3]  = {0.64f, 0.64f, 0.64f};
+const f32 COL_BLACK[3]  = {0.05f, 0.04f, 0.06f};
+const f32 COL_RED[3]    = {1.0f, 0.0f, 0.0f};
+const f32 COL_YELLOW[3] = {1.0f, 0.784f, 0.2f};
+const f32 COL_PURPLE[3] = {0.424f, 0.0f, 1.0f};
 
 void sokol_init(void);
 void sokol_frame(void);
@@ -156,14 +161,14 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
-		tex_clr(tex, GFX_COL_CLEAR);
+		// tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create frame buffer");
 	}
 
 	{
 		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
 		SOKOL_STATE.debug_ctx = gfx_ctx_default(tex);
-		tex_clr(tex, GFX_COL_CLEAR);
+		// tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
 	}
 
@@ -173,6 +178,13 @@ sokol_main(i32 argc, char **argv)
 		SOKOL_STATE.recording.idx    = 0;
 		SOKOL_STATE.recording.frames = sys_alloc(NULL, sizeof(*SOKOL_STATE.recording.frames) * SOKOL_STATE.recording.cap);
 		dbg_check_warn(SOKOL_STATE.recording.frames != NULL, "sokol", "Failed to reserve recording memory");
+	}
+
+	{
+		SOKOL_STATE.pallete.colors[GFX_COL_BLACK]     = 0x0D0B11;
+		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]     = 0xA2A5A5;
+		SOKOL_STATE.pallete_dbg.colors[GFX_COL_BLACK] = 0x000000;
+		SOKOL_STATE.pallete_dbg.colors[GFX_COL_WHITE] = 0xFFFFFF;
 	}
 
 error:;
@@ -410,9 +422,9 @@ sokol_frame(void)
 	s_colors_t colors               = {0};
 	usize size                      = ARRLEN(SOKOL_PIXELS);
 
-	mcpy_array(colors.color_black, COL_BLACK);
-	mcpy_array(colors.color_white, COL_WHITE);
-	mcpy_array(colors.color_debug, COL_RED);
+	mcpy_struct(&colors.color_black, &COL_BLACK);
+	mcpy_struct(&colors.color_white, &COL_WHITE);
+	mcpy_struct(&colors.color_debug, &COL_RED);
 
 #if defined SOKOL_PIXEL_PERFECT
 	params.pixel_perfect = true;
@@ -434,8 +446,8 @@ sokol_frame(void)
 		recording->len = MIN(recording->len + 1, recording->cap);
 	}
 #endif
-	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
-	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL[0], SOKOL_DEBUG_PAL[1]);
+	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.pallete);
+	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.pallete_dbg);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -1203,7 +1215,7 @@ sokol_screenshot_save(struct tex tex)
 	i32 comp                                       = 4;
 	i32 stride_in_bytes                            = w * comp;
 
-	tex_opaque_to_rgba(tex, data, size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
+	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.pallete);
 
 #if SOKOL_SCREENSHOT_FORMAT == 1
 	str8 path = str8_fmt_push(
@@ -1286,7 +1298,7 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 	for(size i = 0; i < (size)recording->len; i++) {
 		size f         = (oldest + i) % recording->cap;
 		struct tex src = recording->frames[f];
-		tex_opaque_to_rgba(src, (u32 *)dst, dst_size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
+		tex_opaque_to_rgba(src, (u32 *)dst, dst_size, SOKOL_STATE.pallete);
 		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 

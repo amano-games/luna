@@ -100,6 +100,7 @@ str8 str8_skip_last_dot(str8 str);
 i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
 b32 str8_to_bool32(str8 str);
+u64 str8_to_u64(str8 str, u32 radix);
 
 // String Stylization
 

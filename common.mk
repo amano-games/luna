@@ -23,8 +23,12 @@ ASSETS_BIN := bin/luna-asset-gen
 ASSETS_SRC := $(LUNA_DIR)/tools/asset-gen.c
 ASSETS_WATCH_SRC  := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 
-# SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
+ifeq ($(DETECTED_OS), Linux)
+SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
+endif
+ifeq ($(DETECTED_OS), Darwin)
 SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/osx_arm64/sokol-shdc
+endif
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h
 
 $(ASSETS_BIN): $(ASSETS_WATCH_SRC)

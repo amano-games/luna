@@ -203,7 +203,7 @@ tex_mask(struct tex tex, i32 x, i32 y, i32 col)
 }
 
 void
-tex_opaque_to_rgba(struct tex tex, u32 *out, size size, u32 white, u32 black)
+tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete)
 {
 	u32 *pixels       = out;
 	i32 width_alinged = (tex.w + 31) & ~31;
@@ -215,7 +215,7 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, u32 white, u32 black)
 			i32 dst     = x + y * tex.w;
 			i32 byt     = in[src];
 			i32 bit     = !!(byt & 0x80 >> (x & 7));
-			pixels[dst] = (bit ? white : black) | 0xFF000000;
+			pixels[dst] = (bit ? pallete.colors[GFX_COL_WHITE] : pallete.colors[GFX_COL_BLACK]) | 0xFF000000;
 		}
 	}
 }
