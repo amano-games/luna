@@ -2,6 +2,7 @@
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
+#include "lib/tex/tex.h"
 #include "sys-debug-draw.h"
 #include "base/types.h"
 #include <stdio.h>
@@ -51,15 +52,11 @@ struct touch_point_mouse_emu {
 	sapp_mousebutton btn;
 };
 
-struct sokol_1bit_frame_buffer {
-	u8 data[SYS_DISPLAY_WBYTES * SYS_DISPLAY_H];
-};
-
 struct sokol_1bit_recording {
 	size idx;
 	size len;
 	size cap;
-	struct sokol_1bit_frame_buffer *frames;
+	struct tex *frames;
 };
 
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
@@ -77,10 +74,8 @@ struct sokol_state {
 	sg_pass_action pass_action;
 
 	f32 mouse_scroll_sensitivity;
-	struct sokol_1bit_frame_buffer frame_buffer;
-	struct sokol_1bit_frame_buffer debug_buffer;
 
-	struct tex debug_t;
+	struct gfx_ctx frame_ctx;
 	struct gfx_ctx debug_ctx;
 
 	u8 keys[SYS_KEYS_LEN];
@@ -120,7 +115,7 @@ static void sokol_set_icon(void);
 static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
-static void sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer);
+static void sokol_screenshot_save(struct tex tex);
 static void sokol_write_recording(struct sokol_1bit_recording *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
@@ -159,6 +154,20 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
+		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
+		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
+		tex_clr(tex, GFX_COL_CLEAR);
+		dbg_check(tex.px, "sokol", "Failed to create frame buffer");
+	}
+
+	{
+		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
+		SOKOL_STATE.debug_ctx = gfx_ctx_default(tex);
+		tex_clr(tex, GFX_COL_CLEAR);
+		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
+	}
+
+	{
 		SOKOL_STATE.recording.cap    = SYS_UPS * SOKOL_RECORDING_SECONDS;
 		SOKOL_STATE.recording.len    = 0;
 		SOKOL_STATE.recording.idx    = 0;
@@ -187,22 +196,6 @@ sokol_init(void)
 {
 	SOKOL_STATE.crank_docked             = true;
 	SOKOL_STATE.mouse_scroll_sensitivity = 0.03f;
-
-	SOKOL_STATE.debug_t       = (struct tex){0};
-	SOKOL_STATE.debug_t.fmt   = TEX_FMT_OPAQUE;
-	SOKOL_STATE.debug_t.px    = (u32 *)SOKOL_STATE.debug_buffer.data;
-	SOKOL_STATE.debug_t.w     = SYS_DISPLAY_W;
-	SOKOL_STATE.debug_t.h     = SYS_DISPLAY_H;
-	SOKOL_STATE.debug_t.wword = SYS_DISPLAY_WWORDS;
-
-	SOKOL_STATE.debug_ctx         = (struct gfx_ctx){0};
-	SOKOL_STATE.debug_ctx.dst     = SOKOL_STATE.debug_t;
-	SOKOL_STATE.debug_ctx.clip_x2 = SOKOL_STATE.debug_t.w - 1;
-	SOKOL_STATE.debug_ctx.clip_y2 = SOKOL_STATE.debug_t.h - 1;
-	mset(&SOKOL_STATE.debug_ctx.pat, 0xFF, sizeof(struct gfx_pattern));
-	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
-		SOKOL_STATE.touches_mouse[i].id = SOKOL_TOUCH_INVALID;
-	}
 
 	stm_setup();
 	sg_setup(&(sg_desc){
@@ -300,7 +293,7 @@ sokol_event(const sapp_event *ev)
 		case SAPP_KEYCODE_ESCAPE: {
 		} break;
 		case SAPP_KEYCODE_F6: {
-			sokol_screenshot_save(&SOKOL_STATE.frame_buffer);
+			sokol_screenshot_save(SOKOL_STATE.frame_ctx.dst);
 		} break;
 		case SAPP_KEYCODE_F8: {
 			sokol_write_recording(&SOKOL_STATE.recording);
@@ -434,15 +427,15 @@ sokol_frame(void)
 #if 1
 	{
 		struct sokol_1bit_recording *recording = &SOKOL_STATE.recording;
-		struct sokol_1bit_frame_buffer *src    = &SOKOL_STATE.frame_buffer;
-		struct sokol_1bit_frame_buffer *dst    = recording->frames + recording->idx;
+		struct tex *src                        = &SOKOL_STATE.frame_ctx.dst;
+		struct tex *dst                        = recording->frames + recording->idx;
 		mcpy_struct(dst, src);
 		recording->idx = (recording->idx + 1) % recording->cap;
 		recording->len = MIN(recording->len + 1, recording->cap);
 	}
 #endif
-	sokol_tex_to_rgba(SOKOL_STATE.frame_buffer.data, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL);
-	sokol_tex_to_rgba(SOKOL_STATE.debug_buffer.data, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL);
+	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
+	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_DEBUG_PAL[0], SOKOL_DEBUG_PAL[1]);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -480,6 +473,8 @@ sokol_frame(void)
 void
 sokol_cleanup(void)
 {
+	if(SOKOL_STATE.frame_ctx.dst.px) { sys_free(SOKOL_STATE.frame_ctx.dst.px); };
+	if(SOKOL_STATE.debug_ctx.dst.px) { sys_free(SOKOL_STATE.debug_ctx.dst.px); };
 	if(SOKOL_STATE.scratch_marena.buf_og != NULL) { sys_free(SOKOL_STATE.scratch_marena.buf_og); }
 	if(SOKOL_STATE.exe_path.size > 0) { sys_free(SOKOL_STATE.exe_path.str); }
 	if(SOKOL_STATE.module_path.size > 0) { sys_free(SOKOL_STATE.module_path.str); }
@@ -631,7 +626,7 @@ error:
 void *
 sys_1bit_buffer(void)
 {
-	return (u32 *)SOKOL_STATE.frame_buffer.data;
+	return SOKOL_STATE.frame_ctx.dst.px;
 }
 
 struct alloc
@@ -1196,7 +1191,7 @@ sys_set_app_name(str8 value)
 #define SOKOL_SCREENSHOT_FORMAT 1
 
 static void
-sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer)
+sokol_screenshot_save(struct tex tex)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	static u32 data[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
@@ -1208,7 +1203,7 @@ sokol_screenshot_save(struct sokol_1bit_frame_buffer *buffer)
 	i32 comp                                       = 4;
 	i32 stride_in_bytes                            = w * comp;
 
-	sokol_tex_to_rgba(buffer->data, (u32 *)data, size, SOKOL_BW_PAL);
+	tex_opaque_to_rgba(tex, data, size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
 
 #if SOKOL_SCREENSHOT_FORMAT == 1
 	str8 path = str8_fmt_push(
@@ -1243,9 +1238,8 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 
 	struct alloc alloc = SOKOL_STATE.scratch;
-	int w              = SYS_DISPLAY_W;
-	int h              = SYS_DISPLAY_H;
-	int row_bytes      = SYS_DISPLAY_WBYTES;
+	int w              = recording->frames[0].w;
+	int h              = recording->frames[0].h;
 	FILE *pipe         = NULL;
 
 	// Generate timestamped output path
@@ -1284,15 +1278,15 @@ sokol_write_recording(struct sokol_1bit_recording *recording)
 
 	dbg_check(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
 
-	static u32 dst[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
-	usize dst_size                                = ARRLEN(dst);
+	// TODO: use scratch to alloc based on recording w and h
+	size dst_size = w * h;
+	u32 *dst      = (u32 *)alloc.allocf(alloc.ctx, dst_size);
 	// Write frames in chronological order (handles circular buffer)
 	size oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
-	u32 pal[2]  = {0xA2A5A5, 0x0D0B11};
 	for(size i = 0; i < (size)recording->len; i++) {
-		size f                             = (oldest + i) % recording->cap;
-		struct sokol_1bit_frame_buffer src = recording->frames[f];
-		sokol_tex_to_rgba(src.data, (u32 *)dst, dst_size, SOKOL_BW_PAL);
+		size f         = (oldest + i) % recording->cap;
+		struct tex src = recording->frames[f];
+		tex_opaque_to_rgba(src, (u32 *)dst, dst_size, SOKOL_BW_PAL[0], SOKOL_BW_PAL[1]);
 		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 

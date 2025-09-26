@@ -201,3 +201,21 @@ tex_mask(struct tex tex, i32 x, i32 y, i32 col)
 		tex_mask_unsafe(tex, x, y, col);
 	}
 }
+
+void
+tex_opaque_to_rgba(struct tex tex, u32 *out, size size, u32 white, u32 black)
+{
+	u32 *pixels       = out;
+	i32 width_alinged = (tex.w + 31) & ~31;
+	i32 wbytes        = width_alinged / 8;
+	u8 *in            = (u8 *)tex.px;
+	for(i32 y = 0; y < tex.h; y++) {
+		for(i32 x = 0; x < tex.w; x++) {
+			i32 src     = (x >> 3) + y * wbytes;
+			i32 dst     = x + y * tex.w;
+			i32 byt     = in[src];
+			i32 bit     = !!(byt & 0x80 >> (x & 7));
+			pixels[dst] = (bit ? white : black) | 0xFF000000;
+		}
+	}
+}

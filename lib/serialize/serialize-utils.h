@@ -11,7 +11,7 @@ ser_write_v2(struct ser_writer *w, v2 v2)
 	ser_write_end(w);
 }
 
-struct v2
+v2
 ser_read_v2(struct ser_reader *r, struct ser_value arr)
 {
 	dbg_assert(arr.type == SER_TYPE_ARRAY);
