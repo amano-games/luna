@@ -74,6 +74,9 @@ clean:
 run: build
 	cd $(BUILD_DIR) && wine ./$(TARGET)
 
+$(PUBLISH_OBJS): $(OBJS)
+	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
+
 build: $(OBJS)
 release: clean $(PUBLISH_OBJS)
 publish: $(PUBLISH_OBJS)
