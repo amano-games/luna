@@ -423,6 +423,19 @@ str8_to_f32(str8 str)
 	return num;
 }
 
+u64
+str8_to_u64(str8 str, u32 radix)
+{
+	u64 x = 0;
+	if(1 < radix && radix <= 16) {
+		for(u64 i = 0; i < str.size; i += 1) {
+			x *= radix;
+			x += INTEGER_SYMBOL_REVERSE[str.str[i] & 0x7F];
+		}
+	}
+	return x;
+}
+
 str8
 str8_to_upper(struct alloc alloc, str8 str)
 {

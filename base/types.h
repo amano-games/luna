@@ -81,6 +81,14 @@ typedef struct v2 {
 	f32 x, y;
 } v2;
 
+typedef struct v3 {
+	f32 x, y, z;
+} v3;
+
+typedef struct v4 {
+	f32 x, y, z, w;
+} v4;
+
 // 2d rotation composed of cos/sin pair for a single angle
 // We use two floats as a small optimization to avoid computing sin/cos unnecessarily
 typedef struct rot2 {
