@@ -3,7 +3,12 @@ ROOT_DIR := $(subst $(space),\ ,$(shell dirname "$(realpath $(firstword $(MAKEFI
 
 include $(ROOT_DIR)/common.mk
 
+ifeq ($(DETECTED_OS), Linux)
 CC           := x86_64-w64-mingw32-cc
+endif
+ifeq ($(DETECTED_OS), Darwin)
+	CC         := x86_64-w64-mingw32-gcc
+endif
 DESTDIR      ?=
 PREFIX       ?=
 BINDIR       ?= ${PREFIX}win
