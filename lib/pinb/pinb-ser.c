@@ -215,7 +215,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_entity_list_write(w, &entity->entity_list);
 	}
 
-	if(entity->spawner.ref != 0) {
+	if(entity->spawner.ref != 0 || entity->spawner.zones_len > 0) {
 		ser_write_string(w, str8_lit("spawner"));
 		pinb_spawner_write(w, &entity->spawner);
 	}
