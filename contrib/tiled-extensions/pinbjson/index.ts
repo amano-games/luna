@@ -133,6 +133,12 @@ function getPos(object: MapObject) {
 function getRigidBody(object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const collisionShape = getCol(object) as CollisionShape;
+  if (collisionShape.ellipsis != null) {
+    tiled.warn(
+      `object with id ${object.id} rigidt body has ellipsis collision`,
+      null,
+    );
+  }
 
   const res: RigidBody = {
     angular_damping: value["angular_damping"],

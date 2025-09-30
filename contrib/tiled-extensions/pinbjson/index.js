@@ -499,6 +499,12 @@
   function getRigidBody(object, prop) {
     const value = prop.value;
     const collisionShape = getCol(object);
+    if (collisionShape.ellipsis != null) {
+      tiled.warn(
+        `object with id ${object.id} rigidt body has ellipsis collision`,
+        null
+      );
+    }
     const res = {
       angular_damping: value["angular_damping"],
       dynamic_friction: value["dynamic_friction"],
