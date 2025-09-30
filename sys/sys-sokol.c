@@ -161,14 +161,14 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
-		// tex_clr(tex, GFX_COL_BLACK);
+		tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create frame buffer");
 	}
 
 	{
 		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
 		SOKOL_STATE.debug_ctx = gfx_ctx_default(tex);
-		// tex_clr(tex, GFX_COL_BLACK);
+		tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
 	}
 
