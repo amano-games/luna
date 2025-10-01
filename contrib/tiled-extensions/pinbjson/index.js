@@ -421,10 +421,10 @@
   };
 
   // utils.ts
-  function getImgPath(img) {
-    const parts = img.split(path.sep);
+  function getAssetPath(value) {
+    const parts = value.split(path.sep);
     const srcIndex = parts.indexOf("assets");
-    const res = srcIndex !== -1 ? path.join(...parts.slice(srcIndex)) : img;
+    const res = srcIndex !== -1 ? path.join(...parts.slice(srcIndex)) : value;
     return res;
   }
 
@@ -525,6 +525,16 @@
     };
     return res;
   }
+  function getBet(object, prop) {
+    const value = prop.value;
+    const pathValue = value["path"].localFile;
+    const path2 = getAssetPath(pathValue);
+    const res = {
+      is_enabled: value["is_enabled"],
+      path: path2
+    };
+    return res;
+  }
   function getMover(object, prop) {
     var _a;
     const value = prop.value;
@@ -567,7 +577,7 @@
       offset[1] = object.y - object.height - y;
     }
     const { imageFileName } = object.tile;
-    const path2 = getImgPath(imageFileName);
+    const path2 = getAssetPath(imageFileName);
     let flip = 0;
     flip = flip | (object.tileFlippedHorizontally ? 1 : 0);
     flip = flip | (object.tileFlippedVertically ? 2 : 0);
@@ -921,6 +931,10 @@
               return __spreadProps(__spreadValues({}, acc), {
                 rigid_body: getRigidBody(item, prop)
               });
+            case "bet":
+              return __spreadProps(__spreadValues({}, acc), {
+                bet: getBet(item, prop)
+              });
             case "plunger":
               return __spreadProps(__spreadValues({}, acc), {
                 plunger: getPlunger(item, prop)
@@ -1181,7 +1195,7 @@
   }
   function getBgTexPath(prop) {
     const value = prop.value;
-    const res = getImgPath(value["image"].localFile);
+    const res = getAssetPath(value["image"].localFile);
     return res;
   }
   function getFlippersProps(prop) {

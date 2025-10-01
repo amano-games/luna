@@ -114,6 +114,11 @@ export interface Sprite {
   y_sort: boolean;
 }
 
+export interface Bet {
+  is_enabled: boolean;
+  path: string;
+}
+
 export interface Gravity {
   value: number;
 }
@@ -273,6 +278,7 @@ export interface Entity {
   charged_impulse?: ChargedImpulse;
   plunger?: Plunger;
   spr?: Sprite;
+  bet?: Bet;
   reactive_impulse?: ReactiveImpulse;
   reactive_sprite_offset?: ReactiveSpriteOffset;
   reactive_animation?: ReactiveAnimation;

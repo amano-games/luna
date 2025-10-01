@@ -207,6 +207,7 @@ bet_read(
 	struct alloc alloc)
 {
 	struct ser_value root = ser_read(r);
+	dbg_assert(root.type == SER_TYPE_OBJECT);
 	struct ser_value key, value;
 	while(ser_iter_object(r, root, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
@@ -218,7 +219,7 @@ bet_read(
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			dbg_assert(bet->nodes != NULL);
 			struct ser_value item = {0};
-			while(ser_iter_array(r, value, &value)) {
+			while(ser_iter_array(r, value, &item)) {
 				arr_push(bet->nodes, bet_node_read(r, item));
 			}
 			dbg_assert((size)arr_len(bet->nodes) == bet->node_count);
