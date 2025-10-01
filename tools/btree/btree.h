@@ -13,4 +13,8 @@ struct node_res {
 	u8 node_index;
 };
 
+struct bet_node_holder {
+	struct bet_node *nodes;
+};
+
 int handle_btree(str8 in_path, str8 out_path, struct alloc scratch);
