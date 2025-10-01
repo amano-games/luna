@@ -89,6 +89,7 @@ struct pinb_spr {
 };
 
 struct pinb_bet {
+	b32 is_enabled;
 	str8 path;
 };
 

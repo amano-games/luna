@@ -1982,6 +1982,8 @@ pinb_entity_bet_write(struct ser_writer *w, struct pinb_bet *bet)
 {
 	dbg_assert(bet != NULL);
 	ser_write_object(w);
+	ser_write_string(w, str8_lit("is_enabled"));
+	ser_write_i32(w, bet->is_enabled);
 	ser_write_string(w, str8_lit("path"));
 	ser_write_string(w, bet->path);
 	ser_write_end(w);
@@ -1998,6 +2000,9 @@ pinb_bet_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("path"), 0)) {
 			dbg_assert(value.type == SER_TYPE_STRING);
 			res.path = value.str;
+		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.is_enabled = value.i32;
 		}
 	}
 
