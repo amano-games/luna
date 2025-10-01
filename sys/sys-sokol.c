@@ -917,9 +917,9 @@ sys_audio_unlock(void)
 usize
 sys_file_modified(str8 path)
 {
-	dbg_not_implemeneted("sokol");
-
-error:
+	// 	dbg_not_implemeneted("sokol");
+	//
+	// error:
 	return 0;
 }
 
