@@ -88,6 +88,10 @@ struct pinb_spr {
 	v2 offset;
 };
 
+struct pinb_bet {
+	str8 path;
+};
+
 struct pinb_animator_transition {
 	i32 from;
 	i32 to;
@@ -288,6 +292,7 @@ struct pinb_entity {
 	i32 y;
 	struct pinb_ball ball;
 	struct pinb_spr spr;
+	struct pinb_bet bet;
 	struct body body;
 	struct pinb_plunger plunger;
 	struct pinb_charged_impulse charged_impulse;
