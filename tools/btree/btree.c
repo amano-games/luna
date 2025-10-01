@@ -17,8 +17,10 @@
 
 #define AI_FILE_EXT "bet"
 
+static inline i32 bet_node_holder_push(struct bet_node_holder *holder, struct bet_node node, struct alloc alloc);
+
 struct prop_res
-handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct alloc scratch)
+handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct alloc scratch)
 {
 	jsmntok_t *root = &tokens[index];
 	dbg_assert(root->type == JSMN_OBJECT);
@@ -71,7 +73,7 @@ handle_prop(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 }
 
 struct node_res
-handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct alloc scratch)
+handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet_node_holder *holder, struct alloc alloc, struct alloc scratch)
 {
 	jsmntok_t *root = &tokens[index];
 	dbg_assert(root->type == JSMN_OBJECT);
@@ -89,80 +91,93 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("type")) == 0) {
 			if(json_eq(json, value, str8_lit("Selector")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_COMP,
-														.sub_type = BET_COMP_SELECTOR,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_COMP,
+																  .sub_type = BET_COMP_SELECTOR,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Sequence")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_COMP,
-														.sub_type = BET_COMP_SEQUENCE,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_COMP,
+																  .sub_type = BET_COMP_SEQUENCE,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Parallel")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_COMP,
-														.sub_type = BET_COMP_PARALLEL,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_COMP,
+																  .sub_type = BET_COMP_PARALLEL,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Random")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_COMP,
-														.sub_type = BET_COMP_RND,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_COMP,
+																  .sub_type = BET_COMP_RND,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Random Weights")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_COMP,
-														.sub_type = BET_COMP_RND_WEIGHTED,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_COMP,
+																  .sub_type = BET_COMP_RND_WEIGHTED,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Invert")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_INVERT,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_INVERT,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Failure")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_FAILURE,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_FAILURE,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Success")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_SUCCESS,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_SUCCESS,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Repeat X times")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_REPEAT_X_TIMES,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_REPEAT_X_TIMES,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Repeat RND times")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_REPEAT_RND_TIMES,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_REPEAT_RND_TIMES,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("One shot")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_ONE_SHOT,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_ONE_SHOT,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Repeat Until Failure")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_REPEAT_UNTIL_FAILURE,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_REPEAT_UNTIL_FAILURE,
+															  },
+					alloc);
 			} else if(json_eq(json, value, str8_lit("Repeat Until Success")) == 0) {
-				res.node_index = bet_push_node(bet, (struct bet_node){
-														.type     = BET_NODE_DECO,
-														.sub_type = BET_DECO_REPEAT_UNTIL_SUCCESS,
-													});
+				res.node_index = bet_node_holder_push(holder, (struct bet_node){
+																  .type     = BET_NODE_DECO,
+																  .sub_type = BET_DECO_REPEAT_UNTIL_SUCCESS,
+															  },
+					alloc);
 			} else {
 				struct bet_node node = {
 					.type = BET_NODE_ACTION,
 				};
 
-				res.node_index = bet_push_node(bet, node);
+				res.node_index = bet_node_holder_push(holder, node, alloc);
 			}
-			struct bet_node *node = bet->nodes + res.node_index;
+			struct bet_node *node = holder->nodes + res.node_index;
 
-			dbg_assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+			dbg_assert((usize)(value->end - value->start) < ARRLEN(holder->nodes[0].name));
 
 			str8 dst = {
 				.str  = (u8 *)node->name,
@@ -173,8 +188,8 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 		} else if(json_eq(json, key, str8_lit("label")) == 0) {
 			usize len = value->end - value->start;
 			if(len > 0) {
-				struct bet_node *node = bet->nodes + res.node_index;
-				dbg_assert((usize)(value->end - value->start) < ARRLEN(bet->nodes[0].name));
+				struct bet_node *node = holder->nodes + res.node_index;
+				dbg_assert((usize)(value->end - value->start) < ARRLEN(holder->nodes[0].name));
 
 				str8 dst = {
 					.str  = (u8 *)node->name,
@@ -189,9 +204,9 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				i32 prop_index  = i + 2;
 				jsmntok_t *item = &tokens[prop_index];
 				dbg_assert(item->type == JSMN_OBJECT);
-				struct prop_res prop_res = handle_prop(json, tokens, prop_index, bet, scratch);
+				struct prop_res prop_res = handle_prop(json, tokens, prop_index, scratch);
 				if(prop_res.prop.type != BET_PROP_NONE) {
-					bet_push_prop(bet, res.node_index, prop_res.prop);
+					bet_node_push_prop(holder->nodes + res.node_index, prop_res.prop);
 				}
 				i += prop_res.token_count;
 			}
@@ -204,7 +219,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 
 		} else if(json_eq(json, key, str8_lit("childNodes")) == 0) {
 			dbg_assert(res.node_index != 0);
-			struct bet_node *node = &bet->nodes[res.node_index];
+			struct bet_node *node = &holder->nodes[res.node_index];
 			dbg_assert(node->type != BET_NODE_NONE);
 			dbg_assert(node->type == BET_NODE_COMP || node->type == BET_NODE_DECO);
 
@@ -213,8 +228,8 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 				i32 child_index = i + 2;
 				jsmntok_t *item = &tokens[child_index];
 				dbg_assert(item->type == JSMN_OBJECT);
-				struct node_res child_res = handle_node(json, tokens, child_index, bet, scratch);
-				bet_push_child(bet, res.node_index, child_res.node_index);
+				struct node_res child_res = handle_node(json, tokens, child_index, holder, alloc, scratch);
+				bet_node_push_child(holder->nodes + res.node_index, res.node_index, holder->nodes + child_res.node_index, child_res.node_index);
 				i += child_res.token_count;
 			}
 		}
@@ -224,7 +239,7 @@ handle_node(str8 json, jsmntok_t *tokens, i32 index, struct bet *bet, struct all
 }
 
 void
-handle_btree_json(str8 json, struct bet *bet, struct alloc scratch)
+handle_btree_json(str8 json, struct bet_node_holder *holder, struct alloc alloc, struct alloc scratch)
 {
 	jsmn_parser parser;
 	jsmn_init(&parser);
@@ -238,13 +253,12 @@ handle_btree_json(str8 json, struct bet *bet, struct alloc scratch)
 
 	dbg_assert(root.type == JSMN_OBJECT);
 
-	handle_node(json, tokens, 0, bet, scratch);
+	handle_node(json, tokens, 0, holder, alloc, scratch);
 }
 
 int
 handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 {
-
 	usize mem_size = MKILOBYTE(100);
 	u8 *mem_buffer = sys_alloc(NULL, mem_size);
 	dbg_assert(mem_buffer != NULL);
@@ -255,10 +269,10 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
 
-	struct bet bet = {0};
-	bet_init(&bet, alloc);
-
-	handle_btree_json(json, &bet, scratch);
+	struct bet_node_holder holder = {0};
+	holder.nodes                  = arr_new(holder.nodes, 1, alloc);
+	arr_push(holder.nodes, (struct bet_node){0});
+	handle_btree_json(json, &holder, alloc, scratch);
 
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
 
@@ -269,12 +283,8 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	}
 
 	struct ser_writer w = {.f = out_file};
-
-	ser_write_array(&w);
-	for(usize i = 1; i < arr_len(bet.nodes); ++i) {
-		bet_node_write(&w, bet.nodes[i]);
-	}
-	ser_write_end(&w);
+	struct bet bet      = {.node_count = arr_len(holder.nodes), .nodes = holder.nodes};
+	bet_write(&w, &bet);
 
 	// if(sys_file_w(out_file, &bet, sizeof(struct bet)) != 1) {
 	// 	log_error("ai-gen", "failed to write file %s", out_file_path.str);
@@ -288,4 +298,12 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	log_info("ai-gen", "%s -> %s\n", in_path.str, out_file_path.str);
 
 	return 1;
+}
+
+static inline i32
+bet_node_holder_push(struct bet_node_holder *holder, struct bet_node node, struct alloc alloc)
+{
+	dbg_assert(holder != NULL);
+	arr_push_packed(holder->nodes, node, alloc);
+	return arr_len(holder->nodes) - 1;
 }

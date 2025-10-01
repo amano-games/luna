@@ -1,5 +1,7 @@
 #include "bet-ser.h"
 
+#include "base/arr.h"
+#include "base/dbg.h"
 #include "lib/serialize/serialize.h"
 #include "base/str.h"
 #include "sys/sys-io.h"
@@ -24,10 +26,7 @@ bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 		.data = data,
 		.len  = size,
 	};
-	struct ser_value arr = ser_read(&r);
-	// ser_print_value(&r, arr, 0);
-	bet_init(&res, alloc);
-	bet_read(&r, arr, &res, MAX_BET_NODES);
+	bet_read(&r, &res, alloc);
 
 	return res;
 }
@@ -103,12 +102,17 @@ bet_node_write(struct ser_writer *w, struct bet_node n)
 }
 
 void
-bet_nodes_write(struct ser_writer *w, struct bet_node *nodes, usize count)
+bet_write(struct ser_writer *w, struct bet *bet)
 {
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("node_count"));
+	ser_write_i32(w, arr_len(bet->nodes));
+	ser_write_string(w, str8_lit("nodes"));
 	ser_write_array(w);
-	for(usize i = 0; i < count; i++) {
-		bet_node_write(w, nodes[i]);
+	for(usize i = 0; i < arr_len(bet->nodes); i++) {
+		bet_node_write(w, bet->nodes[i]);
 	}
+	ser_write_end(w);
 	ser_write_end(w);
 }
 
@@ -156,6 +160,7 @@ bet_prop_read(struct ser_reader *r, struct ser_value obj)
 struct bet_node
 bet_node_read(struct ser_reader *r, struct ser_value obj)
 {
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct bet_node res = {0};
 	struct ser_value key, value;
 
@@ -195,21 +200,31 @@ bet_node_read(struct ser_reader *r, struct ser_value obj)
 	return res;
 }
 
-// reads up to `max_count` rects into the `rects` array and returns the number
-// of rects read — note: if you have a dynamic array as part of your base
-// library, it could be used here instead of the fixed `rects` array
 i32
 bet_read(
 	struct ser_reader *r,
-	struct ser_value arr,
 	struct bet *bet,
-	usize max_count)
+	struct alloc alloc)
 {
-	struct ser_value val;
-	usize i = 0;
-	while(ser_iter_array(r, arr, &val) && i < max_count) {
-		bet_push_node(bet, bet_node_read(r, val));
-		i++;
+	struct ser_value root = ser_read(r);
+	struct ser_value key, value;
+	while(ser_iter_object(r, root, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("node_count"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			bet->node_count = value.i32;
+			bet->nodes      = arr_new(bet->nodes, bet->node_count, alloc);
+		} else if(str8_match(key.str, str8_lit("nodes"), 0)) {
+			dbg_assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(bet->nodes != NULL);
+			struct ser_value item = {0};
+			while(ser_iter_array(r, value, &value)) {
+				arr_push(bet->nodes, bet_node_read(r, item));
+			}
+			dbg_assert((size)arr_len(bet->nodes) == bet->node_count);
+			dbg_assert(bet->nodes[0].type == BET_NODE_NONE);
+		}
 	}
-	return i;
+
+	return bet->node_count;
 }

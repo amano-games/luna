@@ -22,14 +22,6 @@ static inline void bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node
 static inline b32 bet_node_parent_is_parallel(struct bet *bet, struct bet_ctx *ctx, u8 node_index);
 
 void
-bet_init(struct bet *bet, struct alloc alloc)
-{
-	bet->nodes = arr_new(bet->nodes, 1, alloc);
-	bet->alloc = alloc;
-	arr_push(bet->nodes, (struct bet_node){0});
-}
-
-void
 bet_ctx_init(struct bet_ctx *ctx)
 {
 	ctx->bet_node_ctx[ctx->current].i   = -1;
@@ -532,15 +524,6 @@ bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 	node_ctx->i                   = node->children_count;
 }
 
-i32
-bet_push_node(struct bet *bet, struct bet_node node)
-{
-	dbg_assert(bet != NULL);
-	dbg_assert(arr_len(bet->nodes) + 1 < MAX_BET_NODES);
-	arr_push_packed(bet->nodes, node, bet->alloc);
-	return arr_len(bet->nodes) - 1;
-}
-
 struct bet_node *
 bet_get_node(struct bet *bet, usize node_index)
 {
@@ -564,24 +547,22 @@ bet_find_child(struct bet *bet, u8 parent_index, u8 child_index)
 }
 
 b32
-bet_push_child(struct bet *bet, usize parent_index, usize child_index)
+bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, usize child_index)
 {
-	struct bet_node *parent = bet_get_node(bet, parent_index);
 	dbg_assert(parent != NULL);
 	dbg_assert(parent->type == BET_NODE_COMP || parent->type == BET_NODE_DECO);
 	dbg_assert(parent->children_count + 1 < MAX_BET_CHILDREN);
 
 	parent->children[parent->children_count++] = child_index;
-	bet->nodes[child_index].parent             = parent_index;
-	bet->nodes[child_index].i                  = parent->children_count - 1;
+	child->parent                              = parent_index;
+	child->i                                   = parent->children_count - 1;
 
 	return true;
 }
 
 b32
-bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop)
+bet_node_push_prop(struct bet_node *node, struct bet_prop prop)
 {
-	struct bet_node *node = bet_get_node(bet, node_index);
 	dbg_assert(node->prop_count + 1 <= MAX_BET_NODE_PROPS);
 	node->props[node->prop_count++] = prop;
 	return true;

@@ -3,7 +3,6 @@
 #include "base/mem.h"
 #include "base/types.h"
 
-#define MAX_BET_NODES      150
 #define MAX_BET_CHILDREN   10
 #define MAX_BET_NODE_PROPS 5
 #define MAX_BET_NOTE       64
@@ -117,7 +116,7 @@ struct bet_node {
 };
 
 struct bet {
-	struct alloc alloc;
+	size node_count;
 	struct bet_node *nodes;
 };
 
@@ -134,7 +133,8 @@ struct bet_ctx {
 	u8 initial;
 	b32 debug;
 
-	struct bet_node_ctx bet_node_ctx[MAX_BET_NODES];
+	size count;
+	struct bet_node_ctx *bet_node_ctx;
 	void (*action_init)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
@@ -145,10 +145,10 @@ void bet_ctx_init(struct bet_ctx *ctx);
 enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
 
 struct bet_node *bet_get_node(struct bet *bet, usize node_index);
-i32 bet_push_node(struct bet *bet, struct bet_node node);
-b32 bet_push_child(struct bet *bet, usize parent_index, usize child_index);
-b32 bet_push_prop(struct bet *bet, usize node_index, struct bet_prop prop);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
 i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
 b32 bet_prop_bool32_get(struct bet_prop prop);
+
+b32 bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, usize child_index);
+b32 bet_node_push_prop(struct bet_node *node, struct bet_prop prop);
