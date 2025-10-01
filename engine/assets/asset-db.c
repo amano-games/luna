@@ -425,12 +425,11 @@ asset_db_fnt_get_by_id(struct asset_db *db, u32 id)
 }
 
 // TODO: Handle full paths
-struct asset_bet_handle
-asset_db_bet_load(
+u32
+asset_db_bet_push(
 	struct asset_db *db,
 	str8 path,
-	struct alloc alloc,
-	struct alloc scratch)
+	struct bet bet)
 {
 	struct bet_table *table = &db->bets;
 	usize table_len         = arr_len(table->arr);
@@ -439,24 +438,23 @@ asset_db_bet_load(
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push bet");
 
-	u64 key         = hash_string(path);
-	u32 value       = ht_get_u32(&table->ht, key);
-	b32 has_key     = value != 0;
-	usize timestamp = sys_file_modified(path);
+	u64 key                    = hash_string(path);
+	u32 value                  = ht_get_u32(&table->ht, key);
+	b32 has_key                = value != 0;
+	usize timestamp            = sys_file_modified(path);
+	struct asset_bet asset_bet = {.path_hash = key, .bet = bet, .timestamp = timestamp};
 
 	if(has_key) {
-		return (struct asset_bet_handle){.id = value};
+		return value;
 	} else {
 		u32 value = table_len;
 		ht_set_u32(&table->ht, key, value);
-		struct bet bet             = bet_load(path, alloc, scratch);
-		struct asset_bet asset_bet = {.bet = bet, .timestamp = timestamp};
 		arr_push(table->arr, asset_bet);
-		return (struct asset_bet_handle){.id = value};
+		return value;
 	}
 
 error:
-	return (struct asset_bet_handle){0};
+	return 0;
 }
 
 struct asset_bet_handle
@@ -480,12 +478,21 @@ asset_db_bet_get(struct asset_db *db, struct asset_handle handle)
 }
 
 struct asset_bet
-asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle)
+asset_db_bet_get_by_id(struct asset_db *db, u32 id)
 {
 	TRACE_START(__func__);
-	dbg_assert(handle.id < arr_len(db->bets.arr));
-	u32 index            = handle.id;
-	struct asset_bet res = db->bets.arr[index];
+	dbg_assert(id > 0);
+	dbg_assert(id < arr_len(db->bets.arr));
+	struct asset_bet res = db->bets.arr[id];
+	TRACE_END();
+	return res;
+}
+
+u32
+asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle)
+{
+	TRACE_START(__func__);
+	u32 res = ht_get_u32(&db->bets.ht, handle.path_hash);
 	TRACE_END();
 	return res;
 }

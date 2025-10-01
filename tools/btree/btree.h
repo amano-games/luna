@@ -3,6 +3,8 @@
 #include "lib/bet/bet.h"
 #include "base/types.h"
 
+#define AI_FILE_EXT "bet"
+
 struct prop_res {
 	usize token_count;
 	struct bet_prop prop;

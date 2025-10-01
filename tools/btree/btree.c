@@ -15,8 +15,6 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-#define AI_FILE_EXT "bet"
-
 static inline i32 bet_node_holder_push(struct bet_node_holder *holder, struct bet_node node, struct alloc alloc);
 
 struct prop_res

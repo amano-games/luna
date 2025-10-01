@@ -35,6 +35,10 @@ struct snd asset_snd(i32 id);
 i32 asset_snd_load(str8 path, struct snd *snd);
 i32 asset_snd_get_id(str8 path);
 
+struct bet asset_bet(i32 id);
+i32 asset_bet_load(str8 path, struct bet *bet);
+i32 asset_bet_get_id(str8 path);
+
 struct tex_rec asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h);
 struct tex_patch asset_tex_patch(i32 id, i32 x, i32 y, i32 w, i32 h, i32 ml, i32 mr, i32 mt, i32 mb);
 enum asset_type asset_path_get_type(str8 path);

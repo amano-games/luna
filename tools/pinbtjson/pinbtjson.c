@@ -12,6 +12,7 @@
 #include "sys/sys-io.h"
 #include "base/log.h"
 #include "sys/sys.h"
+#include "tools/btree/btree.h"
 #include "tools/png/png.h"
 #include "tools/wav/wav.h"
 #include "base/dbg.h"
@@ -714,6 +715,30 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 }
 
 struct pinbtjson_res
+pinbtjson_handle_bet(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		str8 key_str     = json_str8(json, key);
+		str8 value_str   = json_str8(json, value);
+		if(json_eq(json, key, str8_lit("path")) == 0) {
+			str8 path    = json_str8(json, value);
+			res.bet.path = make_file_name_with_ext(alloc, path, str8_lit(AI_FILE_EXT));
+		} else if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.bet.is_enabled = json_parse_bool32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc, struct alloc scratch)
 {
 	struct pinbtjson_res res = {0};
@@ -1078,6 +1103,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			dbg_assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_spr(json, tokens, i + 1, alloc);
 			res.entity.spr                = item_res.spr;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("bet")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_bet(json, tokens, i + 1, alloc);
+			res.entity.bet                = item_res.bet;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("rigid_body")) == 0) {
 			struct pinbtjson_res item_res = pinbtjson_handle_rigid_body(json, tokens, i + 1, alloc, scratch);

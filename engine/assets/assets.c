@@ -1,6 +1,7 @@
 #include "assets.h"
 #include "engine/assets/asset-db.h"
 #include "base/dbg.h"
+#include "lib/bet/bet-ser.h"
 #include "lib/fnt/fnt.h"
 #include "engine/gfx/gfx.h"
 #include "base/marena.h"
@@ -163,6 +164,42 @@ asset_snd_get_id(str8 path)
 	i32 res = asset_db_snd_get_id(&ASSETS.db, (struct asset_handle){
 												  .path_hash = hash_string(path),
 												  .type      = ASSET_TYPE_SOUND,
+											  });
+	return res;
+}
+
+struct bet
+asset_bet(i32 id)
+{
+	struct asset_bet res = asset_db_bet_get_by_id(&ASSETS.db, id);
+	return res.bet;
+}
+
+i32
+asset_bet_load(str8 path, struct bet *bet)
+{
+	marena_reset(&ASSETS.scratch_marena);
+	struct alloc scratch = ASSETS.scratch_alloc;
+	struct alloc alloc   = ASSETS.alloc;
+	i32 res              = 0;
+	str8 full_path       = asset_path_to_full_path(path);
+	struct bet b         = bet_load(full_path, alloc, scratch);
+	if(b.nodes == NULL) {
+		log_warn("Assets", "Bet loading failed: %s", full_path.str);
+		return -1;
+	}
+	log_info("Assets", "Bet loaded: %s", path.str);
+	res = asset_db_bet_push(&ASSETS.db, path, b);
+	if(bet) *bet = b;
+	return res;
+}
+
+i32
+asset_bet_get_id(str8 path)
+{
+	i32 res = asset_db_bet_get_id(&ASSETS.db, (struct asset_handle){
+												  .path_hash = hash_string(path),
+												  .type      = ASSET_TYPE_BET,
 											  });
 	return res;
 }

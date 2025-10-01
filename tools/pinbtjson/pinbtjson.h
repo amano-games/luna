@@ -23,6 +23,7 @@ struct pinbtjson_res {
 		struct pinb_table_props table_props;
 		struct pinb_col_shapes col_shapes;
 		struct pinb_spr spr;
+		struct pinb_bet bet;
 		struct pinb_flip flip;
 		struct pinb_plunger plunger;
 		struct pinb_charged_impulse charged_impulse;

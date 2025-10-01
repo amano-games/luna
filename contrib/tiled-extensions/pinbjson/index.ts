@@ -31,6 +31,7 @@ import {
   SfxSequence,
   Message,
   Sprite,
+  Bet,
   SwitchValue,
   EntityList,
   TableProperties,
@@ -58,7 +59,7 @@ import {
   MoverPath,
   Mover,
 } from "./types";
-import { getImgPath } from "./utils";
+import { getAssetPath } from "./utils";
 
 export function getPropByType(object: MapObject, typeName: string) {
   const props = object.properties();
@@ -163,6 +164,17 @@ function getSensor(object: MapObject, prop: PropertyValue) {
   return res;
 }
 
+function getBet(object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const pathValue = value["path"].localFile;
+  const path = getAssetPath(pathValue);
+  const res: Bet = {
+    is_enabled: value["is_enabled"],
+    path,
+  };
+  return res;
+}
+
 function getMover(object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const ref = Number(value["ref"]?.id) || 0;
@@ -212,7 +224,7 @@ function getSprite(
     offset[1] = object.y - object.height - y;
   }
   const { imageFileName } = object.tile;
-  const path = getImgPath(imageFileName);
+  const path = getAssetPath(imageFileName);
   let flip = 0;
   flip = flip | (object.tileFlippedHorizontally ? 1 : 0);
   flip = flip | (object.tileFlippedVertically ? 2 : 0);
@@ -627,6 +639,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 ...acc,
                 rigid_body: getRigidBody(item, prop),
               };
+            case "bet":
+              return {
+                ...acc,
+                bet: getBet(item, prop),
+              };
             case "plunger":
               return {
                 ...acc,
@@ -938,7 +955,7 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
 
 function getBgTexPath(prop: PropertyValue) {
   const value = prop.value as object;
-  const res = getImgPath(value["image"].localFile);
+  const res = getAssetPath(value["image"].localFile);
   return res;
 }
 

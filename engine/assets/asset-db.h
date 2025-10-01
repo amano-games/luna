@@ -149,10 +149,11 @@ u32 asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle);
 struct asset_fnt asset_db_fnt_get(struct asset_db *db, struct asset_handle handle);
 struct asset_fnt asset_db_fnt_get_by_id(struct asset_db *db, u32 id);
 
-struct asset_bet_handle asset_db_bet_load(struct asset_db *db, str8 path, struct alloc alloc, struct alloc scratch);
+u32 asset_db_bet_push(struct asset_db *db, str8 path, struct bet bet);
 struct asset_bet_handle asset_db_bet_handle_get(struct asset_db *db, struct asset_handle handle);
 struct asset_bet asset_db_bet_get(struct asset_db *db, struct asset_handle handle);
-struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, struct asset_bet_handle handle);
+struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, u32 id);
+u32 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle);
 
 usize asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
 usize asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);
