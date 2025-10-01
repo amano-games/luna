@@ -17,6 +17,9 @@ struct pinb_ball pinb_ball_read(struct ser_reader *r, struct ser_value obj);
 void pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr);
 struct pinb_spr pinb_spr_read(struct ser_reader *r, struct ser_value obj);
 
+void pinb_entity_bet_write(struct ser_writer *w, struct pinb_bet *bet);
+struct pinb_bet pinb_bet_read(struct ser_reader *r, struct ser_value obj);
+
 void pinb_counter_write(struct ser_writer *w, struct pinb_counter *value);
 struct pinb_counter pinb_counter_read(struct ser_reader *r, struct ser_value obj);
 

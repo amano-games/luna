@@ -100,6 +100,11 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_entity_spr_write(w, &entity->spr);
 	}
 
+	if(entity->bet.path.size > 0) {
+		ser_write_string(w, str8_lit("bet"));
+		pinb_entity_bet_write(w, &entity->bet);
+	}
+
 	if(entity->body.shapes.count > 0) {
 		ser_write_string(w, str8_lit("body"));
 		body_write(w, &entity->body);
@@ -285,6 +290,8 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.y = value.i32;
 		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
 			res.spr = pinb_spr_read(r, value);
+		} else if(str8_match(key.str, str8_lit("bet"), 0)) {
+			res.bet = pinb_bet_read(r, value);
 		} else if(str8_match(key.str, str8_lit("reactive_impulse"), 0)) {
 			res.reactive_impulse = pinb_reactive_impulse_read(r, value);
 		} else if(str8_match(key.str, str8_lit("force_field"), 0)) {
@@ -1968,6 +1975,33 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr)
 	ser_write_v2(w, spr->offset);
 
 	ser_write_end(w);
+}
+
+void
+pinb_entity_bet_write(struct ser_writer *w, struct pinb_bet *bet)
+{
+	dbg_assert(bet != NULL);
+	ser_write_object(w);
+	ser_write_string(w, str8_lit("path"));
+	ser_write_string(w, bet->path);
+	ser_write_end(w);
+}
+
+struct pinb_bet
+pinb_bet_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_bet res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("path"), 0)) {
+			dbg_assert(value.type == SER_TYPE_STRING);
+			res.path = value.str;
+		}
+	}
+
+	return res;
 }
 
 void
