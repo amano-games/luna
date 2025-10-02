@@ -98,8 +98,8 @@ struct bet_prop {
 		b32 b32;
 		i32 i32;
 		f32 f32;
-		u8 u8_arr[4];
-		u8 str[4];
+		u8 u8_arr[MAX_BET_CHILDREN];
+		u8 str[MAX_BET_CHILDREN];
 	};
 };
 
