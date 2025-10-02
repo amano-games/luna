@@ -21,7 +21,7 @@ assets_init(void *mem, usize size)
 	ASSETS.display = tex_frame_buffer();
 
 	{
-		usize scratch_size = MKILOBYTE(10);
+		usize scratch_size = MKILOBYTE(50);
 		void *scratch_mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, scratch_size);
 		marena_init(&ASSETS.scratch_marena, scratch_mem, scratch_size);
 		ASSETS.scratch_alloc = marena_allocator(&ASSETS.scratch_marena);
