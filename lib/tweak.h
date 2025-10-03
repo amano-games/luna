@@ -91,6 +91,8 @@ tweak_look_up_value_f32(
 		current_line_index++;
 
 		// remove processed line + newline
+		// TODO: instead of moving the memory we can just move the string position or something
+		// Find needle function can start from a position
 		mmov(buffer, buffer + new_line_pos + 1, buffer_size - (new_line_pos + 1));
 		buffer_size -= (new_line_pos + 1);
 
