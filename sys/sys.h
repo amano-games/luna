@@ -42,6 +42,16 @@ struct sys_mem {
 	struct mem_block app_mem;
 };
 
+struct sys_process_info {
+	u32 pid;
+	str8 exe_path;
+	str8 module_path;
+	str8 base_path;
+	str8 initial_path;
+	str8 data_path;
+	str8 environment;
+};
+
 struct app_mem {
 	struct mem_block permanent;
 	struct mem_block transient;
@@ -103,3 +113,5 @@ void sys_menu_clr(void);
 void sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset);
 void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
+str8 sys_get_current_path(struct alloc alloc);
+struct sys_process_info sys_process_info(void);
