@@ -1,19 +1,20 @@
 #pragma once
 
 #include "base/mem.h"
-#include "base/log.h"
 #include "base/types.h"
 #include "base/dbg.h"
 
 struct marena {
-#if defined DEBUG || 1
-	char *name;
-#endif
 	void *buf_og;
 	void *buf;
 	usize buf_size;
 	usize rem;
 	char *p;
+};
+
+struct marena_tmp {
+	struct marena *arena;
+	void *p;
 };
 
 void marena_init(struct marena *m, void *buf, usize bufsize);
@@ -31,20 +32,18 @@ marena_alloc_func(void *ctx, usize s)
 	struct marena *arena = (struct marena *)ctx;
 	void *mem            = marena_alloc(arena, s);
 	dbg_check(mem, "marena", "Ran out of arena mem!");
-#if defined DEBUG || 1
-	if(arena->name != NULL) {
-		log_info("marena", "%s | Alloc: %d", arena->name, (int)s);
-	}
-#endif
 	return mem;
 
 error:
 	return NULL;
 }
 
-struct alloc
+static inline struct alloc
 marena_allocator(struct marena *arena)
 {
 	struct alloc alloc = {.allocf = marena_alloc_func, .ctx = (void *)arena};
 	return alloc;
 }
+
+struct marena_tmp marena_tmp_start(struct marena *arena);
+void marena_tmp_end(struct marena_tmp tmp);
