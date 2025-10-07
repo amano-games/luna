@@ -805,6 +805,9 @@ sys_file_rename(str8 from, str8 to)
 	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
+#if defined(TARGET_WIN)
+#include <stdlib.h>
+#endif
 b32
 sys_make_dir(str8 path)
 {
@@ -819,6 +822,10 @@ sys_make_dir(str8 path)
 			res = 1;
 		}
 	}
+#endif
+
+#if defined(TARGET_WIN)
+	_mkdir(path);
 #endif
 
 #if defined(TARGET_WIN) && 0

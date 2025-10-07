@@ -1,8 +1,10 @@
 #include "sys-cli.h"
 
+#include "base/str.h"
 #include "sys-io.h"
 #include "base/log.h"
 #include "sys.h"
+#include <sys/stat.h>
 
 #define SOKOL_LOG_IMPL
 #include "sokol/sokol_log.h"
@@ -170,5 +172,32 @@ struct sys_process_info
 sys_process_info(void)
 {
 	struct sys_process_info res = {0};
+	return res;
+}
+
+#if defined(TARGET_WIN)
+#include <stdlib.h>
+#endif
+b32
+sys_make_dir(str8 path)
+{
+	// TODO: OS Layer that doesn't depend on sokol
+	b32 res = false;
+#if defined(TARGET_WIN)
+	{
+		res = _mkdir(path) == 0;
+	}
+#else
+	{
+		str8 path_copy = str8_cpy_push(sys_allocator(), path);
+		if(mkdir((char *)path_copy.str, 0755) != -1) {
+			res = 1;
+		}
+		if(path_copy.str) {
+			sys_free(path_copy.str);
+		}
+	}
+#endif
+
 	return res;
 }
