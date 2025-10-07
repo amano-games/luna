@@ -65,9 +65,8 @@ struct sokol_state {
 	struct marena scratch_marena;
 	struct alloc scratch;
 
-	str8 exe_path;
-	str8 module_path;
-	str8 base_path;
+	struct marena marena;
+	struct alloc alloc;
 
 	sg_pipeline pip;
 	sg_bindings bind;
@@ -92,6 +91,8 @@ struct sokol_state {
 
 	struct sokol_1bit_recording recording;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
+
+	struct sys_process_info process_info;
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -115,7 +116,7 @@ void sokol_event(const sapp_event *ev);
 void sokol_stream_cb(f32 *buffer, int num_frames, int num_channels);
 void sokol_cleanup(void);
 
-static void sokol_exe_path_set(void);
+static void sokol_process_info_set(void);
 static void sokol_set_icon(void);
 static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
@@ -134,9 +135,15 @@ sokol_main(i32 argc, char **argv)
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
-	sokol_exe_path_set();
+	{
+		usize mem_size = MMEGABYTE(1);
+		void *mem      = sys_alloc(NULL, mem_size);
+		marena_init(&SOKOL_STATE.marena, mem, mem_size);
+		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
+	}
+	sokol_process_info_set();
 
-	struct str8 exe_path = SOKOL_STATE.exe_path;
+	struct str8 exe_path = SOKOL_STATE.process_info.exe_path;
 	str8 base_name       = str8_chop_last_slash(exe_path);
 	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
 	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
@@ -159,14 +166,14 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
+		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
 		tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create frame buffer");
 	}
 
 	{
-		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, sys_allocator());
+		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
 		SOKOL_STATE.debug_ctx = gfx_ctx_default(tex);
 		tex_clr(tex, GFX_COL_BLACK);
 		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
@@ -176,7 +183,7 @@ sokol_main(i32 argc, char **argv)
 		SOKOL_STATE.recording.cap    = SYS_UPS * SOKOL_RECORDING_SECONDS;
 		SOKOL_STATE.recording.len    = 0;
 		SOKOL_STATE.recording.idx    = 0;
-		SOKOL_STATE.recording.frames = sys_alloc(NULL, sizeof(*SOKOL_STATE.recording.frames) * SOKOL_STATE.recording.cap);
+		SOKOL_STATE.recording.frames = SOKOL_STATE.alloc.allocf(SOKOL_STATE.alloc.ctx, sizeof(*SOKOL_STATE.recording.frames) * SOKOL_STATE.recording.cap);
 		dbg_check_warn(SOKOL_STATE.recording.frames != NULL, "sokol", "Failed to reserve recording memory");
 	}
 
@@ -485,12 +492,7 @@ sokol_frame(void)
 void
 sokol_cleanup(void)
 {
-	if(SOKOL_STATE.frame_ctx.dst.px) { sys_free(SOKOL_STATE.frame_ctx.dst.px); };
-	if(SOKOL_STATE.debug_ctx.dst.px) { sys_free(SOKOL_STATE.debug_ctx.dst.px); };
-	if(SOKOL_STATE.scratch_marena.buf_og != NULL) { sys_free(SOKOL_STATE.scratch_marena.buf_og); }
-	if(SOKOL_STATE.exe_path.size > 0) { sys_free(SOKOL_STATE.exe_path.str); }
-	if(SOKOL_STATE.module_path.size > 0) { sys_free(SOKOL_STATE.module_path.str); }
-	if(SOKOL_STATE.base_path.size > 0) { sys_free(SOKOL_STATE.base_path.str); }
+	sys_free(SOKOL_STATE.marena.buf_og);
 	sg_shutdown();
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_shutdown();
@@ -501,20 +503,20 @@ sokol_cleanup(void)
 struct str8
 sys_base_path(void)
 {
-	return SOKOL_STATE.base_path;
+	return SOKOL_STATE.process_info.base_path;
 }
 
 str8
 sys_exe_path(void)
 {
-	return SOKOL_STATE.exe_path;
+	return SOKOL_STATE.process_info.exe_path;
 }
 
 // https://wiki.libsdl.org/SDL3/SDL_GetPrefPath
 str8
-sys_pref_path(void)
+sys_data_path(void)
 {
-	return str8_lit("");
+	return SOKOL_STATE.process_info.data_path;
 }
 
 i32
@@ -803,6 +805,36 @@ sys_file_rename(str8 from, str8 to)
 	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
+b32
+sys_make_dir(str8 path)
+{
+	b32 res = false;
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	struct alloc scratch = SOKOL_STATE.scratch;
+
+#if defined(TARGET_LINUX) || defined(TARGET_MACOS)
+	{
+		str8 path_copy = str8_cpy_push(scratch, path);
+		if(mkdir((char *)path_copy.str, 0755) != -1) {
+			res = 1;
+		}
+	}
+#endif
+
+#if defined(TARGET_WIN) && 0
+	str16 name16                         = str16_from_8(scratch, path);
+	WIN32_FILE_ATTRIBUTE_DATA attributes = {0};
+	GetFileAttributesExW((WCHAR *)name16.str, GetFileExInfoStandard, &attributes);
+	if(attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		result = 1;
+	} else if(CreateDirectoryW((WCHAR *)name16.str, 0)) {
+		result = 1;
+	}
+#endif
+
+	return res;
+}
+
 void
 sys_set_auto_lock_disabled(int disable)
 {
@@ -966,69 +998,102 @@ error:
 }
 
 static void
-sokol_exe_path_set(void)
+sokol_process_info_set(void)
 {
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	SOKOL_STATE.process_info      = (struct sys_process_info){0};
+	struct alloc alloc            = SOKOL_STATE.alloc;
+	struct alloc scratch          = SOKOL_STATE.scratch;
+	struct sys_process_info *info = &SOKOL_STATE.process_info;
+
+#if !defined(TARGET_WASM)
 	{
-		str8 res        = {0};
-		i32 dirname_len = 0;
-
-#if !defined(TARGET_WASM)
-		res.size = wai_getExecutablePath(NULL, 0, &dirname_len);
-#endif
-
-		if(res.size > 0) {
-			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
-#if !defined(TARGET_WASM)
-			wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
-#endif
-
-			res.str[res.size] = '\0';
+		// Exe PATH
+		size str_size = wai_getExecutablePath(NULL, 0, NULL);
+		if(str_size > 0) {
+			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
+			wai_getExecutablePath(path, str_size, NULL);
+			info->exe_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
 		}
-		SOKOL_STATE.exe_path = res;
 	}
+#endif
+
+#if !defined(TARGET_WASM)
 	{
-		str8 res        = {0};
-		i32 dirname_len = 0;
+		// Module PATH
+		size str_size = wai_getModulePath(NULL, 0, NULL);
 
-#if !defined(TARGET_WASM)
-		res.size = wai_getModulePath(NULL, 0, &dirname_len);
-#endif
-
-		if(res.size > 0) {
-			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
-#if !defined(TARGET_WASM)
-			wai_getModulePath((char *)res.str, res.size, &dirname_len);
-#endif
-
-			res.str[res.size] = '\0';
+		if(str_size > 0) {
+			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
+			wai_getModulePath(path, str_size, NULL);
+			info->module_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
 		}
-		SOKOL_STATE.module_path = res;
+	}
+#endif
+
+	{
+		// Initial path
+		info->initial_path = sys_get_current_path(alloc);
 	}
 
 	{
+		// Data Path
+#if defined(TARGET_LINUX)
+		{
+			// TODO: Fallback?
+			char *xdg       = getenv("XDG_DATA_HOME");
+			info->data_path = str8_cpy_push(alloc, str8_cstr(xdg));
+		}
+#endif
+
+#if defined(TARGET_WIN)
+		{
+			size mem_size = MKILOBYTE(32);
+			u16 *buffer   = alloc_arr(scratch, u16, mem_size);
+			// TODO: split os layer in windows/linux/mac so I can inclide windows headers in a single file
+			// TODO: Support for strings u16 for windows things
+#if 0
+			if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, (WCHAR *)buffer))) {
+				info->data_path = str8_from_16(arena, str16_cstring(buffer));
+			}
+#endif
+		}
+#endif
+
 #if defined(TARGET_MACOS)
-		marena_reset(&SOKOL_STATE.scratch_marena);
-		struct alloc scratch = SOKOL_STATE.scratch;
-		struct alloc alloc   = sys_allocator();
-		str8 exe_path        = SOKOL_STATE.exe_path;
-		if(exe_path.size > 0) {
-			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents/MacOS/devils-on-the-moon-pinball
-			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents/MacOS
-			// /Users/mariocarballozama/projects/games/devils-on-the-moon-pinball/build/macos/devils-on-the-moon-pinball.app/Contents
-			str8 macos                 = str8_chop_last_slash(exe_path);
-			str8 contents              = str8_chop_last_slash(macos);
-			str8 resources_rel         = str8_lit("Resources");
-			enum path_style path_style = path_style_from_str8(resources_rel);
-			struct str8_list path_list = {0};
-			str8_list_push(scratch, &path_list, contents);
-			str8_list_push(scratch, &path_list, resources_rel);
-			str8 resources_path   = path_join_by_style(alloc, &path_list, path_style);
-			SOKOL_STATE.base_path = resources_path;
+		{
+			str8 home       = str8_cstr(getenv("HOME"));
+			str8 suffix     = str8_lit("/Library/Application Support");
+			info->data_path = str8_cat_push(alloc, home, suffix);
 		}
-#else
-		SOKOL_STATE.base_path = (str8){0};
 #endif
 	}
+
+	{
+		// Base path
+#if defined(TARGET_MACOS)
+		{
+			str8 exe_path = SOKOL_STATE.process_info.exe_path;
+			if(exe_path.size > 0) {
+				str8 macos                 = str8_chop_last_slash(exe_path);
+				str8 contents              = str8_chop_last_slash(macos);
+				str8 resources_rel         = str8_lit("Resources");
+				enum path_style path_style = path_style_from_str8(resources_rel);
+				struct str8_list path_list = {0};
+				str8_list_push(scratch, &path_list, contents);
+				str8_list_push(scratch, &path_list, resources_rel);
+				str8 resources_path                = path_join_by_style(alloc, &path_list, path_style);
+				SOKOL_STATE.process_info.base_path = resources_path;
+			}
+		}
+#endif
+	}
+}
+
+struct sys_process_info
+sys_process_info(void)
+{
+	return SOKOL_STATE.process_info;
 }
 
 static inline b32
@@ -1073,6 +1138,33 @@ sokol_touch_remove(sapp_touchpoint point)
 			break;
 		}
 	}
+
+	return res;
+}
+
+str8
+sys_get_current_path(struct alloc alloc)
+{
+	str8 res = {0};
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	struct alloc scratch = SOKOL_STATE.scratch;
+
+#if defined(TARGET_LINUX) || defined(TARGET_MACOS)
+	{
+		char *cwdir = getcwd(0, 0);
+		res         = str8_cpy_push(alloc, str8_cstr(cwdir));
+		free(cwdir);
+	}
+#endif
+
+#if defined(TARGET_WIN) && 0
+	{
+		DWORD length = GetCurrentDirectoryW(0, 0);
+		u16 *memory  = alloc_arr(scratch, u16, length + 1);
+		length       = GetCurrentDirectoryW(length + 1, (WCHAR *)memory);
+		res          = str8_from_16(alloc, str16(memory, length));
+	}
+#endif
 
 	return res;
 }
@@ -1136,6 +1228,35 @@ sokol_set_icon(void)
 	for(size i = 0; i < icon_count; ++i) {
 		stbi_image_free((char *)icon_desc.images[i].pixels.ptr);
 	}
+}
+
+str8
+sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
+{
+	str8 res       = path;
+	str8 data_path = sys_data_path();
+	if(data_path.size == 0) { return res; }
+
+	/*
+    On Windows, the string might look like:
+    C:\\Users\\bob\\AppData\\Roaming\\My Company\\My Program Name\\
+    On Linux, the string might look like:
+    /home/bob/.local/share/My Program Name/
+    On Mac OS X, the string might look like:
+    /Users/bob/Library/Application Support/My Program Name/
+  */
+
+	// TODO: support windows
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	enum path_style path_style = path_style_from_str8(path);
+	struct alloc scratch       = SOKOL_STATE.scratch;
+	struct str8_list path_list = {0};
+	str8_list_push(scratch, &path_list, data_path);
+	str8_list_push(scratch, &path_list, app_name);
+	str8_list_push(scratch, &path_list, path);
+	res = path_join_by_style(alloc, &path_list, path_style);
+
+	return res;
 }
 
 str8

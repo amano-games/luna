@@ -1,18 +1,14 @@
 #include "sys-cli.h"
 
-#include "whereami.h"
-
 #include "sys-io.h"
 #include "base/log.h"
 #include "sys.h"
-#include "base/dbg.h"
 
 #define SOKOL_LOG_IMPL
 #include "sokol/sokol_log.h"
 
 struct cli_state {
-	str8 exe_path;
-	str8 module_path;
+	struct sys_process_info process_info;
 };
 
 static struct cli_state CLI_STATE;
@@ -150,29 +146,29 @@ sys_base_path(void)
 }
 
 str8
+sys_data_path(void)
+{
+	str8 res = {0};
+	return res;
+}
+
+str8
 sys_exe_path(void)
 {
-	if(CLI_STATE.exe_path.size == 0) {
-		str8 res        = {0};
-		i32 dirname_len = 0;
-		res.size        = wai_getExecutablePath(NULL, 0, &dirname_len);
-		if(res.size > 0) {
-			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
-			wai_getExecutablePath((char *)res.str, res.size, &dirname_len);
-			res.str[res.size] = '\0';
-		}
-		CLI_STATE.exe_path = res;
-	}
-	if(CLI_STATE.module_path.size == 0) {
-		str8 res        = {0};
-		i32 dirname_len = 0;
-		res.size        = wai_getModulePath(NULL, 0, &dirname_len);
-		if(res.size > 0) {
-			res.str = (u8 *)sys_alloc(NULL, res.size + 1);
-			wai_getModulePath((char *)res.str, res.size, &dirname_len);
-			res.str[res.size] = '\0';
-		}
-		CLI_STATE.exe_path = res;
-	}
-	return CLI_STATE.exe_path;
+	str8 res = {0};
+	return res;
+}
+
+str8
+sys_current_path(struct alloc alloc)
+{
+	str8 res = {0};
+	return res;
+}
+
+struct sys_process_info
+sys_process_info(void)
+{
+	struct sys_process_info res = {0};
+	return res;
 }

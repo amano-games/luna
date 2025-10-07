@@ -48,9 +48,13 @@ i32 sys_file_seek_end(void *f, i32 pos);
 size sys_file_w(void *f, const void *buf, u32 bsize);
 i32 sys_file_r(void *f, void *buf, u32 bsize);
 struct sys_file_stats sys_file_stats(str8 path);
+b32 sys_make_dir(str8 path);
 
 struct sys_full_file_res sys_load_full_file(str8 path, struct alloc alloc);
 usize sys_file_modified(str8 path);
+
 str8 sys_exe_path(void);
 str8 sys_base_path(void);
-str8 sys_pref_path(void);
+str8 sys_data_path(void);
+str8 sys_current_path(struct alloc alloc);
+str8 sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name);
