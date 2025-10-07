@@ -492,12 +492,12 @@ sokol_frame(void)
 void
 sokol_cleanup(void)
 {
+	sys_internal_close();
 	sys_free(SOKOL_STATE.marena.buf_og);
 	sg_shutdown();
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_shutdown();
 #endif
-	sys_internal_close();
 }
 
 struct str8

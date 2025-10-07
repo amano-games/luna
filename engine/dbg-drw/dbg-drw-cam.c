@@ -1,6 +1,5 @@
-#include "debug-draw-cam.h"
-
-#include "debug-draw.h"
+#include "dbg-drw-cam.h"
+#include "dbg-drw.h"
 
 void
 debug_draw_cam_brain(struct cam_brain *brain)
@@ -8,7 +7,7 @@ debug_draw_cam_brain(struct cam_brain *brain)
 	struct cam_area area = brain->areas[brain->active_index];
 	struct col_aabb aabb = area.aabb;
 
-	debug_draw_rec(
+	dbg_drw_rec(
 		aabb.min.x,
 		aabb.min.y,
 		aabb.max.x - aabb.min.x,
@@ -44,13 +43,13 @@ debug_draw_cam(struct cam *c)
 	};
 	struct col_aabb limits = c->data.soft_limits;
 
-	v2_i32 og_offset = DEBUG_STATE.draw_offset;
+	v2_i32 og_offset = dbg_drw_offset_get();
 
-	debug_draw_set_offset(0, 0);
+	dgb_drw_offset_set(0, 0);
 
 	// Cross hair
-	debug_draw_line(half.x - 5, half.y, half.x + 5, half.y);
-	debug_draw_line(half.x, half.y - 5, half.x, half.y + 5);
+	dbg_drw_lin(half.x - 5, half.y, half.x + 5, half.y);
+	dbg_drw_lin(half.x, half.y - 5, half.x, half.y + 5);
 
 	usize dash_size = 10;
 
@@ -58,13 +57,13 @@ debug_draw_cam(struct cam *c)
 		// Drag top
 		for(usize i = 0; i < CAM_W / dash_size; ++i) {
 			if(i % 2 == 0) {
-				debug_draw_line(i * dash_size, half.y - soft.min.y, i * dash_size + dash_size, half.y - soft.min.y);
+				dbg_drw_lin(i * dash_size, half.y - soft.min.y, i * dash_size + dash_size, half.y - soft.min.y);
 			}
 		}
 
 		// Drag top hard
 		if(hard.min.y != 0) {
-			debug_draw_line(0, half.y - hard.min.y, SYS_DISPLAY_W, half.y - hard.min.y);
+			dbg_drw_lin(0, half.y - hard.min.y, SYS_DISPLAY_W, half.y - hard.min.y);
 		}
 	}
 
@@ -72,13 +71,13 @@ debug_draw_cam(struct cam *c)
 		// Drag left
 		for(usize i = 0; i < CAM_H / dash_size; ++i) {
 			if(i % 2 == 0) {
-				debug_draw_line(half.x - soft.min.x, i * dash_size, half.x - soft.min.x, i * dash_size + dash_size);
+				dbg_drw_lin(half.x - soft.min.x, i * dash_size, half.x - soft.min.x, i * dash_size + dash_size);
 			}
 		}
 
 		// Drag right hard
 		if(hard.min.x != 0) {
-			debug_draw_line(half.x - hard.min.x, 0, half.x - hard.min.x, CAM_H);
+			dbg_drw_lin(half.x - hard.min.x, 0, half.x - hard.min.x, CAM_H);
 		}
 	}
 
@@ -86,13 +85,13 @@ debug_draw_cam(struct cam *c)
 		// Drag bottom
 		for(usize i = 0; i < CAM_W / dash_size; ++i) {
 			if(i % 2 == 0) {
-				debug_draw_line(i * dash_size, half.y + soft.max.y, i * dash_size + dash_size, half.y + soft.max.y);
+				dbg_drw_lin(i * dash_size, half.y + soft.max.y, i * dash_size + dash_size, half.y + soft.max.y);
 			}
 		}
 
 		// Drag bottom hard
 		if(hard.max.y != 0) {
-			debug_draw_line(0, half.y + hard.max.y, CAM_W, half.y + hard.max.y);
+			dbg_drw_lin(0, half.y + hard.max.y, CAM_W, half.y + hard.max.y);
 		}
 	}
 
@@ -100,17 +99,17 @@ debug_draw_cam(struct cam *c)
 		// Drag right
 		for(usize i = 0; i < CAM_H / dash_size; ++i) {
 			if(i % 2 == 0) {
-				debug_draw_line(half.x + soft.max.x, i * dash_size, half.x + soft.max.x, i * dash_size + dash_size);
+				dbg_drw_lin(half.x + soft.max.x, i * dash_size, half.x + soft.max.x, i * dash_size + dash_size);
 			}
 		}
 
 		// Drag right hard
 		if(hard.max.x != 0) {
-			debug_draw_line(half.x + hard.max.x, 0, half.x + hard.max.x, CAM_H);
+			dbg_drw_lin(half.x + hard.max.x, 0, half.x + hard.max.x, CAM_H);
 		}
 	}
 
-	debug_draw_set_offset(og_offset.x, og_offset.y);
+	dgb_drw_offset_set(og_offset.x, og_offset.y);
 
-	debug_draw_cir(tp.x, tp.y, 2);
+	dbg_drw_cir(tp.x, tp.y, 2);
 }
