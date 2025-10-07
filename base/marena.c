@@ -72,3 +72,17 @@ marena_size_rem(struct marena *m)
 {
 	return m->rem;
 }
+
+struct marena_tmp
+marena_tmp_start(struct marena *arena)
+{
+	void *p               = arena->p;
+	struct marena_tmp tmp = {arena, p};
+	return tmp;
+}
+
+void
+marena_tmp_end(struct marena_tmp tmp)
+{
+	marena_reset_to(tmp.arena, tmp.p);
+}
