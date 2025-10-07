@@ -328,7 +328,7 @@ main(i32 argc, char *argv[])
 		return 1;
 	}
 	log_info(LOG_ID, "Generating tables recursively from %s -> %s", argv[0], argv[2]);
-	mkdir(argv[2], 0755);
+	sys_make_dir(str8_cstr(argv[2]));
 
 	usize scratch_mem_size = MMEGABYTE(1);
 	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include "whereami.c"
@@ -52,14 +51,6 @@
 #define ASSETS_DB_EXT     ".tsj"
 #define PINBALL_TABLE_EXT ".pinbjson"
 
-void dir_mk(const char* path ){
-	#if !defined(TARGET_WIN)
-	mkdir(path, 0755);
-	#else
-	_mkdir(path);
-	#endif
-}
-
 void
 fcopy(const str8 in_path, const str8 out_path)
 {
@@ -104,7 +95,7 @@ handle_asset_recursive(
 
 		if(file.is_dir) {
 			if(strcmp(file.name, ".") != 0 && strcmp(file.name, "..") != 0) {
-				dir_mk((char*)out_path.str);
+				sys_make_dir(out_path);
 				handle_asset_recursive(str8_cstr(file.path), out_path, scratch);
 			}
 		} else {
@@ -145,7 +136,9 @@ main(int argc, char *argv[])
 
 	log_info("asset-gen", "Processing assets...\n");
 
-	dir_mk(argv[2]);
+	str8 path = str8_cstr(argv[2]);
+	// TODO: check if folder exists
+	sys_make_dir(path);
 
 	usize scratch_mem_size = MMEGABYTE(1);
 	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
@@ -156,7 +149,9 @@ main(int argc, char *argv[])
 
 	handle_asset_recursive(str8_cstr(argv[1]), str8_cstr(argv[2]), scratch);
 
-	sys_free(scratch_mem_buffer);
+	if(scratch_mem_buffer) {
+		sys_free(scratch_mem_buffer);
+	}
 
 	return EXIT_SUCCESS;
 }
