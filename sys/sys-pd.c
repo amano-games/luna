@@ -3,6 +3,7 @@
 #include "base/str.h"
 #include "base/dbg.h"
 
+#include "lib/tex/tex.h"
 #include "sys/sys-debug-draw.h"
 #include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
@@ -603,9 +604,9 @@ sys_pref_path(void)
 
 // void pltf_pd_menu_image_upd(u32 *p, i32 ww, i32 w, i32 h)
 void
-sys_set_menu_image(void *p, int h, int wbyte, i32 x_offset)
+sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	if(p == NULL) {
+	if(tex.px == NULL) {
 		PD->system->setMenuImage(NULL, x_offset);
 		return;
 	}
@@ -622,12 +623,7 @@ sys_set_menu_image(void *p, int h, int wbyte, i32 x_offset)
 		&mk,
 		&px);
 
-	int y2 = MIN(bh, h);
-	int x2 = MIN(bb, wbyte);
-	for(int y = 0; y < y2; y++) {
-		for(int x = 0; x < x2; x++)
-			px[x + y * bb] = ((u8 *)p)[x + y * wbyte];
-	}
+	tex_opaque_to_pdi(tex, px, bw, bh, bb);
 	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
 
 #if 0
