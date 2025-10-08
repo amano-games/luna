@@ -2,6 +2,7 @@
 
 #include "base/types.h"
 #include "base/mem.h"
+#include "lib/tex/tex.h"
 
 #define SYS_UPS            50
 #define SYS_DISPLAY_W      400
@@ -110,7 +111,7 @@ void sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)
 void sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);
 int sys_menu_value(int id);
 void sys_menu_clr(void);
-void sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset);
+void sys_set_menu_image(struct tex tex, i32 x_offset);
 void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
 str8 sys_get_current_path(struct alloc alloc);
