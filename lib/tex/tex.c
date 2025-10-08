@@ -230,6 +230,18 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete p
 }
 
 void
+tex_opaque_to_pdi(struct tex tex, u8 *out_px, i32 w, i32 h, i32 row_bytes)
+{
+	int wbyte = tex.wword * 4;
+	int y2    = MIN(h, tex.h);
+	int x2    = MIN(row_bytes, wbyte);
+	for(int y = 0; y < y2; y++) {
+		for(int x = 0; x < x2; x++)
+			out_px[x + y * row_bytes] = ((u8 *)tex.px)[x + y * wbyte];
+	}
+}
+
+void
 tex_cpy(struct tex *dst, struct tex *src)
 {
 	// TODO: For now only can copy textures that are the same dimensions
@@ -241,16 +253,4 @@ tex_cpy(struct tex *dst, struct tex *src)
 	dbg_assert(dst->px != NULL);
 	usize mem_size = sizeof(u32) * dst->wword * dst->h * 2;
 	mcpy(dst->px, src->px, mem_size);
-}
-
-void
-tex_opaque_to_pdi(struct tex tex, u8 *out_px, i32 w, i32 h, i32 row_bytes)
-{
-	int wbyte = tex.wword * 4;
-	int y2    = MIN(h, tex.h);
-	int x2    = MIN(row_bytes, wbyte);
-	for(int y = 0; y < y2; y++) {
-		for(int x = 0; x < x2; x++)
-			out_px[x + y * row_bytes] = ((u8 *)tex.px)[x + y * wbyte];
-	}
 }

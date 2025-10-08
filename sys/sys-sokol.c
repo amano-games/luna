@@ -1020,7 +1020,7 @@ sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal)
 }
 
 void
-sys_set_menu_image(void *px, int h, int wbyte, i32 x_offset)
+sys_set_menu_image(struct tex tex, i32 x_offset)
 {
 	dbg_not_implemeneted("sokol");
 
