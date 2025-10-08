@@ -199,7 +199,7 @@ sokol_main(i32 argc, char **argv)
 
 	{
 		SOKOL_STATE.pallete.colors[GFX_COL_BLACK]     = 0x110B0DFF;
-		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]     = 0XA5A5A2FF;
+		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]     = 0xA5A5A2FF;
 		SOKOL_STATE.pallete_dbg.colors[GFX_COL_BLACK] = 0x000000FF;
 		SOKOL_STATE.pallete_dbg.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
 	}
