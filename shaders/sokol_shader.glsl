@@ -81,6 +81,7 @@ void main() {
   vec3 app_color = app_sample.rgb;
   vec4 col = mix(vec4(app_color, 1.0), vec4(color_debug, 1.0), debug_sample.r > 0.0 ? 0.5 : 0.0);
   frag_color = col;
+  // frag_color = vec4(app_color, 1.0);
 }
 #pragma sokol @end
 

@@ -5,7 +5,7 @@
 #include "base/utils.h"
 
 u32
-rgba_to_u32(v4 rgba)
+color_rgba_to_u32(v4 rgba)
 {
 	u32 result = 0;
 	result |= ((u32)((u8)(rgba.x * 255.f))) << 24;
@@ -16,7 +16,7 @@ rgba_to_u32(v4 rgba)
 }
 
 v4
-rgba_from_u32(u32 hex)
+color_rgba_from_u32(u32 hex)
 {
 	v4 result = {
 		((hex & 0xff000000) >> 24) / 255.f,
@@ -28,14 +28,14 @@ rgba_from_u32(u32 hex)
 }
 
 str8
-rgba_to_hex_str(struct alloc alloc, v4 rgba)
+color_rgba_to_hex_str(struct alloc alloc, v4 rgba)
 {
 	str8 hex_string = str8_fmt_push(alloc, "%02x%02x%02x%02x", (u8)(rgba.x * 255.f), (u8)(rgba.y * 255.f), (u8)(rgba.z * 255.f), (u8)(rgba.w * 255.f));
 	return hex_string;
 }
 
 v4
-rgba_from_hex_str(str8 hex_string)
+color_rgba_from_hex_str(str8 hex_string)
 {
 	u8 byte_text[8]   = {0};
 	u64 byte_text_idx = 0;

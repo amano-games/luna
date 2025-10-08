@@ -26,3 +26,4 @@ i32 tex_mask_at(struct tex tex, i32 x, i32 y);
 void tex_px(struct tex tex, i32 x, i32 y, i32 col);
 void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
 void tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete);
+void tex_cpy(struct tex *dst, struct tex *src);

@@ -1,4 +1,5 @@
 #include "tex.h"
+#include "base/dbg.h"
 #include "engine/gfx/gfx-defs.h"
 #include "sys/sys-intrin.h"
 #include "sys/sys-io.h"
@@ -209,13 +210,34 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete p
 	i32 width_alinged = (tex.w + 31) & ~31;
 	i32 wbytes        = width_alinged / 8;
 	u8 *in            = (u8 *)tex.px;
+	dbg_assert(size >= tex.w * tex.h);
 	for(i32 y = 0; y < tex.h; y++) {
 		for(i32 x = 0; x < tex.w; x++) {
-			i32 src     = (x >> 3) + y * wbytes;
-			i32 dst     = x + y * tex.w;
-			i32 byt     = in[src];
-			i32 bit     = !!(byt & 0x80 >> (x & 7));
-			pixels[dst] = (bit ? pallete.colors[GFX_COL_WHITE] : pallete.colors[GFX_COL_BLACK]) | 0xFF000000;
+			i32 src        = (x >> 3) + y * wbytes;
+			i32 dst        = x + y * tex.w;
+			i32 byt        = in[src];
+			u8 mask        = 0x80 >> (x & 7);
+			i32 bit        = !!(byt & mask);
+			u32 color_bgra = bit ? pallete.colors[GFX_COL_WHITE] : pallete.colors[GFX_COL_BLACK];
+			u32 color_rgba = ((color_bgra & 0xFF000000) >> 24) | // R
+				((color_bgra & 0x00FF0000) >> 8) |               // G
+				((color_bgra & 0x0000FF00) << 8) |               // B
+				((color_bgra & 0x000000FF) << 24);               // A
+			pixels[dst] = color_rgba;
 		}
 	}
+}
+
+void
+tex_cpy(struct tex *dst, struct tex *src)
+{
+	// TODO: For now only can copy textures that are the same dimensions
+	dbg_assert(src->fmt == dst->fmt);
+	dbg_assert(src->w == dst->w);
+	dbg_assert(src->h == dst->h);
+	dbg_assert(src->wword == dst->wword);
+	dbg_assert(src->px != NULL);
+	dbg_assert(dst->px != NULL);
+	usize mem_size = sizeof(u32) * dst->wword * dst->h * 2;
+	mcpy(dst->px, src->px, mem_size);
 }
