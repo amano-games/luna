@@ -210,7 +210,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		ser_write_v2_i32(w, entity->score_fx_offset);
 	}
 
-	if(entity->switch_value.is_enabled) {
+	if(entity->switch_value.is_enabled || entity->switch_value.animation_off != 0 || entity->switch_value.animation_on != 0 || entity->switch_value.value) {
 		ser_write_string(w, str8_lit("switch_value"));
 		pinb_switch_value_write(w, &entity->switch_value);
 	}
@@ -367,6 +367,8 @@ pinb_counter_write(struct ser_writer *w, struct pinb_counter *value)
 	dbg_assert(value != NULL);
 	ser_write_object(w);
 
+	ser_write_string(w, str8_lit("is_enabled"));
+	ser_write_i32(w, value->is_enabled);
 	ser_write_string(w, str8_lit("type"));
 	ser_write_i32(w, value->type);
 	ser_write_string(w, str8_lit("min"));
@@ -1518,7 +1520,10 @@ pinb_counter_read(struct ser_reader *r, struct ser_value obj)
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("type"), 0)) {
+		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.is_enabled = value.i32;
+		} else if(str8_match(key.str, str8_lit("type"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.type = value.i32;
 		} else if(str8_match(key.str, str8_lit("min"), 0)) {

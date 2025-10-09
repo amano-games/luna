@@ -128,6 +128,7 @@ export interface TableSwitcher {
 }
 
 export interface Counter {
+  is_enabled: boolean;
   type: number;
   max: number;
   min: number;
