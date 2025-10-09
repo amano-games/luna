@@ -1457,6 +1457,7 @@ sokol_write_recording(struct recording_1b *recording)
 	str8_list_pushf(scratch, &cmd_list, "-c:v libx264");
 	str8_list_pushf(scratch, &cmd_list, "-pix_fmt yuv420p");
 	str8_list_pushf(scratch, &cmd_list, "-vb 2500k");
+	// str8_list_pushf(scratch, &cmd_list, "-vf fps=fps=1/%d", fps);
 
 	str8_list_pushf(scratch, &cmd_list, "\"%s\"", path.str);
 
@@ -1464,6 +1465,7 @@ sokol_write_recording(struct recording_1b *recording)
 	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
 	size dst_size          = w * h * sizeof(u32);
 	u32 *dst               = alloc_arr(scratch, u32, w * h);
+	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
 
 	pipe = popen((char *)cmd.str, "w");
 	dbg_check_warn(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
