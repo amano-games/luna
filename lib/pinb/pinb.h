@@ -135,6 +135,7 @@ struct pinb_entity_list {
 
 struct pinb_sensor {
 	b32 is_enabled;
+	f32 angle_rad;
 	struct col_shapes shapes;
 };
 

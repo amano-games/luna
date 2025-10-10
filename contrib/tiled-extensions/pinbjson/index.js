@@ -521,6 +521,7 @@
     const value = prop.value;
     const res = {
       is_enabled: value["is_enabled"],
+      angle_degrees: value["angle_degrees"],
       collision_shape: getCol(object)
     };
     return res;
