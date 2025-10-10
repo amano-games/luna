@@ -117,6 +117,12 @@ floor_f32(f32 a)
 }
 
 static inline f32
+round_f32(f32 a)
+{
+	return roundf(a);
+}
+
+static inline f32
 ceil_f32(f32 a)
 {
 	return ceilf(a);
