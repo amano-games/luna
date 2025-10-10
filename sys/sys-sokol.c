@@ -42,7 +42,7 @@
 #define SOKOL_TOUCH_INVALID U8_MAX
 // #define SOKOL_PIXEL_PERFECT
 #if defined(TARGET_WIN)
-#define SOKOL_DISABLE_AUDIO
+// #define SOKOL_DISABLE_AUDIO
 #endif
 
 // #define SOKOL_DBG_AUDIO
@@ -459,6 +459,7 @@ sokol_event(const sapp_event *ev)
 void
 sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
+#if !defined(SOKOL_DISABLE_AUDIO)
 	if(SOKOL_STATE.state == 1) {
 		dbg_assert(num_channels == 1);
 		dbg_assert(num_frames == SOKOL_AUDIO_FRAMES);
@@ -499,6 +500,7 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 	} else {
 		mclr(buffer, num_frames * num_channels);
 	}
+#endif
 }
 
 void
