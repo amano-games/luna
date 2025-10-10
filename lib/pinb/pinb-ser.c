@@ -394,6 +394,9 @@ pinb_sensor_write(struct ser_writer *w, struct pinb_sensor *value)
 	ser_write_string(w, str8_lit("is_enabled"));
 	ser_write_i32(w, value->is_enabled);
 
+	ser_write_string(w, str8_lit("angle_rad"));
+	ser_write_f32(w, value->angle_rad);
+
 	ser_write_string(w, str8_lit("shapes"));
 	col_shapes_write(w, &value->shapes);
 
@@ -1812,6 +1815,9 @@ pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.is_enabled = value.i32;
+		} else if(str8_match(key.str, str8_lit("angle_rad"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.angle_rad = value.f32;
 		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
 			res.shapes = col_shapes_read(r, value);
 		}
