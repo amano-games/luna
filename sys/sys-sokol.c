@@ -45,6 +45,8 @@
 #define SOKOL_DISABLE_AUDIO
 #endif
 
+// #define SOKOL_DBG_AUDIO
+#define SOKOL_AUDIO_FRAMES      256
 #define SOKOL_RECORDING_SECONDS 120
 #define SOKOL_RECORDING_ENABLED
 
@@ -60,9 +62,18 @@ struct recording_1b {
 	struct tex *frames;
 };
 
+struct recording_aud {
+	size idx;
+	size len;
+	size cap;
+	f32 *frames;
+};
+
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
 
 struct sokol_state {
+	i32 state;
+
 	struct marena scratch_marena;
 	struct alloc scratch;
 
@@ -91,6 +102,7 @@ struct sokol_state {
 	struct gfx_col_pallete pallete_dbg;
 
 	struct recording_1b recording;
+	struct recording_aud recording_aud;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 
 	struct sys_process_info process_info;
@@ -193,7 +205,19 @@ sokol_main(i32 argc, char **argv)
 		for(size i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, alloc);
 		}
-		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording memory");
+		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording video memory");
+	}
+	{
+		struct recording_aud *rec = &SOKOL_STATE.recording_aud;
+		struct alloc alloc        = SOKOL_STATE.alloc;
+		rec->cap                  = SYS_UPS * SOKOL_RECORDING_SECONDS;
+		rec->len                  = 0;
+		rec->idx                  = 0;
+		rec->frames               = alloc_size(alloc, sizeof(*rec->frames) * rec->cap);
+		for(size i = 0; i < rec->cap; ++i) {
+			rec->frames[i] = 0;
+		}
+		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording audio memory");
 	}
 #endif
 
@@ -212,6 +236,8 @@ sokol_main(i32 argc, char **argv)
 			str8_lit(SOKOL_NAME));
 		sys_make_dir(dir_path);
 	}
+
+	SOKOL_STATE.state = 1;
 
 error:;
 	sapp_desc res = {
@@ -243,7 +269,7 @@ sokol_init(void)
 
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_setup(&(saudio_desc){
-		.buffer_frames = 256,
+		.buffer_frames = SOKOL_AUDIO_FRAMES,
 		.stream_cb     = sokol_stream_cb,
 		.logger.func   = slog_func,
 	});
@@ -433,30 +459,45 @@ sokol_event(const sapp_event *ev)
 void
 sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
-	dbg_assert(1 == num_channels);
-	b32 is_mono = (num_channels == 1);
+	if(SOKOL_STATE.state == 1) {
+		dbg_assert(num_channels == 1);
+		dbg_assert(num_frames == SOKOL_AUDIO_FRAMES);
+		b32 is_mono = (num_channels == 1);
 
-	static i16 lbuf[0x1000];
-	static i16 rbuf[0x1000];
-	mclr_array(lbuf);
-	mclr_array(rbuf);
+		static i16 lbuf[0x1000];
+		static i16 rbuf[0x1000];
+		mclr_array(lbuf);
+		mclr_array(rbuf);
 
-	sys_internal_audio(lbuf, rbuf, num_frames);
+		sys_internal_audio(lbuf, rbuf, num_frames);
 
-	f32 *s     = buffer;
-	i16 *l     = lbuf;
-	i16 *r     = rbuf;
-	f32 volume = 0.1f;
+		f32 *s     = buffer;
+		i16 *l     = lbuf;
+		i16 *r     = rbuf;
+		f32 volume = 0.1f;
 
-	for(i32 n = 0; n < num_frames; n++) {
-		f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
-		f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
+		for(i32 n = 0; n < num_frames; n++) {
+			f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
+			f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
 
-		// Store the f32 values in the output stream buffer
-		*s++ = vl; // Left channel
-		if(num_channels == 2) {
-			*s++ = vr; // Right channel, only if stereo
+			// Store the f32 values in the output stream buffer
+			*s++ = vl; // Left channel
+			if(num_channels == 2) {
+				*s++ = vr; // Right channel, only if stereo
+			}
+#if defined(SOKOL_RECORDING_ENABLED)
+			{
+				struct recording_aud *rec = &SOKOL_STATE.recording_aud;
+				if(rec->frames != NULL) {
+					rec->frames[rec->idx] = vl;
+					rec->idx              = (rec->idx + 1) % rec->cap;
+					rec->len              = MIN(rec->len + 1, rec->cap);
+				}
+			}
+#endif
 		}
+	} else {
+		mclr(buffer, num_frames * num_channels);
 	}
 }
 
@@ -534,6 +575,7 @@ sokol_frame(void)
 void
 sokol_cleanup(void)
 {
+	SOKOL_STATE.state = 0;
 	sys_internal_close();
 	sys_free(SOKOL_STATE.marena.buf_og);
 	sg_shutdown();
@@ -961,6 +1003,15 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 		} break;
 		}
 	}
+
+#if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
+	struct recording_aud *rec = &SOKOL_STATE.recording_aud;
+	for(size i = 0; i < rec->len; ++i) {
+		i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
+		i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
+		gfx_cir(ctx, x, y, 1, 1);
+	}
+#endif
 
 error:
 	return;
