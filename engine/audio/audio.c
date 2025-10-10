@@ -322,7 +322,6 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 		adpcm_playback(adpcm, lb, rb, len);
 	} else {
 		// save some cycles on silent parallel music channels
-		// adpcm_playback_nonpitch_silent(adpcm, len);
 		adpcm_playback_nonpitch(adpcm, lb, rb, len);
 	}
 	// dbg_assert((adpcm->data_pos - data_pos_prev) == bneeded);
@@ -334,7 +333,6 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 u32
 snd_instance_play(struct snd snd, f32 vol, f32 pitch, u16 repeat_count)
 {
-	if(AUDIO.snd_playing_disabled) return 0;
 	if(!snd.buf || snd.len == 0) return 0;
 
 	i32 vol_q8   = (i32)(vol * 256.5f);

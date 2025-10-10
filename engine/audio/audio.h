@@ -5,7 +5,6 @@
 #include "engine/audio/snd.h"
 #include "base/types.h"
 
-#define LEN_MUS_NAME      24
 #define NUM_SND_CHANNEL   12
 #define NUM_AUD_CMD_QUEUE 128
 
@@ -108,7 +107,6 @@ struct aud {
 	u32 i_cmd_r;
 	struct aud_cmd cmds[NUM_AUD_CMD_QUEUE];
 	u32 snd_id; // unique snd instance ID counter
-	b32 snd_playing_disabled;
 	i32 lowpass;
 	i32 lowpass_acc;
 };
