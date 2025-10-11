@@ -1496,6 +1496,7 @@ sokol_write_recording(struct recording_1b *recording)
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
 #if DEBUG
 	str8_list_pushf(scratch, &cmd_list, "-loglevel verbose");
+	// str8_list_pushf(scratch, &cmd_list, "-report");
 #endif
 	str8_list_pushf(scratch, &cmd_list, "-y");
 
@@ -1510,8 +1511,6 @@ sokol_write_recording(struct recording_1b *recording)
 	str8_list_pushf(scratch, &cmd_list, "-c:v libx264");
 	str8_list_pushf(scratch, &cmd_list, "-pix_fmt yuv420p");
 	str8_list_pushf(scratch, &cmd_list, "-vb 2500k");
-	str8_list_pushf(scratch, &cmd_list, "-vsync cfr");
-	// str8_list_pushf(scratch, &cmd_list, "-vf fps=%d", fps);
 
 	str8_list_pushf(scratch, &cmd_list, "\"%s\"", path.str);
 
