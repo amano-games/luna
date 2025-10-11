@@ -86,8 +86,14 @@ $(PUBLISH_OBJS): $(EXE_OUT) sign
 clean:
 	rm -rf $(BUILD_DIR)
 
+
+ifeq ($(DEBUG), 1)
+run: build
+	./$(EXE_OUT)
+else
 run: build
 	open $(OBJS)
+endif
 
 build: $(EXE_OUT)
 release: clean $(PUBLISH_OBJS)
