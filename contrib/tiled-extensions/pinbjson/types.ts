@@ -75,6 +75,11 @@ export interface Flip {
   is_enabled: boolean;
 }
 
+export interface SpriteComponent {
+  is_enabled: boolean;
+  offset: [number, number];
+}
+
 export interface Flipper {
   velocity_easing_function: number;
   velocity_radius_max: number;
@@ -107,6 +112,7 @@ export interface Animator {
 }
 
 export interface Sprite {
+  is_enabled: boolean;
   path: string;
   offset: [number, number];
   flip: number;

@@ -584,12 +584,14 @@
     flip = flip | (object.tileFlippedVertically ? 2 : 0);
     const layer = ((_a = layerProps.sprite_layer) == null ? void 0 : _a.layer) ? layerProps.sprite_layer.layer : 0;
     const y_sort = ((_b = layerProps.sprite_layer) == null ? void 0 : _b.y_sort) ? layerProps.sprite_layer.y_sort : false;
+    const is_enabled = true;
     const res = {
       path: path2,
       flip,
       offset,
       layer,
-      y_sort
+      y_sort,
+      is_enabled
     };
     return res;
   }
@@ -689,9 +691,13 @@
     };
     return res;
   }
-  function getSpriteOffset(_object, prop) {
+  function getSpriteComponent(_object, prop) {
     const value = prop.value;
-    const res = [value["x"], value["y"]];
+    const offset = [value["offset_x"], value["offset_y"]];
+    const res = {
+      is_enabled: value["is_enabled"],
+      offset
+    };
     return res;
   }
   function getGravity(_object, prop) {
@@ -977,11 +983,9 @@
               return __spreadProps(__spreadValues({}, acc), {
                 reactive_animation: getReactiveAnimation(item, prop)
               });
-            case "sprite_offset":
+            case "sprite":
               if (acc.spr != null) {
-                const spr = __spreadProps(__spreadValues({}, acc.spr), {
-                  offset: getSpriteOffset(item, prop)
-                });
+                const spr = __spreadValues(__spreadValues({}, acc.spr), getSpriteComponent(item, prop));
                 return __spreadProps(__spreadValues({}, acc), {
                   spr
                 });
