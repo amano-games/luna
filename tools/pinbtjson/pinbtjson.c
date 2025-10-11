@@ -706,6 +706,8 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 			res.spr.y_sort = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("y_sort_offset")) == 0) {
 			res.spr.y_sort_offset = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
+			res.spr.is_enabled = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("offset")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.spr.offset.x = json_parse_f32(json, tokens + i + 2);

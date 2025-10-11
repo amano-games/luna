@@ -1621,6 +1621,9 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("y_sort_offset"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.y_sort_offset = value.i32;
+		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.is_enabled = value.i32;
 		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.offset = ser_read_v2(r, value);
@@ -1981,6 +1984,9 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr)
 	ser_write_i32(w, spr->y_sort);
 	ser_write_string(w, str8_lit("y_sort_offset"));
 	ser_write_i32(w, spr->y_sort_offset);
+
+	ser_write_string(w, str8_lit("is_enabled"));
+	ser_write_i32(w, spr->is_enabled);
 
 	ser_write_string(w, str8_lit("offset"));
 	ser_write_v2(w, spr->offset);

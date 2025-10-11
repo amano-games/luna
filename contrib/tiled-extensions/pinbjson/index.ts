@@ -58,6 +58,7 @@ import {
   TableSwitcher,
   MoverPath,
   Mover,
+  SpriteComponent,
 } from "./types";
 import { getAssetPath } from "./utils";
 
@@ -235,12 +236,14 @@ function getSprite(
   const y_sort = layerProps.sprite_layer?.y_sort
     ? layerProps.sprite_layer.y_sort
     : false;
+  const is_enabled = true;
   const res = {
     path,
     flip,
     offset,
     layer,
     y_sort,
+    is_enabled,
   } as Sprite;
   return res;
 }
@@ -358,10 +361,14 @@ function getFlipper(_object: MapObject, prop: PropertyValue) {
   return res;
 }
 
-function getSpriteOffset(_object: MapObject, prop: PropertyValue) {
+function getSpriteComponent(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
-  const res = [value["x"], value["y"]] as [number, number];
+  const offset = [value["offset_x"], value["offset_y"]] as [number, number];
+  const res: SpriteComponent = {
+    is_enabled: value["is_enabled"],
+    offset,
+  };
   return res;
 }
 
@@ -696,11 +703,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 ...acc,
                 reactive_animation: getReactiveAnimation(item, prop),
               };
-            case "sprite_offset":
+            case "sprite":
               if (acc.spr != null) {
                 const spr = {
                   ...acc.spr,
-                  offset: getSpriteOffset(item, prop),
+                  ...getSpriteComponent(item, prop),
                 };
                 return {
                   ...acc,
