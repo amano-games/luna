@@ -193,10 +193,10 @@ span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, enum prim_mode mode)
 	struct span_blit info = {0};
 	info.y                = y;
 	info.doff             = x1 & 31;
-	info.dmax             = (info.doff + nbit - 1) >> 5;                        // number of touched dst words -1
-	info.mode             = mode;                                               // sprite masking mode
-	info.ml               = bswap32(0xFFFFFFFFU >> (31 & info.doff));           // mask to cut off boundary left
-	info.mr               = bswap32(0xFFFFFFFFU << (31 & (-info.doff - nbit))); // mask to cut off boundary right
+	info.dmax             = (info.doff + nbit - 1) >> 5;                          // number of touched dst words -1
+	info.mode             = mode;                                                 // sprite masking mode
+	info.ml               = bswap_u32(0xFFFFFFFFU >> (31 & info.doff));           // mask to cut off boundary left
+	info.mr               = bswap_u32(0xFFFFFFFFU << (31 & (-info.doff - nbit))); // mask to cut off boundary right
 	info.dst_wword        = ctx.dst.wword;
 	info.dp               = &ctx.dst.px[((x1 >> 5) << lsh) + y * ctx.dst.wword];
 	info.dadd             = 1 + lsh;

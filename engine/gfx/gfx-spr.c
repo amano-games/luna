@@ -55,9 +55,9 @@ spr_blit_fwd(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 	}
 
 	if(0 < offs) { // first word
-		p = bswap32(*sp) << l;
+		p = bswap_u32(*sp) << l;
 		if(sa == 2) {
-			m = bswap32(*(sp + 1)) << l;
+			m = bswap_u32(*(sp + 1)) << l;
 		} else {
 			m = 0xFFFFFFFFU;
 		}
@@ -66,9 +66,9 @@ spr_blit_fwd(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 		}
 	}
 
-	p = bswap32(p | (bswap32(*sp) >> r));
+	p = bswap_u32(p | (bswap_u32(*sp) >> r));
 	if(sa == 2) {
-		m = bswap32(m | (bswap32(*(sp + 1)) >> r)) & ml;
+		m = bswap_u32(m | (bswap_u32(*(sp + 1)) >> r)) & ml;
 	} else {
 		m = ml;
 	}
@@ -81,11 +81,11 @@ spr_blit_fwd(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 	dp += da;
 
 	for(int i = 1; i < dm; i++) { // middle words without first and last word
-		p = bswap32(*sp) << l;
-		p = bswap32(p | (bswap32(*(sp + sa)) >> r));
+		p = bswap_u32(*sp) << l;
+		p = bswap_u32(p | (bswap_u32(*(sp + sa)) >> r));
 		if(sa == 2) {
-			m = bswap32(*(sp + 1)) << l;
-			m = bswap32(m | (bswap32(*(sp + 3)) >> r));
+			m = bswap_u32(*(sp + 1)) << l;
+			m = bswap_u32(m | (bswap_u32(*(sp + 3)) >> r));
 		} else {
 			m = 0xFFFFFFFFU;
 		}
@@ -94,21 +94,21 @@ spr_blit_fwd(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 		dp += da;
 	}
 
-	p = bswap32(*sp) << l; // last word
+	p = bswap_u32(*sp) << l; // last word
 	if(sa == 2) {
-		m = bswap32(*(sp + 1)) << l;
+		m = bswap_u32(*(sp + 1)) << l;
 	} else {
 		m = 0xFFFFFFFFU;
 	}
 	if(sp < source_pixel_words + sm) { // this is different for reversed blitting!
 		sp += sa;
-		p |= bswap32(*sp) >> r;
+		p |= bswap_u32(*sp) >> r;
 		if(sa == 2) {
-			m |= bswap32(*(sp + 1)) >> r;
+			m |= bswap_u32(*(sp + 1)) >> r;
 		}
 	}
-	p = bswap32(p);
-	m = bswap32(m);
+	p = bswap_u32(p);
+	m = bswap_u32(m);
 	spr_blit(dp, da == 1 ? NULL : dp + 1, p, m & (pt & mr), mode);
 }
 
@@ -121,18 +121,18 @@ spr_blit_rev(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 	u32 m                  = 0;
 
 	if(l == 0) { // same alignment, fast path
-		p = brev32(*sp);
+		p = brev_u32(*sp);
 		if(sa == 2) {
-			m = brev32(*(sp + 1)) & ml;
+			m = brev_u32(*(sp + 1)) & ml;
 		} else {
 			m = ml;
 		}
 		sp -= sa;
 		for(int i = 0; i < dm; i++) {
 			spr_blit(dp, da == 1 ? NULL : dp + 1, p, m & pt, mode);
-			p = brev32(*sp);
+			p = brev_u32(*sp);
 			if(sa == 2) {
-				m = brev32(*(sp + 1));
+				m = brev_u32(*(sp + 1));
 			} else {
 				m = 0xFFFFFFFFU;
 			}
@@ -144,9 +144,9 @@ spr_blit_rev(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 	}
 
 	if(0 < offs) { // first word
-		p = brev32(bswap32(*sp)) << l;
+		p = brev_u32(bswap_u32(*sp)) << l;
 		if(sa == 2) {
-			m = brev32(bswap32(*(sp + 1))) << l;
+			m = brev_u32(bswap_u32(*(sp + 1))) << l;
 		} else {
 			m = 0xFFFFFFFFU;
 		}
@@ -155,9 +155,9 @@ spr_blit_rev(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 		}
 	}
 
-	p = bswap32(p | (brev32(bswap32(*sp)) >> r));
+	p = bswap_u32(p | (brev_u32(bswap_u32(*sp)) >> r));
 	if(sa == 2) {
-		m = bswap32(m | (brev32(bswap32(*(sp + 1))) >> r)) & ml;
+		m = bswap_u32(m | (brev_u32(bswap_u32(*(sp + 1))) >> r)) & ml;
 	} else {
 		m = ml;
 	}
@@ -170,11 +170,11 @@ spr_blit_rev(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 	dp += da;
 
 	for(int i = 1; i < dm; i++) { // middle words without first and last word
-		p = brev32(bswap32(*sp)) << l;
-		p = bswap32(p | (brev32(bswap32(*(sp - sa))) >> r));
+		p = brev_u32(bswap_u32(*sp)) << l;
+		p = bswap_u32(p | (brev_u32(bswap_u32(*(sp - sa))) >> r));
 		if(sa == 2) {
-			m = brev32(bswap32(*(sp + 1))) << l;
-			m = bswap32(m | (brev32(bswap32(*(sp - 1))) >> r));
+			m = brev_u32(bswap_u32(*(sp + 1))) << l;
+			m = bswap_u32(m | (brev_u32(bswap_u32(*(sp - 1))) >> r));
 		} else {
 			m = 0xFFFFFFFFU;
 		}
@@ -183,21 +183,21 @@ spr_blit_rev(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_wo
 		dp += da;
 	}
 
-	p = brev32(bswap32(*sp)) << l; // last word
+	p = brev_u32(bswap_u32(*sp)) << l; // last word
 	if(sa == 2) {
-		m = brev32(bswap32(*(sp + 1))) << l;
+		m = brev_u32(bswap_u32(*(sp + 1))) << l;
 	} else {
 		m = 0xFFFFFFFFU;
 	}
 	if(source_pixel_words < sp) {
 		sp -= sa;
-		p |= brev32(bswap32(*sp)) >> r;
+		p |= brev_u32(bswap_u32(*sp)) >> r;
 		if(sa == 2) {
-			m |= brev32(bswap32(*(sp + 1))) >> r;
+			m |= brev_u32(bswap_u32(*(sp + 1))) >> r;
 		}
 	}
-	p = bswap32(p);
-	m = bswap32(m);
+	p = bswap_u32(p);
+	m = bswap_u32(m);
 	spr_blit(dp, da == 1 ? NULL : dp + 1, p, m & (pt & mr), mode);
 }
 
@@ -226,13 +226,13 @@ spr_blit_rev_x(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_
 	u32 m                  = 0;
 
 	if(l == 0) { // same alignment, fast path
-		p = brev32(*sp);
-		m = brev32(*(sp + 1)) & ml;
+		p = brev_u32(*sp);
+		m = brev_u32(*(sp + 1)) & ml;
 		sp -= 2;
 		for(int i = 0; i < dm; i++) {
 			spr_blit_x(dp, p, m & pt, mode);
-			p = brev32(*sp);
-			m = brev32(*(sp + 1));
+			p = brev_u32(*sp);
+			m = brev_u32(*(sp + 1));
 			sp -= 2;
 			dp += 1;
 		}
@@ -241,15 +241,15 @@ spr_blit_rev_x(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_
 	}
 
 	if(0 < offs) { // first word
-		p = brev32(bswap32(*sp)) << l;
-		m = brev32(bswap32(*(sp + 1))) << l;
+		p = brev_u32(bswap_u32(*sp)) << l;
+		m = brev_u32(bswap_u32(*(sp + 1))) << l;
 		if(0 < sm) {
 			sp -= 2;
 		}
 	}
 
-	p = bswap32(p | (brev32(bswap32(*sp)) >> r));
-	m = bswap32(m | (brev32(bswap32(*(sp + 1))) >> r)) & ml;
+	p = bswap_u32(p | (brev_u32(bswap_u32(*sp)) >> r));
+	m = bswap_u32(m | (brev_u32(bswap_u32(*(sp + 1))) >> r)) & ml;
 	if(dm == 0) {
 		spr_blit_x(dp, p, m & (pt & mr), mode);
 		return; // only one word long
@@ -259,24 +259,24 @@ spr_blit_rev_x(u32 *restrict dest_pixel_words, const u32 *restrict source_pixel_
 	dp += 1;
 
 	for(int i = 1; i < dm; i++) { // middle words without first and last word
-		p = brev32(bswap32(*sp)) << l;
-		p = bswap32(p | (brev32(bswap32(*(sp - 2))) >> r));
-		m = brev32(bswap32(*(sp + 1))) << l;
-		m = bswap32(m | (brev32(bswap32(*(sp - 1))) >> r));
+		p = brev_u32(bswap_u32(*sp)) << l;
+		p = bswap_u32(p | (brev_u32(bswap_u32(*(sp - 2))) >> r));
+		m = brev_u32(bswap_u32(*(sp + 1))) << l;
+		m = bswap_u32(m | (brev_u32(bswap_u32(*(sp - 1))) >> r));
 		spr_blit_x(dp, p, m & pt, mode);
 		sp -= 2;
 		dp += 1;
 	}
 
-	p = brev32(bswap32(*sp)) << l; // last word
-	m = brev32(bswap32(*(sp + 1))) << l;
+	p = brev_u32(bswap_u32(*sp)) << l; // last word
+	m = brev_u32(bswap_u32(*(sp + 1))) << l;
 	if(source_pixel_words < sp) {
 		sp -= 2;
-		p |= brev32(bswap32(*sp)) >> r;
-		m |= brev32(bswap32(*(sp + 1))) >> r;
+		p |= brev_u32(bswap_u32(*sp)) >> r;
+		m |= brev_u32(bswap_u32(*(sp + 1))) >> r;
 	}
-	p = bswap32(p);
-	m = bswap32(m);
+	p = bswap_u32(p);
+	m = bswap_u32(m);
 	spr_blit_x(dp, p, m & (pt & mr), mode);
 }
 
@@ -316,15 +316,15 @@ spr_blit_fwd_x(
 	}
 
 	if(0 < alignment_offset) { // first word
-		p = bswap32(*sp) << word_shift_left;
-		m = bswap32(*(sp + 1)) << word_shift_left;
+		p = bswap_u32(*sp) << word_shift_left;
+		m = bswap_u32(*(sp + 1)) << word_shift_left;
 		if(0 < src_words_touched) {
 			sp += 2;
 		}
 	}
 
-	p = bswap32(p | (bswap32(*sp) >> word_shift_right));
-	m = bswap32(m | (bswap32(*(sp + 1)) >> word_shift_right)) & mask_left;
+	p = bswap_u32(p | (bswap_u32(*sp) >> word_shift_right));
+	m = bswap_u32(m | (bswap_u32(*(sp + 1)) >> word_shift_right)) & mask_left;
 	if(dst_words_touched == 0) {
 		spr_blit_x(dp, p, m & (pattern & mask_right), mode);
 		return; // only one word long
@@ -334,24 +334,24 @@ spr_blit_fwd_x(
 	dp++;
 
 	for(int i = 1; i < dst_words_touched; i++) { // middle words without first and last word
-		p = bswap32(*sp) << word_shift_left;
-		p = bswap32(p | (bswap32(*(sp + 2)) >> word_shift_right));
-		m = bswap32(*(sp + 1)) << word_shift_left;
-		m = bswap32(m | (bswap32(*(sp + 3)) >> word_shift_right));
+		p = bswap_u32(*sp) << word_shift_left;
+		p = bswap_u32(p | (bswap_u32(*(sp + 2)) >> word_shift_right));
+		m = bswap_u32(*(sp + 1)) << word_shift_left;
+		m = bswap_u32(m | (bswap_u32(*(sp + 3)) >> word_shift_right));
 		spr_blit_x(dp, p, m & pattern, mode);
 		sp += 2;
 		dp++;
 	}
 
-	p = bswap32(*sp) << word_shift_left; // last word
-	m = bswap32(*(sp + 1)) << word_shift_left;
+	p = bswap_u32(*sp) << word_shift_left; // last word
+	m = bswap_u32(*(sp + 1)) << word_shift_left;
 	if(sp < source_pixel_words + src_words_touched) { // this is different for reversed blitting!
 		sp += 2;
-		p |= bswap32(*sp) >> word_shift_right;
-		m |= bswap32(*(sp + 1)) >> word_shift_right;
+		p |= bswap_u32(*sp) >> word_shift_right;
+		m |= bswap_u32(*(sp + 1)) >> word_shift_right;
 	}
-	p = bswap32(p);
-	m = bswap32(m);
+	p = bswap_u32(p);
+	m = bswap_u32(m);
 	spr_blit_x(dp, p, m & (pattern & mask_right), mode);
 }
 
@@ -368,23 +368,23 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 
 	struct tex dtex       = ctx.dst;
 	struct tex stex       = src.t;
-	b32 fx                = (flip & SPR_FLIP_X) != 0;                                              // flipped x
-	b32 fy                = (flip & SPR_FLIP_Y) != 0;                                              // flipped y
-	int sign_flip_y       = fy ? -1 : +1;                                                          // sign flip x
-	int sign_flip_x       = fx ? -1 : +1;                                                          // sign flip y
-	int bits_in_row       = (x2 + 1) - x1;                                                         // number of bits in a row
-	int dst_obit_offset   = x1 & 31;                                                               // bitoffset in dst
-	int dst_words_touched = (dst_obit_offset + bits_in_row - 1) >> 5;                              // number of touched dst words -1
-	u32 mask_left         = bswap32(0xFFFFFFFFU >> (31 & dst_obit_offset));                        // mask to cut off boundary left
-	u32 mask_right        = bswap32(0xFFFFFFFFU << (31 & (uint)(-dst_obit_offset - bits_in_row))); // mask to cut off boundary right
-	int first_bit         = src.r.x - sign_flip_x * px + (fx ? src.r.w - (x2 + 1) : x1);           // first bit index in src row
-	int src_bit_offset    = (uint)(sign_flip_x * first_bit - fx * bits_in_row) & 31;               // bitoffset in src
-	int dst_words_to_px   = 1 + (dtex.fmt == TEX_FMT_MASK);                                        // number of words to next logical pixel word in dst
-	int src_words_to_px   = 1 + (stex.fmt == TEX_FMT_MASK);                                        // number of words to next logical pixel word in src
-	int src_words_touched = ((src_bit_offset + bits_in_row - 1) >> 5) * src_words_to_px;           // number of touched src words -1
-	int alginment_offset  = src_bit_offset - dst_obit_offset;                                      // alignment difference
-	int word_shift_left   = alginment_offset & 31;                                                 // word left shift amount
-	int word_shift_right  = 32 - word_shift_left;                                                  // word rght shift amound
+	b32 fx                = (flip & SPR_FLIP_X) != 0;                                                // flipped x
+	b32 fy                = (flip & SPR_FLIP_Y) != 0;                                                // flipped y
+	int sign_flip_y       = fy ? -1 : +1;                                                            // sign flip x
+	int sign_flip_x       = fx ? -1 : +1;                                                            // sign flip y
+	int bits_in_row       = (x2 + 1) - x1;                                                           // number of bits in a row
+	int dst_obit_offset   = x1 & 31;                                                                 // bitoffset in dst
+	int dst_words_touched = (dst_obit_offset + bits_in_row - 1) >> 5;                                // number of touched dst words -1
+	u32 mask_left         = bswap_u32(0xFFFFFFFFU >> (31 & dst_obit_offset));                        // mask to cut off boundary left
+	u32 mask_right        = bswap_u32(0xFFFFFFFFU << (31 & (uint)(-dst_obit_offset - bits_in_row))); // mask to cut off boundary right
+	int first_bit         = src.r.x - sign_flip_x * px + (fx ? src.r.w - (x2 + 1) : x1);             // first bit index in src row
+	int src_bit_offset    = (uint)(sign_flip_x * first_bit - fx * bits_in_row) & 31;                 // bitoffset in src
+	int dst_words_to_px   = 1 + (dtex.fmt == TEX_FMT_MASK);                                          // number of words to next logical pixel word in dst
+	int src_words_to_px   = 1 + (stex.fmt == TEX_FMT_MASK);                                          // number of words to next logical pixel word in src
+	int src_words_touched = ((src_bit_offset + bits_in_row - 1) >> 5) * src_words_to_px;             // number of touched src words -1
+	int alginment_offset  = src_bit_offset - dst_obit_offset;                                        // alignment difference
+	int word_shift_left   = alginment_offset & 31;                                                   // word left shift amount
+	int word_shift_right  = 32 - word_shift_left;                                                    // word rght shift amound
 
 	// dst pixel words
 	u32 *dst_px_word = &dtex.px[((x1 >> 5) << (dtex.fmt == TEX_FMT_MASK)) + y1 * dtex.wword];

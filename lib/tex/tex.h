@@ -9,6 +9,10 @@ enum {
 	TEX_FMT_MASK,   // color and mask interlaced in words
 };
 
+struct tex_header {
+	u32 w, h;
+};
+
 struct tex {
 	u32 *px; // either black/white words or black/white and transparent/opaque words interlaced
 	int wword;
