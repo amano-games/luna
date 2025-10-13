@@ -10,6 +10,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// TODO: detect transparency and save if the texture is opaque or not
 void
 tex_handle(
 	const str8 in_path,
