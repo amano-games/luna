@@ -4,13 +4,43 @@
 #include "base/path.h"
 #include "base/str.h"
 #include "sys/sys.h"
-#include "tools/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 #define CHUNK_HEADER_FMT "4L"
 #define WAVE_HEADER_FMT  "SSLLSSSSLS"
 #define RAW_FILE_EXT     "raw"
+
+static inline void
+little_endian_to_native(void *data, char *format)
+{
+	unsigned char *cp = (unsigned char *)data;
+	int32_t temp;
+
+	while(*format) {
+		switch(*format) {
+		case 'L':
+			temp           = cp[0] + ((int32_t)cp[1] << 8) + ((int32_t)cp[2] << 16) + ((int32_t)cp[3] << 24);
+			*(int32_t *)cp = temp;
+			cp += 4;
+			break;
+
+		case 'S':
+			temp         = cp[0] + (cp[1] << 8);
+			*(short *)cp = (short)temp;
+			cp += 2;
+			break;
+
+		default:
+			if(char_is_digit((unsigned char)*format, 10))
+				cp += *format - '0';
+
+			break;
+		}
+
+		format++;
+	}
+}
 
 int
 adpcm_block_size_to_sample_count(int block_size, int num_chans, int bps)

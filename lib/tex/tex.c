@@ -55,23 +55,20 @@ tex_create_opaque(i32 w, i32 h, struct alloc alloc)
 struct tex
 tex_load(str8 path, struct alloc alloc)
 {
-	void *f = sys_file_open(path, SYS_FILE_MODE_R);
-	if(f == NULL) {
-		log_error("Assets", "failed to open texture %s", path.str);
-		return (struct tex){0};
-	}
+	struct tex res = {0};
+	void *f        = sys_file_open_r(path);
+	dbg_check(f, "tex", "failed to open texture %s", path.str);
 
-	u32 w;
-	u32 h;
-	sys_file_r(f, &w, sizeof(uint));
-	sys_file_r(f, &h, sizeof(uint));
+	struct tex_header header = {0};
+	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)), "tex", "failed to read tex header %s", path.str);
 
-	i32 width_alinged = (w + 31) & ~31;
-	usize size        = ((width_alinged * h) * 2) / 8;
+	i32 width_alinged = (header.w + 31) & ~31;
+	usize tex_size    = ((width_alinged * header.h) * 2) / 8;
+	struct tex t      = tex_create(header.w, header.h, alloc);
+	sys_file_r(f, t.px, tex_size);
 
-	struct tex t = tex_create(w, h, alloc);
-	sys_file_r(f, t.px, size);
-	sys_file_close(f);
+error:;
+	if(f) { sys_file_close(f); }
 	return t;
 }
 
@@ -127,7 +124,7 @@ tex_clr(struct tex dst, i32 col)
 static i32
 tex_px_at_unsafe(struct tex tex, i32 x, i32 y)
 {
-	u32 b = bswap32(0x80000000U >> (x & 31));
+	u32 b = bswap_u32(0x80000000U >> (x & 31));
 	switch(tex.fmt) {
 	case TEX_FMT_MASK: return (tex.px[y * tex.wword + ((x >> 5) << 1)] & b);
 	case TEX_FMT_OPAQUE: return (tex.px[y * tex.wword + (x >> 5)] & b);
@@ -140,14 +137,14 @@ tex_mask_at_unsafe(struct tex tex, i32 x, i32 y)
 {
 	if(tex.fmt == TEX_FMT_OPAQUE) return 1;
 
-	u32 b = bswap32(0x80000000U >> (x & 31));
+	u32 b = bswap_u32(0x80000000U >> (x & 31));
 	return (tex.px[y * tex.wword + ((x >> 5) << 1) + 1] & b);
 }
 
 static void
 tex_px_unsafe(struct tex tex, i32 x, i32 y, i32 col)
 {
-	u32 b  = bswap32(0x80000000U >> (x & 31));
+	u32 b  = bswap_u32(0x80000000U >> (x & 31));
 	u32 *p = NULL;
 	switch(tex.fmt) {
 	case TEX_FMT_MASK: p = &tex.px[y * tex.wword + ((x >> 5) << 1)]; break;
@@ -160,7 +157,7 @@ tex_px_unsafe(struct tex tex, i32 x, i32 y, i32 col)
 void
 tex_px_unsafe_display(struct tex tex, i32 x, i32 y, i32 col)
 {
-	u32 b  = bswap32(0x80000000U >> (x & 31));
+	u32 b  = bswap_u32(0x80000000U >> (x & 31));
 	u32 *p = &tex.px[y * tex.wword + (x >> 5)];
 	*p     = (col == 0 ? *p & ~b : *p | b);
 }
@@ -169,7 +166,7 @@ static void
 tex_mask_unsafe(struct tex tex, i32 x, i32 y, i32 col)
 {
 	if(tex.fmt == TEX_FMT_OPAQUE) return;
-	u32 b  = bswap32(0x80000000U >> (x & 31));
+	u32 b  = bswap_u32(0x80000000U >> (x & 31));
 	u32 *p = &tex.px[y * tex.wword + ((x >> 5) << 1) + 1];
 	*p     = (col == 0 ? *p & ~b : *p | b);
 }
@@ -220,11 +217,8 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete p
 			u8 mask        = 0x80 >> (x & 7);
 			i32 bit        = !!(byt & mask);
 			u32 color_bgra = bit ? pallete.colors[GFX_COL_WHITE] : pallete.colors[GFX_COL_BLACK];
-			u32 color_rgba = ((color_bgra & 0xFF000000) >> 24) | // R
-				((color_bgra & 0x00FF0000) >> 8) |               // G
-				((color_bgra & 0x0000FF00) << 8) |               // B
-				((color_bgra & 0x000000FF) << 24);               // A
-			pixels[dst] = color_rgba;
+			u32 color_rgba = bswap_u32(color_bgra);
+			pixels[dst]    = color_rgba;
 		}
 	}
 }

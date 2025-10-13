@@ -3,10 +3,10 @@
 #include "base/types.h"
 
 #if defined(TARGET_PLAYDATE)
-#define bswap32 __builtin_bswap32
+#define bswap_u32 __builtin_bswap32
 
 static inline u32
-brev32(u32 v)
+brev_u32(u32 v)
 {
 	u32 r;
 	ASM("rbit %0, %1" : "=r"(r) : "r"(v));
@@ -23,13 +23,17 @@ ssat16(i32 x)
 }
 #else
 static u32
-bswap32(u32 i)
+bswap_u32(u32 i)
 {
-	return (i >> 24) | ((i << 8) & 0xFF0000U) | (i << 24) | ((i >> 8) & 0x00FF00U);
+	u32 res = (((i & 0xFF000000) >> 24) |
+		((i & 0x00FF0000) >> 8) |
+		((i & 0x0000FF00) << 8) |
+		((i & 0x000000FF) << 24));
+	return res;
 }
 
 static u32
-brev32(u32 x)
+brev_u32(u32 x)
 {
 	u32 r = x;
 	int s = 31;
@@ -50,3 +54,27 @@ ssat16(i32 x)
 }
 
 #endif
+
+static inline u16
+bswap_u16(u16 x)
+{
+	u16 res = (((x & 0xFF00) >> 8) |
+		((x & 0x00FF) << 8));
+	return res;
+}
+
+static inline u64
+bswap_u64(u64 x)
+{
+	// TODO: naive bswap, replace with something
+	// that is faster like an intrinsic
+	u64 res = (((x & 0xFF00000000000000ULL) >> 56) |
+		((x & 0x00FF000000000000ULL) >> 40) |
+		((x & 0x0000FF0000000000ULL) >> 24) |
+		((x & 0x000000FF00000000ULL) >> 8) |
+		((x & 0x00000000FF000000ULL) << 8) |
+		((x & 0x0000000000FF0000ULL) << 24) |
+		((x & 0x000000000000FF00ULL) << 40) |
+		((x & 0x00000000000000FFULL) << 56));
+	return res;
+}

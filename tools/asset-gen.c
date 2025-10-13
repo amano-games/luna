@@ -101,7 +101,7 @@ handle_asset_recursive(
 		} else {
 			void *p = marena->p;
 			if(strstr(file.name, IMG_EXT) != NULL) {
-				handle_texture(in_path, out_path, scratch);
+				tex_handle(in_path, out_path, scratch);
 			} else if(strstr(file.name, ANI_EXT) != NULL) {
 				fcopy(in_path, out_path);
 			} else if(strstr(file.name, AUD_EXT)) {

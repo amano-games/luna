@@ -3,17 +3,13 @@
 #include "base/mem.h"
 #include "base/types.h"
 
-struct pixel {
-	uint8_t red;
-	uint8_t green;
-	uint8_t blue;
-	uint8_t alpha;
-};
-
-struct img_header {
-	unsigned int w, h;
+struct tex_pixel {
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
 };
 
 #define TEX_EXT "tex"
 
-void handle_texture(const str8 in_path, const str8 out_path, struct alloc scratch);
+void tex_handle(const str8 in_path, const str8 out_path, struct alloc scratch);
