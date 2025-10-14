@@ -67,8 +67,8 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 
 	dbg_check_warn(
 		sys_file_r(in_file, &riff_chunk_header, sizeof(struct riff_chunk_header)) ||
-			!strncmp(riff_chunk_header.chunk_id, "RIFF", 4) ||
-			!strncmp(riff_chunk_header.form_type, "WAVE", 4),
+			str8_match(str8_cstr(riff_chunk_header.chunk_id), str8_lit("RIFF"), 0) ||
+			str8_match(str8_cstr(riff_chunk_header.form_type), str8_lit("WAVE"), 4),
 		"snd-gen",
 		"%s is not a valid .WAV file, wrong header",
 		in_file_path.str);
@@ -116,7 +116,7 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 			// 	fprintf(stderr, "%s is not a valid .WAV file, bad samples per block", in_file_path.str);
 			// 	return -1;
 			// }
-		} else if(!strncmp(chunk_header.chunk_id, "fact", 4)) {
+		} else if(str8_match(str8_cstr(chunk_header.chunk_id), str8_lit("fact"), 0)) {
 			dbg_check_warn(
 				sys_file_r(in_file, &fact_samples, sizeof(fact_samples)) &&
 					chunk_header.chunk_size >= 4,
