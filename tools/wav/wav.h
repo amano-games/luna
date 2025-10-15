@@ -9,14 +9,14 @@
 #define WAVE_FORMAT_EXTENSIBLE 0xfffe
 
 struct riff_chunk_header {
-	char chunk_id[4];
+	u32 id;
 	i32 chunk_size;
-	char form_type[4];
+	u32 form_type;
 };
 
 struct chunk_header {
-	char chunk_id[4];
-	uint32_t chunk_size;
+	u32 id;
+	u32 size;
 };
 
 struct wave_header {
@@ -39,4 +39,4 @@ struct wav {
 	void *data;
 };
 
-int handle_wav(str8 in_path, str8 out_path, struct alloc scratch);
+b32 handle_wav(str8 in_path, str8 out_path, struct alloc scratch);
