@@ -36,7 +36,7 @@ struct wav_format {
 };
 
 struct wav {
-	void *data;
+	void *sample_data;
 
 	i32 sample_data_size;
 	i32 sample_count;
@@ -45,6 +45,7 @@ struct wav {
 	i32 sample_format;
 	i32 block_size;
 	i32 samples_per_block;
+	i32 bits_per_sample;
 };
 
-b32 handle_wav(str8 in_path, str8 out_path, struct alloc scratch);
+b32 wav_handle(str8 in_path, str8 out_path, struct alloc scratch);

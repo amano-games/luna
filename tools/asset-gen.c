@@ -105,7 +105,7 @@ handle_asset_recursive(
 			} else if(strstr(file.name, ANI_EXT) != NULL) {
 				fcopy(in_path, out_path);
 			} else if(strstr(file.name, AUD_EXT)) {
-				i32 res = handle_wav(in_path, out_path, scratch);
+				i32 res = wav_handle(in_path, out_path, scratch);
 			} else if(strstr(file.name, AI_EXT)) {
 				i32 res = handle_btree(in_path, out_path, scratch);
 			} else if(strstr(file.name, FNT_EXT)) {
