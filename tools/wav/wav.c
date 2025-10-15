@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WAV_FOURCC(a, b, c, d) (uint32_t)(a | (b << 8) | (c << 16) | (d << 24))
+#define WAV_FOURCC(a, b, c, d) (u32)(a | (b << 8) | (c << 16) | (d << 24))
 
 b32
 wav_parse(const void *data, size data_size, struct wav *res)
@@ -28,7 +28,9 @@ wav_parse(const void *data, size data_size, struct wav *res)
 			dbg_check_warn(chunk->size <= sizeof(struct wav_format), "wav", "invalid, bad fmt chunk");
 
 			format = (struct wav_format *)&chunk[1];
-			dbg_check_warn(format->format == WAVE_FORMAT_PCM, "wav", "unsupported format: %d", format->format);
+			if(format->format == WAVE_FORMAT_IMA_ADPCM && chunk->size == 20) {
+				res->samples_per_block = ((u16 *)&format[1])[1];
+			}
 
 			res->sample_format   = (format->format == WAVE_FORMAT_EXTENSIBLE && chunk->size == 40) ? format->sub_format : format->format;
 			res->bits_per_sample = (chunk->size == 40 && format->samples.valid_bits_per_sample) ? format->samples.valid_bits_per_sample : format->bits_per_sample;
