@@ -8,9 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CHUNK_HEADER_FMT "4L"
-#define WAVE_HEADER_FMT  "SSLLSSSSLS"
-#define RAW_FILE_EXT     "raw"
+#define CHUNK_HEADER_FMT       "4L"
+#define WAVE_HEADER_FMT        "SSLLSSSSLS"
+#define RAW_FILE_EXT           "raw"
+#define WAV_FOURCC(a, b, c, d) (uint32_t)(a | (b << 8) | (c << 16) | (d << 24))
 
 static inline void
 little_endian_to_native(void *data, char *format)
@@ -49,7 +50,7 @@ adpcm_block_size_to_sample_count(int block_size, int num_chans, int bps)
 	return (block_size - num_chans * 4) / num_chans * 8 / bps + 1;
 }
 
-int
+b32
 handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 {
 
@@ -65,15 +66,11 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 	i32 format = 0, res = 0, bits_per_sample = 0, num_channels = 0;
 	u32 fact_samples = 0, num_samples = 0, sample_rate = 0;
 
-	dbg_check_warn(
-		sys_file_r(in_file, &riff_chunk_header, sizeof(struct riff_chunk_header)) ||
-			str8_match(str8_cstr(riff_chunk_header.chunk_id), str8_lit("RIFF"), 0) ||
-			str8_match(str8_cstr(riff_chunk_header.form_type), str8_lit("WAVE"), 4),
-		"snd-gen",
-		"%s is not a valid .WAV file, wrong header",
-		in_file_path.str);
+	dbg_check_warn(sys_file_r(in_file, &riff_chunk_header, sizeof(struct riff_chunk_header)), "snd-gen", "%s failed to read file");
+	dbg_check_warn(riff_chunk_header.id == WAV_FOURCC('R', 'I', 'F', 'F'), "snd-gen", "%s invalid chunk_id");
+	dbg_check_warn(riff_chunk_header.form_type == WAV_FOURCC('W', 'A', 'V', 'E'), "snd-gen", "%s invalid form_type");
 
-	while(1) {
+	while(true) {
 		dbg_check_warn(
 			sys_file_r(in_file, &chunk_header, sizeof(struct chunk_header)),
 			"snd-gen",
@@ -82,18 +79,16 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 
 		little_endian_to_native(&chunk_header, CHUNK_HEADER_FMT);
 
-		if(!strncmp(chunk_header.chunk_id, "fmt ", 4)) {
+		if(chunk_header.id == WAV_FOURCC('f', 'm', 't', ' ')) {
 			i32 supported = 1;
-			dbg_check_warn(
-				sys_file_r(in_file, &wave_header, chunk_header.chunk_size) &&
-					chunk_header.chunk_size >= 16 &&
-					chunk_header.chunk_size <= sizeof(struct wave_header),
+			dbg_check_warn(sys_file_r(in_file, &wave_header, chunk_header.size), "snd-gen", "%s failed to read fmt chunk", in_file_path.str);
+			dbg_check_warn(chunk_header.size >= 16 && chunk_header.size <= sizeof(struct wave_header),
 				"snd-gen",
 				"%s is not a valid .WAV file! bad chunk",
 				in_file_path.str);
 			little_endian_to_native(&wave_header, WAVE_HEADER_FMT);
 
-			format = (wave_header.format_tag == WAVE_FORMAT_EXTENSIBLE && chunk_header.chunk_size == 40) ? wave_header.sub_format : wave_header.format_tag;
+			format = (wave_header.format_tag == WAVE_FORMAT_EXTENSIBLE && chunk_header.size == 40) ? wave_header.sub_format : wave_header.format_tag;
 			dbg_check_warn(
 				format == WAVE_FORMAT_PCM,
 				"snd-gen",
@@ -101,7 +96,7 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 				in_file_path.str,
 				format);
 
-			bits_per_sample = (chunk_header.chunk_size == 40 && wave_header.samples.valid_bits_per_sample) ? wave_header.samples.valid_bits_per_sample : wave_header.bits_per_sample;
+			bits_per_sample = (chunk_header.size == 40 && wave_header.samples.valid_bits_per_sample) ? wave_header.samples.valid_bits_per_sample : wave_header.bits_per_sample;
 
 			dbg_check_warn(wave_header.num_channels > 0, "snd-gen", "%s invalid, wrong number of channels", in_file_path.str, wave_header.num_channels);
 			dbg_check_warn(wave_header.num_channels <= 2, "snd-gen", "%s invalid, wrong number of channels", in_file_path.str, wave_header.num_channels);
@@ -116,39 +111,39 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 			// 	fprintf(stderr, "%s is not a valid .WAV file, bad samples per block", in_file_path.str);
 			// 	return -1;
 			// }
-		} else if(str8_match(str8_cstr(chunk_header.chunk_id), str8_lit("fact"), 0)) {
+		} else if(chunk_header.id == WAV_FOURCC('f', 'a', 'c', 't')) {
 			dbg_check_warn(
 				sys_file_r(in_file, &fact_samples, sizeof(fact_samples)) &&
-					chunk_header.chunk_size >= 4,
+					chunk_header.size >= 4,
 				"snd-gen",
 				"%s is not a valid .WAV file!, bad chunk size",
 				in_file_path.str);
 
 			little_endian_to_native(&fact_samples, "L");
 
-			if(chunk_header.chunk_size > 4) {
-				i32 bytes_to_skip = chunk_header.chunk_size - 4;
+			if(chunk_header.size > 4) {
+				i32 bytes_to_skip = chunk_header.size - 4;
 				char dummy;
 
 				while(bytes_to_skip--) {
 					dbg_check_warn(sys_file_r(in_file, &dummy, 1), "snd-gen", "%s invalid, dummy error", in_file_path.str);
 				}
 			}
-		} else if(!strncmp(chunk_header.chunk_id, "data", 4)) {
+		} else if(chunk_header.id == WAV_FOURCC('d', 'a', 't', 'a')) {
 			// on the data chunk, get size and exit parsing loop
 
 			dbg_check_warn(wave_header.num_channels > 0, "snd-gen", "%s invalid, missing fmt block", in_file_path.str);
-			dbg_check_warn(chunk_header.chunk_size > 0, "snd-gen", "%s invalid, no audio samples, probably corrupt", in_file_path.str);
+			dbg_check_warn(chunk_header.size > 0, "snd-gen", "%s invalid, no audio samples, probably corrupt", in_file_path.str);
 
 			if(format == WAVE_FORMAT_PCM) {
-				dbg_check_warn(chunk_header.chunk_size % wave_header.block_align == 0, "snd-gen", "%s invalid, wrong block align", in_file_path.str);
-				num_samples = chunk_header.chunk_size / wave_header.block_align;
+				dbg_check_warn(chunk_header.size % wave_header.block_align == 0, "snd-gen", "%s invalid, wrong block align", in_file_path.str);
+				num_samples = chunk_header.size / wave_header.block_align;
 			} else {
 				dbg_not_implemeneted("snd-gen");
 				// TODO: Handle adpcm?
 #if 0
-				u32 complete_blocks = chunk_header.chunk_size / wave_header.block_align;
-				int leftover_bytes  = chunk_header.chunk_size % wave_header.block_align;
+				u32 complete_blocks = chunk_header.size / wave_header.block_align;
+				int leftover_bytes  = chunk_header.size % wave_header.block_align;
 				int samples_last_block;
 
 				num_samples = complete_blocks * wave_header.samples.samples_per_block;
@@ -185,10 +180,10 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 			break;
 
 		} else { // just ignore unknown chunks
-			int bytes_to_eat = (chunk_header.chunk_size + 1) & ~1L;
+			int bytes_to_eat = (chunk_header.size + 1) & ~1L;
 			char dummy;
 
-			// fprintf(stderr, "extra unknown chunk \"%c%c%c%c\" of %d bytes", chunk_header.chunk_id[0], chunk_header.chunk_id[1], chunk_header.chunk_id[2], chunk_header.chunk_id[3], chunk_header.chunk_size);
+			// fprintf(stderr, "extra unknown chunk \"%c%c%c%c\" of %d bytes", chunk_header.chunk_id[0], chunk_header.chunk_id[1], chunk_header.chunk_id[2], chunk_header.chunk_id[3], chunk_header.size);
 
 			while(bytes_to_eat--)
 				dbg_check_warn(sys_file_r(in_file, &dummy, 1), "snd-gen", "%s invalid, failed to eat dummy", in_file_path.str);
@@ -198,12 +193,7 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
 
 	dbg_check_warn((out_file = sys_file_open_w(out_file_path)), "snd-gen", "failed to open file \"%s\" for writing!", out_file_path.str);
-
-	dbg_check_warn(
-		sys_file_w(out_file, &num_samples, sizeof(u32)),
-		"snd-gen",
-		"failed to write file \"%s\"!",
-		out_file_path.str);
+	dbg_check_warn(sys_file_w(out_file, &num_samples, sizeof(u32)), "snd-gen", "failed to write file \"%s\"!", out_file_path.str);
 
 	// TODO: Calc correct len
 	usize data_size = num_samples * (bits_per_sample / 8);
@@ -236,10 +226,10 @@ handle_wav(str8 in_file_path, str8 out_path, struct alloc scratch)
 		dbg_not_implemeneted("snd-gen");
 	}
 
-	return 1;
+	return true;
 
 error:
 	if(in_file) { sys_file_close(in_file); }
 	if(out_file) { sys_file_close(out_file); }
-	return -1;
+	return false;
 }
