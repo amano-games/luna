@@ -24,14 +24,6 @@ struct wav_format {
 	u32 byte_rate;
 	u16 block_size;
 	u16 bits_per_sample;
-	u16 cb_size;
-	union {
-		u16 valid_bits_per_sample;
-		u16 samples_per_block;
-		u16 reserved;
-	} samples;
-	i32 channel_mask;
-	u16 sub_format;
 	char guid[14];
 };
 
