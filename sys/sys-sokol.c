@@ -910,7 +910,7 @@ sys_make_dir(str8 path)
 #endif
 
 #if defined(TARGET_WIN)
-	_mkdir(path);
+	_mkdir((char *)path.str);
 #endif
 
 #if defined(TARGET_WIN) && 0
