@@ -14,7 +14,7 @@ brev_u32(u32 v)
 }
 
 static inline i32
-ssat16(i32 x)
+ssat_i16(i32 x)
 {
 	u32 r = 0;
 	u32 i = (u32)x;
