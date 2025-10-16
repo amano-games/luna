@@ -13,9 +13,10 @@
 void *asset_allocf(void *ctx, usize s);
 
 void
-assets_init(void *mem, usize size)
+assets_init(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
+	void *mem = alloc.allocf(alloc.ctx, size);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();

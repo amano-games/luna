@@ -21,7 +21,7 @@ struct assets {
 static struct assets ASSETS;
 struct alloc assets_allocator(struct assets *assets);
 
-void assets_init(void *mem, usize size);
+void assets_init(struct alloc alloc, usize size);
 
 struct tex asset_tex(i32 id);
 i32 asset_tex_load(str8 path, struct tex *tex);
