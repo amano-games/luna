@@ -891,6 +891,7 @@ sys_file_rename(str8 from, str8 to)
 
 #if defined(TARGET_WIN)
 #include <stdlib.h>
+#include <direct.h>
 #endif
 b32
 sys_make_dir(str8 path)
