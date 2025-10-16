@@ -177,25 +177,33 @@ sys_process_info(void)
 
 #if defined(TARGET_WIN)
 #include <stdlib.h>
+#include <direct.h>
 #endif
 b32
 sys_make_dir(str8 path)
 {
-	// TODO: OS Layer that doesn't depend on sokol
 	b32 res = false;
-#if defined(TARGET_WIN)
+
+#if defined(TARGET_LINUX) || defined(TARGET_MACOS)
 	{
-		res = _mkdir(path) == 0;
-	}
-#else
-	{
-		str8 path_copy = str8_cpy_push(sys_allocator(), path);
-		if(mkdir((char *)path_copy.str, 0755) != -1) {
+		if(mkdir((char *)path.str, 0755) != -1) {
 			res = 1;
 		}
-		if(path_copy.str) {
-			sys_free(path_copy.str);
-		}
+	}
+#endif
+
+#if defined(TARGET_WIN)
+	_mkdir((char *)path.str);
+#endif
+
+#if defined(TARGET_WIN) && 0
+	str16 name16                         = str16_from_8(scratch, path);
+	WIN32_FILE_ATTRIBUTE_DATA attributes = {0};
+	GetFileAttributesExW((WCHAR *)name16.str, GetFileExInfoStandard, &attributes);
+	if(attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		result = 1;
+	} else if(CreateDirectoryW((WCHAR *)name16.str, 0)) {
+		result = 1;
 	}
 #endif
 
