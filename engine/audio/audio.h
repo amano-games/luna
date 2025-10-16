@@ -86,7 +86,11 @@ struct mus_channel {
 	void *stream;
 	u32 total_bytes_file;
 	struct adpcm adpcm;
+#if TARGET_PLAYDATE
 	u8 chunk[256];
+#else
+	u8 chunk[2048];
+#endif
 	struct asset_handle path_handle;
 	i32 trg_vol_q8;
 	b32 looping;

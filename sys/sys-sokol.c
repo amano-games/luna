@@ -46,7 +46,11 @@
 #endif
 
 // #define SOKOL_DBG_AUDIO
-#define SOKOL_AUDIO_FRAMES      256
+// #define SOKOL_AUDIO_FRAMES        256
+#define SOKOL_AUDIO_CHANNEL_COUNT 1
+#define SOKOL_AUDIO_VOLUME        0.1f
+#define SOKOL_AUDIO_BUFFER_CAP    0x1000
+
 #define SOKOL_RECORDING_SECONDS 120
 #define SOKOL_RECORDING_ENABLED
 
@@ -269,9 +273,9 @@ sokol_init(void)
 
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_setup(&(saudio_desc){
-		.buffer_frames = SOKOL_AUDIO_FRAMES,
-		.stream_cb     = sokol_stream_cb,
-		.logger.func   = slog_func,
+		// .buffer_frames = SOKOL_AUDIO_FRAMES,
+		.logger.func = slog_func,
+		.stream_cb   = sokol_stream_cb,
 	});
 #endif
 
@@ -461,12 +465,12 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
 #if !defined(SOKOL_DISABLE_AUDIO)
 	if(SOKOL_STATE.state == 1) {
-		dbg_assert(num_channels == 1);
-		dbg_assert(num_frames == SOKOL_AUDIO_FRAMES);
-		b32 is_mono = (num_channels == 1);
+		dbg_assert(num_channels == SOKOL_AUDIO_CHANNEL_COUNT);
+		// dbg_assert(num_frames == SOKOL_AUDIO_FRAMES);
+		dbg_assert(num_frames < SOKOL_AUDIO_BUFFER_CAP);
 
-		static i16 lbuf[0x1000];
-		static i16 rbuf[0x1000];
+		static i16 lbuf[SOKOL_AUDIO_BUFFER_CAP];
+		static i16 rbuf[SOKOL_AUDIO_BUFFER_CAP];
 		mclr_array(lbuf);
 		mclr_array(rbuf);
 
@@ -475,30 +479,24 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 		f32 *s     = buffer;
 		i16 *l     = lbuf;
 		i16 *r     = rbuf;
-		f32 volume = 0.1f;
+		f32 volume = SOKOL_AUDIO_VOLUME;
 
 		for(i32 n = 0; n < num_frames; n++) {
-			f32 vl = (*l++ * F32_SCALE) * volume;                // Convert and apply volume for left channel
-			f32 vr = is_mono ? vl : (*r++ * F32_SCALE) * volume; // Convert and apply volume for right channel (or mono)
+			// Convert and apply volume for left channel
+			f32 vl = (*l++ * F32_SCALE) * volume;
+			f32 vr = vl;
+			if(num_channels == 2) {
+				vr = (*r++ * F32_SCALE) * volume;
+			}
 
 			// Store the f32 values in the output stream buffer
 			*s++ = vl; // Left channel
 			if(num_channels == 2) {
 				*s++ = vr; // Right channel, only if stereo
 			}
-#if defined(SOKOL_RECORDING_ENABLED)
-			{
-				struct recording_aud *rec = &SOKOL_STATE.recording_aud;
-				if(rec->frames != NULL) {
-					rec->frames[rec->idx] = vl;
-					rec->idx              = (rec->idx + 1) % rec->cap;
-					rec->len              = MIN(rec->len + 1, rec->cap);
-				}
-			}
-#endif
 		}
 	} else {
-		mclr(buffer, num_frames * num_channels);
+		mclr(buffer, num_frames * num_channels * sizeof(f32));
 	}
 #endif
 }
