@@ -10,7 +10,8 @@ enum {
 };
 
 struct tex_header {
-	u32 w, h;
+	u32 w;
+	u32 h;
 };
 
 struct tex {

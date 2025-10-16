@@ -25,5 +25,5 @@ void adpcm_playback(struct adpcm *adpcm, i16 *lb, i16 *rb, i32 len);
 void adpcm_playback_nonpitch_silent(struct adpcm *adpcm, i32 len);
 void adpcm_playback_nonpitch(struct adpcm *adpcm, i16 *lb, i16 *rb, i32 len);
 
-void adpcm_encode(i16 *buffer, u8 *out_buffer, usize len);
+void adpcm_i16_encode(i16 *buffer, u8 *out_buffer, usize len);
 void adpcm_decode(i16 *buffer, u8 *out_buffer, usize len);

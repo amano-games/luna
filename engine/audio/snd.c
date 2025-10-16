@@ -1,33 +1,30 @@
 #include "snd.h"
+#include "base/dbg.h"
 #include "sys/sys-io.h"
-#include "base/log.h"
 
 struct snd
 snd_load(const str8 path, struct alloc alloc)
 {
 	struct snd res = {0};
+	void *f        = sys_file_open_r(path);
 
-	void *f = sys_file_open_r(path);
-	if(!f) {
-		log_warn("snd", "Can't open file %s\n", path.str);
-		return res;
-	}
+	dbg_check_warn(f, "snd", "failed to open file %s", path.str);
 
-	u32 num_samples = 0;
-	sys_file_r(f, &num_samples, sizeof(u32));
-	u32 bytes = (num_samples + 1) >> 1;
+	struct snd_header snd_header = {0};
+	sys_file_r(f, &snd_header, sizeof(u32));
+	u32 bytes = (snd_header.sample_count + 1) >> 1;
 
 	void *buf = alloc.allocf(alloc.ctx, bytes);
-	if(!buf) {
-		log_error("snd", "Can't allocate memory for snd: %s\n", path.str);
-		sys_file_close(f);
-		return res;
-	}
+	dbg_check_warn(buf, "snd", "failed to allocate memory for snd %s", path.str);
 
 	sys_file_r(f, buf, bytes);
-	sys_file_close(f);
 
 	res.buf = (u8 *)buf;
-	res.len = num_samples;
+	res.len = snd_header.sample_count;
+
+error:;
+	if(f) {
+		sys_file_close(f);
+	}
 	return res;
 }
