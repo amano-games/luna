@@ -48,7 +48,7 @@ adpcm_playback(struct adpcm *adpcm, i16 *lb, i16 *rb, i32 len)
 	for(i32 i = 0; i < len; i++, l++) {
 		u32 p = (++adpcm->pos_pitched * adpcm->ipitch_q8) >> 8;
 		i32 v = (adpcm_advance_to(adpcm, p) * adpcm->vol_q8) >> 8;
-		*l    = ssat16((i32)*l + v);
+		*l    = ssat_i16((i32)*l + v);
 	}
 }
 
@@ -59,7 +59,7 @@ adpcm_playback_nonpitch(struct adpcm *adpcm, i16 *lb, i16 *rb, i32 len)
 	adpcm->pos_pitched += len;
 	for(i32 i = 0; i < len; i++, l++) {
 		i32 v = (adpcm_advance_step(adpcm) * adpcm->vol_q8) >> 8;
-		*l    = ssat16((i32)*l + v);
+		*l    = ssat_i16((i32)*l + v);
 	}
 }
 
@@ -97,33 +97,44 @@ adpcm_step(u8 step, i16 *history, i16 *step_size)
 
 	i32 s      = step & 7;
 	i32 d      = ((1 + (s << 1)) * *step_size) >> 3;
-	i32 v      = ssat16((i32)*history + ((step & 8) ? -d : +d));
+	i32 v      = ssat_i16((i32)*history + ((step & 8) ? -d : +d));
 	*step_size = clamp_i32((t_step[s] * *step_size) >> 6, 127, 24576);
 	*history   = v;
 	return v;
 }
 
+// https://github.com/superctr/adpcm/blob/7736b178f4fb722d594c6ebdfc1ddf1af2ec81f7/adpcm.c#L156
 void
-adpcm_encode(i16 *buffer, u8 *out_buffer, usize len)
+adpcm_i16_encode(i16 *buffer, u8 *out_buffer, usize sample_count)
 {
-	int16_t step_size  = 127;
-	int16_t history    = 0;
-	uint8_t buf_sample = 0, nibble = 0;
-	unsigned int adpcm_sample;
+	i16 step_size = 127;
+	i16 history   = 0;
+	u8 buf_sample = 0;
+	u8 nibble     = 0;
+	u32 adpcm_sample;
 
-	for(usize i = 0; i < len; i++) {
+	for(usize i = 0; i < sample_count; i++) {
 		// we remove a few bits of accuracy to reduce some noise.
-		int step     = ((buffer[i]) & -8) - history;
+		i32 step     = ((buffer[i]) & -8) - history;
 		adpcm_sample = (ABS(step) << 16) / (step_size << 14);
 		adpcm_sample = MIN(adpcm_sample, 7);
-		if(step < 0)
+
+		if(step < 0) {
 			adpcm_sample |= 8;
-		if(nibble)
+		}
+
+		if(nibble) {
 			*out_buffer++ = buf_sample | (adpcm_sample & 15);
-		else
+		} else {
 			buf_sample = (adpcm_sample & 15) << 4;
+		}
+
 		nibble ^= 1;
 		adpcm_step(adpcm_sample, &history, &step_size);
+	}
+	// On odd number of samples write the last nibble
+	if(nibble) {
+		*out_buffer++ = buf_sample;
 	}
 }
 
@@ -131,12 +142,12 @@ void
 adpcm_decode(i16 *buffer, u8 *out_buffer, usize len)
 {
 
-	int16_t step_size = 127;
-	int16_t history   = 0;
-	uint8_t nibble    = 0;
+	i16 step_size = 127;
+	i16 history   = 0;
+	u8 nibble     = 0;
 
 	for(usize i = 0; i < len; i++) {
-		int8_t step = (*(int8_t *)buffer) << nibble;
+		i8 step = (*(i8 *)buffer) << nibble;
 		step >>= 4;
 		if(nibble)
 			buffer++;

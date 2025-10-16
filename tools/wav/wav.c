@@ -3,6 +3,7 @@
 #include "base/dbg.h"
 #include "base/path.h"
 #include "base/str.h"
+#include "engine/audio/snd.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 
@@ -82,27 +83,18 @@ wav_handle(str8 in_path, str8 out_path, struct alloc scratch)
 	dbg_check_warn(wav.sample_rate == 44100, "wav", "invalid, unsupported sample rate: %d", wav.sample_rate);
 	dbg_check_warn(wav.bits_per_sample == 16, "wav", "invalid, unsupported bits per sample: %d", wav.bits_per_sample);
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
+	struct snd_header snd_header = {.sample_count = wav.sample_count};
+	str8 out_file_path           = make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
 	dbg_check_warn((out_file = sys_file_open_w(out_file_path)), "snd-gen", "%s failed to open", out_file_path.str);
-	dbg_check_warn(sys_file_w(out_file, &wav.sample_count, sizeof(wav.sample_count)), "snd-gen", "%s failed to write", out_file_path.str);
+	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)), "snd-gen", "%s failed to write", out_file_path.str);
 
 	{
-		// TODO: Calc correct len
-		usize data_size = wav.sample_count * (wav.bits_per_sample / 8);
-		usize length    = data_size / 2;
-		out_data        = (u8 *)sys_alloc(NULL, data_size / 2);
+		// The ADPCM encoder writes half a byte per sample 4bits per sample
+		usize data_size = ((wav.sample_count * wav.channel_count) + 1) / 2;
+		out_data        = (u8 *)sys_alloc(NULL, data_size * sizeof(u8));
 
-		// WARN: Don't know where I got that I needed make the size even,
-		// but this caused a buffer overflow because the in_buffer doesn't take that in to account
-		// https://github.com/superctr/adpcm/blob/7736b178f4fb722d594c6ebdfc1ddf1af2ec81f7/adpcm.c#L156
-		if(length & 1) {
-			// make the size even
-			length++;
-		}
-		adpcm_encode((i16 *)wav.sample_data, out_data, length);
-		length /= 2;
-
-		dbg_check_warn(sys_file_w(out_file, out_data, length), "snd-gen", "%s failed to write", out_file_path.str);
+		adpcm_i16_encode((i16 *)wav.sample_data, out_data, wav.sample_count);
+		dbg_check_warn(sys_file_w(out_file, out_data, data_size), "snd-gen", "%s failed to write", out_file_path.str);
 	}
 
 	log_info("snd-gen", "%s -> %s", in_path.str, out_file_path.str);

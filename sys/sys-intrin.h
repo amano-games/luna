@@ -46,7 +46,7 @@ brev_u32(u32 x)
 }
 
 static inline i32
-ssat16(i32 x)
+ssat_i16(i32 x)
 {
 	if(x < I16_MIN) return I16_MIN;
 	if(x > I16_MAX) return I16_MAX;
