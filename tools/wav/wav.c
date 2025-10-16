@@ -5,8 +5,6 @@
 #include "base/str.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 #define WAV_FOURCC(a, b, c, d) (u32)(a | (b << 8) | (c << 16) | (d << 24))
 
@@ -31,10 +29,6 @@ wav_parse(const void *data, size data_size, struct wav *res)
 			if(format->format == WAVE_FORMAT_IMA_ADPCM && chunk->size == 20) {
 				res->samples_per_block = ((u16 *)&format[1])[1];
 			}
-
-			res->sample_format   = (format->format == WAVE_FORMAT_EXTENSIBLE && chunk->size == 40) ? format->sub_format : format->format;
-			res->bits_per_sample = (chunk->size == 40 && format->samples.valid_bits_per_sample) ? format->samples.valid_bits_per_sample : format->bits_per_sample;
-
 		} else if(chunk->id == WAV_FOURCC('f', 'a', 'c', 't')) {
 			dbg_check_warn(chunk->size == 4, "wav", "invalid, wrong fact chunk");
 			res->sample_count = *(u32 *)&chunk[1];
@@ -47,20 +41,24 @@ wav_parse(const void *data, size data_size, struct wav *res)
 
 	dbg_check_warn(format != NULL, "wav", "invalid, missing fmt block");
 
-	res->sample_data   = &chunk[1];
-	res->channel_count = format->channel_count;
-	res->sample_rate   = format->sample_rate;
-	res->block_size    = format->block_size;
+	res->sample_data     = &chunk[1];
+	res->bits_per_sample = format->bits_per_sample;
+	res->sample_format   = format->format;
+	res->channel_count   = format->channel_count;
+	res->sample_rate     = format->sample_rate;
+	res->block_size      = format->block_size;
 
-	if(res->sample_format == WAVE_FORMAT_PCM) {
-		dbg_check_warn(chunk->size % format->block_size == 0, "wav", "invalid, wrong block align");
-		res->sample_count = chunk->size / format->block_size;
-	} else {
-		dbg_not_implemeneted("adpcm not supported");
+	if(res->sample_count == 0) {
+		// No fact chunk, calculate sample count manualy
+		if(res->block_size != 0 && res->samples_per_block != 0) {
+			u32 num_blocks    = res->sample_data_size / res->block_size + 1;
+			res->sample_count = res->samples_per_block * num_blocks;
+		} else {
+			res->sample_count = (int)((u64)(res->sample_data_size / res->channel_count) * 8 / res->bits_per_sample);
+		}
 	}
 
 	dbg_check_warn(res->sample_count > 0, "wav", "%s invalid, no audio samples");
-	dbg_check_warn(res->sample_format == WAVE_FORMAT_PCM, "snd_gen", "invalid, wav format not supported");
 
 	return true;
 
@@ -79,6 +77,7 @@ wav_handle(str8 in_path, str8 out_path, struct alloc scratch)
 
 	dbg_check_warn(in_data.size >= 44 && in_data.data != NULL, "snd-gen", "%s failed to read full file", in_path.str);
 	dbg_check_warn(wav_parse(in_data.data, in_data.size, &wav), "snd-gen", "%s failed to parse wav file", in_path.str);
+	dbg_check_warn(wav.sample_format == WAVE_FORMAT_PCM, "snd_gen", "invalid, wav format not supported");
 	dbg_check_warn(wav.channel_count == 1, "wav", "invalid, unsupported number of channels", wav.channel_count);
 	dbg_check_warn(wav.sample_rate == 44100, "wav", "invalid, unsupported sample rate: %d", wav.sample_rate);
 	dbg_check_warn(wav.bits_per_sample == 16, "wav", "invalid, unsupported bits per sample: %d", wav.bits_per_sample);
@@ -96,19 +95,20 @@ wav_handle(str8 in_path, str8 out_path, struct alloc scratch)
 		// WARN: Don't know where I got that I needed make the size even,
 		// but this caused a buffer overflow because the in_buffer doesn't take that in to account
 		// https://github.com/superctr/adpcm/blob/7736b178f4fb722d594c6ebdfc1ddf1af2ec81f7/adpcm.c#L156
-		if(length & 1) length++; // make the size even
+		if(length & 1) {
+			// make the size even
+			length++;
+		}
 		adpcm_encode((i16 *)wav.sample_data, out_data, length);
 		length /= 2;
 
-		for(usize i = 0; i < length; i++) {
-			putc(*(out_data + i), out_file);
-		}
+		dbg_check_warn(sys_file_w(out_file, out_data, length), "snd-gen", "%s failed to write", out_file_path.str);
 	}
 
 	log_info("snd-gen", "%s -> %s", in_path.str, out_file_path.str);
 	res = true;
 
-error:
+error:;
 	if(in_data.data) { sys_free(in_data.data); }
 	if(out_data) { sys_free(out_data); }
 	if(out_file) { sys_file_close(out_file); }
