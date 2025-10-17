@@ -13,6 +13,18 @@ enum sys_log_level {
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
 #endif
 
+#if SYS_LOG_DISABLE
+#define sys_printf(...)
+#else
+#if TARGET_PLAYDATE
+#include "pd-sys.h"
+#define sys_printf PD_SYSTEM_LOG_TO_CONSOLE
+#else
+#include <stdio.h>
+#define sys_printf(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+#endif
+#endif
+
 void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
 
 // TODO: Add __attribute__(format(gnu_printf, 6, 7)))

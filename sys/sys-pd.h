@@ -6,11 +6,6 @@
 extern PlaydateAPI *PD;
 
 extern void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *fmt, ...);
-#if SYS_LOG_DISABLE
-#define sys_printf(...)
-#else
-#define sys_printf PD_SYSTEM_LOG_TO_CONSOLE
-#endif
 
 b32 sys_pd_reduce_flicker(void);
 f32 sys_pd_crank_deg(void);
