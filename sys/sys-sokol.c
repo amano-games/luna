@@ -1142,8 +1142,15 @@ sokol_process_info_set(void)
 #if defined(TARGET_LINUX)
 		{
 			// TODO: Fallback?
-			char *xdg       = getenv("XDG_DATA_HOME");
-			info->data_path = str8_cpy_push(alloc, str8_cstr(xdg));
+			char *xdg      = getenv("XDG_DATA_HOME");
+			char *home     = getenv("HOME");
+			str8 data_path = str8_lit("");
+			if(xdg != NULL) {
+				data_path = str8_cstr(xdg);
+			} else if(home != NULL) {
+				data_path = str8_cstr(home);
+			}
+			info->data_path = str8_cpy_push(alloc, data_path);
 		}
 #endif
 
