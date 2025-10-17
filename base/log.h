@@ -14,14 +14,14 @@ enum sys_log_level {
 #endif
 
 #if SYS_LOG_DISABLE
-#define sys_printf(fmt, ...)
+#define sys_printf(...)
 #else
 #if TARGET_PLAYDATE
 #include "pd-sys.h"
-#define sys_printf(fmt, ...) PD_SYSTEM_LOG_TO_CONSOLE(fmt, ##__VA_ARGS__)
+#define sys_printf(...) PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__)
 #else
 #include <stdio.h>
-#define sys_printf(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+#define sys_printf(...) (printf(__VA_ARGS__), printf("\n"))
 #endif
 #endif
 
