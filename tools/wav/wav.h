@@ -40,4 +40,4 @@ struct wav {
 	i32 bits_per_sample;
 };
 
-b32 wav_handle(str8 in_path, str8 out_path, struct alloc scratch);
+b32 wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch);

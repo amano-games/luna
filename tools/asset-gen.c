@@ -1,33 +1,36 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
+#include <tinydir.h>
 #include "whereami.c"
 
 #include "sys/sys.h"
 #include "sys/sys-cli.c"
+#include "sys/sys-io.c"
 
+#include "base/dbg.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/types.h"
 #include "base/mem.c"
 #include "base/marena.c"
-#include "lib/bet/bet.c"
-#include "engine/animation/animation-db.c"
-#include "lib/bet/bet-ser.c"
-#include "lib/rndm.c"
 #include "base/str.h"
 #include "base/str.c"
 #include "base/path.c"
-#include "lib/tex/tex.c"
 
+#include "lib/bet/bet-ser.c"
+#include "lib/bet/bet.c"
+#include "lib/rndm.c"
+#include "lib/tex/tex.c"
+#include "lib/pinb/pinb-ser.c"
+#include "lib/fnt/fnt.c"
+
+#include "engine/animation/animation-db.c"
 #include "engine/audio/adpcm.c"
+#include "engine/physics/physics.c"
+#include "engine/physics/body-ser.c"
+
 #include "./wav/wav.h"
 #include "./wav/wav.c"
 #include "./png/png.c"
 
-#include "engine/physics/physics.c"
-#include "engine/physics/body-ser.c"
 #include "tools/btree/btree.h"
 #include "tools/btree/btree.c"
 #include "tools/tsj/tsj.h"
@@ -36,47 +39,49 @@
 #include "tools/fnt-pd/fnt-pd.h"
 #include "tools/pinbtjson/pinbtjson.h"
 #include "tools/pinbtjson/pinbtjson.c"
-#include "lib/pinb/pinb-ser.c"
-#include "lib/fnt/fnt.c"
+
 #include "engine/collisions/collisions.c"
 #include "engine/collisions/collisions-ser.c"
-#include "sys/sys-io.c"
 
-#define IMG_EXT ".png"
-#define AUD_EXT ".wav"
 // #define RAW_EXT ".raw"
-#define ANI_EXT           ".lunass"
-#define AI_EXT            ".btree"
-#define FNT_EXT           ".fnt"
-#define ASSETS_DB_EXT     ".tsj"
-#define PINBALL_TABLE_EXT ".pinbjson"
+#define IMG_EXT           "png"
+#define AUD_EXT           "wav"
+#define ANI_EXT           "lunass"
+#define AI_EXT            "btree"
+#define FNT_EXT           "fnt"
+#define ASSETS_DB_EXT     "tsj"
+#define PINBALL_TABLE_EXT "pinbjson"
 
-void
-fcopy(const str8 in_path, const str8 out_path)
+b32
+file_cpy(const str8 in_path, const str8 out_path)
 {
-	FILE *f1 = fopen((char *)in_path.str, "rb");
-	FILE *f2 = fopen((char *)out_path.str, "wb");
+	b32 res   = false;
+	void *in  = sys_file_open_r(in_path);
+	void *out = sys_file_open_w(out_path);
 	char buffer[BUFSIZ];
-	size_t n;
+	size n;
 
-	while((n = fread(buffer, sizeof(char), sizeof(buffer), f1)) > 0) {
-		if(fwrite(buffer, n, sizeof(char), f2) != 1) {
-			log_error("asset-gen", "Failed to copy file \n");
-		}
+	while((n = sys_file_r(in, buffer, sizeof(buffer)) > 0)) {
+		dbg_check(sys_file_w(out, buffer, n), "asset-gen", "Failed to copy file", out_path.str);
 	}
 
-	log_info("asset-gen", "[cpy] %s -> %s\n", in_path.str, out_path.str);
+	res = true;
+	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
+
+error:;
+	if(in) { sys_file_close(in); }
+	if(out) { sys_file_close(out); }
+	return res;
 }
 
 void
 handle_asset_recursive(
 	const str8 in_dir,
 	const str8 out_dir,
-	struct alloc scratch)
+	struct marena *arena)
 {
 
-	struct marena *marena = (struct marena *)scratch.ctx;
-
+	struct alloc alloc = marena_allocator(arena);
 	tinydir_dir dir;
 	tinydir_open(&dir, (char *)in_dir.str);
 
@@ -84,40 +89,34 @@ handle_asset_recursive(
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
 
-		// char in_path_buff[FILENAME_MAX];
-		// char out_path_buff[FILENAME_MAX];
-		// str8 in_path  = str8_array_fixed(in_path_buff);
-		// str8 out_path = str8_array_fixed(out_path_buff);
-		str8 in_path  = str8_fmt_push(scratch, "%s/%s", in_dir.str, file.name);
-		str8 out_path = str8_fmt_push(scratch, "%s/%s", out_dir.str, file.name);
-		// stbsp_snprintf((char *)in_path.str, in_path.size, "%s/%s", in_dir.str, file.name);
-		// stbsp_snprintf((char *)out_path.str, out_path.size, "%s/%s", out_dir.str, file.name);
+		str8 file_name = str8_cstr(file.name);
+		str8 in_path   = str8_fmt_push(alloc, "%s/%s", in_dir.str, file.name);
+		str8 out_path  = str8_fmt_push(alloc, "%s/%s", out_dir.str, file.name);
 
 		if(file.is_dir) {
-			if(strcmp(file.name, ".") != 0 && strcmp(file.name, "..") != 0) {
+			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				handle_asset_recursive(str8_cstr(file.path), out_path, scratch);
+				handle_asset_recursive(str8_cstr(file.path), out_path, arena);
 			}
 		} else {
-			void *p = marena->p;
-			if(strstr(file.name, IMG_EXT) != NULL) {
-				tex_handle(in_path, out_path, scratch);
-			} else if(strstr(file.name, ANI_EXT) != NULL) {
-				fcopy(in_path, out_path);
-			} else if(strstr(file.name, AUD_EXT)) {
-				i32 res = wav_handle(in_path, out_path, scratch);
-			} else if(strstr(file.name, AI_EXT)) {
-				i32 res = handle_btree(in_path, out_path, scratch);
-			} else if(strstr(file.name, FNT_EXT)) {
-				i32 res = handle_fnt_pd(in_path, out_path, scratch);
-			} else if(strstr(file.name, ASSETS_DB_EXT)) {
-				i32 res = handle_tsj(in_path, out_path, scratch);
-			} else if(strstr(file.name, PINBALL_TABLE_EXT)) {
+			void *reset_p  = arena->p;
+			str8 extension = str8_cstr(file.extension);
+			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
+				b32 res = png_to_tex(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(ANI_EXT), 0)) {
+				b32 res = file_cpy(in_path, out_path);
+			} else if(str8_match(extension, str8_lit(AUD_EXT), 0)) {
+				b32 res = wav_to_snd(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(AI_EXT), 0)) {
+				i32 res = handle_btree(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(FNT_EXT), 0)) {
+				i32 res = handle_fnt_pd(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(ASSETS_DB_EXT), 0)) {
+				i32 res = handle_tsj(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(PINBALL_TABLE_EXT), 0)) {
 				i32 res = pinbtjson_handle(in_path, out_path);
-			} else {
-				// fcopy(in_path, out_path);
 			}
-			marena_reset_to(marena, p);
+			marena_reset_to(arena, reset_p);
 		}
 
 		tinydir_next(&dir);
@@ -129,29 +128,36 @@ handle_asset_recursive(
 int
 main(int argc, char *argv[])
 {
+	int res = EXIT_FAILURE;
+
 	if(argc != 3) {
-		log_info("asset-gen", "Usage: %s <in_path> <destination_path>\n", argv[0]);
-		return 1;
+		log_info("asset-gen", "Usage: %s <in_path> <destination_path>", argv[0]);
+		res = EXIT_SUCCESS;
+		return res;
 	}
 
-	log_info("asset-gen", "Processing assets...\n");
+	str8 in_path  = str8_cstr(argv[1]);
+	str8 out_path = str8_cstr(argv[2]);
+	log_info("asset-gen", "Processing assets from %s -> %s", in_path.str, out_path.str);
 
 	str8 path = str8_cstr(argv[2]);
 	// TODO: check if folder exists
 	sys_make_dir(path);
 
-	usize scratch_mem_size = MMEGABYTE(1);
-	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
-	dbg_assert(scratch_mem_buffer != NULL);
-	struct marena scratch_marena = {0};
-	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
-	struct alloc scratch = marena_allocator(&scratch_marena);
+	usize mem_size = MMEGABYTE(1);
+	u8 *mem        = sys_alloc(NULL, mem_size);
+	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
+	struct marena arena = {0};
+	marena_init(&arena, mem, mem_size);
 
-	handle_asset_recursive(str8_cstr(argv[1]), str8_cstr(argv[2]), scratch);
+	handle_asset_recursive(in_path, out_path, &arena);
 
-	if(scratch_mem_buffer) {
-		sys_free(scratch_mem_buffer);
+	res = EXIT_SUCCESS;
+
+error:;
+	if(mem) {
+		sys_free(mem);
 	}
 
-	return EXIT_SUCCESS;
+	return res;
 }
