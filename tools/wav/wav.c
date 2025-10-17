@@ -68,7 +68,7 @@ error:;
 }
 
 b32
-wav_handle(str8 in_path, str8 out_path, struct alloc scratch)
+wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	b32 res                          = false;
 	struct sys_full_file_res in_data = sys_load_full_file(in_path, sys_allocator());

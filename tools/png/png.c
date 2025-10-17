@@ -11,12 +11,13 @@
 #include "stb_image.h"
 
 // TODO: detect transparency and save if the texture is opaque or not
-void
-tex_handle(
+b32
+png_to_tex(
 	const str8 in_path,
 	const str8 out_path,
 	struct alloc scratch)
 {
+	b32 res = false;
 	i32 w, h, n;
 	u32 *data = (u32 *)stbi_load((char *)in_path.str, &w, &h, &n, 4);
 
@@ -80,10 +81,11 @@ tex_handle(
 		}
 	}
 
-	log_info("tex-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	res = true;
+	log_info("tex-gen", "%s -> %s", in_path.str, out_file_path.str);
 
 error:;
 	if(file) { sys_file_close(file); }
 	if(data != NULL) { stbi_image_free(data); }
-	return;
+	return res;
 }

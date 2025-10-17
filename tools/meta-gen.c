@@ -1,25 +1,26 @@
 #include <tinydir.h>
 #include <jsmn.h>
+#include "base/dbg.h"
 #include "whereami.c"
 
-#include "base/arr.h"
-#include "lib/json.h"
+#include "sys/sys.h"
 #include "sys/sys-cli.c"
+#include "sys/sys-io.h"
+
+#include "base/arr.h"
 #include "base/marena.c"
 #include "base/mem.c"
-
 #include "base/str.h"
 #include "base/str.c"
 #include "base/path.c"
-
 #include "base/marena.h"
-#include "sys/sys-io.h"
 #include "base/log.h"
 #include "base/utils.h"
-#include "sys/sys.h"
+
+#include "lib/json.h"
 
 #define TABLE_EXT ".luntable"
-#define LOG_ID    "MetaGen"
+#define LOG_ID    "meta-gen"
 
 enum COLUMN_TYPE {
 	COLUMN_TYPE_NONE,
@@ -67,19 +68,22 @@ struct table {
 i32
 gen_table(const str8 in_path, struct alloc scratch)
 {
-	str8 json = {0};
-	json_load(in_path, scratch, &json);
+	str8 json          = {0};
+	b32 has_bitmasks   = false;
+	b32 has_labels     = false;
+	struct table table = {0};
 	jsmn_parser parser;
+
+	json_load(in_path, scratch, &json);
+
 	jsmn_init(&parser);
 	i32 token_count   = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
 	jsmn_init(&parser);
+
 	i32 json_res = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
-	b32 has_bitmasks = false;
-	b32 has_labels   = false;
 
-	struct table table = {0};
 	/* Loop over all keys of the root object */
 	for(i32 i = 1; i < token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
@@ -100,7 +104,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 			for(i32 j = 0; j < value->size; j++) {
 				jsmntok_t *child_key   = &tokens[i + j + 1];
 				jsmntok_t *child_value = &tokens[i + j + 2];
-				size_t len             = child_value->end - child_value->start;
+				size len               = child_value->end - child_value->start;
 
 				struct column column = {0};
 				column.name          = json_str8_cpy_push(json, child_value, scratch);
@@ -120,10 +124,10 @@ gen_table(const str8 in_path, struct alloc scratch)
 			i += value->size + 1;
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			size_t rows_count = value->size;
-			table.rows        = arr_new(table.rows, rows_count, scratch);
+			size rows_count = value->size;
+			table.rows      = arr_new(table.rows, rows_count, scratch);
 
-			for(size_t j = 0; j < rows_count; j++) {
+			for(size j = 0; j < rows_count; j++) {
 				struct row row            = {0};
 				usize count               = arr_len(table.columns);
 				row.items                 = arr_new(row.items, count, scratch);
@@ -292,9 +296,11 @@ gen_table(const str8 in_path, struct alloc scratch)
 }
 
 void
-gen_tables_recursive(const str8 in_dir, struct alloc scratch)
+gen_tables_recursive(const str8 in_dir, struct marena *arena)
 {
 	tinydir_dir dir;
+	struct alloc alloc = marena_allocator(arena);
+
 	if(tinydir_open(&dir, (char *)in_dir.str) == -1) {
 		log_error(LOG_ID, "Cannot open directory: %s", in_dir.str);
 		return;
@@ -303,17 +309,17 @@ gen_tables_recursive(const str8 in_dir, struct alloc scratch)
 	while(dir.has_next) {
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
-		str8 in_path   = str8_fmt_push(scratch, "%s/%s", in_dir.str, file.name);
+		str8 in_path   = str8_fmt_push(alloc, "%s/%s", in_dir.str, file.name);
 		str8 file_name = str8_cstr(file.name);
 
 		if(file.is_dir) {
 			if(
 				!str8_match(file_name, str8_lit("."), 0) &&
 				!str8_match(file_name, str8_lit(".."), 0)) {
-				gen_tables_recursive(in_path, scratch);
+				gen_tables_recursive(in_path, arena);
 			}
 		} else if(str8_ends_with(file_name, str8_lit(TABLE_EXT), 0)) {
-			gen_table(in_path, scratch);
+			gen_table(in_path, alloc);
 		}
 		tinydir_next(&dir);
 	}
@@ -323,23 +329,29 @@ gen_tables_recursive(const str8 in_dir, struct alloc scratch)
 i32
 main(i32 argc, char *argv[])
 {
+	int res = EXIT_FAILURE;
 	if(argc != 2) {
 		sys_printf("Usage: %s <in_path>\n", argv[0]);
-		return 1;
+		res = EXIT_SUCCESS;
+		return res;
 	}
-	log_info(LOG_ID, "Generating tables recursively from %s -> %s", argv[0], argv[2]);
-	sys_make_dir(str8_cstr(argv[2]));
 
-	usize scratch_mem_size = MMEGABYTE(1);
-	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
-	dbg_assert(scratch_mem_buffer != NULL);
-	struct marena scratch_marena = {0};
-	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
-	struct alloc scratch = marena_allocator(&scratch_marena);
+	str8 in_path        = str8_cstr(argv[1]);
+	usize mem_size      = MMEGABYTE(1);
+	u8 *mem             = sys_alloc(NULL, mem_size);
+	struct marena arena = {0};
+	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 
-	gen_tables_recursive(str8_cstr(argv[1]), scratch);
+	marena_init(&arena, mem, mem_size);
+	log_info(LOG_ID, "Processing C from %s -> %s", in_path.str, in_path.str);
+	gen_tables_recursive(in_path, &arena);
 
-	sys_free(scratch_mem_buffer);
+	res = EXIT_SUCCESS;
 
-	return EXIT_SUCCESS;
+error:;
+	if(mem) {
+		sys_free(mem);
+	}
+
+	return res;
 }
