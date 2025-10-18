@@ -17,7 +17,7 @@ enum sys_log_level {
 #define sys_printf(...)
 #else
 #if TARGET_PLAYDATE
-#include "pd-sys.h"
+#include "sys/sys-pd.h"
 #define sys_printf(...) PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__)
 #else
 #include <stdio.h>
