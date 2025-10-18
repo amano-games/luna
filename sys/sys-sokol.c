@@ -56,7 +56,7 @@
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
 #define SOKOL_RECORDING_SECONDS 120
-#define SOKOL_RECORDING_SCALE   1
+#define SOKOL_RECORDING_SCALE   3
 #define SOKOL_RECORDING_ENABLED
 
 struct touch_point_mouse_emu {
@@ -109,6 +109,8 @@ struct sokol_state {
 
 	struct gfx_col_pallete pallete;
 	struct gfx_col_pallete pallete_dbg;
+	struct gfx_col_pallete pallete_recording;
+	struct gfx_col_pallete pallete_screenshot;
 
 	struct recording_1b recording;
 	struct recording_aud recording_aud;
@@ -231,10 +233,14 @@ sokol_main(i32 argc, char **argv)
 #endif
 
 	{
-		SOKOL_STATE.pallete.colors[GFX_COL_BLACK]     = 0x110B0DFF;
-		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]     = 0xA5A5A2FF;
-		SOKOL_STATE.pallete_dbg.colors[GFX_COL_BLACK] = 0x000000FF;
-		SOKOL_STATE.pallete_dbg.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
+		SOKOL_STATE.pallete.colors[GFX_COL_BLACK]            = 0x110B0DFF;
+		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]            = 0xA5A5A2FF;
+		SOKOL_STATE.pallete_dbg.colors[GFX_COL_BLACK]        = 0x000000FF;
+		SOKOL_STATE.pallete_dbg.colors[GFX_COL_WHITE]        = 0xFFFFFFFF;
+		SOKOL_STATE.pallete_recording.colors[GFX_COL_BLACK]  = 0x000000FF;
+		SOKOL_STATE.pallete_recording.colors[GFX_COL_WHITE]  = 0xFFFFFFFF;
+		SOKOL_STATE.pallete_screenshot.colors[GFX_COL_BLACK] = 0x000000FF;
+		SOKOL_STATE.pallete_screenshot.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
 	}
 
 	{
@@ -1472,7 +1478,7 @@ sokol_screenshot_save(struct tex tex)
 	i32 comp                                       = 4;
 	i32 stride_in_bytes                            = w * comp;
 
-	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.pallete);
+	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.pallete_screenshot);
 	str8 path = str8_fmt_push(alloc,
 		"%s-%04d-%02d-%02d_%02d:%02d:%02d",
 		SOKOL_NAME,
@@ -1564,7 +1570,7 @@ sokol_recording_write(struct recording_1b *recording)
 	for(size i = 0; i < (size)recording->len; i++) {
 		size f         = (oldest + i) % recording->cap;
 		struct tex src = recording->frames[f];
-		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.pallete_dbg);
+		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.pallete_recording);
 		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 
