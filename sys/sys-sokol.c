@@ -1506,7 +1506,7 @@ sokol_recording_write(struct recording_1b *recording)
 
 	// Construct ffmpeg command
 	i32 fps                   = SYS_UPS;
-	i32 scale                 = 1;
+	i32 scale                 = SOKOL_RECORDING_SCALE;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
 #if DEBUG
