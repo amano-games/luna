@@ -56,6 +56,7 @@
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
 #define SOKOL_RECORDING_SECONDS 120
+#define SOKOL_RECORDING_SCALE   1
 #define SOKOL_RECORDING_ENABLED
 
 struct touch_point_mouse_emu {
@@ -145,7 +146,7 @@ static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 static void sokol_screenshot_save(struct tex tex);
-static void sokol_write_recording(struct recording_1b *recording);
+static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 
@@ -389,7 +390,7 @@ sokol_event(const sapp_event *ev)
 		} break;
 		case SAPP_KEYCODE_F9: {
 #if defined(SOKOL_RECORDING_ENABLED)
-			sokol_write_recording(&SOKOL_STATE.recording);
+			sokol_recording_write(&SOKOL_STATE.recording);
 #endif
 		} break;
 		case SAPP_KEYCODE_R: {
@@ -1495,7 +1496,7 @@ sokol_screenshot_save(struct tex tex)
 
 // https://github.com/tsoding/rendering-video-in-c-with-ffmpeg/blob/master/ffmpeg_linux.c
 static void
-sokol_write_recording(struct recording_1b *recording)
+sokol_recording_write(struct recording_1b *recording)
 {
 	if(!recording || recording->len == 0) return;
 	marena_reset(&SOKOL_STATE.scratch_marena);
@@ -1526,7 +1527,7 @@ sokol_write_recording(struct recording_1b *recording)
 
 	// Construct ffmpeg command
 	i32 fps                   = SYS_UPS;
-	i32 scale                 = 4;
+	i32 scale                 = 1;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
 #if DEBUG
@@ -1563,7 +1564,7 @@ sokol_write_recording(struct recording_1b *recording)
 	for(size i = 0; i < (size)recording->len; i++) {
 		size f         = (oldest + i) % recording->cap;
 		struct tex src = recording->frames[f];
-		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.pallete);
+		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.pallete_dbg);
 		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 
