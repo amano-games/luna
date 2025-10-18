@@ -2,6 +2,9 @@
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
+#include "engine/assets/assets.h"
+#include "engine/gfx/gfx-txt.h"
+#include "lib/fnt/fnt.h"
 #include "lib/tex/tex.h"
 #include "sys-debug-draw.h"
 #include "base/types.h"
@@ -11,6 +14,7 @@
 #include "whereami.h"
 #endif
 
+#include "base/arr.h"
 #include "engine/gfx/gfx.h"
 #include "engine/gfx/gfx-defs.h"
 #include "base/path.h"
@@ -51,7 +55,7 @@
 #define SOKOL_AUDIO_VOLUME        0.1f
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
-#define SOKOL_RECORDING_SECONDS 120
+#define SOKOL_RECORDING_SECONDS 10
 #define SOKOL_RECORDING_ENABLED
 
 struct touch_point_mouse_emu {
@@ -525,17 +529,6 @@ sokol_frame(void)
 	// mcpy_array(colors.color_white, COL_PURPLE);
 	// mcpy_array(colors.color_debug, COL_RED);
 
-#if defined(SOKOL_RECORDING_ENABLED)
-	{
-		struct recording_1b *rec = &SOKOL_STATE.recording;
-		struct tex *src          = &SOKOL_STATE.frame_ctx.dst;
-		struct tex *dst          = rec->frames + rec->idx;
-		tex_cpy(dst, src);
-		rec->idx = (rec->idx + 1) % rec->cap;
-		rec->len = MIN(rec->len + 1, rec->cap);
-	}
-#endif
-
 	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.pallete);
 	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.pallete_dbg);
 
@@ -569,7 +562,43 @@ sokol_frame(void)
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
-	sys_internal_update();
+	b32 updated = sys_internal_update();
+	if(updated) {
+#if defined(SOKOL_RECORDING_ENABLED)
+		{
+			struct alloc scratch     = SOKOL_STATE.scratch;
+			struct recording_1b *rec = &SOKOL_STATE.recording;
+			struct tex *src          = &SOKOL_STATE.frame_ctx.dst;
+			struct tex *dst          = rec->frames + rec->idx;
+#if 0
+			static f32 last_time     = 0;
+			if(arr_len(ASSETS.db.fonts.arr) > 1) {
+				f32 time           = sys_seconds();
+				f32 dt             = time - last_time;
+				last_time          = time;
+				struct gfx_ctx ctx = gfx_ctx_default(*src);
+				str8 str           = str8_fmt_push(scratch, "idx:%04d len:%03d s:%03d dt:%.4f", (int)rec->idx, (int)rec->len, (int)rec->len / SYS_UPS, (double)dt);
+				struct fnt fnt     = asset_fnt(1);
+				v2_i32 txt_size    = fnt_size_px(fnt, str, 0, 0);
+				i32 w              = txt_size.x + 2;
+				i32 h              = txt_size.y + 2;
+				i32 x              = SYS_DISPLAY_W - (w);
+				i32 y              = SYS_DISPLAY_H - (h);
+				gfx_rec_fill(ctx, x, y, txt_size.x, txt_size.y, PRIM_MODE_BLACK);
+				fnt_draw_str(ctx, fnt, str, x + 1, y + 1, 0, 0, SPR_MODE_WHITE);
+			}
+#endif
+			tex_cpy(dst, src);
+#if 0
+			if(rec->len + 1 == rec->cap) {
+				sokol_write_recording(&SOKOL_STATE.recording);
+			}
+#endif
+			rec->idx = (rec->idx + 1) % rec->cap;
+			rec->len = MIN(rec->len + 1, rec->cap);
+		}
+#endif
+	}
 }
 
 void
