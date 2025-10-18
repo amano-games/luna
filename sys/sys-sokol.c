@@ -55,7 +55,7 @@
 #define SOKOL_AUDIO_VOLUME        0.1f
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
-#define SOKOL_RECORDING_SECONDS 10
+#define SOKOL_RECORDING_SECONDS 120
 #define SOKOL_RECORDING_ENABLED
 
 struct touch_point_mouse_emu {
