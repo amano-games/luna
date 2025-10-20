@@ -76,6 +76,26 @@ struct recording_aud {
 
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
 
+struct sys_screenshot_opts {
+	i32 scale;
+	str8 save_path;
+	struct gfx_col_pallete colors;
+};
+
+struct sys_recording_opts {
+	i32 scale;
+	str8 save_path;
+	i32 seconds_count;
+	struct gfx_col_pallete colors;
+};
+
+struct sys_opts {
+	struct gfx_col_pallete colors;
+	struct gfx_col_pallete colors_dbg;
+	struct sys_screenshot_opts screentshot;
+	struct sys_recording_opts recording;
+};
+
 struct sokol_state {
 	i32 state;
 
@@ -103,10 +123,7 @@ struct sokol_state {
 	f32 mouse_y;
 	u32 mouse_btns;
 
-	struct gfx_col_pallete pallete;
-	struct gfx_col_pallete pallete_dbg;
-	struct gfx_col_pallete pallete_recording;
-	struct gfx_col_pallete pallete_screenshot;
+	struct sys_opts opts;
 
 	struct recording_1b recording;
 	struct recording_aud recording_aud;
@@ -188,6 +205,12 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
+		// Ini opts
+		SOKOL_STATE.opts.recording.seconds_count = SOKOL_RECORDING_SECONDS;
+		SOKOL_STATE.opts.recording.scale         = SOKOL_RECORDING_SCALE;
+	}
+
+	{
 		struct tex tex        = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
 		tex_clr(tex, GFX_COL_BLACK);
@@ -205,7 +228,7 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct recording_1b *rec = &SOKOL_STATE.recording;
 		struct alloc alloc       = SOKOL_STATE.alloc;
-		rec->cap                 = SYS_UPS * SOKOL_RECORDING_SECONDS;
+		rec->cap                 = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                 = 0;
 		rec->idx                 = 0;
 		rec->frames              = alloc_size(alloc, sizeof(*rec->frames) * rec->cap);
@@ -217,7 +240,7 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct recording_aud *rec = &SOKOL_STATE.recording_aud;
 		struct alloc alloc        = SOKOL_STATE.alloc;
-		rec->cap                  = SYS_UPS * SOKOL_RECORDING_SECONDS;
+		rec->cap                  = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                  = 0;
 		rec->idx                  = 0;
 		rec->frames               = alloc_size(alloc, sizeof(*rec->frames) * rec->cap);
@@ -229,14 +252,14 @@ sokol_main(i32 argc, char **argv)
 #endif
 
 	{
-		SOKOL_STATE.pallete.colors[GFX_COL_BLACK]            = 0x110B0DFF;
-		SOKOL_STATE.pallete.colors[GFX_COL_WHITE]            = 0xA5A5A2FF;
-		SOKOL_STATE.pallete_dbg.colors[GFX_COL_BLACK]        = 0x000000FF;
-		SOKOL_STATE.pallete_dbg.colors[GFX_COL_WHITE]        = 0xFFFFFFFF;
-		SOKOL_STATE.pallete_recording.colors[GFX_COL_BLACK]  = 0x000000FF;
-		SOKOL_STATE.pallete_recording.colors[GFX_COL_WHITE]  = 0xFFFFFFFF;
-		SOKOL_STATE.pallete_screenshot.colors[GFX_COL_BLACK] = 0x000000FF;
-		SOKOL_STATE.pallete_screenshot.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK]             = 0x110B0DFF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE]             = 0xA5A5A2FF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK]             = 0x000000FF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE]             = 0xFFFFFFFF;
+		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_BLACK]   = 0x000000FF;
+		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_WHITE]   = 0xFFFFFFFF;
+		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_BLACK] = 0x000000FF;
+		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
 	}
 
 	{
@@ -379,7 +402,7 @@ sokol_event(const sapp_event *ev)
 			FILE *test           = fopen("/tmp/frame.raw", "wb");
 			size dst_size        = w * h * sizeof(u32);
 			u32 *dst             = alloc_arr(scratch, u32, w * h);
-			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.pallete);
+			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
 			fwrite(dst, sizeof(u32), w * h, test);
 			fclose(test);
 		} break;
@@ -532,8 +555,8 @@ sokol_frame(void)
 	// mcpy_array(colors.color_white, COL_PURPLE);
 	// mcpy_array(colors.color_debug, COL_RED);
 
-	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.pallete);
-	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.pallete_dbg);
+	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
+	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -1451,7 +1474,7 @@ sokol_screenshot_save(struct tex tex)
 	i32 comp                                       = 4;
 	i32 stride_in_bytes                            = w * comp;
 
-	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.pallete_screenshot);
+	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.opts.screentshot.colors);
 	str8 path = str8_fmt_push(alloc,
 		"%s-%04d-%02d-%02d_%02d:%02d:%02d",
 		SOKOL_NAME,
@@ -1506,7 +1529,7 @@ sokol_recording_write(struct recording_1b *recording)
 
 	// Construct ffmpeg command
 	i32 fps                   = SYS_UPS;
-	i32 scale                 = SOKOL_RECORDING_SCALE;
+	i32 scale                 = SOKOL_STATE.opts.recording.scale;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
 #if DEBUG
@@ -1543,7 +1566,7 @@ sokol_recording_write(struct recording_1b *recording)
 	for(size i = 0; i < (size)recording->len; i++) {
 		size f         = (oldest + i) % recording->cap;
 		struct tex src = recording->frames[f];
-		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.pallete_recording);
+		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.opts.recording.colors);
 		fwrite(dst, sizeof(u32), w * h, pipe);
 	}
 
