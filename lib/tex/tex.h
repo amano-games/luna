@@ -11,6 +11,13 @@ enum {
 	TEX_FMT_MASK,   // color and mask interlaced in words
 };
 
+struct pixel_u8 {
+	u8 r;
+	u8 g;
+	u8 b;
+	u8 a;
+};
+
 struct tex_header {
 	u32 w;
 	u32 h;
@@ -37,3 +44,4 @@ void tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pall
 void tex_opaque_to_pdi(struct tex tex, u8 *px, i32 bw, i32 bh, i32 bb);
 
 void tex_cpy(struct tex *dst, struct tex *src);
+b32 tex_from_rgba_w(const struct pixel_u8 *data, i32 w, i32 h, str8 out_path);
