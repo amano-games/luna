@@ -1,4 +1,5 @@
 #include <tinydir.h>
+#include "tools/aseprite/aseprite.h"
 #include "whereami.c"
 
 #include "sys/sys.h"
@@ -30,6 +31,7 @@
 #include "./wav/wav.h"
 #include "./wav/wav.c"
 #include "./png/png.c"
+#include "./aseprite/aseprite.c"
 
 #include "tools/btree/btree.h"
 #include "tools/btree/btree.c"
@@ -45,6 +47,7 @@
 
 // #define RAW_EXT ".raw"
 #define IMG_EXT           "png"
+#define ASE_EXT           "aseprite"
 #define AUD_EXT           "wav"
 #define ANI_EXT           "lunass"
 #define AI_EXT            "btree"
@@ -103,6 +106,8 @@ handle_asset_recursive(
 			str8 extension = str8_cstr(file.extension);
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				b32 res = png_to_tex(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(ASE_EXT), 0)) {
+				b32 res = aseprite_to_tex(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ANI_EXT), 0)) {
 				b32 res = file_cpy(in_path, out_path);
 			} else if(str8_match(extension, str8_lit(AUD_EXT), 0)) {
