@@ -4,6 +4,8 @@
 #include "base/types.h"
 #include "engine/gfx/gfx-defs.h"
 
+#define TEX_EXT "tex"
+
 enum {
 	TEX_FMT_OPAQUE, // only color pixels
 	TEX_FMT_MASK,   // color and mask interlaced in words
