@@ -248,3 +248,62 @@ tex_cpy(struct tex *dst, struct tex *src)
 	usize mem_size = sizeof(u32) * dst->wword * dst->h * 2;
 	mcpy(dst->px, src->px, mem_size);
 }
+
+b32
+tex_from_rgba_w(const struct pixel_u8 *data, i32 w, i32 h, str8 out_path)
+{
+	b32 res    = false;
+	void *file = sys_file_open_w(out_path);
+	dbg_check(file, "tex", "failed to open file to write: %s", out_path.str);
+	struct tex_header header = {.w = w, .h = h};
+	dbg_check(sys_file_w(file, &header, sizeof(header)) == 1, "tex", "Error writing header image to file");
+
+	i32 w_aligned = (w + 31) & ~31;
+	size bit_idx  = 0;
+	u32 color_row = 0;
+	u32 mask_row  = 0;
+	for(size y = 0; y < h; ++y) {
+		const struct pixel_u8 *row = (struct pixel_u8 *)(data + y * w);
+		for(i32 x = 0; x < w_aligned; ++x) {
+			struct pixel_u8 pixel = {0};
+			if(x < w) {
+				pixel = row[x];
+			}
+
+			i32 color      = (pixel.r + pixel.g + pixel.b) > (3 * 127);
+			i32 alpha      = pixel.a > 127;
+			u32 pixel_mask = (1u << (31 - bit_idx));
+
+			if(color) { color_row |= pixel_mask; }
+			if(alpha) { mask_row |= pixel_mask; }
+
+			if(++bit_idx == 32) {
+				color_row = bswap_u32(color_row);
+				mask_row  = bswap_u32(mask_row);
+				dbg_check(sys_file_w(file, &color_row, sizeof(u32)), "tex", "failed to write color data to file");
+				dbg_check(sys_file_w(file, &mask_row, sizeof(u32)), "tex", "failed to write mask data to file");
+				color_row = 0;
+				mask_row  = 0;
+				bit_idx   = 0;
+			}
+		}
+		// flush remainder bits if width not multiple of 32
+		if(bit_idx > 0) {
+			color_row = bswap_u32(color_row);
+			mask_row  = bswap_u32(mask_row);
+			dbg_check(sys_file_w(file, &color_row, sizeof(u32)) == 1,
+				"tex",
+				"failed to write color data (partial)");
+			dbg_check(sys_file_w(file, &mask_row, sizeof(u32)) == 1,
+				"tex",
+				"failed to write mask data (partial)");
+			color_row = mask_row = 0;
+			bit_idx              = 0;
+		}
+	}
+
+	res = true;
+error:;
+	if(file) { sys_file_close(file); }
+	return res;
+}
