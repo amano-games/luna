@@ -90,6 +90,7 @@ str8 str8_skip(str8 str, usize amt);
 str8 str8_postfix(str8 str, usize size);
 str8 str8_chop(str8 str, usize amt);
 str8 str8_skip_chop_whitespace(str8 str);
+str8 str8_skip_chop_slashes(str8 str);
 
 // Path helpers
 str8 str8_chop_last_slash(str8 str);

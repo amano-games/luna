@@ -13,8 +13,6 @@
 #include "base/utils.h"
 #include "sys/sys.h"
 
-#define ANIMATION_DB_EXT "lunidb"
-
 str8
 tsj_handle_path(
 	str8 path,
@@ -35,6 +33,7 @@ tsj_handle_path(
 	res                   = str8_skip(res, prefix.size);
 	return res;
 }
+
 struct tsj_track_res
 tsj_handle_track(str8 json,
 	jsmntok_t *tokens,

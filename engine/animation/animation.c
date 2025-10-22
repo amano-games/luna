@@ -43,7 +43,7 @@ animation_update(struct animation *ani, f32 timestamp)
 	TRACE_START(__func__);
 	b32 res = false;
 	if(ani->is_stopped) { goto cleanup; }
-	if(ani->clip.count == -1) { goto cleanup; }
+	if(ani->clip.count <= 0) { goto cleanup; }
 
 	struct animation_timer *timer = &ani->timer;
 	f32 duration                  = ani->clip.clip_duration * ani->clip.count;
@@ -112,7 +112,7 @@ animation_get_frame_index(struct animation *ani, enum animation_track_type track
 	f32 start                     = timer->timestamp;
 	f32 current                   = timestamp;
 	f32 delta                     = current - start;
-	b32 loop                      = ani->clip.count == -1;
+	b32 loop                      = ani->clip.count <= 0;
 
 	if(!loop) {
 		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
@@ -149,7 +149,7 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	f32 start                     = timer->timestamp;
 	f32 current                   = timestamp;
 	f32 delta                     = current - start;
-	b32 loop                      = ani->clip.count == -1;
+	b32 loop                      = ani->clip.count <= 0;
 
 	if(!loop) {
 		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);

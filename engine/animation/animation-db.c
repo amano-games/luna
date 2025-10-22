@@ -148,7 +148,6 @@ ani_db_clip_read(
 		}
 	}
 
-	dbg_assert(res.count != 0);
 	dbg_assert(res.frame_duration > 0);
 	dbg_assert(res.frame_duration < 10);
 	dbg_assert(res.tracks[0].frames.len > 0 || res.tracks[1].frames.len > 0);

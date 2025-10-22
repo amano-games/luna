@@ -107,7 +107,7 @@ handle_asset_recursive(
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				b32 res = png_to_tex(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ASE_EXT), 0)) {
-				b32 res = aseprite_to_tex(in_path, out_path, alloc);
+				b32 res = aseprite_to_assets(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ANI_EXT), 0)) {
 				b32 res = file_cpy(in_path, out_path);
 			} else if(str8_match(extension, str8_lit(AUD_EXT), 0)) {

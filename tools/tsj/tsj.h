@@ -23,4 +23,6 @@ struct tsj_track_res {
 	struct animation_track track;
 };
 
+#define ANIMATION_DB_EXT "lunidb"
+
 i32 handle_tsj(str8 in_path, str8 out_path, struct alloc scratch);
