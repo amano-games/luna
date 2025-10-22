@@ -300,6 +300,27 @@ str8_skip_chop_whitespace(str8 str)
 	return (result);
 }
 
+str8
+str8_skip_chop_slashes(str8 str)
+{
+	u8 *first = str.str;
+	u8 *opl   = first + str.size;
+	for(; first < opl; first += 1) {
+		if(!char_is_slash(*first)) {
+			break;
+		}
+	}
+	for(; opl > first;) {
+		opl -= 1;
+		if(!char_is_slash(*opl)) {
+			opl += 1;
+			break;
+		}
+	}
+	str8 result = str8_range(first, opl);
+	return result;
+}
+
 b32
 str8_ends_with(str8 str, str8 end, str_match_flags flags)
 {
