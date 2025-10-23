@@ -1,4 +1,5 @@
 #include <tinydir.h>
+#include "sys/sys-io.h"
 #include "tools/aseprite/aseprite.h"
 #include "whereami.c"
 
@@ -45,7 +46,7 @@
 #include "engine/collisions/collisions.c"
 #include "engine/collisions/collisions-ser.c"
 
-// #define RAW_EXT ".raw"
+#define RAW_EXT           "raw"
 #define IMG_EXT           "png"
 #define ASE_EXT           "aseprite"
 #define AUD_EXT           "wav"
@@ -54,6 +55,24 @@
 #define FNT_EXT           "fnt"
 #define ASSETS_DB_EXT     "tsj"
 #define PINBALL_TABLE_EXT "pinbjson"
+
+b32
+file_cpy_raw(const str8 in_path, const str8 out_path)
+{
+	b32 res                         = false;
+	struct sys_full_file_res in_res = sys_load_full_file(in_path, sys_allocator());
+	void *out                       = sys_file_open_w(out_path);
+	dbg_check(out, "file-cpy-raw", "failed to open file to write %s", out_path.str);
+	dbg_check(sys_file_w(out, in_res.data, in_res.size), "file-cpy-raw", "failed to write: %s", out_path.str);
+
+	res = true;
+	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
+
+error:;
+	if(in_res.data) { sys_free(in_res.data); }
+	if(out) { sys_file_close(out); }
+	return res;
+}
 
 b32
 file_cpy(const str8 in_path, const str8 out_path)
@@ -120,6 +139,8 @@ handle_asset_recursive(
 				i32 res = handle_tsj(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(PINBALL_TABLE_EXT), 0)) {
 				i32 res = pinbtjson_handle(in_path, out_path);
+			} else if(str8_match(extension, str8_lit(RAW_EXT), 0)) {
+				b32 res = file_cpy_raw(in_path, out_path);
 			}
 			marena_reset_to(arena, reset_p);
 		}
