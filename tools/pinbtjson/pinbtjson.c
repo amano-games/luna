@@ -605,7 +605,7 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 				jsmntok_t *item = tokens + item_index;
 				dbg_assert(item->type == JSMN_STRING);
 				str8 wav_path                                        = json_str8(json, item);
-				str8 snd_path                                        = make_file_name_with_ext(alloc, wav_path, str8_lit(SND_FILE_EXT));
+				str8 snd_path                                        = path_make_file_name_with_ext(alloc, wav_path, str8_lit(SND_FILE_EXT));
 				res.sfx_sequence.clips[res.sfx_sequence.clips_len++] = snd_path;
 			}
 			i += value->size;
@@ -697,7 +697,7 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 		str8 value_str   = json_str8(json, value);
 		if(json_eq(json, key, str8_lit("path")) == 0) {
 			str8 path    = json_str8(json, value);
-			res.spr.path = make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
+			res.spr.path = path_make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
 		} else if(json_eq(json, key, str8_lit("flip")) == 0) {
 			res.spr.flip = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("layer")) == 0) {
@@ -733,7 +733,7 @@ pinbtjson_handle_bet(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 		str8 value_str   = json_str8(json, value);
 		if(json_eq(json, key, str8_lit("path")) == 0) {
 			str8 path    = json_str8(json, value);
-			res.bet.path = make_file_name_with_ext(alloc, path, str8_lit(AI_FILE_EXT));
+			res.bet.path = path_make_file_name_with_ext(alloc, path, str8_lit(AI_FILE_EXT));
 		} else if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
 			res.bet.is_enabled = json_parse_bool32(json, value);
 		}
@@ -1367,7 +1367,7 @@ pinbtjson_handle_table_props(str8 json, jsmntok_t *tokens, i32 index, struct all
 		} else if(json_eq(json, key, str8_lit("bg_tex_path")) == 0) {
 			dbg_assert(value->type == JSMN_STRING);
 			str8 path                   = json_str8(json, value);
-			res.table_props.bg_tex_path = make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
+			res.table_props.bg_tex_path = path_make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
 			i++;
 		} else if(json_eq(json, key, str8_lit("flippers_props")) == 0) {
 			struct pinbtjson_res item_res  = pinbtjson_handle_flippers_props(json, tokens, i + 1);
@@ -1452,7 +1452,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	json_load(in_path, alloc, &json);
 	struct pinb_table table = pinbtjson_handle_pinbtjson(json, alloc, scratch);
 
-	str8 out_file_path = make_file_name_with_ext(alloc, out_path, str8_lit(PINB_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(PINB_EXT));
 
 	void *out_file;
 	if(!(out_file = sys_file_open_w(out_file_path))) {

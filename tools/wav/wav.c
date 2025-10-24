@@ -84,7 +84,7 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 	dbg_check_warn(wav.bits_per_sample == 16, "wav", "invalid, unsupported bits per sample: %d", wav.bits_per_sample);
 
 	struct snd_header snd_header = {.sample_count = wav.sample_count};
-	str8 out_file_path           = make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
+	str8 out_file_path           = path_make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
 	dbg_check_warn((out_file = sys_file_open_w(out_file_path)), "snd-gen", "%s failed to open", out_file_path.str);
 	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)), "snd-gen", "%s failed to write", out_file_path.str);
 

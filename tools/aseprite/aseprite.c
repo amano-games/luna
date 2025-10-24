@@ -39,7 +39,7 @@ aseprite_to_tex(const ase_t *ase, const str8 in_path, const str8 out_path, struc
 {
 	b32 res                     = false;
 	struct pixel_u8 *sheet_data = NULL;
-	str8 out_file_path          = make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
+	str8 out_file_path          = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 	i32 sheet_w                 = ase->w * ase->frame_count;
 	i32 sheet_h                 = ase->h;
 	sheet_data                  = sys_alloc(NULL, sheet_w * sheet_h * sizeof(struct pixel_u8));
@@ -86,14 +86,14 @@ aseprite_to_ani(
 	b32 res    = false;
 	void *file = NULL;
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
 
 	struct ani_db db = {.bank_count = 1, .clip_count = ase->tag_count};
 	db.assets        = arr_new(db.assets, 1, scratch);
 	// in_path  = ./src/assets/img/frog.aseprite
 	// out_path = ./tmp
 	// res      = assets/img/frog.ani_db
-	str8 asset_path           = make_file_name_with_ext(scratch, str8_skip_until_assets(in_path), str8_lit(TEX_EXT));
+	str8 asset_path           = path_make_file_name_with_ext(scratch, str8_skip_until_assets(in_path), str8_lit(TEX_EXT));
 	struct ani_db_asset asset = {
 		.path = asset_path,
 		.info = {

@@ -28,7 +28,7 @@ tsj_handle_path(
 	str8 base_dir         = str8_chop_last_slash(in_path);
 	str8 path_with_dots   = str8_fmt_push(scratch, "%.*s/%.*s", (i32)base_dir.size, base_dir.str, (i32)path.size, path.str);
 	res                   = path_resolve_dots(scratch, path_with_dots, style, scratch);
-	res                   = make_file_name_with_ext(alloc, res, str8_lit("tex"));
+	res                   = path_make_file_name_with_ext(alloc, res, str8_lit("tex"));
 	str8 prefix           = str8_lit("src/");
 	res                   = str8_skip(res, prefix.size);
 	return res;
@@ -316,7 +316,7 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 	marena_init(&marean, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marean);
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
 
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
