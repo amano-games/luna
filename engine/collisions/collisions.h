@@ -7,6 +7,7 @@
 
 #define COL_MAX_POLYGON_VERTS 8
 #define COL_SHAPES_MAX        10
+#define COL_AABB_UNPACK(a)    a.min.x, a.min.y, a.max.x, a.max.y
 
 enum col_type {
 	COL_TYPE_NONE,
