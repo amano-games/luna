@@ -17,7 +17,7 @@ str8 path_join_by_style(struct alloc alloc, struct str8_list *path, enum path_st
 void path_resolve_dots_in_place(struct str8_list *path, enum path_style style, struct alloc scratch);
 str8 path_resolve_dots(struct alloc alloc, str8 path, enum path_style style, struct alloc scratch);
 
-str8 make_file_name_with_ext(struct alloc alloc, str8 file_name, str8 ext);
+str8 path_make_file_name_with_ext(struct alloc alloc, str8 file_name, str8 ext);
 enum path_style path_style_from_str8(str8 string);
 struct str8_list path_normalized_list_from_string(struct alloc alloc, str8 path_string, enum path_style *style_out, struct alloc scratch);
 

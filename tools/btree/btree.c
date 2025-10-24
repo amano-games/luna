@@ -272,7 +272,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	arr_push(holder.nodes, (struct bet_node){0});
 	handle_btree_json(json, &holder, alloc, scratch);
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(AI_FILE_EXT));
 
 	void *out_file;
 	if(!(out_file = sys_file_open_w(out_file_path))) {

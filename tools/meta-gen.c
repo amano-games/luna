@@ -284,7 +284,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 		}
 	}
 
-	str8 out_file_path = make_file_name_with_ext(scratch, in_path, str8_lit("h"));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, in_path, str8_lit("h"));
 	str8 res           = str8_list_join(alloc, &content, NULL);
 	void *f            = sys_file_open_w(out_file_path);
 	sys_file_w(f, res.str, res.size);

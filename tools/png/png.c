@@ -21,7 +21,7 @@ png_to_tex(
 
 	dbg_check(data != NULL, "png", "Failed to load image with path %s: %s", in_path.str, stbi_failure_reason());
 
-	str8 out_file_path = make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 
 	res = tex_from_rgba_w((const struct pixel_u8 *)data, w, h, out_file_path);
 	dbg_check(res, "png", "failed to write tex file %s", out_file_path.str);
