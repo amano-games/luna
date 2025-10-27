@@ -16,4 +16,6 @@ struct animator {
 void animator_init(struct animator *animator, f32 timestamp);
 b32 animator_update(struct animator *animator, f32 timestamp);
 usize animator_get_frame(struct animator *animator, enum animation_track_type type, f32 timestamp);
-void animator_play_animation(struct animator *animator, usize index, f32 timestamp);
+void animator_animation_play(struct animator *animator, usize index, f32 timestamp);
+void animator_animation_pause(struct animator *animator, f32 timestamp);
+void animator_animation_resume(struct animator *animator, f32 timestamp);
