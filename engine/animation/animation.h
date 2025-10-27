@@ -4,10 +4,6 @@
 
 #define ANIMATION_MAX_FRAMES 50
 
-struct animation_timer {
-	f32 timestamp;
-};
-
 enum animation_track_type {
 	ANIMATION_TRACK_NONE,
 	ANIMATION_TRACK_FRAME,
@@ -41,8 +37,10 @@ struct animation_clip {
 };
 
 struct animation {
-	b32 is_stopped;
-	struct animation_timer timer;
+	u16 is_stopped;
+	u16 is_paused;
+	f32 timestamp_start;
+	f32 timestamp_pause;
 	struct animation_clip clip;
 };
 
@@ -52,5 +50,7 @@ b32 animation_update(struct animation *ani, f32 timestamp);
 usize animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 void animation_start(struct animation *ani, f32 timestamp);
+void animation_pause(struct animation *ani, f32 timestamp);
+void animation_resume(struct animation *ani, f32 timestamp);
 
 f32 animation_data_get_clip_duration(struct animation_clip *data);
