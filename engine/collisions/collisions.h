@@ -133,6 +133,18 @@ col_aabb_to_rec_i32(struct col_aabb aabb)
 	return res;
 }
 
+static inline struct col_aabb
+col_aabb_from_rec_i32(rec_i32 rec)
+{
+	struct col_aabb res = {
+		.min.x = rec.x,
+		.min.y = rec.y,
+		.max.x = rec.x + rec.w,
+		.max.y = rec.y + rec.h,
+	};
+	return res;
+}
+
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
 struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest);
