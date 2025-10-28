@@ -68,7 +68,7 @@ cam_limit_position(v2 p, struct col_aabb limits)
 }
 
 void
-cam_update(struct cam *c, int tx, int ty, f32 dt)
+cam_upd(struct cam *c, int tx, int ty, f32 dt)
 {
 	v2 cam_pos                  = c->p;
 	struct cam_data data        = c->data;
