@@ -9,23 +9,23 @@ dbg_drw_cam(struct cam *c)
 
 	struct col_aabb soft = {
 		.min = {
-			.x = half.x * c->data.soft.min.x,
-			.y = half.y * c->data.soft.min.y,
+			.x = half.x * c->data.soft_drag.min.x,
+			.y = half.y * c->data.soft_drag.min.y,
 		},
 		.max = {
-			.x = half.x * c->data.soft.max.x,
-			.y = half.y * c->data.soft.max.y,
+			.x = half.x * c->data.soft_drag.max.x,
+			.y = half.y * c->data.soft_drag.max.y,
 		},
 	};
 
 	struct col_aabb hard = {
 		.min = {
-			.x = half.x * c->data.hard.min.x,
-			.y = half.y * c->data.hard.min.y,
+			.x = half.x * c->data.hard_drag.min.x,
+			.y = half.y * c->data.hard_drag.min.y,
 		},
 		.max = {
-			.x = half.x * c->data.hard.max.x,
-			.y = half.y * c->data.hard.max.y,
+			.x = half.x * c->data.hard_drag.max.x,
+			.y = half.y * c->data.hard_drag.max.y,
 		},
 	};
 	struct col_aabb limits = c->data.soft_limits;

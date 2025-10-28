@@ -75,7 +75,7 @@ cam_upd(struct cam *c, int tx, int ty, f32 dt)
 	struct col_aabb hard_limits = data.hard_limits;
 	f32 smoothing_speed         = data.drag_vel;
 
-	v2 soft_pos = cam_drag_position(c, tx, ty, data.soft.min, data.soft.max);
+	v2 soft_pos = cam_drag_position(c, tx, ty, data.soft_drag.min, data.soft_drag.max);
 	soft_pos    = cam_limit_position(soft_pos, data.soft_limits);
 
 	v2 a = cam_pos;
@@ -85,11 +85,11 @@ cam_upd(struct cam *c, int tx, int ty, f32 dt)
 	// 	set the camera position to that position without lerp
 	v2 hard_pos = cam_pos;
 	if(
-		data.hard.min.x != 0 ||
-		data.hard.min.y != 0 ||
-		data.hard.max.x != 0 ||
-		data.hard.max.y != 0) {
-		hard_pos = cam_drag_position(c, tx, ty, data.hard.min, data.hard.max);
+		data.hard_drag.min.x != 0 ||
+		data.hard_drag.min.y != 0 ||
+		data.hard_drag.max.x != 0 ||
+		data.hard_drag.max.y != 0) {
+		hard_pos = cam_drag_position(c, tx, ty, data.hard_drag.min, data.hard_drag.max);
 	}
 
 	if(hard_pos.y != cam_pos.y || hard_pos.x != cam_pos.x) {
