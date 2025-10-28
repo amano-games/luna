@@ -15,8 +15,8 @@ struct cam_data {
 
 	struct col_aabb soft_limits;
 	struct col_aabb hard_limits;
-	struct col_aabb soft;
-	struct col_aabb hard;
+	struct col_aabb soft_drag;
+	struct col_aabb hard_drag;
 };
 
 struct cam {
