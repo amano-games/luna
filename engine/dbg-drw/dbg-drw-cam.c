@@ -2,20 +2,7 @@
 #include "dbg-drw.h"
 
 void
-debug_draw_cam_brain(struct cam_brain *brain)
-{
-	struct cam_area area = brain->areas[brain->active_index];
-	struct col_aabb aabb = area.aabb;
-
-	dbg_drw_rec(
-		aabb.min.x,
-		aabb.min.y,
-		aabb.max.x - aabb.min.x,
-		aabb.max.y - aabb.min.y);
-}
-
-void
-debug_draw_cam(struct cam *c)
+dbg_drw_cam(struct cam *c)
 {
 	v2 tp   = c->p_final;
 	v2 half = {CAM_HALF_W, CAM_HALF_H};
