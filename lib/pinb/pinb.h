@@ -206,6 +206,7 @@ struct pinb_actions {
 
 struct pinb_spinner {
 	f32 damping;
+	f32 stiffness;
 	f32 spin_force;
 	f32 stop_threshold;
 };

@@ -531,6 +531,9 @@ pinb_spinner_write(struct ser_writer *w, struct pinb_spinner *value)
 	ser_write_string(w, str8_lit("damping"));
 	ser_write_f32(w, value->damping);
 
+	ser_write_string(w, str8_lit("stiffness"));
+	ser_write_f32(w, value->stiffness);
+
 	ser_write_string(w, str8_lit("spin_force"));
 	ser_write_f32(w, value->spin_force);
 
@@ -1391,6 +1394,9 @@ pinb_spinner_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("damping"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.damping = value.f32;
+		} else if(str8_match(key.str, str8_lit("stiffness"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.stiffness = value.f32;
 		} else if(str8_match(key.str, str8_lit("spin_force"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.spin_force = value.f32;
