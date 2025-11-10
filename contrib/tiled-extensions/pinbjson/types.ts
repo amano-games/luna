@@ -184,6 +184,7 @@ export interface EntityList {
 
 export interface Spinner {
   damping: number;
+  stiffness: number;
   spin_force: number;
   stop_threshold: number;
 }

@@ -312,6 +312,7 @@ function getSpinner(_object: MapObject, prop: PropertyValue) {
 
   const res: Spinner = {
     damping: value["damping"],
+    stiffness: value["stiffness"],
     spin_force: value["spin_force"],
     stop_threshold: value["stop_threshold"],
   };

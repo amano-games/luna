@@ -649,6 +649,7 @@
     const value = prop.value;
     const res = {
       damping: value["damping"],
+      stiffness: value["stiffness"],
       spin_force: value["spin_force"],
       stop_threshold: value["stop_threshold"]
     };

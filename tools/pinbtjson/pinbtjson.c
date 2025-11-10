@@ -402,6 +402,8 @@ pinbtjson_handle_spinner(str8 json, jsmntok_t *tokens, i32 index)
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("damping")) == 0) {
 			res.spinner.damping = json_parse_f32(json, value);
+		} else if(json_eq(json, key, str8_lit("stiffness")) == 0) {
+			res.spinner.stiffness = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("spin_force")) == 0) {
 			res.spinner.spin_force = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("stop_threshold")) == 0) {
