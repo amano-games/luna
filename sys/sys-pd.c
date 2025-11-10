@@ -132,7 +132,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
-		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorBlack);
+		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorClear);
 
 		PD_STATE.process_info = (struct sys_process_info){
 			.initial_path = str8_lit(""),
@@ -264,25 +264,6 @@ void *
 sys_1bit_buffer(void)
 {
 	return PD->graphics->getFrame();
-}
-
-void *
-sys_1bit_menu_buffer(void)
-{
-	int *width    = NULL;
-	int *height   = NULL;
-	int *rowbytes = NULL;
-	u8 **mask     = NULL;
-	u8 **data     = NULL;
-
-	PD->graphics->getBitmapData(
-		PD_STATE.menu_bitmap,
-		width,
-		height,
-		rowbytes,
-		mask,
-		data);
-	return data;
 }
 
 struct alloc
@@ -601,7 +582,6 @@ sys_pref_path(void)
 	return res;
 }
 
-// void pltf_pd_menu_image_upd(u32 *p, i32 ww, i32 w, i32 h)
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
@@ -622,25 +602,15 @@ sys_set_menu_image(struct tex tex, i32 x_offset)
 		&mk,
 		&px);
 
-	tex_opaque_to_pdi(tex, px, bw, bh, bb);
+	if(tex.fmt == 0) {
+		if(mk != NULL) {
+			mset(mk, 0xFF, bb * bh);
+		}
+		tex_opaque_to_pdi(tex, px, bw, bh, bb);
+	} else {
+		tex_mask_to_pdi(tex, px, mk, bw, bh, bb);
+	}
 	PD->system->setMenuImage(PD_STATE.menu_bitmap, x_offset);
-
-#if 0
-    // Transparency?
-    int bw, bh, bb;
-    u8 *mk = 0;
-    u8 *px = 0;
-    PD->graphics->getBitmapData(g_PD.menubm, &bw, &bh, &bb, &mk, &px);
-
-    i32 y2 = h < bh ? h : bh;
-    i32 x2 = (ww << 2) < bb ? (ww << 2) : bb;
-
-    for (i32 y = 0; y < y2; y++) {
-        for (i32 x = 0; x < x2; x++) {
-            px[x + y * bb] = ((u8 *)p)[x + ((y * ww) << 2)];
-        }
-    }
-#endif
 }
 
 void
