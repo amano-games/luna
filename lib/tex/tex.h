@@ -41,7 +41,8 @@ void tex_px(struct tex tex, i32 x, i32 y, i32 col);
 void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
 
 void tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete);
-void tex_opaque_to_pdi(struct tex tex, u8 *px, i32 bw, i32 bh, i32 bb);
+void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);
+void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 bw, i32 bh, i32 bb);
 
 void tex_cpy(struct tex *dst, struct tex *src);
 b32 tex_from_rgba_w(const struct pixel_u8 *data, i32 w, i32 h, str8 out_path);

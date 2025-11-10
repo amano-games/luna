@@ -92,7 +92,6 @@ u32 sys_epoch_2000(u32 *milliseconds);
 
 void sys_1bit_invert(b32 i);
 void *sys_1bit_buffer(void);
-void *sys_1bit_menu_buffer(void);
 
 void sys_accelerometer_set(b32 enabled);
 void sys_accelerometer(f32 *x, f32 *y, f32 *z);

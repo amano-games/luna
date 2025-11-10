@@ -226,12 +226,36 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete p
 void
 tex_opaque_to_pdi(struct tex tex, u8 *out_px, i32 w, i32 h, i32 row_bytes)
 {
-	int wbyte = tex.wword * 4;
-	int y2    = MIN(h, tex.h);
-	int x2    = MIN(row_bytes, wbyte);
-	for(int y = 0; y < y2; y++) {
-		for(int x = 0; x < x2; x++)
-			out_px[x + y * row_bytes] = ((u8 *)tex.px)[x + y * wbyte];
+	i32 src_stride = tex.wword * 4;
+	i32 y2         = MIN(h, tex.h);
+	i32 copy_bytes = MIN(row_bytes, src_stride);
+	const u8 *src  = (const u8 *)tex.px;
+
+	for(i32 y = 0; y < y2; ++y)
+		mcpy(out_px + y * row_bytes,
+			src + y * src_stride,
+			copy_bytes);
+}
+
+void
+tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes)
+{
+	i32 w_aligned  = (tex.w + 31) & ~31;
+	i32 wbyte      = tex.wword * 4;
+	u32 *color_dst = (u32 *)px_out;
+	u32 *mask_dst  = (u32 *)mask_out;
+	const u32 *src = (const u32 *)tex.px;
+	i32 y2         = MIN(h, tex.h);
+	i32 x2         = MIN(row_bytes, wbyte) / 4;
+	i32 stride     = row_bytes / 4;
+
+	for(i32 y = 0; y < y2; ++y) {
+		for(i32 x = 0; x < x2; ++x) {
+			u32 color_word            = *src++;
+			u32 mask_word             = *src++;
+			color_dst[y * stride + x] = color_word;
+			mask_dst[y * stride + x]  = mask_word;
+		}
 	}
 }
 
