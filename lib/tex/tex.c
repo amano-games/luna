@@ -204,6 +204,7 @@ tex_mask(struct tex tex, i32 x, i32 y, i32 col)
 void
 tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete)
 {
+	dbg_assert(tex.fmt == TEX_FMT_OPAQUE);
 	u32 *pixels       = out;
 	i32 width_alinged = (tex.w + 31) & ~31;
 	i32 wbytes        = width_alinged / 8;
@@ -226,6 +227,7 @@ tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete p
 void
 tex_opaque_to_pdi(struct tex tex, u8 *out_px, i32 w, i32 h, i32 row_bytes)
 {
+	dbg_assert(tex.fmt == TEX_FMT_OPAQUE);
 	i32 src_stride = tex.wword * 4;
 	i32 y2         = MIN(h, tex.h);
 	i32 copy_bytes = MIN(row_bytes, src_stride);
@@ -240,6 +242,7 @@ tex_opaque_to_pdi(struct tex tex, u8 *out_px, i32 w, i32 h, i32 row_bytes)
 void
 tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes)
 {
+	dbg_assert(tex.fmt == TEX_FMT_MASK);
 	i32 w_aligned  = (tex.w + 31) & ~31;
 	i32 wbyte      = tex.wword * 4;
 	u32 *color_dst = (u32 *)px_out;

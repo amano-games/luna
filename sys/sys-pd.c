@@ -602,7 +602,7 @@ sys_set_menu_image(struct tex tex, i32 x_offset)
 		&mk,
 		&px);
 
-	if(tex.fmt == 0) {
+	if(tex.fmt == TEX_FMT_OPAQUE) {
 		if(mk != NULL) {
 			mset(mk, 0xFF, bb * bh);
 		}
