@@ -226,7 +226,7 @@ body_impulse_correction(
 	v2 jn_dir  = m->normal;
 	f32 jn_mag = 0.0f;
 	v2 jn      = {0};
-	// Only apply the impulse if the relative velocity is negative (approaching)
+	// Only apply the impulse if bodies are approaching
 	if(vrel_dot_n > 0.0f) {
 		jn_mag = -(1.0f + restitution) * vrel_dot_n / mass_inv_sum_n;
 		jn     = v2_mul(jn_dir, jn_mag);
