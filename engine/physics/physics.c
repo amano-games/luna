@@ -7,6 +7,16 @@
 #include "base/dbg.h"
 #include "base/v2.h"
 
+// TODO:
+// - Add Baumgarte bias in the normal impulse solve
+// - Use all contacts not only one  maybe?
+// - Accumulate impulses across frames (warm starting)
+// - Split velocity and position solvers
+//  - Integrate velocities
+//  - Solve velocity constraints (impulses)
+//  - Integrate positions
+//  - Solve positional constraints (penetration correction).
+
 void
 body_init(struct body *body)
 {
