@@ -245,7 +245,7 @@ body_impulse_correction(
 	f32 rb_crs_t       = v2_crs_v2(rb, tangent);
 	f32 ra_crs_t2      = ra_crs_t * ra_crs_t;
 	f32 rb_crs_t2      = rb_crs_t * rb_crs_t;
-	f32 mass_inv_sum_t = (a->mass_inv + b->mass_inv) * ra_crs_t2 * a->inertia_inv + rb_crs_t2 * b->inertia_inv;
+	f32 mass_inv_sum_t = (a->mass_inv + b->mass_inv) + ra_crs_t2 * a->inertia_inv + rb_crs_t2 * b->inertia_inv;
 	f32 vrel_dot_t     = v2_dot(rv, tangent);
 
 	v2 jt_dir  = tangent;
