@@ -248,11 +248,13 @@ body_impulse_correction(
 	f32 mass_inv_sum_t = (a->mass_inv + b->mass_inv) + ra_crs_t2 * a->inertia_inv + rb_crs_t2 * b->inertia_inv;
 	f32 vrel_dot_t     = v2_dot(rv, tangent);
 
+	// Apply coulumb's law
 	v2 jt_dir  = tangent;
-	f32 jt_mag = -(1 + restitution) * vrel_dot_t / mass_inv_sum_t;
-
-	if(abs_f32(jt_mag) >= jn_mag * static_friction) {
-		jt_mag = jt_mag * dynamic_friction;
+	f32 jt_mag = -(vrel_dot_t / mass_inv_sum_t);
+	f32 jt_abs = abs_f32(jt_mag);
+	f32 jn_abs = abs_f32(jn_mag);
+	if(jt_abs > jn_abs * static_friction) {
+		jt_mag = -sgn_f32(vrel_dot_t) * jn_abs * dynamic_friction;
 	}
 
 	if(f32_equal(jt_mag, 0.0f)) {
