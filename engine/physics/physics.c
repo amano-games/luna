@@ -113,7 +113,6 @@ void
 body_integrate_linear(struct physics *physics, struct body *body)
 {
 	// TODO: check null ?
-	// TODO: move to step context?
 	f32 dt                         = physics->dt;
 	f32 dt_inv                     = physics->dt_inv;
 	f32 max_translation            = physics->max_translation;
@@ -135,7 +134,6 @@ body_integrate_linear(struct physics *physics, struct body *body)
 	body_clear_forces(body);
 }
 
-// TODO: add delta time
 void
 body_integrate_angular(struct physics *physics, struct body *body)
 {
@@ -189,7 +187,11 @@ body_positional_correction(struct physics *physics, struct body *a, struct body 
 }
 
 void
-body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, struct col_manifold *m)
+body_impulse_correction(
+	struct body *a,
+	struct body *b,
+	f32 restitution_slop,
+	struct col_manifold *m)
 {
 	/// Restitution mixing law. The idea is allow for anything to bounce off an inelastic surface.
 	/// For example, a superball bounces on anything.
@@ -210,7 +212,7 @@ body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, st
 	// Determine if we should perform a resting collision or not
 	// The idea is if the only thing moving this object is gravity,
 	// then the collision should be performed without any restitution
-	if(v2_len_sq(rv) < restitution_slop + EPSILON) {
+	if(v2_len_sq(rv) < (restitution_slop * restitution_slop) + EPSILON) {
 		restitution = 0.0f;
 	}
 
@@ -222,8 +224,13 @@ body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, st
 	f32 mass_inv_sum_n = (a->mass_inv + b->mass_inv) + ra_crs_n2 * a->inertia_inv + rb_crs_n2 * b->inertia_inv;
 
 	v2 jn_dir  = m->normal;
-	f32 jn_mag = -(1 + restitution) * vrel_dot_n / mass_inv_sum_n;
-	v2 jn      = v2_mul(jn_dir, min_f32(jn_mag, 0));
+	f32 jn_mag = 0.0f;
+	v2 jn      = {0};
+	// Only apply the impulse if the relative velocity is negative (approaching)
+	if(vrel_dot_n > 0.0f) {
+		jn_mag = -(1.0f + restitution) * vrel_dot_n / mass_inv_sum_n;
+		jn     = v2_mul(jn_dir, jn_mag);
+	}
 
 	body_apply_angular_impulse(a, jn, ra);
 	body_apply_angular_impulse(b, v2_mul(jn, -1.0f), rb);
@@ -246,7 +253,6 @@ body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, st
 
 	if(abs_f32(jt_mag) >= jn_mag * static_friction) {
 		jt_mag = jt_mag * dynamic_friction;
-	} else {
 	}
 
 	if(f32_equal(jt_mag, 0.0f)) {
