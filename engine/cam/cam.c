@@ -1,5 +1,7 @@
 #include "engine/cam/cam.h"
 #include "base/mathfunc.h"
+#include "base/str.h"
+#include "engine/collisions/collisions-ser.h"
 #include "lib/rndm.h"
 #include "base/v2.h"
 
@@ -147,4 +149,26 @@ void
 cam_shake(struct cam *c, i32 ticks, i32 str)
 {
 	cam_shake_xy(c, ticks, str, str);
+}
+
+str8
+cam_data_to_str8(struct alloc alloc, struct cam_data *value)
+{
+	str8 res              = {0};
+	struct str8_list list = {0};
+	str8 hard_drag        = col_aabb_to_str8(alloc, value->hard_drag);
+	str8 soft_drag        = col_aabb_to_str8(alloc, value->soft_drag);
+	str8 soft_limits      = col_aabb_to_str8(alloc, value->soft_limits);
+
+	str8_list_pushf(alloc, &list, "id:%u", value->id);
+	str8_list_pushf(alloc, &list, "drag_vel:%g", (double)value->drag_vel);
+	str8_list_pushf(alloc, &list, "hard:%.*s", hard_drag.size, hard_drag.str);
+	str8_list_pushf(alloc, &list, "soft:%.*s", soft_drag.size, soft_drag.str);
+	str8_list_pushf(alloc, &list, "limits:%.*s", soft_limits.size, soft_limits.str);
+
+	struct str_join params = {.sep = str8_lit(",")};
+	str8 str               = str8_list_join(alloc, &list, &params);
+	res                    = str8_fmt_push(alloc, "{%.*s}", str.size, str.str);
+
+	return res;
 }
