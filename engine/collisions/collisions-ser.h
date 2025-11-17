@@ -37,7 +37,7 @@ col_aabb_to_str8(struct alloc alloc, struct col_aabb col)
 str8
 col_cir_to_str8(struct alloc alloc, struct col_cir col)
 {
-	str8 res = str8_fmt_push(alloc, "{x: %g, y: %g, r: %g}", (double)col.p.x, (double)col.p.y, (double)col.r);
+	str8 res = str8_fmt_push(alloc, "{x:%g,y:%g,r:%g}", (double)col.p.x, (double)col.p.y, (double)col.r);
 	return res;
 }
 
