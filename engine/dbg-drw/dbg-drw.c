@@ -23,7 +23,7 @@ dbg_drw(i32 x, i32 y)
 {
 #if !defined(TARGET_PLAYDATE) && defined(DEBUG) && !defined(APP_DISABLE_DEBUG_DRAW)
 	TRACE_START(__func__);
-	dgb_drw_offset_set(x, y);
+	dbg_drw_offset_set(x, y);
 	sys_debug_draw(DBG_DRW_STATE.shapes, arr_len(DBG_DRW_STATE.shapes));
 	dbg_drw_clr();
 	TRACE_END();
@@ -37,7 +37,7 @@ dbg_drw_offset_get(void)
 }
 
 v2_i32
-dgb_drw_offset_set(i32 x, i32 y)
+dbg_drw_offset_set(i32 x, i32 y)
 {
 	v2_i32 res                 = DBG_DRW_STATE.drw_offset;
 	DBG_DRW_STATE.drw_offset.x = x;

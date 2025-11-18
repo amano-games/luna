@@ -40,7 +40,7 @@
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
-// #define SOKOL_PIXEL_PERFECT
+#define SOKOL_PIXEL_PERFECT
 #if defined(TARGET_WIN)
 // #define SOKOL_DISABLE_AUDIO
 #endif

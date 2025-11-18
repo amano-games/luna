@@ -11,7 +11,7 @@ struct dbg_drw {
 
 void dbg_drw_ini(struct alloc alloc, size shapes_count);
 void dbg_drw(i32 x, i32 y);
-v2_i32 dgb_drw_offset_set(i32 x, i32 y);
+v2_i32 dbg_drw_offset_set(i32 x, i32 y);
 v2_i32 dbg_drw_offset_get(void);
 void dbg_drw_clr(void);
 
