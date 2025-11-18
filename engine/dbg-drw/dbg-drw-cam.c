@@ -32,7 +32,7 @@ dbg_drw_cam(struct cam *c)
 
 	v2_i32 og_offset = dbg_drw_offset_get();
 
-	dgb_drw_offset_set(0, 0);
+	dbg_drw_offset_set(0, 0);
 
 	// Cross hair
 	dbg_drw_lin(half.x - 5, half.y, half.x + 5, half.y);
@@ -96,7 +96,7 @@ dbg_drw_cam(struct cam *c)
 		}
 	}
 
-	dgb_drw_offset_set(og_offset.x, og_offset.y);
+	dbg_drw_offset_set(og_offset.x, og_offset.y);
 
 	dbg_drw_cir(tp.x, tp.y, 2);
 }
