@@ -366,6 +366,8 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 	int y2 = min_i32(py + src.r.h - 1, ctx.clip_y2); // inclusive
 	if(x2 < x1) goto cleanup;
 
+	dbg_assert(src.t.px != NULL);
+	dbg_assert(ctx.dst.px != NULL);
 	struct tex dtex       = ctx.dst;
 	struct tex stex       = src.t;
 	b32 fx                = (flip & SPR_FLIP_X) != 0;                                                // flipped x
