@@ -43,7 +43,6 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 	log_info(SYS_LOG_LABEL, "Debug    : %$$u", (uint)debug);
 	log_info(SYS_LOG_LABEL, "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
 	log_info(SYS_LOG_LABEL, "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
-	dbg_assert(mem_total <= mem_max);
 	dbg_check(
 		mem_total <= mem_max,
 		SYS_LOG_LABEL,
