@@ -290,6 +290,10 @@ struct pinb_spawner {
 	i32 *zones;
 };
 
+struct pinb_mob {
+	i32 type;
+};
+
 struct pinb_entity {
 	i32 id;
 	i32 flags;
@@ -327,6 +331,7 @@ struct pinb_entity {
 	struct pinb_collision_layer collision_layer;
 	struct pinb_spawner spawner;
 	struct pinb_spawn_zone spawn_zone;
+	struct pinb_mob mob;
 	struct pinb_messages messages;
 	struct pinb_actions actions;
 	struct pinb_custom_data custom_data;
