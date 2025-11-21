@@ -65,6 +65,9 @@ struct pinb_flip pinb_flip_read(struct ser_reader *r, struct ser_value obj);
 void pinb_gravity_write(struct ser_writer *w, struct pinb_gravity *value);
 struct pinb_gravity pinb_gravity_read(struct ser_reader *r, struct ser_value obj);
 
+void pinb_mob_write(struct ser_writer *w, struct pinb_mob *value);
+struct pinb_mob pinb_mob_read(struct ser_reader *r, struct ser_value obj);
+
 void pinb_collision_layer_write(struct ser_writer *w, struct pinb_collision_layer *value);
 struct pinb_collision_layer pinb_collision_layer_read(struct ser_reader *r, struct ser_value obj);
 

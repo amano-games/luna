@@ -180,6 +180,11 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_gravity_write(w, &entity->gravity);
 	}
 
+	if(entity->mob.type != 0) {
+		ser_write_string(w, str8_lit("mob"));
+		pinb_mob_write(w, &entity->mob);
+	}
+
 	if(entity->counter.resolution != 0) {
 		ser_write_string(w, str8_lit("counter"));
 		pinb_counter_write(w, &entity->counter);
@@ -326,6 +331,8 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.flip = pinb_flip_read(r, value);
 		} else if(str8_match(key.str, str8_lit("gravity"), 0)) {
 			res.gravity = pinb_gravity_read(r, value);
+		} else if(str8_match(key.str, str8_lit("mob"), 0)) {
+			res.mob = pinb_mob_read(r, value);
 		} else if(str8_match(key.str, str8_lit("counter"), 0)) {
 			res.counter = pinb_counter_read(r, value);
 		} else if(str8_match(key.str, str8_lit("collision_layer"), 0)) {
@@ -2138,6 +2145,34 @@ pinb_table_switcher_read(struct ser_reader *r, struct ser_value obj)
 		if(str8_match(key.str, str8_lit("table"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.table = value.i32;
+		}
+	}
+	return res;
+}
+
+void
+pinb_mob_write(struct ser_writer *w, struct pinb_mob *value)
+{
+	dbg_assert(value != NULL);
+	ser_write_object(w);
+
+	ser_write_string(w, str8_lit("type"));
+	ser_write_i32(w, value->type);
+
+	ser_write_end(w);
+}
+
+struct pinb_mob
+pinb_mob_read(struct ser_reader *r, struct ser_value obj)
+{
+	struct pinb_mob res = {0};
+	struct ser_value key, value;
+	dbg_assert(obj.type == SER_TYPE_OBJECT);
+	while(ser_iter_object(r, obj, &key, &value)) {
+		dbg_assert(key.type == SER_TYPE_STRING);
+		if(str8_match(key.str, str8_lit("type"), 0)) {
+			dbg_assert(value.type == SER_TYPE_I32);
+			res.type = value.i32;
 		}
 	}
 	return res;
