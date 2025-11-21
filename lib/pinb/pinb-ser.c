@@ -2064,6 +2064,8 @@ pinb_prop_write(struct ser_writer *w, struct pinb_prop *value)
 {
 	dbg_assert(value != NULL);
 	ser_write_object(w);
+	ser_write_string(w, str8_lit("name"));
+	ser_write_string(w, value->name);
 
 	switch(value->type) {
 	case PINB_PROP_TYPE_I32: {
@@ -2095,7 +2097,10 @@ pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("i32"), 0)) {
+		if(str8_match(key.str, str8_lit("name"), 0)) {
+			dbg_assert(value.type == SER_TYPE_STRING);
+			res.name = value.str;
+		} else if(str8_match(key.str, str8_lit("i32"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			res.type = PINB_PROP_TYPE_I32;
 			res.i32  = value.i32;

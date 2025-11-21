@@ -59,6 +59,7 @@ import {
   MoverPath,
   Mover,
   SpriteComponent,
+  CustomData,
 } from "./types";
 import { getAssetPath } from "./utils";
 
@@ -926,7 +927,31 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
                 spawn_zone: getSpawnZone(item, prop),
               };
             default: {
-              return acc;
+              let data: CustomData = null;
+              switch (typeof value) {
+                case "boolean":
+                  data = { name: key, i32: value ? 1 : 0 };
+                  break;
+                case "number":
+                  data = Number.isInteger(value)
+                    ? { name: key, i32: value }
+                    : { name: key, f32: value };
+                  break;
+                case "string":
+                  data = { name: key, str8: value };
+                default: {
+                  return acc;
+                }
+              }
+              if (data != null) {
+                if (acc.custom_data == null) {
+                  acc.custom_data = [];
+                }
+                return {
+                  ...acc,
+                  custom_data: [...acc.custom_data, data],
+                };
+              }
             }
           }
         },

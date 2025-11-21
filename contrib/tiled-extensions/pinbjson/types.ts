@@ -217,6 +217,13 @@ export interface GameAction {
   event_type: number;
 }
 
+export interface CustomData {
+  name: string;
+  i32?: number;
+  f32?: number;
+  str8?: string;
+}
+
 export interface SfxToAnimation {
   animation: number;
   sfx: number;
@@ -307,6 +314,7 @@ export interface Entity {
   force_field?: ForceField;
   attractor?: Attractor;
   actions?: GameAction[];
+  custom_data?: CustomData[];
   sfx_sequences?: SfxSequence[];
   messages?: Message[];
   collision_layer?: CollisionLayer;

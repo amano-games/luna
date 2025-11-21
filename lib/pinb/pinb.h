@@ -15,6 +15,7 @@ enum pinb_prop_type {
 
 struct pinb_prop {
 	u8 type;
+	str8 name;
 	union {
 		i32 i32;
 		f32 f32;
