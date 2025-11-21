@@ -226,6 +226,25 @@ pinbtjson_handle_gravity(str8 json, jsmntok_t *tokens, i32 index)
 }
 
 struct pinbtjson_res
+pinbtjson_handle_mob(str8 json, jsmntok_t *tokens, i32 index)
+{
+	struct pinbtjson_res res = {0};
+	jsmntok_t *root          = &tokens[index];
+	dbg_assert(root->type == JSMN_OBJECT);
+	res.token_count = json_obj_count(json, root);
+
+	for(usize i = index + 1; i < index + res.token_count; i += 2) {
+		jsmntok_t *key   = tokens + i;
+		jsmntok_t *value = tokens + i + 1;
+		if(json_eq(json, key, str8_lit("type")) == 0) {
+			res.mob.type = json_parse_i32(json, value);
+		}
+	}
+
+	return res;
+}
+
+struct pinbtjson_res
 pinbtjson_handle_table_switcher(str8 json, jsmntok_t *tokens, i32 index)
 {
 	struct pinbtjson_res res = {0};
@@ -1178,6 +1197,11 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			dbg_assert(value->type == JSMN_OBJECT);
 			struct pinbtjson_res item_res = pinbtjson_handle_gravity(json, tokens, i + 1);
 			res.entity.gravity            = item_res.gravity;
+			i += item_res.token_count - 1;
+		} else if(json_eq(json, key, str8_lit("mob")) == 0) {
+			dbg_assert(value->type == JSMN_OBJECT);
+			struct pinbtjson_res item_res = pinbtjson_handle_mob(json, tokens, i + 1);
+			res.entity.mob                = item_res.mob;
 			i += item_res.token_count - 1;
 		} else if(json_eq(json, key, str8_lit("table_switcher")) == 0) {
 			dbg_assert(value->type == JSMN_OBJECT);
