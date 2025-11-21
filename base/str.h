@@ -118,6 +118,7 @@ struct str8_node *str8_list_pushf(struct alloc alloc, struct str8_list *list, ch
 void str8_list_concat_in_place(struct str8_list *list, struct str8_list *to_push);
 
 // String Splitting & Joining
+#define str8_list_first(list) ((list)->first ? (list)->first->str : str8_zero())
 struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize split_char_count, str_split_flags flags);
 struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
 str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params);

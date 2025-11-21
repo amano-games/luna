@@ -178,8 +178,7 @@ struct pinb_message {
 	i32 sequence_type;
 	f32 sequence_reset_time;
 	f32 hide_time;
-	usize text_len;
-	str8 *text;
+	str8 text;
 };
 
 struct pinb_messages {
