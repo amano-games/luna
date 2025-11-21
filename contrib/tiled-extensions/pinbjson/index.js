@@ -708,6 +708,13 @@
     };
     return res;
   }
+  function getMob(_object, prop) {
+    const value = prop.value;
+    const res = {
+      type: value["type"]
+    };
+    return res;
+  }
   function getCounter(_object, prop) {
     const value = prop.value;
     const res = {
@@ -1008,6 +1015,10 @@
             case "gravity":
               return __spreadProps(__spreadValues({}, acc), {
                 gravity: getGravity(item, prop)
+              });
+            case "mob":
+              return __spreadProps(__spreadValues({}, acc), {
+                mob: getMob(item, prop)
               });
             case "counter":
               return __spreadProps(__spreadValues({}, acc), {

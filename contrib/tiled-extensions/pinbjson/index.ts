@@ -60,6 +60,7 @@ import {
   Mover,
   SpriteComponent,
   CustomData,
+  Mob,
 } from "./types";
 import { getAssetPath } from "./utils";
 
@@ -378,6 +379,14 @@ function getGravity(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const res: Gravity = {
     value: value["value"],
+  };
+  return res;
+}
+
+function getMob(_object: MapObject, prop: PropertyValue) {
+  const value = prop.value as object;
+  const res: Mob = {
+    type: value["type"],
   };
   return res;
 }
@@ -739,6 +748,11 @@ function handleObjectLayer(layer: Layer, layer_index: number) {
               return {
                 ...acc,
                 gravity: getGravity(item, prop),
+              };
+            case "mob":
+              return {
+                ...acc,
+                mob: getMob(item, prop),
               };
             case "counter":
               return {

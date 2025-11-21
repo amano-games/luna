@@ -129,6 +129,10 @@ export interface Gravity {
   value: number;
 }
 
+export interface Mob {
+  type: number;
+}
+
 export interface TableSwitcher {
   table: number;
 }
@@ -301,6 +305,7 @@ export interface Entity {
   flip?: Flip;
   flipper?: Flipper;
   gravity?: Gravity;
+  mob?: Mob;
   animator?: Animator;
   sensor?: Sensor;
   switch_value?: SwitchValue;
