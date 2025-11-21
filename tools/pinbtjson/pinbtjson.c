@@ -13,7 +13,6 @@
 #include "base/log.h"
 #include "sys/sys.h"
 #include "tools/btree/btree.h"
-#include "tools/png/png.h"
 #include "tools/wav/wav.h"
 #include "base/dbg.h"
 
@@ -635,15 +634,8 @@ pinbtjson_handle_message(str8 json, jsmntok_t *tokens, i32 index, struct alloc a
 		} else if(json_eq(json, key, str8_lit("hide_time")) == 0) {
 			res.message.hide_time = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("text")) == 0) {
-			dbg_assert(value->type == JSMN_ARRAY);
-			res.message.text = arr_new(res.message.text, value->size, alloc);
-			for(usize j = 0; j < (usize)value->size; ++j) {
-				i32 item_index  = i + j + 2;
-				jsmntok_t *item = tokens + item_index;
-				dbg_assert(item->type == JSMN_STRING);
-				res.message.text[res.message.text_len++] = json_str8_cpy_push(json, item, alloc);
-			}
-			i += value->size;
+			dbg_assert(value->type == JSMN_STRING);
+			res.message.text = json_str8_cpy_push(json, value, alloc);
 		}
 	}
 	return res;

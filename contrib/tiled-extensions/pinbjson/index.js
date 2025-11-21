@@ -756,7 +756,7 @@
       sequence_type: value["sequence_type"].value,
       sequence_reset_time: value["sequence_reset_time"],
       hide_time: value["hide_time"],
-      text: value["text"].split("\n")
+      text: value["text"]
     };
     return res;
   }

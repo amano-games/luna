@@ -1067,15 +1067,8 @@ pinb_message_write(struct ser_writer *w, struct pinb_message *value)
 	ser_write_f32(w, value->sequence_reset_time);
 	ser_write_string(w, str8_lit("hide_time"));
 	ser_write_f32(w, value->hide_time);
-	ser_write_string(w, str8_lit("text_len"));
-	ser_write_i32(w, value->text_len);
-
 	ser_write_string(w, str8_lit("text"));
-	ser_write_array(w);
-	for(usize i = 0; i < value->text_len; ++i) {
-		ser_write_string(w, value->text[i]);
-	}
-	ser_write_end(w);
+	ser_write_string(w, value->text);
 
 	ser_write_end(w);
 }
@@ -1928,16 +1921,9 @@ pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 			res.sequence_reset_time = value.f32;
 		} else if(str8_match(key.str, str8_lit("hide_time"), 0)) {
 			res.hide_time = value.f32;
-		} else if(str8_match(key.str, str8_lit("text_len"), 0)) {
-			res.text_len = value.i32;
-			res.text     = arr_new(res.text, res.text_len, alloc);
 		} else if(str8_match(key.str, str8_lit("text"), 0)) {
-			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value item_value;
-			usize i = 0;
-			while(ser_iter_array(r, value, &item_value)) {
-				res.text[i++] = item_value.str;
-			}
+			dbg_assert(value.type == SER_TYPE_STRING);
+			res.text = value.str;
 		}
 	}
 	return res;
