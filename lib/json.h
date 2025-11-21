@@ -6,6 +6,11 @@
 #include "base/str.h"
 #include "base/dbg.h"
 
+enum json_copy_flags {
+	json_copy_none     = 0,
+	json_copy_unescape = 1 << 0
+};
+
 b32
 json_load(const str8 path, struct alloc alloc, str8 *out)
 {
@@ -78,15 +83,98 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 	return res;
 }
 
+// Returns number of bytes required for unescaped string.
+// If out == NULL: only compute size.
+// If out != NULL: write into out->str and set out->size.
+static usize
+json_unescape_str8(str8 src, str8 *out)
+{
+	usize res = 0;
+	// First pass: compute length if out==NULL
+	// Second pass: write data if out!=NULL
+	for(usize i = 0; i < src.size; i++) {
+		u8 c = src.str[i];
+		if(c == '\\' && i + 1 < src.size) {
+			i++;
+			u8 esc = src.str[i];
+
+			switch(esc) {
+			case 'n':
+				if(out) out->str[res] = '\n';
+				res++;
+				break;
+			case 't':
+				if(out) out->str[res] = '\t';
+				res++;
+				break;
+			case 'r':
+				if(out) out->str[res] = '\r';
+				res++;
+				break;
+			case 'b':
+				if(out) out->str[res] = '\b';
+				res++;
+				break;
+			case 'f':
+				if(out) out->str[res] = '\f';
+				res++;
+				break;
+			case '\\':
+				if(out) out->str[res] = '\\';
+				res++;
+				break;
+			case '"':
+				if(out) out->str[res] = '"';
+				res++;
+				break;
+			case '/':
+				if(out) out->str[res] = '/';
+				res++;
+				break;
+
+			case 'u':
+				dbg_not_implemeneted("json decoding \\uXXXX");
+				break;
+
+			default:
+				dbg_not_implemeneted("json decoding unknown escape");
+				break;
+			}
+		} else {
+			if(out) out->str[res] = c;
+			res++;
+		}
+	}
+
+	if(out) {
+		out->size = res;
+	}
+
+error:;
+	return res;
+}
+
 static str8
-json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc)
+json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc, enum json_copy_flags flags)
 {
 	dbg_assert(tok->type == JSMN_STRING);
-	str8 src = (str8){
-		.str  = (u8 *)json.str + tok->start,
-		.size = tok->end - tok->start,
-	};
-	str8 res = str8_cpy_push(alloc, src);
+	b32 unescape = (flags & json_copy_unescape);
+	str8 src     = (str8){
+			.str  = (u8 *)json.str + tok->start,
+			.size = tok->end - tok->start,
+    };
+	str8 res = {0};
+	if(!unescape) {
+		res = str8_cpy_push(alloc, src);
+	} else {
+		usize str_size = json_unescape_str8(src, NULL);
+		if(str_size > 0) {
+			res.str = alloc.allocf(alloc.ctx, str_size + 1);
+			json_unescape_str8(src, &res);
+			res.str[res.size] = '\0';
+		}
+	}
+
 	return res;
 }
 

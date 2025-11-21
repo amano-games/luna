@@ -635,7 +635,8 @@ pinbtjson_handle_message(str8 json, jsmntok_t *tokens, i32 index, struct alloc a
 			res.message.hide_time = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("text")) == 0) {
 			dbg_assert(value->type == JSMN_STRING);
-			res.message.text = json_str8_cpy_push(json, value, alloc);
+			enum json_copy_flags flags = json_copy_unescape;
+			res.message.text           = json_str8_cpy_push(json, value, alloc, flags);
 		}
 	}
 	return res;
