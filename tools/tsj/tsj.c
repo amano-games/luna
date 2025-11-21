@@ -199,7 +199,7 @@ tsj_handle_tile(
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("image")) == 0) {
-			str8 path      = json_str8_cpy_push(json, value, scratch);
+			str8 path      = json_str8_cpy_push(json, value, scratch, 0);
 			res.asset.path = tsj_handle_path(path, in_path, alloc, scratch);
 		} else if(json_eq(json, key, str8_lit("width")) == 0) {
 			res.asset.info.cell_size.x = json_parse_i32(json, value);
