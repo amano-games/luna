@@ -116,7 +116,7 @@ struct asset_db {
 	struct snd_table snds;
 };
 
-void asset_db_init(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, usize snds_count, usize bets_count, struct alloc alloc);
+void asset_db_ini(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, usize snds_count, usize bets_count, struct alloc alloc);
 struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 
 str8 asset_db_path_push(struct asset_db *db, str8 path);

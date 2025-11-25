@@ -13,7 +13,7 @@
 void *asset_allocf(void *ctx, usize s);
 
 void
-assets_init(struct alloc alloc, usize size)
+assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
 	void *mem = alloc.allocf(alloc.ctx, size);

@@ -4,13 +4,12 @@
 #include "base/arr.h"
 #include "lib/fnt/fnt.h"
 #include "lib/bet/bet.h"
-#include "lib/bet/bet-ser.h"
 #include "base/ht.h"
 #include "base/log.h"
 #include "base/trace.h"
 
 void
-asset_db_init(
+asset_db_ini(
 	struct asset_db *db,
 	usize paths_count,
 	usize textures_count,
