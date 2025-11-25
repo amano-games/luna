@@ -476,6 +476,7 @@ gfx_spr_tiled(
 	}
 }
 
+// BUG: margins 0 are not behaving correctly
 void
 gfx_patch(
 	struct gfx_ctx ctx,
