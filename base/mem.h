@@ -15,13 +15,15 @@ struct alloc {
 	void *ctx;
 };
 
-#define alloc_struct(alloc, type)     (type *)alloc_size(alloc, sizeof(type))
-#define alloc_arr(alloc, type, count) (type *)alloc_size(alloc, sizeof(type) * count)
+#define alloc_struct(alloc, type, clr)     (type *)alloc_size(alloc, sizeof(type), clr)
+#define alloc_arr(alloc, type, count, clr) (type *)alloc_size(alloc, sizeof(type) * count, clr)
 
 static inline void *
-alloc_size(struct alloc alloc, usize size)
+alloc_size(struct alloc alloc, usize size, b32 clr)
 {
-	return alloc.allocf(alloc.ctx, size);
+	void *mem = alloc.allocf(alloc.ctx, size);
+	if(clr) { mclr(mem, size); };
+	return mem;
 }
 
 // every object of type struct mkilobyte
