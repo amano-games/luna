@@ -487,7 +487,7 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
-#if (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0))
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE)
 	LCDBitmap *ctx = PD->graphics->getDebugBitmap();
 	PD->graphics->pushContext(ctx);
 	for(int i = 0; i < count; ++i) {
