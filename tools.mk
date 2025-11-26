@@ -5,19 +5,16 @@ include $(ROOT_DIR)/common.mk
 
 SRC_DIR   := $(ROOT_DIR)/tools
 DESTDIR   ?=
-PREFIX    ?=
-BINDIR    ?= ${PREFIX}bin
-BUILD_DIR := ${DESTDIR}${BINDIR}
+BINDIR    ?= bin
+BUILD_DIR := ${BINDIR}
 
-WATCH_SRC      := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
-INC_DIRS       := $(SRC_DIR)
-INC_DIRS       += $(LUNA_DIR)
-INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
-INC_FLAGS      += $(EXTERNAL_FLAGS)
 
-LDLIBS := -lm
+INC_DIRS       := $(SRC_DIR) $(LUNA_DIR)
+INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
+
+LDLIBS  := -lm
 LDFLAGS :=
 
 override CDEFS := $(CDEFS) -DBACKEND_CLI
@@ -38,11 +35,12 @@ endif
 
 CFLAGS += $(CDEFS)
 
-all: $(BUILD_DIR) $(BUILD_DIR)/luna-meta-gen $(BUILD_DIR)/luna-assets-gen
+# all: $(BUILD_DIR) $(BUILD_DIR)/luna-meta-gen $(BUILD_DIR)/luna-asset-gen
 
 # Create tools bin dir
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
+
 
 $(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(BUILD_DIR)
 	$(CC) \
@@ -59,9 +57,8 @@ $(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(BUILD_DIR)
 		"$<" $(LDLIBS) \
 		-o "$@"
 
+tools-meta: $(BUILD_DIR)/luna-meta-gen
+tools-asset: $(BUILD_DIR)/luna-asset-gen
 # Clean tools bin
 clean:
 	rm -rf $(BUILD_DIR)
-
-luna-meta-gen: $(BUILD_DIR)/luna-meta-gen
-luna-assets-gen: $(BUILD_DIR)/luna-asset-gen

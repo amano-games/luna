@@ -66,6 +66,9 @@ PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
 all: clean build run
 
+$(ASSETS_BIN):
+	make -f $(LUNA_DIR)/tools.mk tools-asset
+
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p $(ASSETS_OUT)
 	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
