@@ -11,7 +11,7 @@ dbg_drw_ini(struct alloc alloc, ssize shapes_count)
 {
 	log_info("Debug draw", "init");
 	struct dbg_drw *state = &DBG_DRW_STATE;
-#if !defined(TARGET_PLAYDATE) && DEBUG && !defined(APP_DISABLE_DEBUG_DRAW)
+#if !defined(TARGET_PLAYDATE) && defined(DEBUG) && !defined(APP_DISABLE_DEBUG_DRAW)
 	state->shapes = arr_new_clr(state->shapes, shapes_count, alloc);
 #else
 	DBG_DRW_STATE.shapes = NULL;
