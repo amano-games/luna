@@ -168,6 +168,7 @@ static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 sapp_desc
 sokol_main(i32 argc, char **argv)
 {
+	stm_setup();
 	{
 		usize mem_size = MMEGABYTE(1);
 		void *mem      = sys_alloc(NULL, mem_size);
@@ -295,7 +296,6 @@ sokol_init(void)
 	SOKOL_STATE.crank_docked             = true;
 	SOKOL_STATE.mouse_scroll_sensitivity = 0.03f;
 
-	stm_setup();
 	sg_setup(&(sg_desc){
 		.environment = sglue_environment(),
 		.logger.func = slog_func,
