@@ -2,15 +2,18 @@
 
 #include "base/log.h"
 
-#if defined(TARGET_PLAYDATE) // assertions don't work on hardware - disable
+#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE // assertions don't work on hardware - disable
 #define dbg_assert(X)
 #else
 #if __GNUC__
-#define dbg_assert(c) if (!(c)) __builtin_trap()
+#define dbg_assert(c) \
+	if(!(c)) __builtin_trap()
 #elif _MSC_VER
-#define dbg_assert(c) if (!(c)) __debugbreak()
+#define dbg_assert(c) \
+	if(!(c)) __debugbreak()
 #else
-#define dbg_assert(c) if (!(c)) *(volatile int *)0 = 0
+#define dbg_assert(c) \
+	if(!(c)) *(volatile int *)0 = 0
 #endif
 #endif
 
