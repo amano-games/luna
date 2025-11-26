@@ -998,7 +998,7 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
-#if DEBUG
+#if defined(DEBUG)
 	struct gfx_ctx ctx = SOKOL_STATE.debug_ctx;
 	tex_clr(ctx.dst, GFX_COL_BLACK);
 
@@ -1532,7 +1532,7 @@ sokol_recording_write(struct recording_1b *recording)
 	i32 scale                 = SOKOL_STATE.opts.recording.scale;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
-#if DEBUG
+#if defined(DEBUG)
 	str8_list_pushf(scratch, &cmd_list, "-loglevel verbose");
 	// str8_list_pushf(scratch, &cmd_list, "-report");
 #endif

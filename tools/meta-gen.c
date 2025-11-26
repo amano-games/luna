@@ -91,11 +91,11 @@ gen_table(const str8 in_path, struct alloc scratch)
 
 		if(json_eq(json, key, str8_lit("name")) == 0) {
 			dbg_assert(value->type == JSMN_STRING);
-			table.name = json_str8_cpy_push(json, value, scratch);
+			table.name = json_str8_cpy_push(json, value, scratch, false);
 			i++;
 		} else if(json_eq(json, key, str8_lit("prefix")) == 0) {
 			dbg_assert(value->type == JSMN_STRING);
-			table.prefix = json_str8_cpy_push(json, value, scratch);
+			table.prefix = json_str8_cpy_push(json, value, scratch, false);
 			i++;
 		} else if(json_eq(json, key, str8_lit("columns")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
@@ -104,10 +104,10 @@ gen_table(const str8 in_path, struct alloc scratch)
 			for(i32 j = 0; j < value->size; j++) {
 				jsmntok_t *child_key   = &tokens[i + j + 1];
 				jsmntok_t *child_value = &tokens[i + j + 2];
-				size len               = child_value->end - child_value->start;
+				ssize len              = child_value->end - child_value->start;
 
 				struct column column = {0};
-				column.name          = json_str8_cpy_push(json, child_value, scratch);
+				column.name          = json_str8_cpy_push(json, child_value, scratch, false);
 				if(json_eq(json, child_value, str8_lit("id")) == 0) {
 					column.type = COLUMN_TYPE_ID;
 				} else if(json_eq(json, child_value, str8_lit("label")) == 0) {
@@ -124,8 +124,8 @@ gen_table(const str8 in_path, struct alloc scratch)
 			i += value->size + 1;
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			size rows_count = value->size;
-			table.rows      = arr_new(table.rows, rows_count, scratch);
+			ssize rows_count = value->size;
+			table.rows       = arr_new(table.rows, rows_count, scratch);
 
 			for(ssize j = 0; j < rows_count; j++) {
 				struct row row            = {0};
@@ -138,13 +138,13 @@ gen_table(const str8 in_path, struct alloc scratch)
 				jsmntok_t *child_value = &tokens[i + j + 2];
 				size_t len             = child_value->end - child_value->start;
 				dbg_assert(child_value->type == JSMN_STRING);
-				for(ssize_t z = 0; z < arr_len(row.items); ++z) {
+				for(ssize z = 0; z < (ssize)arr_len(row.items); ++z) {
 					struct column column        = table.columns[z];
 					struct row_value *row_value = &row.items[z];
 					row_value->type             = column.type;
 					switch(column.type) {
 					case COLUMN_TYPE_ID: {
-						row_value->string = json_str8_cpy_push(json, child_value, scratch);
+						row_value->string = json_str8_cpy_push(json, child_value, scratch, false);
 					} break;
 					case COLUMN_TYPE_BITMASK: {
 						u8 flag = j + 1;
@@ -159,7 +159,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 						}
 					} break;
 					case COLUMN_TYPE_LABEL: {
-						row_value->string = json_str8_cpy_push(json, child_value, scratch);
+						row_value->string = json_str8_cpy_push(json, child_value, scratch, false);
 					} break;
 					default: {
 					} break;
@@ -197,14 +197,14 @@ gen_table(const str8 in_path, struct alloc scratch)
 		str8 enum_none  = str8_fmt_push(alloc, "%.*sNONE = 0", (i32)table.prefix.size, table.prefix.str);
 		str8 enum_count = str8_fmt_push(alloc, "%.*sNUM_COUNT", (i32)table.prefix.size, table.prefix.str);
 
-		for(ssize_t i = 0; i < arr_len(table.columns); ++i) {
+		for(ssize i = 0; i < (ssize)arr_len(table.columns); ++i) {
 			struct column column = table.columns[i];
 
 			switch(column.type) {
 			case COLUMN_TYPE_ID: {
 				str8_list_pushf(alloc, &content, "enum %.*s {\n", (i32)table.name.size, table.name.str);
 				str8_list_pushf(alloc, &content, "  %.*s,\n\n", (i32)enum_none.size, enum_none.str);
-				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row             = table.rows[j];
 					struct row_value row_value = row.items[i];
 					dbg_assert(row_value.type == column.type);
@@ -219,7 +219,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 				str8_list_pushf(alloc, &content, "static const str8 %.*sLABELS[%.*s] = {\n", (i32)table.prefix.size, table.prefix.str, (i32)enum_count.size, enum_count.str);
 				str8_list_pushf(alloc, &content, "  [%.*sNONE] = str8_lit_comp(\"NONE\"),\n", (i32)table.prefix.size, table.prefix.str);
 
-				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];
@@ -261,7 +261,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 					(i32)arr_len(table.rows) + 1);
 				str8_list_pushf(alloc, &content, "  [%.*sNONE] = %d,\n", (i32)table.prefix.size, table.prefix.str, 0);
 
-				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];
