@@ -13,6 +13,7 @@ DETECTED_OS := $(strip $(DETECTED_OS))
 WARN_FLAGS += -Werror -Wall -Wextra -pedantic-errors
 WARN_FLAGS += -Wstrict-prototypes
 WARN_FLAGS += -Wshadow
+WARN_FLAGS += -Wundef
 WARN_FLAGS += -Wdouble-promotion
 WARN_FLAGS += -Wno-unused-function
 WARN_FLAGS += -Wno-unused-but-set-variable

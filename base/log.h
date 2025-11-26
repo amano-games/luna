@@ -13,10 +13,10 @@ enum sys_log_level {
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
 #endif
 
-#if SYS_LOG_DISABLE
+#if defined(SYS_LOG_DISABLE)
 #define sys_printf(...)
 #else
-#if TARGET_PLAYDATE
+#if defined(TARGET_PLAYDATE)
 #include "sys/sys-pd.h"
 #define sys_printf(...) PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__)
 #else
