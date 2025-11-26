@@ -11,7 +11,7 @@ dbg_drw_ini(struct alloc alloc, ssize shapes_count)
 {
 	log_info("Debug draw", "init");
 	struct dbg_drw *state = &DBG_DRW_STATE;
-#if defined(DEBUG) && (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0)) && !defined(APP_DISABLE_DEBUG_DRAW)
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
 	state->shapes = arr_new_clr(state->shapes, shapes_count, alloc);
 #else
 	DBG_DRW_STATE.shapes = NULL;
@@ -21,7 +21,7 @@ dbg_drw_ini(struct alloc alloc, ssize shapes_count)
 void
 dbg_drw(i32 x, i32 y)
 {
-#if defined(DEBUG) && (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0)) && !defined(APP_DISABLE_DEBUG_DRAW)
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
 	TRACE_START(__func__);
 	dbg_drw_offset_set(x, y);
 	sys_debug_draw(DBG_DRW_STATE.shapes, arr_len(DBG_DRW_STATE.shapes));
@@ -54,7 +54,7 @@ dbg_drw_clr(void)
 void
 dgb_drw_shape_push(struct debug_shape shape)
 {
-#if defined(DEBUG) && (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0)) && !defined(APP_DISABLE_DEBUG_DRAW)
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
 	arr_push(DBG_DRW_STATE.shapes, shape);
 #endif
 }

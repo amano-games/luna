@@ -45,17 +45,3 @@ error:
 	if(f != NULL) { sys_file_close(f); }
 	return (struct sys_full_file_res){0};
 }
-
-// usize
-// sys_file_modified(str8 path)
-// {
-// 	usize res = 0;
-//
-// #if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE == 1
-// 	cf_time_t timestamp;
-// 	cf_get_file_time((char *)path.str, &timestamp);
-// 	res = timestamp.time;
-// #endif
-//
-// 	return res;
-// }

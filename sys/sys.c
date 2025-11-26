@@ -61,7 +61,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 		(uint)sys_mem->app_mem.size,
 		sys_mem->app_mem.buffer);
 
-#if defined(DEBUG) && (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0))
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE)
 	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, sys_mem->app_mem.size);
 #endif
 

@@ -37,7 +37,7 @@ typedef intptr_t iptr;
 typedef size_t usize;
 typedef ptrdiff_t ssize;
 
-#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE == 1
+#if defined(TARGET_PD_DEVICE)
 #define ASM __asm volatile
 #endif
 
