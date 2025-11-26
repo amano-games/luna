@@ -422,10 +422,10 @@ sys_file_seek_end(void *f, i32 pos)
 	return (i32)PD->file->seek(f, pos, SEEK_END);
 }
 
-size
+ssize
 sys_file_w(void *f, const void *buf, u32 buf_size)
 {
-	size res = PD_FILE_WRITE(f, buf, (uint)buf_size);
+	ssize res = PD_FILE_WRITE(f, buf, (uint)buf_size);
 	return res;
 }
 
@@ -487,7 +487,7 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
-#if !defined(TARGET_PLAYDATE)
+#if (!defined(TARGET_PLAYDATE) || (TARGET_PLAYDATE == 0))
 	LCDBitmap *ctx = PD->graphics->getDebugBitmap();
 	PD->graphics->pushContext(ctx);
 	for(int i = 0; i < count; ++i) {
@@ -524,9 +524,9 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 		case DEBUG_POLY: {
 			struct debug_shape_poly poly = shape->poly;
 
-			for(int i = 0; i < poly.count; ++i) {
-				v2_i32 a = poly.verts[i];
-				v2_i32 b = poly.verts[(i + 1) % poly.count];
+			for(ssize j = 0; j < poly.count; ++j) {
+				v2_i32 a = poly.verts[j];
+				v2_i32 b = poly.verts[(j + 1) % poly.count];
 
 				PD->graphics->drawLine(a.x, a.y, b.x, b.y, 1, kColorWhite);
 			}

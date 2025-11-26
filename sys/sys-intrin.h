@@ -2,7 +2,7 @@
 
 #include "base/types.h"
 
-#if defined(TARGET_PLAYDATE)
+#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE
 #define bswap_u32 __builtin_bswap32
 
 static inline u32

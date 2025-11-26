@@ -51,7 +51,7 @@ error:
 // {
 // 	usize res = 0;
 //
-// #if !defined(TARGET_PLAYDATE)
+// #if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE == 1
 // 	cf_time_t timestamp;
 // 	cf_get_file_time((char *)path.str, &timestamp);
 // 	res = timestamp.time;
