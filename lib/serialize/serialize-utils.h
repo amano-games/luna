@@ -3,11 +3,11 @@
 #include "lib/serialize/serialize.h"
 
 void
-ser_write_v2(struct ser_writer *w, v2 v2)
+ser_write_v2(struct ser_writer *w, v2 value)
 {
 	ser_write_array(w);
-	ser_write_f32(w, v2.x);
-	ser_write_f32(w, v2.y);
+	ser_write_f32(w, value.x);
+	ser_write_f32(w, value.y);
 	ser_write_end(w);
 }
 

@@ -55,7 +55,7 @@ struct col_tangents {
 };
 
 struct col_poly {
-	size count;
+	ssize count;
 	v2 verts[COL_MAX_POLYGON_VERTS];
 	v2 norms[COL_MAX_POLYGON_VERTS];
 };
@@ -89,7 +89,7 @@ struct col_shape {
 };
 
 struct col_shapes {
-	size count;
+	ssize count;
 	struct col_shape items[COL_SHAPES_MAX];
 };
 

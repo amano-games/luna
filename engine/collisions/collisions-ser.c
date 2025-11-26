@@ -17,7 +17,7 @@ col_shapes_write(struct ser_writer *w, struct col_shapes *shapes)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < shapes->count; ++i) {
+	for(ssize i = 0; i < shapes->count; ++i) {
 		col_shape_write(w, shapes->items + i);
 	}
 	ser_write_end(w);
@@ -92,14 +92,14 @@ col_poly_write(struct ser_writer *w, struct col_poly col)
 
 		ser_write_string(w, str8_lit("verts"));
 		ser_write_array(w);
-		for(size i = 0; i < col.count; ++i) {
+		for(ssize i = 0; i < col.count; ++i) {
 			ser_write_v2(w, col.verts[i]);
 		}
 		ser_write_end(w);
 
 		ser_write_string(w, str8_lit("norms"));
 		ser_write_array(w);
-		for(size i = 0; i < col.count; ++i) {
+		for(ssize i = 0; i < col.count; ++i) {
 			ser_write_v2(w, col.norms[i]);
 		}
 		ser_write_end(w);
@@ -123,7 +123,7 @@ col_shapes_read(struct ser_reader *r, struct ser_value obj)
 	struct col_shapes res = {0};
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct ser_value key, value;
-	size count = 0;
+	ssize count = 0;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("count"), 0)) {
@@ -232,18 +232,18 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("verts"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value;
-			size i = 0;
+			ssize i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
-				dbg_assert(i < (size)ARRLEN(res.verts));
+				dbg_assert(i < (ssize)ARRLEN(res.verts));
 				res.verts[i++] = ser_read_v2(r, item_value);
 			}
 			dbg_assert(res.count == i);
 		} else if(str8_match(key.str, str8_lit("norms"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value;
-			size i = 0;
+			ssize i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
-				dbg_assert(i < (size)ARRLEN(res.norms));
+				dbg_assert(i < (ssize)ARRLEN(res.norms));
 				res.norms[i++] = ser_read_v2(r, item_value);
 			}
 			dbg_assert(res.count == i);

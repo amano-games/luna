@@ -127,7 +127,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 			size rows_count = value->size;
 			table.rows      = arr_new(table.rows, rows_count, scratch);
 
-			for(size j = 0; j < rows_count; j++) {
+			for(ssize j = 0; j < rows_count; j++) {
 				struct row row            = {0};
 				usize count               = arr_len(table.columns);
 				row.items                 = arr_new(row.items, count, scratch);
@@ -138,7 +138,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 				jsmntok_t *child_value = &tokens[i + j + 2];
 				size_t len             = child_value->end - child_value->start;
 				dbg_assert(child_value->type == JSMN_STRING);
-				for(size_t z = 0; z < arr_len(row.items); ++z) {
+				for(ssize_t z = 0; z < arr_len(row.items); ++z) {
 					struct column column        = table.columns[z];
 					struct row_value *row_value = &row.items[z];
 					row_value->type             = column.type;
@@ -197,14 +197,14 @@ gen_table(const str8 in_path, struct alloc scratch)
 		str8 enum_none  = str8_fmt_push(alloc, "%.*sNONE = 0", (i32)table.prefix.size, table.prefix.str);
 		str8 enum_count = str8_fmt_push(alloc, "%.*sNUM_COUNT", (i32)table.prefix.size, table.prefix.str);
 
-		for(size_t i = 0; i < arr_len(table.columns); ++i) {
+		for(ssize_t i = 0; i < arr_len(table.columns); ++i) {
 			struct column column = table.columns[i];
 
 			switch(column.type) {
 			case COLUMN_TYPE_ID: {
 				str8_list_pushf(alloc, &content, "enum %.*s {\n", (i32)table.name.size, table.name.str);
 				str8_list_pushf(alloc, &content, "  %.*s,\n\n", (i32)enum_none.size, enum_none.str);
-				for(size_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
 					struct row row             = table.rows[j];
 					struct row_value row_value = row.items[i];
 					dbg_assert(row_value.type == column.type);
@@ -219,7 +219,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 				str8_list_pushf(alloc, &content, "static const str8 %.*sLABELS[%.*s] = {\n", (i32)table.prefix.size, table.prefix.str, (i32)enum_count.size, enum_count.str);
 				str8_list_pushf(alloc, &content, "  [%.*sNONE] = str8_lit_comp(\"NONE\"),\n", (i32)table.prefix.size, table.prefix.str);
 
-				for(size_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];
@@ -261,7 +261,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 					(i32)arr_len(table.rows) + 1);
 				str8_list_pushf(alloc, &content, "  [%.*sNONE] = %d,\n", (i32)table.prefix.size, table.prefix.str, 0);
 
-				for(size_t j = 0; j < arr_len(table.rows); ++j) {
+				for(ssize_t j = 0; j < arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
 					struct row_value row_value    = row.items[i];
 					struct row_value row_value_id = row.items[0];

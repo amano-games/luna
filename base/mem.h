@@ -19,10 +19,10 @@ struct alloc {
 #define alloc_arr(alloc, type, count, clr) (type *)alloc_size(alloc, sizeof(type) * count, clr)
 
 static inline void *
-alloc_size(struct alloc alloc, usize size, b32 clr)
+alloc_size(struct alloc alloc, usize mem_size, b32 clr)
 {
-	void *mem = alloc.allocf(alloc.ctx, size);
-	if(clr) { mclr(mem, size); };
+	void *mem = alloc.allocf(alloc.ctx, mem_size);
+	if(clr) { mclr(mem, mem_size); };
 	return mem;
 }
 

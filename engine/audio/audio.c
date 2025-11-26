@@ -72,49 +72,49 @@ aud_cmds_flush(void)
 			}
 		} break;
 		case AUD_CMD_SND_STOP: {
-			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
-			struct sfx_channel *sfx_channel = NULL;
+			struct aud_cmd_snd_modify *cmd = &aud_cmd.c.snd_modify;
+			struct sfx_channel *channel    = NULL;
 			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
 				struct sfx_channel *curr = &AUDIO.sfx_channel[i];
 				if(curr->snd_id == cmd->id) {
-					sfx_channel = curr;
+					channel = curr;
 					break;
 				}
 			}
 
-			if(sfx_channel == NULL) break;
+			if(channel == NULL) break;
 
-			sfx_channel_stop(sfx_channel);
+			sfx_channel_stop(channel);
+		} break;
 		case AUD_CMD_SND_MODIFY_VOL: {
-			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
-			struct sfx_channel *sfx_channel = NULL;
+			struct aud_cmd_snd_modify *cmd = &aud_cmd.c.snd_modify;
+			struct sfx_channel *channel    = NULL;
 			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
 				struct sfx_channel *curr = &AUDIO.sfx_channel[i];
 				if(curr->snd_id == cmd->id) {
-					sfx_channel = curr;
+					channel = curr;
 					break;
 				}
 			}
 
-			if(sfx_channel == NULL) break;
+			if(channel == NULL) break;
 
-			sfx_channel->adpcm.vol_q8 = cmd->vol_q8;
+			channel->adpcm.vol_q8 = cmd->vol_q8;
 		} break;
 		case AUD_CMD_SND_MODIFY_REPEAT_COUNT: {
-			struct aud_cmd_snd_modify *cmd  = &aud_cmd.c.snd_modify;
-			struct sfx_channel *sfx_channel = NULL;
+			struct aud_cmd_snd_modify *cmd = &aud_cmd.c.snd_modify;
+			struct sfx_channel *channel    = NULL;
 			for(u32 i = 0; i < NUM_SND_CHANNEL; i++) {
 				struct sfx_channel *curr = &AUDIO.sfx_channel[i];
 				if(curr->snd_id == cmd->id) {
-					sfx_channel = curr;
+					channel = curr;
 					break;
 				}
 			}
 
-			if(sfx_channel == NULL) break;
+			if(channel == NULL) break;
 
-			sfx_channel->repeat_count = cmd->repeat_count;
-		} break;
+			channel->repeat_count = cmd->repeat_count;
 		} break;
 		case AUD_CMD_MUS_PLAY: {
 			struct aud_cmd_mus_play *cmd = &aud_cmd.c.mus_play;

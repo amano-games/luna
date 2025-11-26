@@ -40,7 +40,7 @@ i32 tex_mask_at(struct tex tex, i32 x, i32 y);
 void tex_px(struct tex tex, i32 x, i32 y, i32 col);
 void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
 
-void tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete);
+void tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete);
 void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);
 void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 bw, i32 bh, i32 bb);
 

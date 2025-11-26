@@ -22,13 +22,13 @@ error:
 void *
 marena_alloc(struct marena *m, usize s)
 {
-	usize size = align_up_size_t(s);
+	usize mem_size = align_up_size_t(s);
 
-	if(m->rem < size) { return NULL; }
+	if(m->rem < mem_size) { return NULL; }
 
 	void *mem = m->p;
-	m->p += size;
-	m->rem -= size;
+	m->p += mem_size;
+	m->rem -= mem_size;
 
 	return mem;
 }

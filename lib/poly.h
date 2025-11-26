@@ -11,32 +11,32 @@
 // https://github.com/schteppe/poly-decomp.js/blob/master/src/index.js
 
 struct poly {
-	size count;
+	ssize count;
 	v2 verts[POLY_MAX_VERTS];
 };
 
 struct mesh {
-	size count;
+	ssize count;
 	struct poly *items;
 };
 
 // Get a vertex at position i. It does not matter if i is out of bounds, this function will just cycle.
 static inline v2
-poly_at(const v2 *verts, size count, i32 i)
+poly_at(const v2 *verts, ssize count, i32 i)
 {
-	size s     = count;
-	size index = i < 0 ? i % s + s : i % s;
+	ssize s     = count;
+	ssize index = i < 0 ? i % s + s : i % s;
 	return verts[index];
 }
 
 // Reverse the vertices in the polygon
 static inline void
-poly_reverse(v2 *verts, size count)
+poly_reverse(v2 *verts, ssize count)
 {
 	if(!verts || count == 0) return;
 
-	size left  = 0;
-	size right = count - 1;
+	ssize left  = 0;
+	ssize right = count - 1;
 	while(left < right) {
 		v2 temp      = verts[left];
 		verts[left]  = verts[right];
@@ -48,7 +48,7 @@ poly_reverse(v2 *verts, size count)
 
 // https://stackoverflow.com/questions/2792443/finding-the-centroid-of-a-polygon
 v2
-poly_centroid(v2 *verts, size verts_count)
+poly_centroid(v2 *verts, ssize verts_count)
 {
 	v2 res          = {0};
 	f32 signed_area = 0.0;
@@ -63,7 +63,7 @@ poly_centroid(v2 *verts, size verts_count)
 	v2 *next;
 
 	// For all vertices in a loop
-	for(size i = 0; i < verts_count; ++i) {
+	for(ssize i = 0; i < verts_count; ++i) {
 		next = &(verts[i]);
 		x0   = prev->x;
 		y0   = prev->y;
@@ -83,13 +83,13 @@ poly_centroid(v2 *verts, size verts_count)
 }
 
 b32
-poly_is_convex(const v2 *verts, size count)
+poly_is_convex(const v2 *verts, ssize count)
 {
 	if(count < 3) return false;
 
 	int sign = 0;
 
-	for(size i = 0; i < count; ++i) {
+	for(ssize i = 0; i < count; ++i) {
 		v2 p0 = verts[i];
 		v2 p1 = verts[(i + 1) % count];
 		v2 p2 = verts[(i + 2) % count];
@@ -110,12 +110,12 @@ poly_is_convex(const v2 *verts, size count)
 }
 
 static inline b32
-poly_make_ccw(v2 *verts, size count)
+poly_make_ccw(v2 *verts, ssize count)
 {
-	size br = 0;
+	ssize br = 0;
 
 	// find bottom right point
-	for(size i = 1; i < count; ++i) {
+	for(ssize i = 1; i < count; ++i) {
 		if(verts[i].y < verts[br].y || (verts[i].y == verts[br].y && verts[i].x > verts[br].x)) {
 			br = i;
 		}
@@ -152,13 +152,13 @@ poly_collinear(v2 a, v2 b, v2 c, f32 threshold_ang)
 	}
 }
 
-static inline size
-poly_remove_collinear_points(v2 *verts, size count, f32 precision)
+static inline ssize
+poly_remove_collinear_points(v2 *verts, ssize count, f32 precision)
 {
 	if(count <= 3) return count;
 
-	size res = 0;
-	for(size i = 0; i < count; ++i) {
+	ssize res = 0;
+	for(ssize i = 0; i < count; ++i) {
 		v2 prev = poly_at(verts, count, (i + count - 1));
 		v2 curr = poly_at(verts, count, i);
 		v2 next = poly_at(verts, count, (i + 1));
@@ -175,7 +175,7 @@ poly_remove_collinear_points(v2 *verts, size count, f32 precision)
 }
 
 static inline struct mesh
-poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
+poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratch)
 {
 	poly_make_ccw(verts, count);
 	// Linked list
@@ -185,7 +185,7 @@ poly_triangulate(v2 *verts, size count, struct alloc alloc, struct alloc scratch
 		.count = 0,
 		.items = alloc.allocf(alloc.ctx, sizeof(*res.items)),
 	};
-	for(size i = 0; i < count; ++i) {
+	for(ssize i = 0; i < count; ++i) {
 		prev[i] = i - 1;
 		next[i] = i + 1;
 	}
@@ -272,24 +272,24 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 		.items = alloc.allocf(alloc.ctx, sizeof(*res.items) * mesh.count),
 	};
 
-	for(size i = 0; i < mesh.count; i++) {
+	for(ssize i = 0; i < mesh.count; i++) {
 		if(merged[i]) { continue; }
 
 		struct poly *a = mesh.items + i;
 		bool did_merge = false;
 
-		for(size j = i + 1; j < mesh.count; ++j) {
+		for(ssize j = i + 1; j < mesh.count; ++j) {
 			if(merged[j]) { continue; }
 
 			struct poly *b = mesh.items + j;
 
 			// Try to merge a and b if they share and edge
 			// Find the shared edge (reverse order in both)
-			for(size ai = 0; ai < a->count; ++ai) {
+			for(ssize ai = 0; ai < a->count; ++ai) {
 				v2 a0 = a->verts[ai];
 				v2 a1 = a->verts[(ai + 1) % a->count];
 
-				for(size bi = 0; bi < b->count; ++bi) {
+				for(ssize bi = 0; bi < b->count; ++bi) {
 					v2 b1 = b->verts[bi];
 					v2 b0 = b->verts[(bi + 1) % b->count];
 
@@ -300,7 +300,7 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 
 						// Add a verts up to a0
 						{
-							size idx = (ai + 1) % a->count;
+							ssize idx = (ai + 1) % a->count;
 							while(!v2_eq(a->verts[idx], a0)) {
 								merged_poly.verts[merged_poly.count++] = a->verts[idx];
 								idx                                    = (idx + 1) % a->count;
@@ -309,7 +309,7 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 
 						// Add verts from b (excluding shared edge b1→b0)
 						{
-							size idx = (bi + 1) % b->count;
+							ssize idx = (bi + 1) % b->count;
 							while(!v2_eq(b->verts[idx], b1)) {
 								merged_poly.verts[merged_poly.count++] = b->verts[idx];
 								idx                                    = (idx + 1) % b->count;
@@ -341,7 +341,7 @@ poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 
 // Decomposes the polygon into one or more convex sub-Polygons.
 static inline struct mesh
-poly_decomp(v2 *verts, size count, struct alloc alloc, struct alloc scratch)
+poly_decomp(v2 *verts, ssize count, struct alloc alloc, struct alloc scratch)
 {
 	struct mesh mesh = poly_triangulate(verts, count, scratch, scratch);
 	struct mesh res  = poly_decomp_hm(mesh, alloc, scratch);

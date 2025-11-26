@@ -26,7 +26,7 @@ slice_grow(void *slice, ptrdiff_t size, struct alloc alloc)
 	void *data  = alloc.allocf(alloc.ctx, 2 * size, replica.cap);
 	replica.cap *= 2;
 	if(replica.len) {
-		memcpy(data, replica.data, size * replica.len);
+		memcpy(data, replica.data, ssize * replica.len);
 	}
 	replica.data = data;
 

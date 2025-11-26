@@ -45,9 +45,9 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, usize size)
+sys_alloc(void *ptr, usize mem_size)
 {
-	return malloc(size);
+	return malloc(mem_size);
 }
 
 void
@@ -101,11 +101,11 @@ sys_file_r(void *f, void *buf, u32 buf_size)
 	return (i32)s;
 }
 
-size
+ssize
 sys_file_w(void *f, const void *buf, u32 buf_size)
 {
 	int count = 1;
-	size res  = fwrite(buf, buf_size, count, (FILE *)f);
+	ssize res = fwrite(buf, buf_size, count, (FILE *)f);
 	return res;
 }
 

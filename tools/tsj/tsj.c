@@ -56,14 +56,14 @@ tsj_handle_track(str8 json,
 				.size = value->end - value->start,
 			};
 			struct str8_list list = str8_split(scratch, frames_str, (u8 *)",", 1, 0);
-			i32 i                 = 0;
+			i32 last_idx          = 0;
 			for(struct str8_node *n = list.first; n != 0; n = n->next) {
 				// NOTE: we remove 1 because in tiled we specify them starting with 1 instead of 0
-				res.track.frames.items[i++] = str8_to_i32(n->str) - 1;
+				res.track.frames.items[last_idx++] = str8_to_i32(n->str) - 1;
 			}
 
-			res.track.frames.len = i;
-			res.track.frames.cap = i;
+			res.track.frames.len = last_idx;
+			res.track.frames.cap = last_idx;
 		}
 	}
 

@@ -20,7 +20,7 @@
 void
 body_init(struct body *body)
 {
-	for(size i = 0; i < body->shapes.count; ++i) {
+	for(ssize i = 0; i < body->shapes.count; ++i) {
 		struct col_shape *shape = body->shapes.items + i;
 		switch(shape->type) {
 		case COL_TYPE_POLY: {

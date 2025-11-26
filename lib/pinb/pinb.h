@@ -24,7 +24,7 @@ struct pinb_prop {
 };
 
 struct pinb_custom_data {
-	size len;
+	ssize len;
 	struct pinb_prop *data;
 };
 
@@ -101,7 +101,7 @@ struct pinb_animator_transition {
 };
 
 struct pinb_animator_transitions {
-	size len;
+	ssize len;
 	struct pinb_animator_transition *items;
 };
 
@@ -166,12 +166,12 @@ struct pinb_sfx_sequence {
 	f32 vol_max;
 	f32 pitch_min;
 	f32 pitch_max;
-	size clips_len;
+	ssize clips_len;
 	str8 *clips;
 };
 
 struct pinb_sfx_sequences {
-	size len;
+	ssize len;
 	struct pinb_sfx_sequence *items;
 };
 
@@ -183,7 +183,7 @@ struct pinb_message {
 };
 
 struct pinb_messages {
-	size len;
+	ssize len;
 	struct pinb_message *items;
 };
 
@@ -200,7 +200,7 @@ struct pinb_action {
 };
 
 struct pinb_actions {
-	size len;
+	ssize len;
 	struct pinb_action *items;
 };
 

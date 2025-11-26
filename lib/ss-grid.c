@@ -19,31 +19,31 @@ ss_grid_gen(
 	grid->cell_size_inv = cell_size_inv;
 	usize count         = items_count;
 
-	i32 x1 = 0;
-	i32 y1 = 0;
-	i32 x2 = 0;
-	i32 y2 = 0;
+	i32 qx1 = 0;
+	i32 qy1 = 0;
+	i32 qx2 = 0;
+	i32 qy2 = 0;
 
 	// Find min/max cell cords of grid.
 	for(usize i = 0; i < count; i++) {
 		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
-		x1                   = min_i32(x1, (i32)floor_f32(aabb.min.x * cell_size_inv));
-		y1                   = min_i32(y1, (i32)floor_f32(aabb.min.y * cell_size_inv));
-		x2                   = max_i32(x2, (i32)ceil_f32(aabb.max.x * cell_size_inv));
-		y2                   = max_i32(y2, (i32)ceil_f32(aabb.max.y * cell_size_inv));
+		qx1                  = min_i32(qx1, (i32)floor_f32(aabb.min.x * cell_size_inv));
+		qy1                  = min_i32(qy1, (i32)floor_f32(aabb.min.y * cell_size_inv));
+		qx2                  = max_i32(qx2, (i32)ceil_f32(aabb.max.x * cell_size_inv));
+		qy2                  = max_i32(qy2, (i32)ceil_f32(aabb.max.y * cell_size_inv));
 	}
 
-	i32 width   = (x2 - x1);
-	i32 height  = (y2 - y1);
+	i32 width   = (qx2 - qx1);
+	i32 height  = (qy2 - qy1);
 	i32 columns = width > 0 ? width + 1 : 0;
 	i32 rows    = height > 0 ? height + 1 : 0;
-	log_info("SSGrid", "Generating grid cell_size:%d columns:%d rows:%d total:%d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)x1, (int)y1, (int)x2, (int)y2);
+	log_info("SSGrid", "Generating grid cell_size:%d columns:%d rows:%d total:%d [%d,%d] => [%d,%d]", (int)grid->cell_size, (int)columns, (int)rows, (int)(columns * rows), (int)qx1, (int)qy1, (int)qx2, (int)qy2);
 
 	grid->columns             = columns;
 	grid->rows                = rows;
-	grid->x_offset            = -x1;
-	grid->y_offset            = -y1;
+	grid->x_offset            = -qx1;
+	grid->y_offset            = -qy1;
 	grid->cells               = arr_new_clr(grid->cells, columns * rows, alloc);
 	struct arr_header *header = arr_header(grid->cells);
 	header->len               = arr_cap(grid->cells);
@@ -55,13 +55,13 @@ ss_grid_gen(
 	for(usize i = 0; i < count; ++i) {
 		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
-		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
-		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);
-		i32 x2               = (i32)ceil_f32(aabb.max.x * cell_size_inv);
-		i32 y2               = (i32)ceil_f32(aabb.max.y * cell_size_inv);
+		i32 gx1              = (i32)floor_f32(aabb.min.x * cell_size_inv);
+		i32 gy1              = (i32)floor_f32(aabb.min.y * cell_size_inv);
+		i32 gx2              = (i32)ceil_f32(aabb.max.x * cell_size_inv);
+		i32 gy2              = (i32)ceil_f32(aabb.max.y * cell_size_inv);
 
-		for(int cx = x1; cx <= x2; ++cx) {
-			for(int cy = y1; cy <= y2; ++cy) {
+		for(int cx = gx1; cx <= gx2; ++cx) {
+			for(int cy = gy1; cy <= gy2; ++cy) {
 				// NOTE: we could avoid the collision check and make this step faster
 				// But this would help get less items to check when queriing the grid
 				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {

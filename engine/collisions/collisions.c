@@ -45,7 +45,7 @@ poly_to_c2poly(struct col_poly v)
 		.count = v.count,
 	};
 
-	for(size i = 0; i < v.count; ++i) {
+	for(ssize i = 0; i < v.count; ++i) {
 		r.verts[i] = v2_to_c2v(v.verts[i]);
 		r.norms[i] = v2_to_c2v(v.norms[i]);
 	}
@@ -435,7 +435,7 @@ col_shapes_get_bounding_box(struct col_shapes shapes)
 		.max.y = F32_MIN,
 	};
 
-	for(size i = 0; i < shapes.count; ++i) {
+	for(ssize i = 0; i < shapes.count; ++i) {
 		struct col_aabb aabb = col_shape_get_bounding_box(shapes.items[i]);
 		res.min.x            = min_f32(res.min.x, aabb.min.x);
 		res.min.y            = min_f32(res.min.y, aabb.min.y);
@@ -466,7 +466,7 @@ col_poly_get_bounding_box(struct col_poly poly)
 		.max.y = F32_MIN,
 	};
 
-	for(size j = 0; j < poly.count; ++j) {
+	for(ssize j = 0; j < poly.count; ++j) {
 		v2 p      = poly.verts[j];
 		res.min.x = min_f32(res.min.x, p.x);
 		res.min.y = min_f32(res.min.y, p.y);
