@@ -40,9 +40,9 @@ DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
-CFLAGS := $(DEBUG_CFLAGS)
+	CFLAGS := $(DEBUG_CFLAGS)
 else
-CFLAGS := $(RELEASE_CFLAGS)
+	CFLAGS := $(RELEASE_CFLAGS)
 endif
 
 CFLAGS += $(CDEFS)
@@ -53,9 +53,11 @@ PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
 
 .PHONY: all clean build steam run
-.DEFAULT_GOAL := all
 
-all: clean build run
+all: build run
+
+$(ASSETS_BIN):
+	make -f $(LUNA_DIR)/tools.mk tools-asset
 
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p $(ASSETS_OUT)
@@ -65,7 +67,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
+$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) | $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
 	$(CC) \
 		$(CFLAGS) \
 		$(INC_FLAGS) $< \

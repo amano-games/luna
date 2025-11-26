@@ -57,19 +57,21 @@ EXE_OUT      := $(OBJS)/Contents/MacOS/$(GAME_NAME)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
 .PHONY: all clean build run publish
-.DEFAULT_GOAL := all
 
 all: clean build run
+
+$(ASSETS_BIN):
+	make -f $(LUNA_DIR)/tools.mk tools-asset
+
+$(ASSETS_OUT): $(ASSETS_BIN) $(BUILD_DIR) $(OBJS)
+	mkdir -p $(ASSETS_OUT)
+	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(OBJS): $(BUILD_DIR)
 	mkdir -p $(OBJS)/Contents/MacOS
-
-$(ASSETS_OUT): $(ASSETS_BIN) $(BUILD_DIR) $(OBJS)
-	mkdir -p $(ASSETS_OUT)
-	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
 
 $(EXE_OUT): $(SRC_DIR)/main.c $(SHADER_OBJS) $(ASSETS_OUT) $(WATCH_SRC)
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents

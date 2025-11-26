@@ -111,8 +111,10 @@ ifeq ($(DETECTED_OS), Linux)
 SIM_CFLAGS     += -fsanitize-trap -fsanitize=address,unreachable
 endif
 
-.DEFAULT_GOAL := all
 .PHONY: all clean build run
+
+$(ASSETS_BIN):
+	make -f $(LUNA_DIR)/tools.mk tools-asset
 
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p "$(ASSETS_OUT)"
