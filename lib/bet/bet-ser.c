@@ -222,7 +222,7 @@ bet_read(
 			while(ser_iter_array(r, value, &item)) {
 				arr_push(bet->nodes, bet_node_read(r, item));
 			}
-			dbg_assert((size)arr_len(bet->nodes) == bet->node_count);
+			dbg_assert((ssize)arr_len(bet->nodes) == bet->node_count);
 			dbg_assert(bet->nodes[0].type == BET_NODE_NONE);
 		}
 	}

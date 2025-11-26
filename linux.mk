@@ -17,7 +17,7 @@ WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
 WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
-EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
+EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
 INC_DIRS       := src
 INC_DIRS       += $(LUNA_DIR)

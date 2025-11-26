@@ -769,13 +769,13 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 		if(json_eq(json, key, str8_lit("poly")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			i++;
-			size vert_count  = value->size / 2;
+			ssize vert_count = value->size / 2;
 			struct v2 *verts = arr_new(verts, vert_count, scratch);
-			for(size j = 0; j < vert_count; ++j) {
+			for(ssize j = 0; j < vert_count; ++j) {
 				verts[j].x = json_parse_f32(json, tokens + ++i);
 				verts[j].y = json_parse_f32(json, tokens + ++i);
 			}
-			size vert_count_n = poly_remove_collinear_points(verts, vert_count, 0);
+			ssize vert_count_n = poly_remove_collinear_points(verts, vert_count, 0);
 			if(vert_count_n != vert_count) {
 				log_info("pinb-gen", "Removed points from polygon from %d -> %d", (int)vert_count, (int)vert_count_n);
 			}
@@ -790,16 +790,16 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				mesh.count          = 1;
 				mesh.items          = alloc.allocf(alloc.ctx, sizeof(*mesh.items));
 				mesh.items[0].count = vert_count;
-				for(size j = 0; j < vert_count; ++j) {
+				for(ssize j = 0; j < vert_count; ++j) {
 					mesh.items[0].verts[j] = verts[j];
 				}
 			} else {
 				mesh = poly_decomp(verts, vert_count, scratch, scratch);
-				dbg_assert(mesh.count <= (size)ARRLEN(res.col_shapes.items));
+				dbg_assert(mesh.count <= (ssize)ARRLEN(res.col_shapes.items));
 			}
 
 			res.col_shapes.count = mesh.count;
-			for(size j = 0; j < mesh.count; ++j) {
+			for(ssize j = 0; j < mesh.count; ++j) {
 				struct poly poly                   = mesh.items[j];
 				res.col_shapes.items[j].type       = COL_TYPE_POLY;
 				res.col_shapes.items[j].poly.count = poly.count;

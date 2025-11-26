@@ -45,7 +45,7 @@ i32 sys_file_tell(void *f);
 i32 sys_file_seek_set(void *f, i32 pos);
 i32 sys_file_seek_cur(void *f, i32 pos);
 i32 sys_file_seek_end(void *f, i32 pos);
-size sys_file_w(void *f, const void *buf, u32 bsize);
+ssize sys_file_w(void *f, const void *buf, u32 bsize);
 i32 sys_file_r(void *f, void *buf, u32 bsize);
 struct sys_file_stats sys_file_stats(str8 path);
 b32 sys_make_dir(str8 path);

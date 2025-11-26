@@ -7,7 +7,7 @@
 struct dbg_drw DBG_DRW_STATE;
 
 void
-dbg_drw_ini(struct alloc alloc, size shapes_count)
+dbg_drw_ini(struct alloc alloc, ssize shapes_count)
 {
 	log_info("Debug draw", "init");
 	struct dbg_drw *state = &DBG_DRW_STATE;
@@ -94,9 +94,9 @@ dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
 }
 
 void
-dbg_drw_poly(struct v2 *verts, size count)
+dbg_drw_poly(struct v2 *verts, ssize count)
 {
-	for(size i = 0; i < count; ++i) {
+	for(ssize i = 0; i < count; ++i) {
 		v2 a = verts[i];
 		v2 b = verts[(i + 1) % count];
 		dbg_drw_lin(a.x, a.y, b.x, b.y);

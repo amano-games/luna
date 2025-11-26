@@ -72,33 +72,33 @@ ser_write(struct ser_writer *w, struct ser_value val)
 }
 
 void
-ser_write_u8(struct ser_writer *w, u8 u8)
+ser_write_u8(struct ser_writer *w, u8 value)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_U8, .u8 = u8});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_U8, .u8 = value});
 }
 
 void
-ser_write_i32(struct ser_writer *w, i32 i32)
+ser_write_i32(struct ser_writer *w, i32 value)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_I32, .i32 = i32});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_I32, .i32 = value});
 }
 
 void
-ser_write_f32(struct ser_writer *w, f32 f32)
+ser_write_f32(struct ser_writer *w, f32 value)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_F32, .f32 = f32});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_F32, .f32 = value});
 }
 
 void
-ser_write_bool(struct ser_writer *w, b32 bool32)
+ser_write_bool(struct ser_writer *w, b32 value)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .b32 = bool32});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .b32 = value});
 }
 
 void
-ser_write_string(struct ser_writer *w, str8 str)
+ser_write_string(struct ser_writer *w, str8 value)
 {
-	ser_write(w, (struct ser_value){.type = SER_TYPE_STRING, .str = str});
+	ser_write(w, (struct ser_value){.type = SER_TYPE_STRING, .str = value});
 }
 
 void

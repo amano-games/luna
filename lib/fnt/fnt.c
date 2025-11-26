@@ -177,12 +177,12 @@ error:
 struct fnt
 fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
-	struct fnt res       = {0};
-	str8 fnt_ext         = str8_lit(".fnt");
-	size widths_size     = FNT_CHAR_MAX;
-	size kern_pairs_size = FNT_KERN_PAIRS_MAX;
-	res.widths           = arr_new(res.widths, widths_size, alloc);
-	res.kern_pairs       = arr_new(res.kern_pairs, kern_pairs_size, alloc);
+	struct fnt res        = {0};
+	str8 fnt_ext          = str8_lit(".fnt");
+	ssize widths_size     = FNT_CHAR_MAX;
+	ssize kern_pairs_size = FNT_KERN_PAIRS_MAX;
+	res.widths            = arr_new(res.widths, widths_size, alloc);
+	res.kern_pairs        = arr_new(res.kern_pairs, kern_pairs_size, alloc);
 
 	if(res.widths == NULL) {
 		log_error("fnt", "Failed to alloc widths array ");

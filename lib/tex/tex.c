@@ -202,7 +202,7 @@ tex_mask(struct tex tex, i32 x, i32 y, i32 col)
 }
 
 void
-tex_opaque_to_rgba(struct tex tex, u32 *out, size size, struct gfx_col_pallete pallete)
+tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete)
 {
 	dbg_assert(tex.fmt == TEX_FMT_OPAQUE);
 	u32 *pixels       = out;
@@ -286,10 +286,10 @@ tex_from_rgba_w(const struct pixel_u8 *data, i32 w, i32 h, str8 out_path)
 	dbg_check(sys_file_w(file, &header, sizeof(header)) == 1, "tex", "Error writing header image to file");
 
 	i32 w_aligned = (w + 31) & ~31;
-	size bit_idx  = 0;
+	ssize bit_idx = 0;
 	u32 color_row = 0;
 	u32 mask_row  = 0;
-	for(size y = 0; y < h; ++y) {
+	for(ssize y = 0; y < h; ++y) {
 		const struct pixel_u8 *row = (struct pixel_u8 *)(data + y * w);
 		for(i32 x = 0; x < w_aligned; ++x) {
 			struct pixel_u8 pixel = {0};

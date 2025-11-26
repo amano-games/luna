@@ -49,9 +49,9 @@ aseprite_to_tex(const ase_t *ase, const str8 in_path, const str8 out_path, struc
 			for(int i = 0; i < ase->frame_count; ++i) {
 				ase_frame_t *frame  = ase->frames + i;
 				ase_color_t *pixels = frame->pixels;
-				for(size y = 0; y < ase->h; ++y) {
-					for(size x = 0; x < ase->w; ++x) {
-						size dst_x                      = x + i * ase->w;
+				for(ssize y = 0; y < ase->h; ++y) {
+					for(ssize x = 0; x < ase->w; ++x) {
+						ssize dst_x                     = x + i * ase->w;
 						struct ase_color_t src          = pixels[y * ase->w + x];
 						sheet_data[y * sheet_w + dst_x] = (struct pixel_u8){
 							.r = src.r,
@@ -103,7 +103,7 @@ aseprite_to_ani(
 		},
 	};
 	asset.clips = arr_new(asset.clips, ase->tag_count, scratch);
-	for(size i = 0; i < ase->tag_count; ++i) {
+	for(ssize i = 0; i < ase->tag_count; ++i) {
 		const ase_tag_t *tag       = ase->tags + i;
 		struct animation_clip clip = {0};
 		i32 frame_count            = tag->to_frame - tag->from_frame + 1;
@@ -115,8 +115,8 @@ aseprite_to_ani(
 			track->type                   = ANIMATION_TRACK_FRAME;
 			track->frames.len             = frame_count;
 			track->frames.cap             = frame_count;
-			for(size i = 0; i < frame_count; ++i) {
-				track->frames.items[i] = tag->from_frame + i;
+			for(ssize j = 0; j < frame_count; ++j) {
+				track->frames.items[j] = tag->from_frame + j;
 			}
 		}
 		{
@@ -163,8 +163,8 @@ str8_skip_non_alpha(str8 str)
 static inline str8
 str8_skip_until_assets(str8 str)
 {
-	str8 res = str;
-	size idx = str8_find_needle(str, 0, str8_lit("assets"), 0);
+	str8 res  = str;
+	ssize idx = str8_find_needle(str, 0, str8_lit("assets"), 0);
 	if(idx > 0) {
 		res = str8_skip(str, idx);
 	}

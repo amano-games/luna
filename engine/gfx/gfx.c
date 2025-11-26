@@ -314,12 +314,12 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode
 	struct tex dtex       = ctx.dst;
 	struct span_blit info = span_blit_gen(ctx, y1, x1, x2, mode);
 	if(dtex.fmt == TEX_FMT_OPAQUE) {
-		for(i32 y = y1; y <= y2; y++) {
+		for(i32 row = y1; row <= y2; row++) {
 			prim_blit_span_x(info);
 			span_blit_incr_y(&info);
 		}
 	} else {
-		for(i32 y = y1; y <= y2; y++) {
+		for(i32 row = y1; row <= y2; row++) {
 			prim_blit_span_y(info);
 			span_blit_incr_y(&info);
 		}

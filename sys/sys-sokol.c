@@ -61,16 +61,16 @@ struct touch_point_mouse_emu {
 };
 
 struct recording_1b {
-	size idx;
-	size len;
-	size cap;
+	ssize idx;
+	ssize len;
+	ssize cap;
 	struct tex *frames;
 };
 
 struct recording_aud {
-	size idx;
-	size len;
-	size cap;
+	ssize idx;
+	ssize len;
+	ssize cap;
 	f32 *frames;
 };
 
@@ -232,7 +232,7 @@ sokol_main(i32 argc, char **argv)
 		rec->len                 = 0;
 		rec->idx                 = 0;
 		rec->frames              = alloc_size(alloc, sizeof(*rec->frames) * rec->cap, false);
-		for(size i = 0; i < rec->cap; ++i) {
+		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, alloc);
 		}
 		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording video memory");
@@ -244,7 +244,7 @@ sokol_main(i32 argc, char **argv)
 		rec->len                  = 0;
 		rec->idx                  = 0;
 		rec->frames               = alloc_size(alloc, sizeof(*rec->frames) * rec->cap, false);
-		for(size i = 0; i < rec->cap; ++i) {
+		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = 0;
 		}
 		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording audio memory");
@@ -400,7 +400,7 @@ sokol_event(const sapp_event *ev)
 			i32 h                = SYS_DISPLAY_H;
 			str8 dbgcmd          = str8_lit("ffmpeg -f rawvideo -pix_fmt rgba -s 400x240 -i frame.raw frame.png");
 			FILE *test           = fopen("/tmp/frame.raw", "wb");
-			size dst_size        = w * h * sizeof(u32);
+			ssize dst_size       = w * h * sizeof(u32);
 			u32 *dst             = alloc_arr(scratch, u32, w * h, false);
 			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
 			fwrite(dst, sizeof(u32), w * h, test);
@@ -465,7 +465,7 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.mouse_btns &= ~(1 << ev->mouse_button);
 	} break;
 	case SAPP_EVENTTYPE_TOUCHES_BEGAN: {
-		for(size i = 0; i < ev->num_touches; ++i) {
+		for(ssize i = 0; i < ev->num_touches; ++i) {
 			struct sapp_touchpoint touch = ev->touches[i];
 			if(touch.pos_y > ev->window_height * 0.8f) {
 				sokol_touch_add(touch, SAPP_MOUSEBUTTON_MIDDLE);
@@ -479,7 +479,7 @@ sokol_event(const sapp_event *ev)
 		}
 	} break;
 	case SAPP_EVENTTYPE_TOUCHES_ENDED: {
-		for(size i = 0; i < ev->num_touches; ++i) {
+		for(ssize i = 0; i < ev->num_touches; ++i) {
 			struct sapp_touchpoint touch = ev->touches[i];
 			sokol_touch_remove(touch);
 		}
@@ -876,11 +876,11 @@ sys_file_r(void *f, void *buf, u32 buf_size)
 	return (i32)s;
 }
 
-size
+ssize
 sys_file_w(void *f, const void *buf, u32 buf_size)
 {
 	i32 count = 1;
-	size res  = fwrite(buf, buf_size, count, (FILE *)f);
+	ssize res = fwrite(buf, buf_size, count, (FILE *)f);
 	return res;
 }
 
@@ -1039,7 +1039,7 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 
 #if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
 	struct recording_aud *rec = &SOKOL_STATE.recording_aud;
-	for(size i = 0; i < rec->len; ++i) {
+	for(ssize i = 0; i < rec->len; ++i) {
 		i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
 		i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
 		gfx_cir(ctx, x, y, 1, 1);
@@ -1142,7 +1142,7 @@ sokol_process_info_set(void)
 #if !defined(TARGET_WASM)
 	{
 		// Exe PATH
-		size str_size = wai_getExecutablePath(NULL, 0, NULL);
+		ssize str_size = wai_getExecutablePath(NULL, 0, NULL);
 		if(str_size > 0) {
 			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
 			wai_getExecutablePath(path, str_size, NULL);
@@ -1154,7 +1154,7 @@ sokol_process_info_set(void)
 #if !defined(TARGET_WASM)
 	{
 		// Module PATH
-		size str_size = wai_getModulePath(NULL, 0, NULL);
+		ssize str_size = wai_getModulePath(NULL, 0, NULL);
 
 		if(str_size > 0) {
 			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
@@ -1242,12 +1242,12 @@ sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button)
 	b32 res = false;
 
 	// Make sure the point doesn't already exist
-	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+	for(ssize i = 0; i < (ssize)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
 		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
 		dbg_check(emu.id != point.identifier, "sokol", "Touch point already exists %" PRIxPTR "", emu.id);
 	}
 
-	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+	for(ssize i = 0; i < (ssize)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
 		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
 		if(emu.id == SOKOL_TOUCH_INVALID) {
 			SOKOL_STATE.touches_mouse[i].id  = point.identifier;
@@ -1266,7 +1266,7 @@ static inline b32
 sokol_touch_remove(sapp_touchpoint point)
 {
 	b32 res = false;
-	for(size i = 0; i < (size)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
+	for(ssize i = 0; i < (ssize)ARRLEN(SOKOL_STATE.touches_mouse); ++i) {
 		struct touch_point_mouse_emu emu = SOKOL_STATE.touches_mouse[i];
 		sapp_mousebutton btn             = SOKOL_STATE.touches_mouse[i].btn;
 		if(emu.id == point.identifier) {
@@ -1365,7 +1365,7 @@ sokol_set_icon(void)
 		sapp_set_icon(&icon_desc);
 	}
 
-	for(size i = 0; i < icon_count; ++i) {
+	for(ssize i = 0; i < icon_count; ++i) {
 		stbi_image_free((char *)icon_desc.images[i].pixels.ptr);
 	}
 }
@@ -1554,7 +1554,7 @@ sokol_recording_write(struct recording_1b *recording)
 
 	struct str_join params = {.sep = str8_lit(" ")};
 	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
-	size dst_size          = w * h * sizeof(u32);
+	ssize dst_size         = w * h * sizeof(u32);
 	u32 *dst               = alloc_arr(scratch, u32, w * h, false);
 	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
 
@@ -1562,9 +1562,9 @@ sokol_recording_write(struct recording_1b *recording)
 	dbg_check_warn(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
 
 	// Write frames in chronological order (handles circular buffer)
-	size oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
-	for(size i = 0; i < (size)recording->len; i++) {
-		size f         = (oldest + i) % recording->cap;
+	ssize oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
+	for(ssize i = 0; i < (ssize)recording->len; i++) {
+		ssize f        = (oldest + i) % recording->cap;
 		struct tex src = recording->frames[f];
 		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.opts.recording.colors);
 		fwrite(dst, sizeof(u32), w * h, pipe);

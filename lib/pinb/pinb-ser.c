@@ -702,7 +702,7 @@ pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_trans
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value->len; ++i) {
+	for(ssize i = 0; i < value->len; ++i) {
 		ser_write_array(w);
 		ser_write_i32(w, value->items[i].from);
 		ser_write_i32(w, value->items[i].to);
@@ -761,7 +761,7 @@ pinb_spawner_write(struct ser_writer *w, struct pinb_spawner *value)
 
 	ser_write_string(w, str8_lit("zones"));
 	ser_write_array(w);
-	for(size i = 0; i < value->zones_len; ++i) {
+	for(ssize i = 0; i < value->zones_len; ++i) {
 		ser_write_i32(w, value->zones[i]);
 	}
 	ser_write_end(w);
@@ -793,7 +793,7 @@ pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 				dbg_assert(item_value.type == SER_TYPE_I32);
 				arr_push(res.zones, item_value.i32);
 			}
-			dbg_assert(res.zones_len == (size)arr_len(res.zones));
+			dbg_assert(res.zones_len == (ssize)arr_len(res.zones));
 		}
 	}
 	return res;
@@ -982,7 +982,7 @@ pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences *value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value->len; ++i) {
+	for(ssize i = 0; i < value->len; ++i) {
 		pinb_sfx_sequence_write(w, value->items + i);
 	}
 	ser_write_end(w);
@@ -1007,7 +1007,7 @@ pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc
 			while(ser_iter_array(r, value, &item_value)) {
 				arr_push(res.items, pinb_sfx_sequence_read(r, item_value, alloc));
 			}
-			dbg_assert(res.len == (size)arr_len(res.items));
+			dbg_assert(res.len == (ssize)arr_len(res.items));
 		}
 	}
 	return res;
@@ -1036,7 +1036,7 @@ pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence *value)
 
 	ser_write_string(w, str8_lit("clips"));
 	ser_write_array(w);
-	for(size i = 0; i < value->clips_len; ++i) {
+	for(ssize i = 0; i < value->clips_len; ++i) {
 		ser_write_string(w, value->clips[i]);
 	}
 	ser_write_end(w);
@@ -1054,7 +1054,7 @@ pinb_messages_write(struct ser_writer *w, struct pinb_messages *value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value->len; ++i) {
+	for(ssize i = 0; i < value->len; ++i) {
 		pinb_message_write(w, value->items + i);
 	}
 	ser_write_end(w);
@@ -1091,7 +1091,7 @@ pinb_actions_write(struct ser_writer *w, struct pinb_actions *value)
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(size i = 0; i < value->len; ++i) {
+	for(ssize i = 0; i < value->len; ++i) {
 		pinb_action_write(w, value->items + i);
 	}
 	ser_write_end(w);
@@ -1656,7 +1656,7 @@ pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 			while(ser_iter_array(r, value, &sequence_value)) {
 				arr_push(res.items, pinb_message_read(r, sequence_value, alloc));
 			}
-			dbg_assert(res.len == (size)arr_len(res.items));
+			dbg_assert(res.len == (ssize)arr_len(res.items));
 		}
 	}
 	return res;
@@ -1679,7 +1679,7 @@ pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 			while(ser_iter_array(r, value, &item_value)) {
 				arr_push(res.items, pinb_action_read(r, item_value));
 			}
-			dbg_assert(res.len == (size)arr_len(res.items));
+			dbg_assert(res.len == (ssize)arr_len(res.items));
 		}
 	}
 	return res;
@@ -1771,7 +1771,7 @@ pinb_animator_transitions_read(struct ser_reader *r, struct ser_value obj, struc
 	struct pinb_animator_transitions res = {0};
 	struct ser_value key, value;
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
-	size len = 0;
+	ssize len = 0;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
@@ -2035,7 +2035,7 @@ pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data *value)
 
 	ser_write_string(w, str8_lit("data"));
 	ser_write_array(w);
-	for(size i = 0; i < value->len; ++i) {
+	for(ssize i = 0; i < value->len; ++i) {
 		pinb_prop_write(w, value->data + i);
 	}
 	ser_write_end(w);
@@ -2060,7 +2060,7 @@ pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc a
 			while(ser_iter_array(r, value, &item_value)) {
 				arr_push(res.data, pinb_prop_read(r, item_value, alloc));
 			}
-			dbg_assert(res.len == (size)arr_len(res.data));
+			dbg_assert(res.len == (ssize)arr_len(res.data));
 		}
 	}
 	return res;

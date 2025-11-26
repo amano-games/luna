@@ -22,19 +22,19 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 		return 0;
 	}
 	sys_file_seek_end(f, 0);
-	i32 size = sys_file_tell(f);
+	ssize f_size = sys_file_tell(f);
 	sys_file_seek_set(f, 0);
-	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)size + 1);
+	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
 		log_error("fnt-pd", "loading %s", path.str);
 		return 0;
 	}
-	sys_file_r(f, buf, size);
+	sys_file_r(f, buf, f_size);
 	sys_file_close(f);
-	buf[size] = '\0';
-	out->str  = buf;
-	out->size = size;
+	buf[f_size] = '\0';
+	out->str    = buf;
+	out->size   = f_size;
 	return 1;
 }
 

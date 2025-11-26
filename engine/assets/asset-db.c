@@ -124,7 +124,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 	if(has_key) {
 		return value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, asset_tex);
 		return value;
@@ -197,7 +197,7 @@ asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info inf
 	if(has_key) {
 		return value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, info);
 		return value;
@@ -270,7 +270,7 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 	if(has_key) {
 		return value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, slice);
 		return value;
@@ -310,7 +310,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	if(has_key) {
 		res = value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, asset_snd);
 		res = value;
@@ -385,7 +385,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 	if(has_key) {
 		res = value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, asset_fnt);
 		res = value;
@@ -446,7 +446,7 @@ asset_db_bet_push(
 	if(has_key) {
 		return value;
 	} else {
-		u32 value = table_len;
+		value = table_len;
 		ht_set_u32(&table->ht, key, value);
 		arr_push(table->arr, asset_bet);
 		return value;

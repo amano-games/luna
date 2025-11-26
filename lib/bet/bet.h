@@ -116,7 +116,7 @@ struct bet_node {
 };
 
 struct bet {
-	size node_count;
+	ssize node_count;
 	struct bet_node *nodes;
 };
 
@@ -133,7 +133,7 @@ struct bet_ctx {
 	u8 initial;
 	b32 debug;
 
-	size count;
+	ssize count;
 	struct bet_node_ctx *bet_node_ctx;
 	void (*action_init)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);

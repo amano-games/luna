@@ -10,7 +10,7 @@
 #define WAV_FOURCC(a, b, c, d) (u32)(a | (b << 8) | (c << 16) | (d << 24))
 
 b32
-wav_parse(const void *data, size data_size, struct wav *res)
+wav_parse(const void *data, ssize data_size, struct wav *res)
 {
 	struct wav_format *format = NULL;
 	struct riff_chunk *chunk  = (struct riff_chunk *)data;

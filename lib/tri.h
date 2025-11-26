@@ -6,14 +6,14 @@
 static inline void
 tri_barycentric(v2 p, v2 a, v2 b, v2 c, f32 *u, f32 *v, f32 *w)
 {
-	v2 v0     = v2_sub(b, a);
-	v2 v1     = v2_sub(c, a);
-	v2 v2     = v2_sub(p, a);
-	f32 d00   = v2_dot(v0, v0);
-	f32 d01   = v2_dot(v0, v1);
-	f32 d11   = v2_dot(v1, v1);
-	f32 d20   = v2_dot(v2, v0);
-	f32 d21   = v2_dot(v2, v1);
+	v2 v2_0   = v2_sub(b, a);
+	v2 v2_1   = v2_sub(c, a);
+	v2 v2_2   = v2_sub(p, a);
+	f32 d00   = v2_dot(v2_0, v2_0);
+	f32 d01   = v2_dot(v2_0, v2_1);
+	f32 d11   = v2_dot(v2_1, v2_1);
+	f32 d20   = v2_dot(v2_2, v2_0);
+	f32 d21   = v2_dot(v2_2, v2_1);
 	f32 denom = d00 * d11 - d01 * d01;
 	*v        = (d11 * d20 - d01 * d21) / denom;
 	*w        = (d00 * d21 - d01 * d20) / denom;

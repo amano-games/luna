@@ -789,7 +789,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		goto error;
 	} else {
 		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
-		for(size i = 0; i < (size)scores->count; ++i) {
+		for(ssize i = 0; i < (ssize)scores->count; ++i) {
 			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
 		}
 		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);

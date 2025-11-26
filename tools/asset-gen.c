@@ -81,7 +81,7 @@ file_cpy(const str8 in_path, const str8 out_path)
 	void *in  = sys_file_open_r(in_path);
 	void *out = sys_file_open_w(out_path);
 	char buffer[BUFSIZ];
-	size n;
+	ssize n;
 
 	while((n = sys_file_r(in, buffer, sizeof(buffer)) > 0)) {
 		dbg_check(sys_file_w(out, buffer, n), "asset-gen", "Failed to copy file", out_path.str);

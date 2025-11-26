@@ -11,7 +11,7 @@ BUILD_DIR := ${DESTDIR}${BINDIR}
 
 WATCH_SRC      := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
-EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
+EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS       := $(SRC_DIR)
 INC_DIRS       += $(LUNA_DIR)
 INC_FLAGS      += $(addprefix -I,$(INC_DIRS))

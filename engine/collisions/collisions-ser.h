@@ -55,7 +55,7 @@ col_poly_to_str8(struct alloc alloc, struct col_poly col)
 {
 	str8 res              = {0};
 	struct str8_list list = {0};
-	for(size i = 0; i < col.count; ++i) {
+	for(ssize i = 0; i < col.count; ++i) {
 		struct v2 vert = col.verts[i];
 		str8_list_pushf(alloc, &list, "%g", (double)vert.x);
 		str8_list_pushf(alloc, &list, "%g", (double)vert.y);

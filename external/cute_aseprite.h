@@ -1251,11 +1251,11 @@ ase_t* cute_aseprite_load_from_memory(const void* memory, int size, void* mem_ct
 				continue;
 			}
 			while (cel->is_linked) {
-				ase_frame_t* frame = ase->frames + cel->linked_frame_index;
+				ase_frame_t* sub_frame = ase->frames + cel->linked_frame_index;
 				int found = 0;
-				for (int k = 0; k < frame->cel_count; ++k) {
-					if (frame->cels[k].layer == cel->layer) {
-						cel = frame->cels + k;
+				for (int k = 0; k < sub_frame->cel_count; ++k) {
+					if (sub_frame->cels[k].layer == cel->layer) {
+						cel = sub_frame->cels + k;
 						found = 1;
 						break;
 					}

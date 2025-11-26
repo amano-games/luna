@@ -112,9 +112,9 @@ cstr8_len(u8 *c)
 }
 
 inline str8
-string8(u8 *str, u64 size)
+string8(u8 *str, u64 str_size)
 {
-	str8 result = {str, size};
+	str8 result = {str, str_size};
 	return (result);
 }
 
