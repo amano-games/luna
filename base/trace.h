@@ -10,7 +10,7 @@ static SpallProfile SPALL_CTX;
 static SpallBuffer SPALL_BUFFER;
 #endif
 
-void trace_init(str8 file_name, uchar *buffer, usize size);
+void trace_ini(str8 file_name, uchar *buffer, usize size);
 void trace_buffer_close(void);
 void trace_close(void);
 
