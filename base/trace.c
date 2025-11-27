@@ -29,7 +29,7 @@ trace_fclose(SpallProfile *self)
 #endif
 
 void
-trace_init(str8 file_name, u8 *buffer, usize size)
+trace_ini(str8 file_name, u8 *buffer, usize size)
 {
 
 #if defined(TRACE_AUTO)
@@ -40,8 +40,14 @@ trace_init(str8 file_name, u8 *buffer, usize size)
 	spall_auto_thread_init(thread_id, SPALL_DEFAULT_BUFFER_SIZE);
 #else
 	log_info("trace", "Init (Manual)");
-	void *f      = sys_file_open_w(file_name);
-	SPALL_CTX    = spall_init_callbacks(1, &trace_fwrite, &trace_fflush, &trace_fclose, f, false);
+	void *f   = sys_file_open_w(file_name);
+	SPALL_CTX = spall_init_callbacks(
+		1,
+		&trace_fwrite,
+		&trace_fflush,
+		&trace_fclose,
+		f,
+		false);
 	SPALL_BUFFER = (SpallBuffer){
 		.length = size,
 		.data   = buffer,
