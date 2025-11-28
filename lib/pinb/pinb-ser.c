@@ -875,6 +875,9 @@ pinb_mover_write(struct ser_writer *w, struct pinb_mover *value)
 	ser_write_string(w, str8_lit("speed"));
 	ser_write_f32(w, value->speed);
 
+	ser_write_string(w, str8_lit("t"));
+	ser_write_f32(w, value->t);
+
 	ser_write_end(w);
 }
 
@@ -896,6 +899,9 @@ pinb_mover_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("speed"), 0)) {
 			dbg_assert(value.type == SER_TYPE_F32);
 			res.speed = value.f32;
+		} else if(str8_match(key.str, str8_lit("t"), 0)) {
+			dbg_assert(value.type == SER_TYPE_F32);
+			res.t = value.f32;
 		}
 	}
 
