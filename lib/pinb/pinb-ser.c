@@ -51,9 +51,9 @@ pinb_read(
 		}
 	}
 	log_info(
-		"Pinb",
-		"Parsed, version: %d\n"
-		"entities_count: %d\n"
+		"pinb-ser",
+		"version: %d "
+		"entities_count: %d "
 		"entities_max_id %d",
 		table->version,
 		table->entities_count,

@@ -59,8 +59,7 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 void
 trace_buffer_close(void)
 {
-#if defined(TRACE_AUTO)
-#else
+#if !defined(TRACE_AUTO)
 	spall_buffer_quit(&SPALL_CTX, &SPALL_BUFFER);
 #endif
 }
