@@ -309,8 +309,8 @@ gen_tables_recursive(const str8 in_dir, struct marena *arena)
 	while(dir.has_next) {
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
-		str8 in_path   = str8_fmt_push(alloc, "%s/%s", in_dir.str, file.name);
 		str8 file_name = str8_cstr(file.name);
+		str8 in_path   = str8_fmt_push(alloc, "%*.s/%*.s", in_dir.size, in_dir.str, file_name.size, file_name.str);
 
 		if(file.is_dir) {
 			if(

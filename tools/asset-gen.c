@@ -112,8 +112,8 @@ handle_asset_recursive(
 		tinydir_readfile(&dir, &file);
 
 		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%s/%s", in_dir.str, file.name);
-		str8 out_path  = str8_fmt_push(alloc, "%s/%s", out_dir.str, file.name);
+		str8 in_path   = str8_fmt_push(alloc, "%*.s/%*.s", in_dir.size, in_dir.str, file_name.size, file_name.str);
+		str8 out_path  = str8_fmt_push(alloc, "%*.s/%*.s", out_dir.size, out_dir.str, file_name.size, file_name.str);
 
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
