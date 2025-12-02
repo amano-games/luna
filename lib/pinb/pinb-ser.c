@@ -1127,8 +1127,8 @@ pinb_action_write(struct ser_writer *w, struct pinb_action *value)
 	ser_write_i32(w, value->event_condition_type);
 	ser_write_string(w, str8_lit("event_condition"));
 	ser_write_i32(w, value->event_condition);
-	ser_write_string(w, str8_lit("debug"));
-	ser_write_i32(w, value->debug);
+	ser_write_string(w, str8_lit("flags"));
+	ser_write_i32(w, value->flags);
 
 	ser_write_end(w);
 }
@@ -1966,8 +1966,8 @@ pinb_action_read(struct ser_reader *r, struct ser_value obj)
 			res.event_condition_type = value.i32;
 		} else if(str8_match(key.str, str8_lit("event_condition"), 0)) {
 			res.event_condition = value.i32;
-		} else if(str8_match(key.str, str8_lit("debug"), 0)) {
-			res.debug = value.i32;
+		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
+			res.flags = value.i32;
 		}
 	}
 	return res;

@@ -188,7 +188,7 @@ struct pinb_messages {
 };
 
 struct pinb_action {
-	b32 debug;
+	u32 flags;
 	i32 event_type;
 	i32 event_condition; // NOTE: should events be an array?
 	i32 event_condition_type;

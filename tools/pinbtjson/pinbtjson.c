@@ -689,8 +689,8 @@ pinbtjson_handle_action(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.action.event_condition_type = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("event_condition")) == 0) {
 			res.action.event_condition = json_parse_i32(json, value);
-		} else if(json_eq(json, key, str8_lit("debug")) == 0) {
-			res.action.debug = json_parse_bool32(json, value);
+		} else if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.action.flags = json_parse_i32(json, value);
 		}
 	}
 	return res;

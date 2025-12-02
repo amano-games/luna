@@ -210,7 +210,7 @@ export interface Attractor {
 
 export interface GameAction {
   _name?: string;
-  debug: boolean;
+  flags: number;
   action_argument: number;
   action_ref: number;
   action_type: number;

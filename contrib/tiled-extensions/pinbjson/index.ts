@@ -546,7 +546,7 @@ function getAction(object: MapObject, key: string, prop: PropertyValue) {
   const action_ref = Number(value["action_ref"].id) || object.id;
   const res: GameAction = {
     _name: key,
-    debug: value["debug"],
+    flags: value["flags"].value,
     action_argument: value["action_argument"],
     action_ref: action_ref,
     action_type: value["action_type"].value,
