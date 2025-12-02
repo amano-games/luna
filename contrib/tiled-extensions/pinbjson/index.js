@@ -846,7 +846,7 @@
     const action_ref = Number(value["action_ref"].id) || object.id;
     const res = {
       _name: key,
-      debug: value["debug"],
+      flags: value["flags"].value,
       action_argument: value["action_argument"],
       action_ref,
       action_type: value["action_type"].value,
