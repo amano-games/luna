@@ -9,12 +9,10 @@ struct dbg_drw DBG_DRW_STATE;
 void
 dbg_drw_ini(struct alloc alloc, ssize shapes_count)
 {
+#if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
 	log_info("Debug draw", "init");
 	struct dbg_drw *state = &DBG_DRW_STATE;
-#if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
-	state->shapes = arr_new_clr(state->shapes, shapes_count, alloc);
-#else
-	DBG_DRW_STATE.shapes = NULL;
+	state->shapes         = arr_new_clr(state->shapes, shapes_count, alloc);
 #endif
 }
 
