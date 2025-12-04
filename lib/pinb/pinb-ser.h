@@ -126,6 +126,7 @@ void pinb_prop_write(struct ser_writer *w, struct pinb_prop *value);
 struct pinb_prop pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
 
 struct pinb_table_props pinb_table_props_read(struct ser_reader *r, struct ser_value obj);
+void pinb_table_props_write(struct ser_writer *w, struct pinb_table_props *props);
 
 void pinb_table_switcher_write(struct ser_writer *w, struct pinb_table_switcher *value);
 struct pinb_table_switcher pinb_table_switcher_read(struct ser_reader *r, struct ser_value obj);
