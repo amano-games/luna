@@ -15,8 +15,12 @@ struct alloc {
 	void *ctx;
 };
 
-#define alloc_struct(alloc, type, clr)     (type *)alloc_size(alloc, sizeof(type), clr)
-#define alloc_arr(alloc, type, count, clr) (type *)alloc_size(alloc, sizeof(type) * count, clr)
+#define alloc_struct(alloc, ptr)     (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), false)
+#define alloc_struct_clr(alloc, ptr) (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), true)
+#define alloc_arr(alloc, ptr, count) \
+	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), false)
+#define alloc_arr_clr(alloc, ptr, count) \
+	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), true)
 
 static inline void *
 alloc_size(struct alloc alloc, usize mem_size, b32 clr)

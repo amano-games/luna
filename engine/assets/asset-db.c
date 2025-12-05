@@ -25,33 +25,33 @@ asset_db_ini(
 	i32 exp               = 10;
 
 	db->animations.ht   = ht_new_u32(exp, alloc);
-	db->animations.data = arr_new(db->animations.data, clip_count + 1, alloc);
-	db->animations.arr  = arr_new(db->animations.arr, slice_count + 1, alloc);
+	db->animations.data = arr_new(alloc, db->animations.data, clip_count + 1);
+	db->animations.arr  = arr_new(alloc, db->animations.arr, slice_count + 1);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
 	db->paths.ht   = ht_new_u32(exp, alloc);
-	db->paths.arr  = arr_new(db->paths.arr, paths_count + 1, alloc);
-	db->paths.data = arr_new(db->paths.data, paths_data_size, alloc);
+	db->paths.arr  = arr_new(alloc, db->paths.arr, paths_count + 1);
+	db->paths.data = arr_new(alloc, db->paths.data, paths_data_size);
 	arr_push(db->paths.arr, (str8){0});
 
 	db->textures.ht  = ht_new_u32(exp, alloc);
-	db->textures.arr = arr_new(db->textures.arr, textures_count + 1, alloc);
+	db->textures.arr = arr_new(alloc, db->textures.arr, textures_count + 1);
 	arr_push(db->textures.arr, (struct asset_tex){0});
 
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
-	db->textures_info.arr = arr_new(db->textures_info.arr, textures_count + 1, alloc);
+	db->textures_info.arr = arr_new(alloc, db->textures_info.arr, textures_count + 1);
 	arr_push(db->textures_info.arr, (struct asset_tex_info){0});
 
 	db->snds.ht  = ht_new_u32(exp, alloc);
-	db->snds.arr = arr_new(db->snds.arr, snds_count + 1, alloc);
+	db->snds.arr = arr_new(alloc, db->snds.arr, snds_count + 1);
 	arr_push(db->snds.arr, (struct asset_snd){0});
 
 	db->fonts.ht  = ht_new_u32(exp, alloc);
-	db->fonts.arr = arr_new(db->fonts.arr, fonts_count + 1, alloc);
+	db->fonts.arr = arr_new(alloc, db->fonts.arr, fonts_count + 1);
 	arr_push(db->fonts.arr, (struct asset_fnt){0});
 
 	db->bets.ht  = ht_new_u32(exp, alloc);
-	db->bets.arr = arr_new(db->bets.arr, bets_count + 1, alloc);
+	db->bets.arr = arr_new(alloc, db->bets.arr, bets_count + 1);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 }
 

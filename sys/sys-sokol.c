@@ -401,7 +401,7 @@ sokol_event(const sapp_event *ev)
 			str8 dbgcmd          = str8_lit("ffmpeg -f rawvideo -pix_fmt rgba -s 400x240 -i frame.raw frame.png");
 			FILE *test           = fopen("/tmp/frame.raw", "wb");
 			ssize dst_size       = w * h * sizeof(u32);
-			u32 *dst             = alloc_arr(scratch, u32, w * h, false);
+			u32 *dst             = alloc_arr(scratch, dst, w * h);
 			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
 			fwrite(dst, sizeof(u32), w * h, test);
 			fclose(test);
@@ -1555,7 +1555,7 @@ sokol_recording_write(struct recording_1b *recording)
 	struct str_join params = {.sep = str8_lit(" ")};
 	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
 	ssize dst_size         = w * h * sizeof(u32);
-	u32 *dst               = alloc_arr(scratch, u32, w * h, false);
+	u32 *dst               = alloc_arr(scratch, dst, w * h);
 	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
 
 	pipe = popen((char *)cmd.str, "w");
