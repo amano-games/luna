@@ -154,6 +154,7 @@ struct asset_bet_handle asset_db_bet_handle_get(struct asset_db *db, struct asse
 struct asset_bet asset_db_bet_get(struct asset_db *db, struct asset_handle handle);
 struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, u32 id);
 u32 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle);
+struct str8 asset_db_bet_path_get(struct asset_db *db, u32 id);
 
 usize asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
 usize asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);

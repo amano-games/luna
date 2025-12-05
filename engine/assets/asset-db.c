@@ -496,6 +496,21 @@ asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
+struct str8
+asset_db_bet_path_get(struct asset_db *db, u32 id)
+{
+	TRACE_START(__func__);
+	str8 res = {0};
+	dbg_assert(id > 0);
+	dbg_assert(id < arr_len(db->textures.arr));
+	struct bet_table *table    = &db->bets;
+	struct asset_bet asset     = table->arr[id];
+	struct asset_handle handle = {.path_hash = asset.path_hash, .type = ASSET_TYPE_BET};
+	res                        = asset_db_path_get(db, handle);
+	TRACE_END();
+	return res;
+}
+
 usize
 asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle)
 {
