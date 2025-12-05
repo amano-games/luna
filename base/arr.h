@@ -11,8 +11,8 @@ struct arr_header {
 	usize cap;
 };
 
-#define arr_new(alloc, ptr, count)     _arr_ini((alloc), sizeof(*(ptr)), (count), false)
-#define arr_new_clr(alloc, ptr, count) _arr_ini((alloc), sizeof(*(ptr)), (count), true)
+#define arr_new(alloc, ptr, count)     (__typeof__(ptr))_arr_ini((alloc), sizeof(*(ptr)), (count), false)
+#define arr_new_clr(alloc, ptr, count) (__typeof__(ptr))_arr_ini((alloc), sizeof(*(ptr)), (count), true)
 #define arr_header(a)                  ((a) ? (struct arr_header *)((char *)(a) - sizeof(struct arr_header)) : NULL)
 #define arr_pop(a)                     ((a) ? (--arr_header(a)->len, (a)[arr_len(a)]) : (a)[0])
 #define arr_len(a)                     ((a) ? arr_header(a)->len : 0)
