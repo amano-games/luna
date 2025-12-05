@@ -89,7 +89,7 @@ aseprite_to_ani(
 	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
 
 	struct ani_db db = {.bank_count = 1, .clip_count = ase->tag_count};
-	db.assets        = arr_new(db.assets, 1, scratch);
+	db.assets        = arr_new(scratch, db.assets, 1);
 	// in_path  = ./src/assets/img/frog.aseprite
 	// out_path = ./tmp
 	// res      = assets/img/frog.ani_db
@@ -102,7 +102,7 @@ aseprite_to_ani(
 			.path_hash = hash_string(asset_path),
 		},
 	};
-	asset.clips = arr_new(asset.clips, ase->tag_count, scratch);
+	asset.clips = arr_new(scratch, asset.clips, ase->tag_count);
 	for(ssize i = 0; i < ase->tag_count; ++i) {
 		const ase_tag_t *tag       = ase->tags + i;
 		struct animation_clip clip = {0};

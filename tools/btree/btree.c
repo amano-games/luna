@@ -243,7 +243,7 @@ handle_btree_json(str8 json, struct bet_node_holder *holder, struct alloc alloc,
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
+	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
 
@@ -268,7 +268,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	json_load(in_path, scratch, &json);
 
 	struct bet_node_holder holder = {0};
-	holder.nodes                  = arr_new(holder.nodes, 1, alloc);
+	holder.nodes                  = arr_new(alloc, holder.nodes, 1);
 	arr_push(holder.nodes, (struct bet_node){0});
 	handle_btree_json(json, &holder, alloc, scratch);
 
