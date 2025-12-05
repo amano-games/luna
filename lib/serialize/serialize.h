@@ -77,10 +77,24 @@ ser_write_u8(struct ser_writer *w, u8 value)
 	ser_write(w, (struct ser_value){.type = SER_TYPE_U8, .u8 = value});
 }
 
+static inline u8
+ser_get_u8(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_U8);
+	return value.u8;
+}
+
 void
 ser_write_i32(struct ser_writer *w, i32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_I32, .i32 = value});
+}
+
+static inline i32
+ser_get_i32(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_I32);
+	return value.i32;
 }
 
 void
@@ -89,16 +103,37 @@ ser_write_f32(struct ser_writer *w, f32 value)
 	ser_write(w, (struct ser_value){.type = SER_TYPE_F32, .f32 = value});
 }
 
+static inline f32
+ser_get_f32(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_F32);
+	return value.f32;
+}
+
 void
-ser_write_bool(struct ser_writer *w, b32 value)
+ser_write_b32(struct ser_writer *w, b32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .b32 = value});
+}
+
+static inline b32
+ser_get_b32(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_BOOL);
+	return value.b32;
 }
 
 void
 ser_write_string(struct ser_writer *w, str8 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_STRING, .str = value});
+}
+
+static inline str8
+ser_get_string(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_STRING);
+	return value.str;
 }
 
 void
@@ -124,7 +159,7 @@ ser_safe_read(struct ser_reader *r, void *dst, int size)
 {
 	int idx = r->cur + size;
 	if(idx > r->len) { return false; }
-	if(dst) { memcpy(dst, &r->data[r->cur], size); }
+	if(dst) { mcpy(dst, &r->data[r->cur], size); }
 	r->cur = idx;
 	return true;
 }

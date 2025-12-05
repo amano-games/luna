@@ -127,8 +127,7 @@ col_shapes_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("count"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			count = value.i32;
+			count = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value;
@@ -177,16 +176,13 @@ col_cir_read(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value = {0};
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.p.x = value.f32;
+	res.p.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.p.y = value.f32;
+	res.p.y = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.r = value.f32;
+	res.r = ser_get_f32(value);
 
 	return res;
 }
@@ -199,20 +195,16 @@ col_aabb_read(struct ser_reader *r, struct ser_value arr)
 	dbg_assert(arr.type == SER_TYPE_ARRAY);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.min.x = value.f32;
+	res.min.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.min.y = value.f32;
+	res.min.y = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.max.x = value.f32;
+	res.max.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.max.y = value.f32;
+	res.max.y = ser_get_f32(value);
 
 	return res;
 }
@@ -227,8 +219,7 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("count"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.count = value.i32;
+			res.count = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("verts"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value item_value;
@@ -288,20 +279,16 @@ col_ellipsis_read(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value  = {0};
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.p.x = value.f32;
+	res.p.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.p.y = value.f32;
+	res.p.y = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.rx = value.f32;
+	res.rx = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.ry = value.f32;
+	res.ry = ser_get_f32(value);
 
 	return res;
 }
@@ -325,20 +312,16 @@ col_line_read(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value = {0};
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.a.x = value.f32;
+	res.a.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.a.y = value.f32;
+	res.a.y = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.b.x = value.f32;
+	res.b.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.b.y = value.f32;
+	res.b.y = ser_get_f32(value);
 
 	return res;
 }

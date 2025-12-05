@@ -24,23 +24,19 @@ pinb_read(
 	while(ser_iter_object(r, root, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("version"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			dbg_assert(value.i32 > 0);
-			table->version = value.i32;
+			dbg_assert(ser_get_i32(value) > 0);
+			table->version = ser_get_i32(value);
 			dbg_assert(table->version == 1);
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			table->flags = value.i32;
+			table->flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("props"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
 			table->props = pinb_table_props_read(r, value);
 		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			table->entities_count = value.i32;
+			table->entities_count = ser_get_i32(value);
 			table->entities       = arr_new(alloc, table->entities, table->entities_count);
 		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			table->entities_max_id = value.i32;
+			table->entities_max_id = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("entities"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value val;
@@ -282,17 +278,13 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("id"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.id = value.i32;
+			res.id = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("x"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.x = value.i32;
+			res.x = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("y"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.y = value.i32;
+			res.y = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
 			res.spr = pinb_spr_read(r, value);
 		} else if(str8_match(key.str, str8_lit("bet"), 0)) {
@@ -778,20 +770,16 @@ pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("ref"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.ref = value.i32;
+			res.ref = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("type"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("zones_len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.zones_len = value.i32;
-			res.zones     = arr_new(alloc, res.zones, value.i32);
+			res.zones_len = ser_get_i32(value);
+			res.zones     = arr_new(alloc, res.zones, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("zones"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
-				dbg_assert(item_value.type == SER_TYPE_I32);
-				arr_push(res.zones, item_value.i32);
+				arr_push(res.zones, ser_get_i32(item_value));
 			}
 			dbg_assert(res.zones_len == (ssize)arr_len(res.zones));
 		}
@@ -841,11 +829,9 @@ pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("mode"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.mode = value.i32;
+			res.mode = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("capacity"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.capacity = value.i32;
+			res.capacity = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("cir"), 0)) {
 			res.type = PINB_SPAWN_ZONE_TYPE_CIR;
 			res.cir  = col_cir_read(r, value);
@@ -891,17 +877,13 @@ pinb_mover_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("ref"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.ref = value.i32;
+			res.ref = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("speed"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.speed = value.f32;
+			res.speed = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("t"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.t = value.f32;
+			res.t = ser_get_f32(value);
 		}
 	}
 
@@ -955,8 +937,7 @@ pinb_mover_path_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("point"), 0)) {
 			res.type  = PINB_MOVER_PATH_TYPE_POINT;
 			res.point = ser_read_v2(r, value);
@@ -1005,9 +986,8 @@ pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.len   = value.i32;
-			res.items = arr_new(alloc, res.items, value.i32);
+			res.len   = ser_get_i32(value);
+			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
@@ -1116,7 +1096,7 @@ pinb_action_write(struct ser_writer *w, struct pinb_action *value)
 	ser_write_string(w, str8_lit("action_ref"));
 	ser_write_i32(w, value->action_ref);
 	ser_write_string(w, str8_lit("action_arg"));
-	ser_write_i32(w, value->action_arg);
+	ser_write_f32(w, value->action_arg);
 	ser_write_string(w, str8_lit("action_delay"));
 	ser_write_f32(w, value->action_delay);
 	ser_write_string(w, str8_lit("action_cooldown"));
@@ -1226,14 +1206,11 @@ pinb_reactive_impulse_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("magnitude"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.magnitude = value.f32;
+			res.magnitude = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("cooldown"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.cooldown = value.f32;
+			res.cooldown = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("normalize"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.normalize = value.i32;
+			res.normalize = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1248,14 +1225,11 @@ pinb_force_field_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("magnitude"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.magnitude = value.f32;
+			res.magnitude = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("angle"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.angle_rad = value.f32;
+			res.angle_rad = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1270,22 +1244,17 @@ pinb_attractor_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
 			res.offset = ser_read_v2(r, value);
 		} else if(str8_match(key.str, str8_lit("radius"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.radius = value.f32;
+			res.radius = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("force"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.force = value.f32;
+			res.force = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("damping"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.damping = value.f32;
+			res.damping = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("distance_threshold"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.distance_threshold = value.f32;
+			res.distance_threshold = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1300,14 +1269,11 @@ pinb_reactive_sprite_offset_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("magnitude"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.magnitude = value.f32;
+			res.magnitude = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("delay"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.delay = value.f32;
+			res.delay = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("ref"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.ref = value.i32;
+			res.ref = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1322,8 +1288,7 @@ pinb_reactive_animation_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("animation_index"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_index = value.i32;
+			res.animation_index = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1338,26 +1303,19 @@ pinb_charged_impulse_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("angle"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.angle_rad = value.f32;
+			res.angle_rad = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("magnitude"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.magnitude = value.f32;
+			res.magnitude = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("charge_speed"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.charge_speed = value.f32;
+			res.charge_speed = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("release_speed"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.release_speed = value.f32;
+			res.release_speed = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("reset_target"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.reset_target = value.i32;
+			res.reset_target = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("auto_shoot"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.auto_shoot = value.i32;
+			res.auto_shoot = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("auto_shoot_hold"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.auto_shoot_hold = value.f32;
+			res.auto_shoot_hold = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1372,17 +1330,13 @@ pinb_plunger_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("charge_force_min"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.charge_force_min = value.f32;
+			res.charge_force_min = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("charge_force_max"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.charge_force_max = value.f32;
+			res.charge_force_max = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("release_force_min"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.release_force_min = value.f32;
+			res.release_force_min = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("release_force_max"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.release_force_max = value.f32;
+			res.release_force_max = ser_get_f32(value);
 		}
 	}
 
@@ -1398,17 +1352,13 @@ pinb_spinner_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("damping"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.damping = value.f32;
+			res.damping = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("stiffness"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.stiffness = value.f32;
+			res.stiffness = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("spin_force"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.spin_force = value.f32;
+			res.spin_force = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("stop_threshold"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.stop_threshold = value.f32;
+			res.stop_threshold = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1423,23 +1373,17 @@ pinb_bucket_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("animation_shoot"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_shoot = value.i32;
+			res.animation_shoot = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("animation_on"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_on = value.i32;
+			res.animation_on = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("animation_off"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_off = value.i32;
+			res.animation_off = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("impulse_angle"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.impulse_angle_rad = value.f32;
+			res.impulse_angle_rad = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("impulse_magnitude"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.impulse_magnitude = value.f32;
+			res.impulse_magnitude = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("delay"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.delay = value.f32;
+			res.delay = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1454,14 +1398,11 @@ pinb_ball_saver_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("duration"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.duration = value.f32;
+			res.duration = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("save_delay"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.save_delay = value.f32;
+			res.save_delay = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1476,17 +1417,13 @@ pinb_flipper_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("velocity_easing_function"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.velocity_easing_function = value.i32;
+			res.velocity_easing_function = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("velocity_scale"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.velocity_scale = value.f32;
+			res.velocity_scale = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("velocity_radius_min"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.velocity_radius_min = value.f32;
+			res.velocity_radius_min = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("velocity_radius_max"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.velocity_radius_max = value.f32;
+			res.velocity_radius_max = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1501,11 +1438,9 @@ pinb_flip_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1520,8 +1455,7 @@ pinb_gravity_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("value"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.value = value.f32;
+			res.value = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1536,26 +1470,19 @@ pinb_counter_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("type"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("min"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.min = value.i32;
+			res.min = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("max"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.max = value.i32;
+			res.max = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("value"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.value = value.i32;
+			res.value = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("value_initial"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.value_initial = value.i32;
+			res.value_initial = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("resolution"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.resolution = value.i32;
+			res.resolution = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1570,8 +1497,7 @@ pinb_collision_layer_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("layer"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.layer = value.i32;
+			res.layer = ser_get_i32(value);
 		}
 	}
 
@@ -1587,8 +1513,7 @@ pinb_crank_animation_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("interval"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.interval = value.f32;
+			res.interval = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1603,8 +1528,7 @@ pinb_reset_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -1619,23 +1543,17 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
-			res.path = value.str;
+			res.path = ser_get_string(value);
 		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flip = value.i32;
+			res.flip = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("layer"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.layer = value.i32;
+			res.layer = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("y_sort"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.y_sort = value.i32;
+			res.y_sort = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("y_sort_offset"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.y_sort_offset = value.i32;
+			res.y_sort_offset = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("offset"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			res.offset = ser_read_v2(r, value);
@@ -1654,9 +1572,8 @@ pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.len   = value.i32;
-			res.items = arr_new(alloc, res.items, value.i32);
+			res.len   = ser_get_i32(value);
+			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value sequence_value;
 			while(ser_iter_array(r, value, &sequence_value)) {
@@ -1677,9 +1594,8 @@ pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.len   = value.i32;
-			res.items = arr_new(alloc, res.items, value.i32);
+			res.len   = ser_get_i32(value);
+			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
@@ -1700,15 +1616,15 @@ pinb_physics_props_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("steps"), 0)) {
-			res.steps = value.i32;
+			res.steps = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("max_translation"), 0)) {
-			res.max_translation = value.f32;
+			res.max_translation = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("max_rotation"), 0)) {
-			res.max_rotation = value.f32;
+			res.max_rotation = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("penetration_correction"), 0)) {
-			res.penetration_correction = value.f32;
+			res.penetration_correction = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("penetration_allowance"), 0)) {
-			res.penetration_allowance = value.f32;
+			res.penetration_allowance = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1723,13 +1639,13 @@ pinb_flippers_props_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flip_velocity"), 0)) {
-			res.flip_velocity = value.f32;
+			res.flip_velocity = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("rotation_max_degrees"), 0)) {
-			res.rotation_max_turns = value.f32;
+			res.rotation_max_turns = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("rotation_min_degrees"), 0)) {
-			res.rotation_min_turns = value.f32;
+			res.rotation_min_turns = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("release_velocity"), 0)) {
-			res.release_velocity = value.f32;
+			res.release_velocity = ser_get_f32(value);
 		}
 	}
 	return res;
@@ -1748,8 +1664,7 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
 			res.flippers_props = pinb_flippers_props_read(r, value);
 		} else if(str8_match(key.str, str8_lit("bg_tex_path"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
-			res.bg_tex_path = value.str;
+			res.bg_tex_path = ser_get_string(value);
 		}
 	}
 
@@ -1763,11 +1678,9 @@ pinb_animator_transition_read(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value;
 	dbg_assert(arr.type == SER_TYPE_ARRAY);
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.from = value.i32;
+	res.from = ser_get_i32(value);
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.to = value.i32;
+	res.to = ser_get_i32(value);
 	return res;
 }
 
@@ -1781,8 +1694,7 @@ pinb_animator_transitions_read(struct ser_reader *r, struct ser_value obj, struc
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			len       = value.i32;
+			len       = ser_get_i32(value);
 			res.items = arr_new(alloc, res.items, len);
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
@@ -1806,11 +1718,9 @@ pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("play_on_start"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.play_on_start = value.i32;
+			res.play_on_start = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("initial_animation"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.initial_animation = value.i32;
+			res.initial_animation = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("transitions"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
 			res.transitions = pinb_animator_transitions_read(r, value, alloc);
@@ -1828,11 +1738,9 @@ pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("angle_rad"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.angle_rad = value.f32;
+			res.angle_rad = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
 			res.shapes = col_shapes_read(r, value);
 		}
@@ -1849,17 +1757,13 @@ pinb_switch_value_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("value"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.value = value.i32;
+			res.value = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("animation_on"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_on = value.i32;
+			res.animation_on = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("animation_off"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.animation_off = value.i32;
+			res.animation_off = ser_get_i32(value);
 		}
 	}
 
@@ -1874,11 +1778,9 @@ pinb_entity_list_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("prev"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.prev = value.i32;
+			res.prev = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("next"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.next = value.i32;
+			res.next = ser_get_i32(value);
 		}
 	}
 
@@ -1894,26 +1796,26 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc 
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("reset_time"), 0)) {
-			res.reset_time = value.f32;
+			res.reset_time = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("vol_min"), 0)) {
-			res.vol_min = value.f32;
+			res.vol_min = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("vol_max"), 0)) {
-			res.vol_max = value.f32;
+			res.vol_max = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("pitch_min"), 0)) {
-			res.pitch_min = value.f32;
+			res.pitch_min = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("pitch_max"), 0)) {
-			res.pitch_max = value.f32;
+			res.pitch_max = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("clips_len"), 0)) {
-			res.clips_len = value.i32;
+			res.clips_len = ser_get_i32(value);
 			res.clips     = arr_new(alloc, res.clips, res.clips_len);
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
-			struct ser_value clip_value;
+			struct ser_value item_value;
 			usize i = 0;
-			while(ser_iter_array(r, value, &clip_value)) {
-				res.clips[i++] = clip_value.str;
+			while(ser_iter_array(r, value, &item_value)) {
+				res.clips[i++] = ser_get_string(item_value);
 			}
 		}
 	}
@@ -1929,14 +1831,13 @@ pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("sequence_type"), 0)) {
-			res.sequence_type = value.i32;
+			res.sequence_type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("sequence_reset_time"), 0)) {
-			res.sequence_reset_time = value.f32;
+			res.sequence_reset_time = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("hide_time"), 0)) {
-			res.hide_time = value.f32;
+			res.hide_time = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("text"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
-			res.text = value.str;
+			res.text = ser_get_string(value);
 		}
 	}
 	return res;
@@ -1951,23 +1852,23 @@ pinb_action_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("action_type"), 0)) {
-			res.action_type = value.i32;
+			res.action_type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("action_ref"), 0)) {
-			res.action_ref = value.i32;
+			res.action_ref = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("action_arg"), 0)) {
-			res.action_arg = value.i32;
+			res.action_arg = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("action_delay"), 0)) {
-			res.action_delay = value.f32;
+			res.action_delay = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("action_cooldown"), 0)) {
-			res.action_cooldown = value.f32;
+			res.action_cooldown = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("event_type"), 0)) {
-			res.event_type = value.i32;
+			res.event_type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("event_condition_type"), 0)) {
-			res.event_condition_type = value.i32;
+			res.event_condition_type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("event_condition"), 0)) {
-			res.event_condition = value.i32;
+			res.event_condition = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -2020,11 +1921,9 @@ pinb_bet_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
-			res.path = value.str;
+			res.path = ser_get_string(value);
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.is_enabled = value.i32;
+			res.is_enabled = ser_get_i32(value);
 		}
 	}
 
@@ -2058,9 +1957,8 @@ pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc a
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.len  = value.i32;
-			res.data = arr_new(alloc, res.data, value.i32);
+			res.len  = ser_get_i32(value);
+			res.data = arr_new(alloc, res.data, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("data"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
@@ -2111,20 +2009,16 @@ pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("name"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
-			res.name = value.str;
+			res.name = ser_get_string(value);
 		} else if(str8_match(key.str, str8_lit("i32"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
 			res.type = PINB_PROP_TYPE_I32;
-			res.i32  = value.i32;
+			res.i32  = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("f32"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
 			res.type = PINB_PROP_TYPE_F32;
-			res.f32  = value.f32;
+			res.f32  = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("str"), 0)) {
-			dbg_assert(value.type == SER_TYPE_STRING);
 			res.type = PINB_PROP_TYPE_STR;
-			res.str  = value.str;
+			res.str  = ser_get_string(value);
 		}
 	}
 	return res;
@@ -2149,8 +2043,7 @@ pinb_table_switcher_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("table"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.table = value.i32;
+			res.table = ser_get_i32(value);
 		}
 	}
 	return res;
@@ -2177,8 +2070,7 @@ pinb_mob_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		}
 	}
 	return res;
