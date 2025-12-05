@@ -119,35 +119,35 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_check(key.type == SER_TYPE_STRING, "fnt", "Corrupt fnt data");
 		if(str8_match(key.str, str8_lit("tracking"), 0)) {
-			fnt->tracking = value.i32;
+			fnt->tracking = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("grid_w"), 0)) {
-			fnt->grid_w = value.i32;
+			fnt->grid_w = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("grid_h"), 0)) {
-			fnt->grid_h = value.i32;
+			fnt->grid_h = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("cell_w"), 0)) {
-			fnt->cell_w = value.i32;
+			fnt->cell_w = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("cell_h"), 0)) {
-			fnt->cell_h = value.i32;
+			fnt->cell_h = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("metrics"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
 			struct ser_value item_key, item_value;
 			while(ser_iter_object(r, value, &item_key, &item_value)) {
 				dbg_assert(item_key.type == SER_TYPE_STRING);
 				if(str8_match(item_key.str, str8_lit("baseline"), 0)) {
-					fnt->metrics.baseline = item_value.i32;
+					fnt->metrics.baseline = ser_get_i32(item_value);
 				} else if(str8_match(item_key.str, str8_lit("x_height"), 0)) {
-					fnt->metrics.x_height = item_value.i32;
+					fnt->metrics.x_height = ser_get_i32(item_value);
 				} else if(str8_match(item_key.str, str8_lit("cap_height"), 0)) {
-					fnt->metrics.cap_height = item_value.i32;
+					fnt->metrics.cap_height = ser_get_i32(item_value);
 				} else if(str8_match(item_key.str, str8_lit("descent"), 0)) {
-					fnt->metrics.descent = item_value.i32;
+					fnt->metrics.descent = ser_get_i32(item_value);
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("widths"), 0)) {
 			struct ser_value item_val;
 			usize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
-				fnt->widths[i++] = item_val.u8;
+				fnt->widths[i++] = ser_get_u8(item_val);
 			}
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
 			struct ser_value item_val;
@@ -161,7 +161,7 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 					u8 a                   = ker_key.str.str[0];
 					u8 b                   = ker_key.str.str[1];
 					u16 index              = ((u16)a << 8) | b;
-					fnt->kern_pairs[index] = ker_value.i32;
+					fnt->kern_pairs[index] = ser_get_i32(ker_value);
 				}
 				i++;
 			}

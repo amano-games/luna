@@ -124,22 +124,22 @@ bet_prop_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("value"), 0)) {
 			switch(res.type) {
 			case BET_PROP_NONE: {
 			} break;
 			case BET_PROP_F32: {
-				res.f32 = value.f32;
+				res.f32 = ser_get_f32(value);
 			} break;
 			case BET_PROP_I32: {
-				res.i32 = value.i32;
+				res.i32 = ser_get_i32(value);
 			} break;
 			case BET_PROP_U8_ARR: {
 				struct ser_value item_val;
 				usize i = 0;
 				while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.u8_arr)) {
-					res.u8_arr[i] = item_val.u8;
+					res.u8_arr[i] = ser_get_u8(item_val);
 					i++;
 				}
 			} break;
@@ -148,7 +148,7 @@ bet_prop_read(struct ser_reader *r, struct ser_value obj)
 				str8_cpy(&value.str, &dst);
 			} break;
 			case BET_PROP_BOOL32: {
-				res.i32 = value.i32;
+				res.i32 = ser_get_i32(value);
 			} break;
 			}
 		}
@@ -167,24 +167,24 @@ bet_node_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("type"), 0)) {
-			res.type = value.i32;
+			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("sub_type"), 0)) {
-			res.sub_type = value.i32;
+			res.sub_type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("parent"), 0)) {
-			res.parent = value.u8;
+			res.parent = ser_get_u8(value);
 		} else if(str8_match(key.str, str8_lit("i"), 0)) {
-			res.i = value.u8;
+			res.i = ser_get_u8(value);
 		} else if(str8_match(key.str, str8_lit("children_count"), 0)) {
-			res.children_count = value.u8;
+			res.children_count = ser_get_u8(value);
 		} else if(str8_match(key.str, str8_lit("children"), 0)) {
 			struct ser_value item_val;
 			usize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < ARRLEN(res.children)) {
-				res.children[i] = item_val.u8;
+				res.children[i] = ser_get_u8(item_val);
 				i++;
 			}
 		} else if(str8_match(key.str, str8_lit("prop_count"), 0)) {
-			res.prop_count = value.u8;
+			res.prop_count = ser_get_u8(value);
 		} else if(str8_match(key.str, str8_lit("props"), 0)) {
 			struct ser_value item_val;
 			int i = 0;
@@ -213,7 +213,7 @@ bet_read(
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("node_count"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
-			bet->node_count = value.i32;
+			bet->node_count = ser_get_i32(value);
 			bet->nodes      = arr_new(alloc, bet->nodes, bet->node_count);
 		} else if(str8_match(key.str, str8_lit("nodes"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);

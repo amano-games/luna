@@ -196,7 +196,7 @@ struct pinb_action {
 	i32 action_ref;
 	f32 action_delay;
 	f32 action_cooldown;
-	i32 action_arg; // NOTE: Should arguments be an array?
+	f32 action_arg; // NOTE: Should arguments be an array?
 };
 
 struct pinb_actions {

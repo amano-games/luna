@@ -54,41 +54,29 @@ body_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("flags"), 0)) {
-			dbg_assert(value.type == SER_TYPE_I32);
-			res.flags = value.i32;
+			res.flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("x"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.p.x = value.i32;
+			res.p.x = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("y"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.p.y = value.i32;
+			res.p.y = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("restitution"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.restitution = value.f32;
+			res.restitution = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("dynamic_friction"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.dynamic_friction = value.f32;
+			res.dynamic_friction = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("static_friction"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.static_friction = value.f32;
+			res.static_friction = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("mass"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.mass = value.f32;
+			res.mass = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("mass_inv"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.mass_inv = value.f32;
+			res.mass_inv = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("inertia"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.inertia = value.f32;
+			res.inertia = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("inertia_inv"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.inertia_inv = value.f32;
+			res.inertia_inv = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("linear_damping"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.linear_damping = value.f32;
+			res.linear_damping = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("ang_damping"), 0)) {
-			dbg_assert(value.type == SER_TYPE_F32);
-			res.ang_damping = value.f32;
+			res.ang_damping = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
 			res.shapes = col_shapes_read(r, value);
 		}

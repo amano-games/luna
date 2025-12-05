@@ -19,12 +19,10 @@ ser_read_v2(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value = {0};
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.x = value.f32;
+	res.x = ser_get_f32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_F32);
-	res.y = value.f32;
+	res.y = ser_get_f32(value);
 
 	return res;
 }
@@ -48,12 +46,10 @@ ser_read_v2_i32(struct ser_reader *r, struct ser_value arr)
 	struct ser_value value = {0};
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.x = value.i32;
+	res.x = ser_get_i32(value);
 
 	ser_iter_array(r, arr, &value);
-	dbg_assert(value.type == SER_TYPE_I32);
-	res.y = value.i32;
+	res.y = ser_get_i32(value);
 
 	return res;
 }
