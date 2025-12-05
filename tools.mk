@@ -42,7 +42,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 
-$(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(BUILD_DIR)
+$(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(ASSETS_WATCH_SRC) $(BUILD_DIR)
 	$(CC) \
 		$(CFLAGS) \
 		$(INC_FLAGS) \
@@ -50,7 +50,7 @@ $(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(BUILD_DIR)
 		$(LDLIBS) \
 		-o "$@"
 
-$(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(BUILD_DIR)
+$(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(ASSETS_WATCH_SRC) $(BUILD_DIR)
 	$(CC) \
 		$(CFLAGS) \
 		$(INC_FLAGS) \

@@ -62,7 +62,7 @@ PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
 all: clean build run
 
-$(ASSETS_BIN):
+$(ASSETS_BIN): $(ASSETS_WATCH_SRC)
 	make -f $(LUNA_DIR)/tools.mk tools-asset
 
 $(ASSETS_OUT): $(ASSETS_BIN)
