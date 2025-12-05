@@ -21,6 +21,8 @@ WARN_FLAGS += -Wno-unused-parameter
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen
 
+ASSETS_WATCH_SRC := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
+
 ifeq ($(DETECTED_OS), Linux)
 SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
 endif
