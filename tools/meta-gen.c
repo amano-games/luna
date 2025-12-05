@@ -78,7 +78,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 
 	jsmn_init(&parser);
 	i32 token_count   = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
-	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
+	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	jsmn_init(&parser);
 
 	i32 json_res = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
@@ -100,7 +100,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("columns")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 
-			table.columns = arr_new(table.columns, value->size, scratch);
+			table.columns = arr_new(scratch, table.columns, value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				jsmntok_t *child_key   = &tokens[i + j + 1];
 				jsmntok_t *child_value = &tokens[i + j + 2];
@@ -125,12 +125,12 @@ gen_table(const str8 in_path, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			ssize rows_count = value->size;
-			table.rows       = arr_new(table.rows, rows_count, scratch);
+			table.rows       = arr_new(scratch, table.rows, rows_count);
 
 			for(ssize j = 0; j < rows_count; j++) {
 				struct row row            = {0};
 				usize count               = arr_len(table.columns);
-				row.items                 = arr_new(row.items, count, scratch);
+				row.items                 = arr_new(scratch, row.items, count);
 				struct arr_header *header = arr_header(row.items);
 				header->len               = count;
 

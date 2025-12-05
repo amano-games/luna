@@ -191,7 +191,7 @@ pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index, struct alloc 
 		} else if(json_eq(json, key, str8_lit("transitions")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.animator.transitions.len   = value->size;
-			res.animator.transitions.items = arr_new(res.animator.transitions.items, value->size, alloc);
+			res.animator.transitions.items = arr_new(alloc, res.animator.transitions.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -619,7 +619,7 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 			res.sfx_sequence.reset_time = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			res.sfx_sequence.clips = arr_new(res.sfx_sequence.clips, value->size, alloc);
+			res.sfx_sequence.clips = arr_new(alloc, res.sfx_sequence.clips, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + j + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -770,7 +770,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 			dbg_assert(value->type == JSMN_ARRAY);
 			i++;
 			ssize vert_count = value->size / 2;
-			struct v2 *verts = arr_new(verts, vert_count, scratch);
+			struct v2 *verts = arr_new(scratch, verts, vert_count);
 			for(ssize j = 0; j < vert_count; ++j) {
 				verts[j].x = json_parse_f32(json, tokens + ++i);
 				verts[j].y = json_parse_f32(json, tokens + ++i);
@@ -969,7 +969,7 @@ pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index, struct alloc a
 			res.spawner.type = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("zones")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			res.spawner.zones = arr_new(res.spawner.zones, value->size, alloc);
+			res.spawner.zones = arr_new(alloc, res.spawner.zones, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + j + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -1241,7 +1241,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("sfx_sequences")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.sfx_sequences.len   = value->size;
-			res.entity.sfx_sequences.items = arr_new(res.entity.sfx_sequences.items, value->size, alloc);
+			res.entity.sfx_sequences.items = arr_new(alloc, res.entity.sfx_sequences.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -1253,7 +1253,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("messages")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.messages.len   = value->size;
-			res.entity.messages.items = arr_new(res.entity.messages.items, value->size, alloc);
+			res.entity.messages.items = arr_new(alloc, res.entity.messages.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -1265,7 +1265,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("actions")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.actions.len   = value->size;
-			res.entity.actions.items = arr_new(res.entity.actions.items, value->size, alloc);
+			res.entity.actions.items = arr_new(alloc, res.entity.actions.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = tokens + item_index;
@@ -1406,7 +1406,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	jsmntok_t *tokens = arr_new(tokens, token_count, scratch);
+	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
 
@@ -1432,7 +1432,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("entities_count")) == 0) {
 			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.entities_count = json_parse_i32(json, value);
-			res.entities       = arr_new(res.entities, res.entities_count, alloc);
+			res.entities       = arr_new(alloc, res.entities, res.entities_count);
 			++i;
 		} else if(json_eq(json, key, str8_lit("entities")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
