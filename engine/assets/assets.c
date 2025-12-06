@@ -10,7 +10,7 @@
 #include "base/str.h"
 #include "base/types.h"
 
-void *asset_allocf(void *ctx, usize s);
+void *asset_allocf(void *ctx, ssize s);
 
 void
 assets_ini(struct alloc alloc, usize size)
@@ -30,7 +30,7 @@ assets_ini(struct alloc alloc, usize size)
 }
 
 void *
-asset_allocf(void *ctx, usize s)
+asset_allocf(void *ctx, ssize s)
 {
 	struct assets *assets = (struct assets *)ctx;
 	void *mem             = marena_alloc(&assets->marena, s);

@@ -11,7 +11,7 @@
 // used for user defined allocations
 // alloc(ctx, size) -> ctx: pointer to some memory manager
 struct alloc {
-	void *(*allocf)(void *ctx, usize s);
+	void *(*allocf)(void *ctx, ssize s);
 	void *ctx;
 };
 

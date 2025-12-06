@@ -277,7 +277,7 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, usize size)
+sys_alloc(void *ptr, ssize size)
 {
 	void *res = PD_SYSTEM_REALLOC(ptr, size);
 	dbg_check(res, "sys-pd", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
