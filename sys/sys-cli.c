@@ -45,9 +45,9 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, ssize mem_size)
+sys_alloc(void *ptr, ssize size, ssize align)
 {
-	return malloc(mem_size);
+	return malloc(size);
 }
 
 void

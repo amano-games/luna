@@ -257,8 +257,9 @@ handle_btree_json(str8 json, struct bet_node_holder *holder, struct alloc alloc,
 int
 handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 {
-	usize mem_size = MKILOBYTE(100);
-	u8 *mem_buffer = sys_alloc(NULL, mem_size);
+	usize mem_size         = MKILOBYTE(100);
+	struct alloc sys_alloc = sys_allocator();
+	u8 *mem_buffer         = alloc_arr(sys_alloc, mem_buffer, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);

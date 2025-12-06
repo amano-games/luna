@@ -113,7 +113,7 @@ ht_new_u32(int exp, struct alloc alloc)
 	}
 
 	usize size = ((size_t)1 << exp) * sizeof(*ht.ht);
-	ht.ht      = alloc.allocf(alloc.ctx, size);
+	ht.ht      = alloc.allocf(alloc.ctx, size, 4);
 	mclr(ht.ht, size);
 	return ht;
 }

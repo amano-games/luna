@@ -788,7 +788,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				}
 				dbg_assert(vert_count <= POLY_MAX_VERTS);
 				mesh.count          = 1;
-				mesh.items          = alloc.allocf(alloc.ctx, sizeof(*mesh.items));
+				mesh.items          = alloc_struct(alloc, mesh.items);
 				mesh.items[0].count = vert_count;
 				for(ssize j = 0; j < vert_count; ++j) {
 					mesh.items[0].verts[j] = verts[j];
@@ -1454,14 +1454,14 @@ i32
 pinbtjson_handle(str8 in_path, str8 out_path)
 {
 	usize mem_size = MMEGABYTE(4);
-	u8 *mem_buffer = sys_alloc(NULL, mem_size);
+	u8 *mem_buffer = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 
 	usize scratch_mem_size = MMEGABYTE(10);
-	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size);
+	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size, alignof(u8));
 	dbg_assert(scratch_mem_buffer != NULL);
 	struct marena scratch_marena = {0};
 	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);

@@ -277,7 +277,7 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, ssize size)
+sys_alloc(void *ptr, ssize size, ssize align)
 {
 	void *res = PD_SYSTEM_REALLOC(ptr, size);
 	dbg_check(res, "sys-pd", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
@@ -802,7 +802,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		if(scores->count > 0) {
 			struct sys_score_arr *entries = &res.get.entries;
 			if(req->get.alloc.allocf != NULL) {
-				entries->items = req->get.alloc.allocf(req->get.alloc.ctx, sizeof(*entries->items) * scores->count);
+				entries->items = alloc_arr(req->get.alloc, entries->items, scores->count);
 			}
 			if(entries->items == NULL) {
 				log_error("sys-scores", "Failed to allocate memory for %d scores", scores->count);

@@ -171,7 +171,7 @@ main(int argc, char *argv[])
 	sys_make_dir(path);
 
 	usize mem_size = MMEGABYTE(1);
-	u8 *mem        = sys_alloc(NULL, mem_size);
+	u8 *mem        = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
 	struct marena arena = {0};
 	marena_init(&arena, mem, mem_size);

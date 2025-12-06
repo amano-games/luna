@@ -11,21 +11,21 @@
 // used for user defined allocations
 // alloc(ctx, size) -> ctx: pointer to some memory manager
 struct alloc {
-	void *(*allocf)(void *ctx, ssize s);
+	void *(*allocf)(void *ctx, ssize size, ssize align);
 	void *ctx;
 };
 
-#define alloc_struct(alloc, ptr)     (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), false)
-#define alloc_struct_clr(alloc, ptr) (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), true)
+#define alloc_struct(alloc, ptr)     (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), alignof(*(ptr)), false)
+#define alloc_struct_clr(alloc, ptr) (__typeof__(ptr))alloc_size(alloc, sizeof(*(ptr)), alignof(*(ptr)), true)
 #define alloc_arr(alloc, ptr, count) \
-	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), false)
+	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), alignof(*(ptr)), false)
 #define alloc_arr_clr(alloc, ptr, count) \
-	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), true)
+	(__typeof__(ptr))alloc_size((alloc), sizeof(*(ptr)) * (count), alignof(*(ptr)), true)
 
 static inline void *
-alloc_size(struct alloc alloc, usize mem_size, b32 clr)
+alloc_size(struct alloc alloc, ssize mem_size, ssize align, b32 clr)
 {
-	void *mem = alloc.allocf(alloc.ctx, mem_size);
+	void *mem = alloc.allocf(alloc.ctx, mem_size, align);
 	if(clr) { mclr(mem, mem_size); };
 	return mem;
 }

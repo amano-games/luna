@@ -17,7 +17,7 @@ struct marena_tmp {
 };
 
 void marena_init(struct marena *m, void *buf, ssize bufsize);
-void *marena_alloc(struct marena *m, ssize s);
+void *marena_alloc(struct marena *m, ssize size, ssize align);
 void *marena_state(struct marena *m);
 void marena_reset_to(struct marena *m, void *p);
 void marena_reset(struct marena *m);
@@ -26,10 +26,10 @@ ssize marena_size_rem(struct marena *m);
 
 // NOTE: Should this live outside?
 static void *
-marena_alloc_func(void *ctx, ssize s)
+marena_alloc_func(void *ctx, ssize s, ssize align)
 {
 	struct marena *arena = (struct marena *)ctx;
-	void *mem            = marena_alloc(arena, s);
+	void *mem            = marena_alloc(arena, s, align);
 	dbg_check(mem, "marena", "Ran out of arena mem!");
 	return mem;
 

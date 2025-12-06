@@ -171,13 +171,13 @@ sokol_main(i32 argc, char **argv)
 	stm_setup();
 	{
 		usize mem_size = MMEGABYTE(1);
-		void *mem      = sys_alloc(NULL, mem_size);
+		void *mem      = sys_alloc(NULL, mem_size, 4);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 	{
 		usize mem_size = MMEGABYTE(200);
-		void *mem      = sys_alloc(NULL, mem_size);
+		void *mem      = sys_alloc(NULL, mem_size, 4);
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
@@ -232,7 +232,7 @@ sokol_main(i32 argc, char **argv)
 		rec->cap                 = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                 = 0;
 		rec->idx                 = 0;
-		rec->frames              = alloc_size(alloc, sizeof(*rec->frames) * rec->cap, false);
+		rec->frames              = alloc_arr(alloc, rec->frames, rec->cap);
 		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, alloc);
 		}
@@ -244,7 +244,7 @@ sokol_main(i32 argc, char **argv)
 		rec->cap                  = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                  = 0;
 		rec->idx                  = 0;
-		rec->frames               = alloc_size(alloc, sizeof(*rec->frames) * rec->cap, false);
+		rec->frames               = alloc_arr(alloc, rec->frames, rec->cap);
 		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = 0;
 		}
@@ -770,7 +770,7 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, ssize size)
+sys_alloc(void *ptr, ssize size, ssize align)
 {
 	void *res = malloc(size);
 	dbg_check(res, "sys-sokol", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
@@ -1144,8 +1144,8 @@ sokol_process_info_set(void)
 		// Exe PATH
 		ssize str_size = wai_getExecutablePath(NULL, 0, NULL);
 		if(str_size > 0) {
-			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
-			wai_getExecutablePath(path, str_size, NULL);
+			u8 *path = (u8 *)alloc_arr(scratch, path, str_size);
+			wai_getExecutablePath((char *)path, str_size, NULL);
 			info->exe_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
 		}
 	}
@@ -1157,8 +1157,8 @@ sokol_process_info_set(void)
 		ssize str_size = wai_getModulePath(NULL, 0, NULL);
 
 		if(str_size > 0) {
-			char *path = (char *)scratch.allocf(scratch.ctx, str_size);
-			wai_getModulePath(path, str_size, NULL);
+			u8 *path = alloc_arr(scratch, path, str_size);
+			wai_getModulePath((char *)path, str_size, NULL);
 			info->module_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
 		}
 	}

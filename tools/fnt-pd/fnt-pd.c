@@ -24,7 +24,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 	sys_file_seek_end(f, 0);
 	ssize f_size = sys_file_tell(f);
 	sys_file_seek_set(f, 0);
-	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)f_size + 1);
+	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
 		log_error("fnt-pd", "loading %s", path.str);
@@ -147,7 +147,7 @@ int
 handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	usize mem_size = MKILOBYTE(100);
-	u8 *mem_buffer = sys_alloc(NULL, mem_size);
+	u8 *mem_buffer = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);

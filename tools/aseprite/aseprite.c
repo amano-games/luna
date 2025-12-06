@@ -38,11 +38,11 @@ b32
 aseprite_to_tex(const ase_t *ase, const str8 in_path, const str8 out_path, struct alloc scratch)
 {
 	b32 res                     = false;
-	struct pixel_u8 *sheet_data = NULL;
+	struct alloc alloc          = sys_allocator();
 	str8 out_file_path          = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 	i32 sheet_w                 = ase->w * ase->frame_count;
 	i32 sheet_h                 = ase->h;
-	sheet_data                  = sys_alloc(NULL, sheet_w * sheet_h * sizeof(struct pixel_u8));
+	struct pixel_u8 *sheet_data = alloc_arr(alloc, sheet_data, sheet_w * sheet_h);
 	{
 		// Build horizontal sprite sheet
 		{

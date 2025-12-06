@@ -10,30 +10,30 @@
 #include "base/str.h"
 #include "base/types.h"
 
-void *asset_allocf(void *ctx, ssize s);
+void *asset_allocf(void *ctx, ssize size, ssize align);
 
 void
 assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
-	void *mem = alloc.allocf(alloc.ctx, size);
+	void *mem = alloc.allocf(alloc.ctx, size, 4);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();
 
 	{
 		usize scratch_size = MKILOBYTE(50);
-		void *scratch_mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, scratch_size);
+		void *scratch_mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, scratch_size, 4);
 		marena_init(&ASSETS.scratch_marena, scratch_mem, scratch_size);
 		ASSETS.scratch_alloc = marena_allocator(&ASSETS.scratch_marena);
 	}
 }
 
 void *
-asset_allocf(void *ctx, ssize s)
+asset_allocf(void *ctx, ssize size, ssize align)
 {
 	struct assets *assets = (struct assets *)ctx;
-	void *mem             = marena_alloc(&assets->marena, s);
+	void *mem             = marena_alloc(&assets->marena, size, align);
 	dbg_check_mem(mem != NULL, "Assets");
 	return mem;
 
@@ -41,7 +41,7 @@ error: {
 	usize left  = marena_size_rem(&ASSETS.marena);
 	usize total = assets->marena.buf_size;
 	usize used  = total - left;
-	log_error("Assets", "Ran out of asset mem! requested: %$u", (uint)s);
+	log_error("Assets", "Ran out of asset mem! requested: %$u", (uint)size);
 	log_error("Assets", "MEM: used: %$u left: %$u total: %$u", (uint)used, (uint)left, (uint)total);
 	return NULL;
 }
@@ -107,7 +107,7 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 	i32 res = 0;
 
 	usize size = MKILOBYTE(200);
-	void *mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size);
+	void *mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size, 4);
 	mclr(mem, size);
 	struct marena marena = {0};
 	struct alloc alloc   = {0};
@@ -115,7 +115,7 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 	alloc = marena_allocator(&marena);
 
 	usize size_scratch = MKILOBYTE(200);
-	void *mem_scratch  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch);
+	void *mem_scratch  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch, 4);
 	mclr(mem_scratch, size_scratch);
 	struct marena marena_scratch = {0};
 	struct alloc scratch         = {0};
