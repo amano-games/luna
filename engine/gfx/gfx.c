@@ -560,7 +560,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 		}
 
 		if(xi == bx && yi == by) break;
-		i32 e2 = er << 1;
+		i32 e2 = er * 2;
 		if(e2 >= dy) { er += dy, xi += sx; }
 		if(e2 <= dx) { er += dx, yi += sy; }
 	}
