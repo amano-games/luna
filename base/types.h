@@ -13,6 +13,28 @@
 #define STB_SPRINTF_DECORATE(name) sys_##name
 #include "stb_sprintf.h"
 
+#if defined(__clang__)
+// clang supports both __attribute__ and no_sanitize
+#define NO_ASAN_UB __attribute__((no_sanitize("undefined")))
+
+#elif defined(__GNUC__)
+// gcc supports no_sanitize("undefined") since GCC 8+
+#if __GNUC__ >= 8
+#define NO_ASAN_UB __attribute__((no_sanitize("undefined")))
+#else
+#define NO_ASAN_UB /* nothing */
+#endif
+
+#elif defined(_MSC_VER)
+// MSVC has no equivalent attribute; define as empty
+#define NO_ASAN_UB /* nothing */
+
+#else
+// Unknown compiler — safest option is to disable the attribute
+#define NO_ASAN_UB /* nothing */
+
+#endif
+
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
@@ -60,14 +82,14 @@ typedef ptrdiff_t ssize;
 #define F32_MAX FLT_MAX
 #define F32_MIN FLT_MIN
 
-#define mset              memset
-#define mcpy              memcpy
-#define mmov              memmove
-#define mclr(DST, SIZE)   mset(DST, 0, SIZE)
-#define mclr_struct(s)    mclr((s), sizeof(*(s)))
-#define mclr_array(a)     mclr((a), sizeof(a))
-#define mcpy_struct(d, s) mcpy((d), (s), sizeof(*(d)))
-#define mcpy_array(d, s)  mcpy((d), (s), sizeof(d))
+#define mset                 memset
+#define mmov                 memmove
+#define mcpy(dst, src, size) mmov((dst), (src), (size))
+#define mclr(dst, size)      mset((dst), (0), (size))
+#define mclr_struct(s)       mclr((s), sizeof(*(s)))
+#define mclr_array(a)        mclr((a), sizeof(a))
+#define mcpy_struct(d, s)    mcpy((d), (s), sizeof(*(d)))
+#define mcpy_array(d, s)     mcpy((d), (s), sizeof(d))
 
 typedef struct v2_i32 {
 	i32 x, y;

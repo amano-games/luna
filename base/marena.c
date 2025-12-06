@@ -3,12 +3,11 @@
 #include "marena.h"
 
 void
-marena_init(struct marena *m, void *buf, usize bufsize)
+marena_init(struct marena *m, void *buf, ssize bufsize)
 {
 	dbg_check_mem(buf, "Marena");
 	mspan sp    = {buf, bufsize};
 	sp          = mspan_align(sp);
-	m->buf_og   = buf;
 	m->buf      = sp.p;
 	m->buf_size = sp.size;
 
@@ -20,17 +19,22 @@ error:
 }
 
 void *
-marena_alloc(struct marena *m, usize s)
+marena_alloc(struct marena *m, ssize s)
 {
-	usize mem_size = align_up_size_t(s);
+	ssize mem_size        = align_up_size_t(s);
+	const usize alignment = alignof(max_align_t);
+	ptrdiff_t p           = (ptrdiff_t)m->p;
+	ptrdiff_t aligned     = (p + (alignment - 1)) & ~(alignment - 1);
+	ssize padding         = aligned - p;
 
-	if(m->rem < mem_size) { return NULL; }
+	if(padding > m->rem - mem_size) {
+		return NULL;
+	}
 
-	void *mem = m->p;
-	m->p += mem_size;
-	m->rem -= mem_size;
+	m->p = (void *)(aligned + mem_size);
+	m->rem -= padding + mem_size;
 
-	return mem;
+	return (void *)aligned;
 }
 
 void *
@@ -43,7 +47,7 @@ void
 marena_reset_to(struct marena *m, void *p)
 {
 	m->p       = (char *)p;
-	usize offs = ((char *)p - (char *)m->buf);
+	ssize offs = ((char *)p - (char *)m->buf);
 
 	m->rem = m->buf_size - offs;
 }
@@ -56,7 +60,7 @@ marena_reset(struct marena *m)
 }
 
 void *
-marena_alloc_rem(struct marena *m, usize *s)
+marena_alloc_rem(struct marena *m, ssize *s)
 {
 	// If size is > 0 s_out = the remainder
 	if(s) *s = m->rem;
@@ -67,7 +71,7 @@ marena_alloc_rem(struct marena *m, usize *s)
 	return mem;
 }
 
-usize
+ssize
 marena_size_rem(struct marena *m)
 {
 	return m->rem;

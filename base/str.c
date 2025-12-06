@@ -555,6 +555,7 @@ str8_skip_last_dot(str8 str)
 	return (result);
 }
 
+NO_ASAN_UB
 struct str8_node *
 str8_list_push_node_set_string(struct str8_list *list, struct str8_node *node, str8 str)
 {
@@ -652,6 +653,7 @@ str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_s
 	return list;
 }
 
+NO_ASAN_UB
 str8
 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params)
 {

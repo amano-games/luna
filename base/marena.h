@@ -5,10 +5,9 @@
 #include "base/dbg.h"
 
 struct marena {
-	void *buf_og;
-	void *buf;
-	usize buf_size;
-	usize rem;
+	char *buf;
+	ssize buf_size;
+	ssize rem;
 	char *p;
 };
 
@@ -17,17 +16,17 @@ struct marena_tmp {
 	void *p;
 };
 
-void marena_init(struct marena *m, void *buf, usize bufsize);
-void *marena_alloc(struct marena *m, usize s);
+void marena_init(struct marena *m, void *buf, ssize bufsize);
+void *marena_alloc(struct marena *m, ssize s);
 void *marena_state(struct marena *m);
 void marena_reset_to(struct marena *m, void *p);
 void marena_reset(struct marena *m);
-void *marena_alloc_rem(struct marena *m, usize *s);
-usize marena_size_rem(struct marena *m);
+void *marena_alloc_rem(struct marena *m, ssize *s);
+ssize marena_size_rem(struct marena *m);
 
 // NOTE: Should this live outside?
 static void *
-marena_alloc_func(void *ctx, usize s)
+marena_alloc_func(void *ctx, ssize s)
 {
 	struct marena *arena = (struct marena *)ctx;
 	void *mem            = marena_alloc(arena, s);

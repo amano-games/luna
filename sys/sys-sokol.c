@@ -609,7 +609,7 @@ sokol_cleanup(void)
 {
 	SOKOL_STATE.state = 0;
 	sys_internal_close();
-	sys_free(SOKOL_STATE.marena.buf_og);
+	sys_free(SOKOL_STATE.marena.buf);
 	sg_shutdown();
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_shutdown();
@@ -770,7 +770,7 @@ sys_allocator(void)
 }
 
 void *
-sys_alloc(void *ptr, usize size)
+sys_alloc(void *ptr, ssize size)
 {
 	void *res = malloc(size);
 	dbg_check(res, "sys-sokol", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
