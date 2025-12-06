@@ -21,7 +21,7 @@ error:
 void *
 marena_alloc(struct marena *m, ssize s)
 {
-#if 0
+#if 1
 	const usize alignment = alignof(max_align_t);
 #else
 	usize alignment = 32;
