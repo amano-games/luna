@@ -21,11 +21,11 @@ error:
 void *
 marena_alloc(struct marena *m, ssize s)
 {
-	ssize mem_size        = align_up_size_t(s);
-	const usize alignment = alignof(max_align_t);
-	ptrdiff_t p           = (ptrdiff_t)m->p;
-	ptrdiff_t aligned     = (p + (alignment - 1)) & ~(alignment - 1);
-	ssize padding         = aligned - p;
+	ssize mem_size    = align_up_size_t(s);
+	usize alignment   = 32;
+	ptrdiff_t p       = (ptrdiff_t)m->p;
+	ptrdiff_t aligned = (p + (alignment - 1)) & ~(alignment - 1);
+	ssize padding     = aligned - p;
 
 	if(padding > m->rem - mem_size) {
 		return NULL;
