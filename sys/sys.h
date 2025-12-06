@@ -81,7 +81,7 @@ void app_close(void);
 void app_pause(void);
 void app_resume(void);
 
-void *sys_alloc(void *ptr, ssize size);
+void *sys_alloc(void *ptr, ssize size, ssize align);
 struct alloc sys_allocator(void);
 void sys_free(void *ptr);
 

@@ -262,7 +262,7 @@ path_resolve_dots_in_place(
 		if(stack_node != 0) {
 			SLLStackPop(free_meta_node);
 		} else {
-			stack_node = scratch.allocf(scratch.ctx, sizeof(struct str8_meta_node));
+			stack_node = alloc_struct(scratch, stack_node);
 		}
 		SLLStackPush(stack, stack_node);
 		stack_node->node = node;

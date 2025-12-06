@@ -183,7 +183,7 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 	i32 *next       = arr_new(scratch, next, count);
 	struct mesh res = {
 		.count = 0,
-		.items = alloc.allocf(alloc.ctx, sizeof(*res.items)),
+		.items = alloc_struct(alloc, res.items),
 	};
 	for(ssize i = 0; i < count; ++i) {
 		prev[i] = i - 1;
@@ -223,7 +223,7 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 		// If current vertex v[i] is an ear, delete it and visit the prev vertex
 		if(is_ear) {
 			// Triangle (v[i], v[prev[i]], v[next[i]]) is an ear
-			alloc.allocf(alloc.ctx, sizeof(*res.items));
+			alloc_struct(alloc, res.items);
 			res.items[res.count++] = (struct poly){
 				.count = 3,
 				.verts = {
@@ -246,7 +246,7 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 		}
 	}
 
-	alloc.allocf(alloc.ctx, sizeof(*res.items));
+	alloc_struct(alloc, res.items);
 	res.items[res.count++] = (struct poly){
 		.count = 3,
 		.verts = {
@@ -265,11 +265,10 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 static inline struct mesh
 poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 {
-	b32 *merged = scratch.allocf(scratch.ctx, sizeof(*merged) * mesh.count);
-	mclr(merged, sizeof(*merged) * mesh.count);
+	b32 *merged = alloc_arr_clr(scratch, merged, mesh.count);
 
 	struct mesh res = {
-		.items = alloc.allocf(alloc.ctx, sizeof(*res.items) * mesh.count),
+		.items = alloc_arr(alloc, res.items, mesh.count),
 	};
 
 	for(ssize i = 0; i < mesh.count; i++) {

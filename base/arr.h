@@ -36,7 +36,7 @@ void *
 _arr_ini(struct alloc alloc, usize elem_size, usize count, b32 clear)
 {
 	usize new_size            = sizeof(struct arr_header) + count * elem_size;
-	struct arr_header *header = alloc.allocf(alloc.ctx, new_size);
+	struct arr_header *header = alloc.allocf(alloc.ctx, new_size, 4);
 	dbg_check_mem(header, "arr");
 	header->len = 0;
 	header->cap = count;
@@ -68,7 +68,7 @@ arr_grow_packed(void *a, usize new_len, usize elem_size, struct alloc alloc)
 	usize len   = arr_len(a);
 	usize count = new_len - len;
 
-	void *res = alloc.allocf(alloc.ctx, count * elem_size);
+	void *res = alloc.allocf(alloc.ctx, count * elem_size, 4);
 	// TODO: Check if packed
 
 	header->cap = new_cap;

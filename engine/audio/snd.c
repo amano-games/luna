@@ -14,7 +14,7 @@ snd_load(const str8 path, struct alloc alloc)
 	sys_file_r(f, &snd_header, sizeof(u32));
 	u32 bytes = (snd_header.sample_count + 1) >> 1;
 
-	void *buf = alloc.allocf(alloc.ctx, bytes);
+	void *buf = alloc.allocf(alloc.ctx, bytes, 4);
 	dbg_check_warn(buf, "snd", "failed to allocate memory for snd %s", path.str);
 
 	sys_file_r(f, buf, bytes);

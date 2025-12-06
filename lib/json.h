@@ -22,7 +22,7 @@ json_load(const str8 path, struct alloc alloc, str8 *out)
 	sys_file_seek_end(f, 0);
 	ssize f_size = sys_file_tell(f);
 	sys_file_seek_set(f, 0);
-	u8 *buf = (u8 *)alloc.allocf(alloc.ctx, (usize)f_size + 1);
+	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
 		log_error("JSON", "loading %s", path.str);
@@ -169,7 +169,7 @@ json_str8_cpy_push(str8 json, jsmntok_t *tok, struct alloc alloc, enum json_copy
 	} else {
 		usize str_size = json_unescape_str8(src, NULL);
 		if(str_size > 0) {
-			res.str = alloc.allocf(alloc.ctx, str_size + 1);
+			res.str = alloc_size(alloc, str_size + 1, alignof(u8), false);
 			json_unescape_str8(src, &res);
 			res.str[res.size] = '\0';
 		}

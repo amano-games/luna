@@ -27,7 +27,7 @@ sys_load_full_file(str8 path, struct alloc alloc)
 	sys_file_seek_set(f, 0);
 
 	// Alloc memory
-	void *data = alloc.allocf(alloc.ctx, f_size);
+	void *data = alloc.allocf(alloc.ctx, f_size, 4);
 	dbg_check(data != NULL, "io", "Failed alloc mem for: %*.s", (int)path.size, path.str);
 
 	// Read contents

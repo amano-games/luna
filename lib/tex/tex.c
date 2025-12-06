@@ -28,7 +28,7 @@ tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
 	// getting the full size of the image aligned.
 	usize size = sizeof(u32) * width_word * h * 2;
 
-	void *mem = alloc.allocf(alloc.ctx, size);
+	void *mem = alloc.allocf(alloc.ctx, size, 4);
 
 	if(!mem) return t;
 

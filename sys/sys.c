@@ -52,7 +52,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 		(uint)((mem_total - mem_max)));
 
 	sys_mem->app_mem.size   = mem_total;
-	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size);
+	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size, 4);
 
 	dbg_check(
 		sys_mem->app_mem.buffer != NULL,

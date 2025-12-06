@@ -19,10 +19,10 @@ error:
 }
 
 void *
-marena_alloc(struct marena *m, ssize s)
+marena_alloc(struct marena *m, ssize size, ssize align)
 {
 	const usize alignment = alignof(max_align_t);
-	ssize mem_size        = align_up_size_t(s);
+	ssize mem_size        = align_up_size_t(size);
 	ptrdiff_t p           = (ptrdiff_t)m->p;
 	ptrdiff_t aligned     = (p + (alignment - 1)) & ~(alignment - 1);
 	ssize padding         = aligned - p;

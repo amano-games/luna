@@ -89,9 +89,10 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)), "snd-gen", "%s failed to write", out_file_path.str);
 
 	{
+		struct alloc alloc = sys_allocator();
 		// The ADPCM encoder writes half a byte per sample 4bits per sample
 		usize data_size = ((wav.sample_count * wav.channel_count) + 1) / 2;
-		out_data        = (u8 *)sys_alloc(NULL, data_size * sizeof(u8));
+		out_data        = (u8 *)alloc_arr(alloc, out_data, data_size);
 
 		adpcm_i16_encode((i16 *)wav.sample_data, out_data, wav.sample_count);
 		dbg_check_warn(sys_file_w(out_file, out_data, data_size), "snd-gen", "%s failed to write", out_file_path.str);
