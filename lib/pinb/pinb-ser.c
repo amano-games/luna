@@ -1188,7 +1188,7 @@ pinb_write(struct ser_writer *w, struct pinb_table *pinb)
 
 	ser_write_string(w, str8_lit("entities"));
 	ser_write_array(w);
-	for(usize i = 0; i < pinb->entities_count; ++i) {
+	for(ssize i = 0; i < pinb->entities_count; ++i) {
 		pinb_entity_write(w, pinb->entities + i);
 	}
 	ser_write_end(w);

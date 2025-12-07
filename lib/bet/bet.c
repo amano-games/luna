@@ -525,7 +525,7 @@ bet_finish_comp(struct bet *bet, struct bet_ctx *ctx, u8 node_index)
 }
 
 struct bet_node *
-bet_get_node(struct bet *bet, usize node_index)
+bet_get_node(struct bet *bet, ssize node_index)
 {
 	dbg_assert(bet != NULL);
 	dbg_assert(node_index > 0 && node_index < arr_len(bet->nodes));
@@ -547,7 +547,7 @@ bet_find_child(struct bet *bet, u8 parent_index, u8 child_index)
 }
 
 b32
-bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, usize child_index)
+bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, ssize child_index)
 {
 	dbg_assert(parent != NULL);
 	dbg_assert(parent->type == BET_NODE_COMP || parent->type == BET_NODE_DECO);

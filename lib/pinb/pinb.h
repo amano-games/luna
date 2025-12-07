@@ -366,9 +366,9 @@ struct pinb_table_props {
 
 struct pinb_table {
 	u32 flags;
-	usize version;
+	ssize version;
 	struct pinb_table_props props;
-	usize entities_count;
-	usize entities_max_id;
+	ssize entities_count;
+	ssize entities_max_id;
 	struct pinb_entity *entities;
 };
