@@ -3,16 +3,20 @@
 #include "marena.h"
 
 void
-marena_init(struct marena *m, void *buf, ssize bufsize)
+marena_init(struct marena *m, void *buf, ssize buf_size)
 {
 	dbg_check_mem(buf, "Marena");
+#if 0
 	mspan sp    = {buf, bufsize};
 	sp          = mspan_align(sp);
 	m->buf      = sp.p;
 	m->buf_size = sp.size;
+#else
+	m->buf      = buf;
+	m->buf_size = buf_size;
+#endif
 
 	marena_reset(m);
-	return;
 
 error:
 	return;
@@ -21,7 +25,11 @@ error:
 void *
 marena_alloc(struct marena *m, ssize size, ssize align)
 {
+#if 0
 	ssize mem_size    = align_up_size_t(size);
+#else
+	ssize mem_size = size;
+#endif
 	ptrdiff_t p       = (ptrdiff_t)m->p;
 	ptrdiff_t aligned = (p + (align - 1)) & ~(align - 1);
 	ssize padding     = aligned - p;
