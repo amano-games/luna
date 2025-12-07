@@ -274,7 +274,7 @@ tsj_handle_json(
 			res.assets  = arr_new(alloc, res.assets, count);
 		} else if(json_eq(json, key, str8_lit("tiles")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			dbg_assert(arr_cap(res.assets) == (usize)value->size);
+			dbg_assert(arr_cap(res.assets) == value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
@@ -294,9 +294,9 @@ tsj_handle_json(
 	}
 
 	dbg_assert(arr_len(res.assets) == arr_cap(res.assets));
-	for(usize i = 0; i < arr_len(res.assets); ++i) {
+	for(ssize i = 0; i < arr_len(res.assets); ++i) {
 		struct ani_db_asset asset = res.assets[i];
-		usize clip_count          = arr_len(asset.clips);
+		ssize clip_count          = arr_len(asset.clips);
 		res.clip_count += clip_count;
 		if(clip_count > 0) { res.bank_count++; }
 	}
@@ -323,14 +323,14 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 	struct ani_db db = tsj_handle_json(in_path, json, alloc, scratch);
 
 	// Fill all empty tracks with a sequence 0,1,2,3...num of cells
-	for(usize i = 0; i < arr_len(db.assets); ++i) {
+	for(ssize i = 0; i < arr_len(db.assets); ++i) {
 		struct ani_db_asset *asset = db.assets + i;
-		for(usize j = 0; j < arr_len(asset->clips); ++j) {
+		for(ssize j = 0; j < arr_len(asset->clips); ++j) {
 			struct animation_clip *clip = asset->clips + j;
 			if(clip->tracks[0].frames.len == 0) {
-				usize cells_count          = asset->info.tex_size.x / asset->info.cell_size.x;
+				ssize cells_count          = asset->info.tex_size.x / asset->info.cell_size.x;
 				clip->tracks[0].frames.len = cells_count;
-				for(usize k = 0; k < cells_count; ++k) {
+				for(ssize k = 0; k < cells_count; ++k) {
 					clip->tracks[0].frames.items[k] = k;
 				}
 			}

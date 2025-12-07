@@ -83,7 +83,7 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 	ser_write_string(w, str8_lit("widths"));
 	ser_write_array(w);
 	// TODO: Store same as pairs, only the characters that have the width
-	for(usize i = 0; i < arr_len(fnt.widths); ++i) {
+	for(ssize i = 0; i < arr_len(fnt.widths); ++i) {
 		ser_write_u8(w, fnt.widths[i]);
 	}
 	ser_write_end(w);
@@ -93,7 +93,7 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 	// and the value is the kerning value
 	ser_write_string(w, str8_lit("kern_pairs"));
 	ser_write_array(w);
-	for(usize i = 0; i < arr_len(fnt.kern_pairs); ++i) {
+	for(ssize i = 0; i < arr_len(fnt.kern_pairs); ++i) {
 		if(fnt.kern_pairs[i] != 0) {
 			ser_write_object(w);
 			u16 index    = i;
@@ -145,13 +145,13 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 			}
 		} else if(str8_match(key.str, str8_lit("widths"), 0)) {
 			struct ser_value item_val;
-			usize i = 0;
+			ssize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
 				fnt->widths[i++] = ser_get_u8(item_val);
 			}
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
 			struct ser_value item_val;
-			usize i = 0;
+			ssize i = 0;
 			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->kern_pairs)) {
 				dbg_assert(item_val.type == SER_TYPE_OBJECT);
 				struct ser_value ker_key, ker_value;

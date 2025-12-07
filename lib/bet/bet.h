@@ -144,11 +144,11 @@ void bet_ctx_init(struct bet_ctx *ctx);
 
 enum bet_res bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata);
 
-struct bet_node *bet_get_node(struct bet *bet, usize node_index);
+struct bet_node *bet_get_node(struct bet *bet, ssize node_index);
 
 f32 bet_prop_f32_get(struct bet_prop prop, f32 fallback);
 i32 bet_prop_i32_get(struct bet_prop prop, i32 fallback);
 b32 bet_prop_bool32_get(struct bet_prop prop);
 
-b32 bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, usize child_index);
+b32 bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node *child, ssize child_index);
 b32 bet_node_push_prop(struct bet_node *node, struct bet_prop prop);

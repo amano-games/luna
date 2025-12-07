@@ -11,13 +11,13 @@ void
 ss_grid_gen(
 	struct ss_grid *grid,
 	struct ss_item *items,
-	usize items_count,
+	ssize items_count,
 	struct alloc alloc)
 {
 	f32 cell_size_inv   = 1.0f / grid->cell_size;
 	grid->items         = NULL;
 	grid->cell_size_inv = cell_size_inv;
-	usize count         = items_count;
+	ssize count         = items_count;
 
 	i32 qx1 = 0;
 	i32 qy1 = 0;
@@ -25,7 +25,7 @@ ss_grid_gen(
 	i32 qy2 = 0;
 
 	// Find min/max cell cords of grid.
-	for(usize i = 0; i < count; i++) {
+	for(ssize i = 0; i < count; i++) {
 		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		qx1                  = min_i32(qx1, (i32)floor_f32(aabb.min.x * cell_size_inv));
@@ -49,10 +49,10 @@ ss_grid_gen(
 	header->len               = arr_cap(grid->cells);
 	dbg_assert(arr_len(grid->cells) == arr_cap(grid->cells));
 
-	usize handles_count = 0;
+	ssize handles_count = 0;
 
 	// Calculate how many bodies will be in each cell
-	for(usize i = 0; i < count; ++i) {
+	for(ssize i = 0; i < count; ++i) {
 		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 gx1              = (i32)floor_f32(aabb.min.x * cell_size_inv);
@@ -78,26 +78,26 @@ ss_grid_gen(
 
 	grid->items = arr_new(alloc, grid->items, handles_count);
 	log_info("SSGrid", "Grid items:%zu cell-size:%" PRIu32 " handles:%zu", count, grid->cell_size, arr_cap(grid->items));
-	for(usize i = 0; i < arr_cap(grid->items); ++i) {
+	for(ssize i = 0; i < arr_cap(grid->items); ++i) {
 		struct ss_item item = {0};
 		arr_push(grid->items, item);
 	}
 
 	// Calculate indices
-	for(usize i = 1; i < arr_len(grid->cells); ++i) {
+	for(ssize i = 1; i < arr_len(grid->cells); ++i) {
 		struct ss_cell *cell      = grid->cells + i;
 		struct ss_cell *prev_cell = grid->cells + (i - 1);
 		cell->index               = prev_cell->index + prev_cell->count;
 	}
 
 	// Reset count
-	for(usize i = 0; i < arr_len(grid->cells); ++i) {
+	for(ssize i = 0; i < arr_len(grid->cells); ++i) {
 		struct ss_cell *cell = &grid->cells[i];
 		grid->cells[i].count = 0;
 	}
 
 	// Store objects handles in array
-	for(usize i = 0; i < count; ++i) {
+	for(ssize i = 0; i < count; ++i) {
 		struct ss_item item  = items[i];
 		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
@@ -110,7 +110,7 @@ ss_grid_gen(
 				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
 					dbg_assert(cell != NULL);
-					usize item_index = cell->index + cell->count;
+					ssize item_index = cell->index + cell->count;
 					dbg_assert(item_index < arr_len(grid->items));
 					grid->items[item_index] = item;
 					cell->count++;

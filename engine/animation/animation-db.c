@@ -69,7 +69,7 @@ ani_db_write_asset(struct ser_writer *w, struct ani_db_asset asset)
 
 	ser_write_string(w, str8_lit("clips"));
 	ser_write_array(w);
-	for(usize i = 0; i < arr_len(asset.clips); ++i) {
+	for(ssize i = 0; i < arr_len(asset.clips); ++i) {
 		struct animation_clip clip = asset.clips[i];
 		ani_db_write_clip(w, clip);
 	}
@@ -91,7 +91,7 @@ ani_db_write(struct ser_writer *w, struct ani_db db)
 
 	ser_write_string(w, str8_lit("assets"));
 	ser_write_array(w);
-	for(usize i = 0; i < arr_len(db.assets); ++i) {
+	for(ssize i = 0; i < arr_len(db.assets); ++i) {
 		ani_db_write_asset(w, db.assets[i]);
 	}
 	ser_write_end(w);

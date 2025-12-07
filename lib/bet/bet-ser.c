@@ -109,7 +109,7 @@ bet_write(struct ser_writer *w, struct bet *bet)
 	ser_write_i32(w, arr_len(bet->nodes));
 	ser_write_string(w, str8_lit("nodes"));
 	ser_write_array(w);
-	for(usize i = 0; i < arr_len(bet->nodes); i++) {
+	for(ssize i = 0; i < arr_len(bet->nodes); i++) {
 		bet_node_write(w, bet->nodes[i]);
 	}
 	ser_write_end(w);

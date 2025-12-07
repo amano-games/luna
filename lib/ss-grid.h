@@ -31,5 +31,5 @@ struct ss_item {
 	struct col_shape shape;
 };
 
-void ss_grid_gen(struct ss_grid *grid, struct ss_item *items, usize items_count, struct alloc alloc);
+void ss_grid_gen(struct ss_grid *grid, struct ss_item *items, ssize items_count, struct alloc alloc);
 struct ss_cell *ss_grid_get(struct ss_grid *grid, i32 x, i32 y);
