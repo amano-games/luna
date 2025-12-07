@@ -30,7 +30,7 @@ struct arr_header {
 	} while(0)
 
 #define arr_push_packed(ptr, item, alloc) \
-	arr_full(ptr) ? (ptr) = arr_grow_packed(ptr, arr_len(ptr) + 1, sizeof(*(ptr)), alignof(*(ptr)), alloc) : 0, (ptr)[arr_header(ptr)->len++] = item
+	arr_full(ptr) ? (ptr) = arr_grow_packed(ptr, arr_len(ptr) + 1, sizeof(*(ptr)), alignof(max_align_t), alloc) : 0, (ptr)[arr_header(ptr)->len++] = item
 
 void *
 _arr_ini(struct alloc alloc, ssize elem_size, ssize align, ssize count, b32 clear)
