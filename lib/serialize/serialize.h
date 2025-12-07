@@ -59,7 +59,9 @@ ser_write(struct ser_writer *w, struct ser_value val)
 	} break;
 	case SER_TYPE_STRING: {
 		sys_file_w(w->f, &val.str.size, sizeof(val.str.size)); // write length
-		sys_file_w(w->f, val.str.str, val.str.size);           // write string
+		if(val.str.size > 0) {
+			sys_file_w(w->f, val.str.str, val.str.size); // write string
+		}
 		u8 null = 0;
 		sys_file_w(w->f, &null, 1); // write null-terminator
 	} break;
