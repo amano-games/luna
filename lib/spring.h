@@ -1,7 +1,9 @@
 #pragma once
 
+#include "base/mathfunc.h"
 #include "base/types.h"
-#include "mathfunc.h"
+
+// https://theorangeduck.com/page/spring-roll-call
 
 f32
 halflife_to_damping(f32 halflife, f32 eps)
