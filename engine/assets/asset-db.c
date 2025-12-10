@@ -149,7 +149,7 @@ asset_db_tex_path_get(struct asset_db *db, u32 id)
 	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->textures.arr));
+	dbg_assert((ssize)id < arr_len(db->textures.arr));
 	struct tex_table *table    = &db->textures;
 	struct asset_tex asset_tex = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset_tex.path_hash, .type = ASSET_TYPE_TEXTURE};
@@ -173,7 +173,7 @@ asset_db_tex_get_by_id(struct asset_db *db, u32 id)
 {
 	TRACE_START(__func__);
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->textures.arr));
+	dbg_assert((ssize)id < arr_len(db->textures.arr));
 	struct tex_table *table = &db->textures;
 	struct asset_tex res    = table->arr[id];
 	TRACE_END();
@@ -337,7 +337,7 @@ asset_db_snd_path_get(struct asset_db *db, u32 id)
 	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->snds.arr));
+	dbg_assert((ssize)id < arr_len(db->snds.arr));
 	struct snd_table *table    = &db->snds;
 	struct asset_snd asset_snd = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset_snd.path_hash, .type = ASSET_TYPE_SOUND};
@@ -359,7 +359,7 @@ struct asset_snd
 asset_db_snd_get_by_id(struct asset_db *db, u32 id)
 {
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->snds.arr));
+	dbg_assert((ssize)id < arr_len(db->snds.arr));
 	TRACE_START(__func__);
 	struct asset_snd res = db->snds.arr[id];
 	TRACE_END();
@@ -418,7 +418,7 @@ struct asset_fnt
 asset_db_fnt_get_by_id(struct asset_db *db, u32 id)
 {
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->fonts.arr));
+	dbg_assert((ssize)id < arr_len(db->fonts.arr));
 	struct asset_fnt res = db->fonts.arr[id];
 	return res;
 }
@@ -481,7 +481,7 @@ asset_db_bet_get_by_id(struct asset_db *db, u32 id)
 {
 	TRACE_START(__func__);
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->bets.arr));
+	dbg_assert((ssize)id < arr_len(db->bets.arr));
 	struct asset_bet res = db->bets.arr[id];
 	TRACE_END();
 	return res;
@@ -502,7 +502,7 @@ asset_db_bet_path_get(struct asset_db *db, u32 id)
 	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
-	dbg_assert(id < arr_len(db->textures.arr));
+	dbg_assert((ssize)id < arr_len(db->textures.arr));
 	struct bet_table *table    = &db->bets;
 	struct asset_bet asset     = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset.path_hash, .type = ASSET_TYPE_BET};
