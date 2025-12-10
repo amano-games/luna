@@ -1189,7 +1189,7 @@ sokol_process_info_set(void)
 #if defined(TARGET_WIN)
 		{
 			ssize mem_size = MKILOBYTE(32);
-			u16 *buffer    = alloc_arr(scratch, u16, mem_size, false);
+			u16 *buffer    = alloc_arr(scratch, buffer, mem_size);
 			// TODO: split os layer in windows/linux/mac so I can inclide windows headers in a single file
 			// TODO: Support for strings u16 for windows things
 #if 0
@@ -1300,7 +1300,7 @@ sys_get_current_path(struct alloc alloc)
 #if defined(TARGET_WIN) && 0
 	{
 		DWORD length = GetCurrentDirectoryW(0, 0);
-		u16 *memory  = alloc_arr(scratch, u16, length + 1, false);
+		u16 *memory  = alloc_arr(scratch, memory, length + 1);
 		length       = GetCurrentDirectoryW(length + 1, (WCHAR *)memory);
 		res          = str8_from_16(alloc, str16(memory, length));
 	}
