@@ -253,12 +253,15 @@ sokol_main(i32 argc, char **argv)
 #endif
 
 	{
-		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK]             = 0x110B0DFF;
-		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE]             = 0xA5A5A2FF;
-		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK]             = 0x000000FF;
-		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE]             = 0xFFFFFFFF;
-		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_BLACK]   = 0x000000FF;
-		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_WHITE]   = 0xFFFFFFFF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK] = 0x110B0DFF;
+		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE] = 0xA5A5A2FF;
+
+		SOKOL_STATE.opts.colors_dbg.colors[GFX_COL_BLACK] = 0x000000FF;
+		SOKOL_STATE.opts.colors_dbg.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
+
+		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_BLACK] = 0x000000FF;
+		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
+
 		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_BLACK] = 0x000000FF;
 		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
 	}
@@ -556,7 +559,7 @@ sokol_frame(void)
 	// mcpy_array(colors.color_debug, COL_RED);
 
 	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
-	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors);
+	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
