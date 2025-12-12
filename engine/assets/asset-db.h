@@ -122,8 +122,8 @@ struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 str8 asset_db_path_push(struct asset_db *db, str8 path);
 str8 asset_db_path_get(struct asset_db *db, struct asset_handle handle);
 
-u32 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex);
-u32 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle);
+i32 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex);
+i32 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle);
 struct asset_tex asset_db_tex_get(struct asset_db *db, struct asset_handle handle);
 struct asset_tex asset_db_tex_get_by_id(struct asset_db *db, u32 id);
 struct str8 asset_db_tex_path_get(struct asset_db *db, u32 id);
