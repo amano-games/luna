@@ -107,12 +107,12 @@ asset_db_path_get(struct asset_db *db, struct asset_handle handle)
 	return res;
 }
 
-u32
+i32
 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 {
 	struct tex_table *table = &db->textures;
-	usize table_len         = arr_len(table->arr);
-	usize table_cap         = arr_cap(table->arr);
+	ssize table_len         = arr_len(table->arr);
+	ssize table_cap         = arr_cap(table->arr);
 
 	// Can we add the string?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex");
@@ -158,7 +158,7 @@ asset_db_tex_path_get(struct asset_db *db, u32 id)
 	return res;
 }
 
-u32
+i32
 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 {
 	TRACE_START(__func__);
