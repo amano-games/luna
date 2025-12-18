@@ -551,7 +551,7 @@ bet_node_push_child(struct bet_node *parent, usize parent_index, struct bet_node
 {
 	dbg_assert(parent != NULL);
 	dbg_assert(parent->type == BET_NODE_COMP || parent->type == BET_NODE_DECO);
-	dbg_assert(parent->children_count + 1 < MAX_BET_CHILDREN);
+	dbg_assert(parent->children_count + 1 <= MAX_BET_CHILDREN);
 
 	parent->children[parent->children_count++] = child_index;
 	child->parent                              = parent_index;
