@@ -943,7 +943,9 @@ pinbtjson_handle_entity_list(str8 json, jsmntok_t *tokens, i32 index, struct all
 		jsmntok_t *value = tokens + i + 1;
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
-		if(json_eq(json, key, str8_lit("next")) == 0) {
+		if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.entity_list.flags = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("next")) == 0) {
 			res.entity_list.next = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("prev")) == 0) {
 			res.entity_list.prev = json_parse_i32(json, value);

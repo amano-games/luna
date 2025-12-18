@@ -807,6 +807,7 @@
   function getEntityList(_object, prop) {
     const value = prop.value;
     const res = {
+      flags: value["flags"].value,
       prev: Number(value["prev"].id),
       next: Number(value["next"].id)
     };
