@@ -728,6 +728,8 @@ pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list *value)
 	dbg_assert(value != NULL);
 	ser_write_object(w);
 
+	ser_write_string(w, str8_lit("flags"));
+	ser_write_i32(w, value->flags);
 	ser_write_string(w, str8_lit("next"));
 	ser_write_i32(w, value->next);
 	ser_write_string(w, str8_lit("prev"));
@@ -1777,7 +1779,9 @@ pinb_entity_list_read(struct ser_reader *r, struct ser_value obj)
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("prev"), 0)) {
+		if(str8_match(key.str, str8_lit("flags"), 0)) {
+			res.flags = ser_get_i32(value);
+		} else if(str8_match(key.str, str8_lit("prev"), 0)) {
 			res.prev = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("next"), 0)) {
 			res.next = ser_get_i32(value);

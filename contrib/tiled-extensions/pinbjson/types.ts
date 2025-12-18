@@ -182,6 +182,7 @@ export interface SwitchValue {
 }
 
 export interface EntityList {
+  flags: number;
   next: number;
   prev: number;
 }

@@ -131,6 +131,7 @@ struct pinb_switch {
 };
 
 struct pinb_entity_list {
+	u32 flags;
 	i32 next;
 	i32 prev;
 };

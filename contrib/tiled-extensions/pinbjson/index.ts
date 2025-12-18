@@ -501,6 +501,7 @@ function getSwitchValue(_object: MapObject, prop: PropertyValue) {
 function getEntityList(_object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
   const res: EntityList = {
+    flags: value["flags"].value,
     prev: Number(value["prev"].id),
     next: Number(value["next"].id),
   };
