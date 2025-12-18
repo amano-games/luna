@@ -52,6 +52,8 @@ bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
 		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
 		i32 i                         = curr_ctx->i++;
+		dbg_assert(i == 0 || i <= curr_node->children_count);
+		dbg_assert(i >= -1);
 
 		if(ctx->debug) {
 			sys_printf("loop: i:%2d res:%-10s [%d] %s ", (int)i, BET_RES_STR[res], (int)curr_index, curr_node->name);
@@ -380,6 +382,7 @@ bet_action_tick(
 		res           = ctx->action_do(bet, ctx, node, userdata);
 		node_ctx->res = res;
 		dbg_assert(res != BET_RES_NONE);
+		dbg_assert(res < BET_RES_NUM_COUNT);
 	}
 
 	return res;
