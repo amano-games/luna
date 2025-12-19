@@ -175,7 +175,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	}
 
 	usize size           = MMEGABYTE(1);
-	u8 *mem              = sys_alloc(NULL, size);
+	u8 *mem              = sys_alloc(NULL, size, 1);
 	struct marena marena = {0};
 	struct alloc alloc   = marena_allocator(&marena);
 	marena_init(&marena, mem, size);
@@ -338,7 +338,7 @@ main(i32 argc, char *argv[])
 
 	str8 in_path        = str8_cstr(argv[1]);
 	usize mem_size      = MMEGABYTE(1);
-	u8 *mem             = sys_alloc(NULL, mem_size);
+	u8 *mem             = sys_alloc(NULL, mem_size, 1);
 	struct marena arena = {0};
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 
