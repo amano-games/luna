@@ -1,10 +1,10 @@
 #include "bet.h"
 #include "base/arr.h"
-#include "base/mem.h"
 #include "lib/rndm.h"
 #include "base/types.h"
 #include "base/dbg.h"
 
+struct bet_node_ctx *bet_get_node_ctx(struct bet_ctx *ctx, ssize node_index);
 void bet_comp_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 void bet_deco_init(struct bet *bet, struct bet_ctx *ctx, u8 node_index, void *userdata);
 
@@ -34,13 +34,14 @@ enum bet_res
 bet_tick(struct bet *bet, struct bet_ctx *ctx, void *userdata)
 {
 	enum bet_res res = BET_RES_NONE;
+	dbg_assert(bet->node_count <= ctx->count);
 
 	// If the ctx is not initialized set the node_index to 1 as 0 is NULL
 
 	{
 		u8 curr_index                 = ctx->current;
 		struct bet_node *curr_node    = bet_get_node(bet, curr_index);
-		struct bet_node_ctx *curr_ctx = ctx->bet_node_ctx + curr_index;
+		struct bet_node_ctx *curr_ctx = bet_get_node_ctx(ctx, curr_index);
 		res                           = curr_ctx->res;
 		if(ctx->debug) {
 			sys_printf("\ntick: [%d] %s -> %d", (int)curr_index, curr_node->name, (int)curr_ctx->i);
@@ -533,6 +534,14 @@ bet_get_node(struct bet *bet, ssize node_index)
 	dbg_assert(bet != NULL);
 	dbg_assert(node_index > 0 && node_index < arr_len(bet->nodes));
 	return bet->nodes + node_index;
+}
+
+struct bet_node_ctx *
+bet_get_node_ctx(struct bet_ctx *ctx, ssize node_index)
+{
+	dbg_assert(ctx != NULL);
+	dbg_assert(node_index > 0 && node_index < arr_cap(ctx->bet_node_ctx));
+	return ctx->bet_node_ctx + node_index;
 }
 
 i32
