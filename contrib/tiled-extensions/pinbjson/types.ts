@@ -76,6 +76,7 @@ export interface Flip {
 }
 
 export interface SpriteComponent {
+  alpha: number;
   is_enabled: boolean;
   offset: [number, number];
 }
@@ -114,6 +115,7 @@ export interface Animator {
 export interface Sprite {
   is_enabled: boolean;
   path: string;
+  alpha: number;
   offset: [number, number];
   flip: number;
   layer: number;

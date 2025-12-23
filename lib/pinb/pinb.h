@@ -87,6 +87,7 @@ struct pinb_spr {
 	i32 layer;
 	i32 y_sort_offset;
 	b32 y_sort;
+	f32 alpha;
 	v2 offset;
 };
 

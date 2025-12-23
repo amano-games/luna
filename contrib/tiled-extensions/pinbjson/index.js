@@ -586,6 +586,7 @@
     const y_sort = ((_b = layerProps.sprite_layer) == null ? void 0 : _b.y_sort) ? layerProps.sprite_layer.y_sort : false;
     const is_enabled = true;
     const res = {
+      alpha: 1,
       path: path2,
       flip,
       offset,
@@ -697,6 +698,7 @@
     const offset = [value["offset_x"], value["offset_y"]];
     const res = {
       is_enabled: value["is_enabled"],
+      alpha: value["alpha"],
       offset
     };
     return res;
