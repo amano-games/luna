@@ -1548,6 +1548,8 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 			res.path = ser_get_string(value);
 		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
 			res.flip = ser_get_i32(value);
+		} else if(str8_match(key.str, str8_lit("alpha"), 0)) {
+			res.alpha = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("layer"), 0)) {
 			res.layer = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("y_sort"), 0)) {
@@ -1888,6 +1890,8 @@ pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr)
 	ser_write_string(w, spr->path);
 	ser_write_string(w, str8_lit("flip"));
 	ser_write_i32(w, spr->flip);
+	ser_write_string(w, str8_lit("alpha"));
+	ser_write_f32(w, spr->alpha);
 	ser_write_string(w, str8_lit("layer"));
 	ser_write_i32(w, spr->layer);
 	ser_write_string(w, str8_lit("y_sort"));

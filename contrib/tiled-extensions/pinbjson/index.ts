@@ -240,6 +240,7 @@ function getSprite(
     : false;
   const is_enabled = true;
   const res = {
+    alpha: 1,
     path,
     flip,
     offset,
@@ -370,6 +371,7 @@ function getSpriteComponent(_object: MapObject, prop: PropertyValue) {
   const offset = [value["offset_x"], value["offset_y"]] as [number, number];
   const res: SpriteComponent = {
     is_enabled: value["is_enabled"],
+    alpha: value["alpha"],
     offset,
   };
   return res;

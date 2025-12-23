@@ -714,6 +714,8 @@ pinbtjson_handle_spr(str8 json, jsmntok_t *tokens, i32 index, struct alloc alloc
 			res.spr.path = path_make_file_name_with_ext(alloc, path, str8_lit(TEX_EXT));
 		} else if(json_eq(json, key, str8_lit("flip")) == 0) {
 			res.spr.flip = json_parse_i32(json, value);
+		} else if(json_eq(json, key, str8_lit("alpha")) == 0) {
+			res.spr.alpha = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("layer")) == 0) {
 			res.spr.layer = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("y_sort")) == 0) {
