@@ -894,8 +894,8 @@ pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		jsmntok_t *value = tokens + i + 1;
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
-		if(json_eq(json, key, str8_lit("is_enabled")) == 0) {
-			res.sensor.is_enabled = json_parse_bool32(json, value);
+		if(json_eq(json, key, str8_lit("flags")) == 0) {
+			res.sensor.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("angle_degrees")) == 0) {
 			res.sensor.angle_rad = json_parse_f32(json, value) * DEG_TO_RAD;
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
