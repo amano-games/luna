@@ -520,7 +520,7 @@
   function getSensor(object, prop) {
     const value = prop.value;
     const res = {
-      is_enabled: value["is_enabled"],
+      flags: value["flags"].value,
       angle_degrees: value["angle_degrees"],
       collision_shape: getCol(object)
     };
