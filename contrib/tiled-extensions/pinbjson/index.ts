@@ -161,7 +161,7 @@ function getSensor(object: MapObject, prop: PropertyValue) {
   const value = prop.value as object;
 
   const res: Sensor = {
-    is_enabled: value["is_enabled"],
+    flags: value["flags"].value,
     angle_degrees: value["angle_degrees"],
     collision_shape: getCol(object),
   };

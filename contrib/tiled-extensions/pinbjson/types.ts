@@ -171,7 +171,7 @@ export interface Message {
 }
 
 export interface Sensor {
-  is_enabled: boolean;
+  flags: number;
   angle_degrees: number;
   collision_shape: CollisionShape;
 }
