@@ -85,6 +85,7 @@ function getPos(object: MapObject) {
   // Tiles have their pivot at their bottom left
   switch (collisioType) {
     case COL_TYPE_CIR:
+      // Why is only the cir centered? I don't remember but I think it's a bad idea.
       if (isTile) {
         const [first] = getTileObjects(object);
         const ax = object.x;
@@ -223,6 +224,7 @@ function getSprite(
   const [first] = getTileObjects(object);
   const colType = getColType(first?.shape);
   const offset = [0, 0];
+  // This was a bad idea
   if (colType == COL_TYPE_CIR) {
     offset[0] = object.x - x;
     offset[1] = object.y - object.height - y;
