@@ -5,16 +5,17 @@
 // This comes from the SOKOL SAPP_MAX_KEYCODES var
 #define SYS_KEYS_LEN 512
 
-enum {                           // pd_api.h
-	SYS_INP_DPAD_L       = 0x01, // kButtonLeft
-	SYS_INP_DPAD_R       = 0x02, // kButtonRight
-	SYS_INP_DPAD_U       = 0x04, // kButtonUp
-	SYS_INP_DPAD_D       = 0x08, // kButtonDown
-	SYS_INP_B            = 0x10, // kButtonB
-	SYS_INP_A            = 0x20, // kButtonA
-	SYS_INP_MOUSE_LEFT   = 0x40,
-	SYS_INP_MOUSE_RIGHT  = 0x80,
-	SYS_INP_MOUSE_MIDDLE = 0x100,
+enum {                         // pd_api.h
+	SYS_INP_DPAD_L = (1 << 0), // kButtonLeft
+	SYS_INP_DPAD_R = (1 << 1), // kButtonRight
+	SYS_INP_DPAD_U = (1 << 2), // kButtonUp
+	SYS_INP_DPAD_D = (1 << 3), // kButtonDown
+	SYS_INP_B      = (1 << 4), // kButtonB
+	SYS_INP_A      = (1 << 5), // kButtonA
+	// SYS_INP_MENU         = (1 << 6), // Maybe inp menu and lock button
+	SYS_INP_MOUSE_LEFT   = (1 << 8),
+	SYS_INP_MOUSE_RIGHT  = (1 << 9),
+	SYS_INP_MOUSE_MIDDLE = (1 << 10),
 };
 
 int sys_inp(void);   // bitmask
