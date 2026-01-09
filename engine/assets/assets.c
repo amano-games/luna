@@ -25,7 +25,7 @@ assets_ini(struct alloc alloc, usize size)
 		usize scratch_size = MKILOBYTE(50);
 		void *scratch_mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, scratch_size, 4);
 		marena_init(&ASSETS.scratch_marena, scratch_mem, scratch_size);
-		ASSETS.scratch_alloc = marena_allocator(&ASSETS.scratch_marena);
+		ASSETS.scratch = marena_allocator(&ASSETS.scratch_marena);
 	}
 }
 
@@ -38,11 +38,8 @@ asset_allocf(void *ctx, ssize size, ssize align)
 	return mem;
 
 error: {
-	usize left  = marena_size_rem(&ASSETS.marena);
-	usize total = assets->marena.buf_size;
-	usize used  = total - left;
 	log_error("Assets", "Ran out of asset mem! requested: %$u", (uint)size);
-	log_error("Assets", "MEM: used: %$u left: %$u total: %$u", (uint)used, (uint)left, (uint)total);
+	MARENA_LOG_USAGE(&ASSETS.marena, "Assets");
 	return NULL;
 }
 }
@@ -180,7 +177,7 @@ i32
 asset_bet_load(str8 path, struct bet *bet)
 {
 	marena_reset(&ASSETS.scratch_marena);
-	struct alloc scratch = ASSETS.scratch_alloc;
+	struct alloc scratch = ASSETS.scratch;
 	struct alloc alloc   = ASSETS.alloc;
 	i32 res              = 0;
 	str8 full_path       = asset_path_to_full_path(path);
@@ -269,7 +266,7 @@ asset_path_to_full_path(struct str8 path)
 
 	marena_reset(&ASSETS.scratch_marena);
 	enum path_style path_style = path_style_from_str8(base_path);
-	struct alloc scratch       = ASSETS.scratch_alloc;
+	struct alloc scratch       = ASSETS.scratch;
 	struct str8_list path_list = {0};
 	str8_list_push(scratch, &path_list, base_path);
 	str8_list_push(scratch, &path_list, path);

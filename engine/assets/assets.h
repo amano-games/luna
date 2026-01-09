@@ -12,7 +12,7 @@ struct assets {
 	struct tex display;
 
 	struct marena scratch_marena;
-	struct alloc scratch_alloc;
+	struct alloc scratch;
 
 	struct marena marena;
 	struct alloc alloc;
