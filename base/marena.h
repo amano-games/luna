@@ -32,7 +32,7 @@ marena_log_usage(const struct marena *marena, const char *tag, const char *name)
 	ssize used  = total - left;
 
 	log_info(tag,
-		"mem-%s| %$u/%$u left:%$u",
+		"mem-%s| %_$u/%_$u left:%_$u",
 		name,
 		(uint)used,
 		(uint)total,
