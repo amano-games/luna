@@ -24,6 +24,24 @@ void marena_reset(struct marena *m);
 void *marena_alloc_rem(struct marena *m, ssize *s);
 ssize marena_size_rem(struct marena *m);
 
+static inline void
+marena_log_usage(const struct marena *marena, const char *tag, const char *name)
+{
+	ssize left  = marena_size_rem((struct marena *)marena);
+	ssize total = marena->buf_size;
+	ssize used  = total - left;
+
+	log_info(tag,
+		"mem-%s| used:%$u left:%$u total:%$u",
+		name,
+		(uint)used,
+		(uint)left,
+		(uint)total);
+}
+
+#define MARENA_LOG_USAGE(marena, tag) \
+	marena_log_usage((marena), (tag), #marena)
+
 // NOTE: Should this live outside?
 static void *
 marena_alloc_func(void *ctx, ssize s, ssize align)

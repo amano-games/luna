@@ -1,5 +1,6 @@
 #include "base/mem.h"
 #include "base/dbg.h"
+#include "base/str.h"
 #include "marena.h"
 
 void
