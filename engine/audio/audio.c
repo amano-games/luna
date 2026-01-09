@@ -261,12 +261,19 @@ mus_stop(enum mus_channel_id channel_id)
 }
 
 void
-mus_set_vol(enum mus_channel_id channel_id, f32 vol)
+mus_vol_set(enum mus_channel_id channel_id, f32 vol)
 {
 	struct aud_cmd cmd          = {.type = AUD_CMD_MUS_MODIFY_VOL};
 	cmd.c.mus_modify.channel_id = channel_id;
 	cmd.c.mus_modify.vol_q8     = (i32)(vol * 255.0f);
 	aud_push_cmd(cmd);
+}
+
+f32
+mus_vol_get(enum mus_channel_id channel_id)
+{
+	f32 res = AUDIO.mus_channel[channel_id].adpcm.vol_q8 / 255.0f;
+	return res;
 }
 
 static void
