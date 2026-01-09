@@ -132,5 +132,6 @@ void snd_instance_set_vol(u32 snd_id, f32 vol);
 void mus_play(const struct asset_handle handle, enum mus_channel_id channel_id, f32 vol, b32 loop);
 void mus_play_by_path(const str8 path, enum mus_channel_id channel_id, f32 vol, b32 loop);
 b32 mus_is_playing(enum mus_channel_id channel_id);
-void mus_set_vol(enum mus_channel_id channel_id, f32 vol);
+void mus_vol_set(enum mus_channel_id channel_id, f32 vol);
+f32 mus_vol_get(enum mus_channel_id channel_id);
 void mus_stop(enum mus_channel_id channel_id);
