@@ -78,7 +78,7 @@ cleanup:
 	return res;
 }
 
-usize
+static inline u8
 animation_get_last_frame(struct animation_track *track)
 {
 	TRACE_START(__func__);
@@ -112,20 +112,21 @@ usize
 animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
 	TRACE_START(__func__);
-	usize res = 0;
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
+
+	usize res                     = 0;
 	usize track_index             = track_type - 1;
 	struct animation_track *track = &ani->clip.tracks[track_index];
-
-	if(ani->is_stopped) {
-		res = track->frames.len - 1;
-		goto cleanup;
-	};
 
 	if(track->frames.len == 0) {
 		res = 0;
 		goto cleanup;
 	}
+
+	if(ani->is_stopped) {
+		res = track->frames.len - 1;
+		goto cleanup;
+	};
 
 	f32 start   = ani->timestamp_start;
 	f32 current = ani->is_paused ? ani->timestamp_pause : timestamp;
@@ -143,25 +144,24 @@ cleanup:
 	return res;
 }
 
-usize
+u8
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
 	TRACE_START(__func__);
-	usize res = 0;
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
+	u8 res                        = 0;
 	usize track_index             = track_type - 1;
 	struct animation_track *track = &ani->clip.tracks[track_index];
-
-	if(ani->is_stopped) {
-		res = animation_get_last_frame(track);
-		goto cleanup;
-	};
 
 	if(track->frames.len == 0) {
 		res = 0;
 		goto cleanup;
 	}
+	if(ani->is_stopped) {
+		res = animation_get_last_frame(track);
+		goto cleanup;
+	};
 
 	f32 start   = ani->timestamp_start;
 	f32 current = ani->is_paused ? ani->timestamp_pause : timestamp;
