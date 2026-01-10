@@ -24,24 +24,14 @@ animator_update(struct animator *animator, f32 timestamp)
 {
 	TRACE_START(__func__);
 	b32 res                      = false;
-	usize current_animation      = animator->index;
-	struct animation *animation  = &animator->animation;
+	u8 current_animation         = animator->index;
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, animator->clips_handle);
 
 	if(slice.size > 0) {
-		res = animation_update(animation, timestamp);
+		res = animation_update(&animator->animation, timestamp);
 	}
 	TRACE_END();
 	return res;
-}
-
-usize
-animator_get_frame(struct animator *animator, enum animation_track_type type, f32 timestamp)
-{
-	dbg_assert(type == ANIMATION_TRACK_FRAME || type == ANIMATION_TRACK_SPRITE_MODE);
-
-	struct animation *animation = &animator->animation;
-	return animation_get_frame(animation, type, timestamp);
 }
 
 void

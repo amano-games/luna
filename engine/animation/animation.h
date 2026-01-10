@@ -17,7 +17,7 @@ struct frames {
 };
 
 struct animation_track {
-	enum animation_track_type type;
+	u8 type;
 	struct frames frames;
 };
 
@@ -28,7 +28,7 @@ struct animation_clip {
 	f32 frame_duration;
 	// Play 1 or 2 or 3 times
 	// -1 loop forever
-	int count;
+	i16 count;
 	// values to sample the current frame
 	f32 scale;
 
@@ -47,7 +47,7 @@ struct animation {
 void animation_init(struct animation *animation);
 void animation_clip_init(struct animation_clip *data);
 b32 animation_update(struct animation *ani, f32 timestamp);
-usize animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
+u8 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
 void animation_start(struct animation *ani, f32 timestamp);
 void animation_pause(struct animation *ani, f32 timestamp);
