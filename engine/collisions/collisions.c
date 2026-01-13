@@ -76,6 +76,25 @@ c2toi_to_toi(c2TOIResult *c2toi, struct col_toi *toi)
 	toi->iterations = c2toi->iterations;
 }
 
+static inline struct col_transform
+col_transform_identity(void)
+{
+	return (struct col_transform){
+		.p = {0, 0},
+		.r = {1, 0},
+	};
+}
+
+static inline c2x
+col_transform_to_c2x(const struct col_transform *bx)
+{
+	struct col_transform x = bx ? *bx : col_transform_identity();
+	return (c2x){
+		.p = {x.p.x, x.p.y},
+		.r = {x.r.c, x.r.s},
+	};
+}
+
 static inline void
 c2manifold_to_manifold(c2Manifold *c2m, struct col_manifold *m)
 {
@@ -219,13 +238,14 @@ col_circle_to_capsule(struct col_cir a, struct col_capsule b)
 }
 
 int
-col_circle_to_poly(struct col_cir a, struct col_poly b)
+col_circle_to_poly(struct col_cir a, struct col_poly b, struct col_transform *bx)
 {
 	TRACE_START(__func__);
 	c2Circle c2a = cir_to_c2cir(a);
 	int res      = 0;
 	c2Poly c2b   = poly_to_c2poly(b);
-	res          = c2CircletoPoly(c2a, &c2b, NULL);
+	c2x cbx      = col_transform_to_c2x(bx);
+	res          = c2CircletoPoly(c2a, &c2b, &cbx);
 	TRACE_END();
 	return res;
 }
@@ -354,13 +374,21 @@ col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, 
 }
 
 void
-col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b, struct col_manifold *m)
+col_aabb_to_poly_manifold(
+	f32 x1a,
+	f32 y1a,
+	f32 x2a,
+	f32 y2a,
+	struct col_poly b,
+	struct col_transform *bx,
+	struct col_manifold *m)
 {
 	TRACE_START(__func__);
 	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	c2Manifold res = {0};
 	c2Poly c2b     = poly_to_c2poly(b);
-	c2AABBtoPolyManifold(c2a, &c2b, NULL, &res);
+	c2x cbx        = col_transform_to_c2x(bx);
+	c2AABBtoPolyManifold(c2a, &c2b, &cbx, &res);
 	TRACE_END();
 	c2manifold_to_manifold(&res, m);
 }
@@ -379,13 +407,14 @@ col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct co
 }
 
 void
-col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_manifold *m)
+col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_transform *bx, struct col_manifold *m)
 {
 	TRACE_START(__func__);
 	c2Circle c2a   = cir_to_c2cir(a);
 	c2Manifold c2m = {0};
 	c2Poly c2b     = poly_to_c2poly(b);
-	c2CircletoPolyManifold(c2a, &c2b, NULL, &c2m);
+	c2x cbx        = col_transform_to_c2x(bx);
+	c2CircletoPolyManifold(c2a, &c2b, &cbx, &c2m);
 	TRACE_END();
 	c2manifold_to_manifold(&c2m, m);
 }
