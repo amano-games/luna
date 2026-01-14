@@ -360,6 +360,20 @@ col_circle_to_aabb_manifold(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2,
 	TRACE_END();
 	c2manifold_to_manifold(&res, m);
 }
+
+void
+col_aabb_to_circle_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 bx, f32 by, f32 br, struct col_manifold *m)
+{
+	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
+	c2Circle c2b   = {.p = {bx, by}, .r = br};
+	c2Manifold res = {0};
+	c2CircletoAABBManifold(c2b, c2a, &res);
+	res.n.x = -res.n.x;
+	res.n.y = -res.n.y;
+	TRACE_END();
+	c2manifold_to_manifold(&res, m);
+}
+
 void
 col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b, struct col_manifold *m)
 {
@@ -394,6 +408,25 @@ col_aabb_to_poly_manifold(
 }
 
 void
+col_poly_to_poly_manifold(
+	struct col_poly a,
+	struct col_transform *ax,
+	struct col_poly b,
+	struct col_transform *bx,
+	struct col_manifold *m)
+{
+	TRACE_START(__func__);
+	c2Manifold res = {0};
+	c2Poly c2a     = poly_to_c2poly(a);
+	c2Poly c2b     = poly_to_c2poly(b);
+	c2x cax        = col_transform_to_c2x(ax);
+	c2x cbx        = col_transform_to_c2x(bx);
+	c2PolytoPolyManifold(&c2a, &cax, &c2b, &cbx, &res);
+	TRACE_END();
+	c2manifold_to_manifold(&res, m);
+}
+
+void
 col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m, f32 *t, v2 *closest)
 {
 	TRACE_START(__func__);
@@ -407,10 +440,10 @@ col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct co
 }
 
 void
-col_circle_to_poly_manifold(struct col_cir a, struct col_poly b, struct col_transform *bx, struct col_manifold *m)
+col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_transform *bx, struct col_manifold *m)
 {
 	TRACE_START(__func__);
-	c2Circle c2a   = cir_to_c2cir(a);
+	c2Circle c2a   = {.p.x = x, .p.y = y, .r = r};
 	c2Manifold c2m = {0};
 	c2Poly c2b     = poly_to_c2poly(b);
 	c2x cbx        = col_transform_to_c2x(bx);
