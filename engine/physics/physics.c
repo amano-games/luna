@@ -180,7 +180,8 @@ body_integrate(struct physics *physics, struct body *body)
 
 	body->orient = body->orient + body->ang_vel;
 
-	body->p_delta = (v2){0.0f, 0.0f};
+	body->p_delta.x = 0;
+	body->p_delta.y = 0;
 }
 
 void
