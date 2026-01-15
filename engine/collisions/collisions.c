@@ -177,25 +177,20 @@ col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2)
 }
 
 struct col_cir
-col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest)
+col_capsule_get_circle_col(struct col_capsule capsule, v2 p)
 {
 	TRACE_START(__func__);
-	closest->x = 0;
-	closest->y = 0;
-	*t         = 0.0f;
-
-	v2 closest_p = {0};
+	v2 closest           = {0};
+	v2 closest_tangent_p = {0};
+	f32 t                = 0.0;
 	{
-		// We don't need t so we just use a temp variable
-		f32 t_temp = 0;
-
 		// First we get the closest point from the ball to the tangent A
 		v2 ta = {0};
-		col_point_to_line(p, capsule.tangents.a.a, capsule.tangents.a.b, &t_temp, &ta);
+		col_point_to_line(p, capsule.tangents.a.a, capsule.tangents.a.b, NULL, &ta);
 
 		// Closes point from the ball to tangent B
 		v2 tb = {0};
-		col_point_to_line(p, capsule.tangents.b.a, capsule.tangents.b.b, &t_temp, &tb);
+		col_point_to_line(p, capsule.tangents.b.a, capsule.tangents.b.b, NULL, &tb);
 
 		// Get the vector from the ball to the tangents
 		v2 tap = v2_sub(p, ta);
@@ -205,26 +200,24 @@ col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest
 		f32 tbl = v2_len_sq(tbp);
 
 		// The closes point from a tangent to the ball
-		closest_p = tal < tbl ? ta : tb;
+		closest_tangent_p = tal < tbl ? ta : tb;
 	}
 
-	col_point_to_line(closest_p, capsule.a.p, capsule.b.p, t, closest);
-	struct col_cir circle = {
-		.p = {closest->x, closest->y},
-		.r = lerp(capsule.a.r, capsule.b.r, *t),
+	col_point_to_line(closest_tangent_p, capsule.a.p, capsule.b.p, &t, &closest);
+	struct col_cir res = {
+		.p = {closest.x, closest.y},
+		.r = lerp(capsule.a.r, capsule.b.r, t),
 	};
 
 	TRACE_END();
-	return circle;
+	return res;
 }
 
 int
 col_circle_to_capsule(struct col_cir a, struct col_capsule b)
 {
 	TRACE_START(__func__);
-	f32 t                   = 0.0f;
-	v2 closest              = {0};
-	struct col_cir circle_b = col_capsule_get_circle_col(b, a.p, &t, &closest);
+	struct col_cir circle_b = col_capsule_get_circle_col(b, a.p);
 	int r                   = col_circle_to_circle(
         a.p.x,
         a.p.y,
@@ -427,10 +420,10 @@ col_poly_to_poly_manifold(
 }
 
 void
-col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m, f32 *t, v2 *closest)
+col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m)
 {
 	TRACE_START(__func__);
-	struct col_cir b_cir = col_capsule_get_circle_col(b, a.p, t, closest);
+	struct col_cir b_cir = col_capsule_get_circle_col(b, a.p);
 	struct c2Circle c2b  = cir_to_c2cir(b_cir);
 	c2Circle c2a         = cir_to_c2cir(a);
 	c2Manifold res       = {0};
@@ -454,21 +447,25 @@ col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_t
 
 // TODO: optimize division
 void
-col_point_to_line(v2 c, v2 a, v2 b, f32 *const t, v2 *const d)
+col_point_to_line(v2 c, v2 a, v2 b, f32 *const t_out, v2 *const d_out)
 {
 	TRACE_START(__func__);
 	v2 ab = v2_sub(b, a);
 	v2 ac = v2_sub(c, a);
+	f32 t = 0;
+	v2 d  = {0};
 
 	// project c onto ab, computing parametrized position
-	*t = v2_dot(ac, ab) / v2_dot(ab, ab);
+	t = v2_dot(ac, ab) / v2_dot(ab, ab);
 
 	// clamp t if outside of segment
-	if(*t < 0.0f) *t = 0.0f;
-	if(*t > 1.0f) *t = 1.0f;
+	if(t < 0.0f) t = 0.0f;
+	if(t > 1.0f) t = 1.0f;
 
 	// Compute projected position from the clamped t
-	*d = v2_add(a, v2_mul(ab, *t));
+	d = v2_add(a, v2_mul(ab, t));
+	if(t_out) { *t_out = t; }
+	if(d_out) { *d_out = d; }
 	TRACE_END();
 }
 
