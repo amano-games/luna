@@ -586,3 +586,135 @@ col_shape_get_bounding_box(struct col_shape shape)
 error:
 	return (struct col_aabb){0};
 }
+
+void
+col_vs_col_manifold(
+	struct col_shape *a,
+	struct col_transform a_transform,
+	struct col_shape *b,
+	struct col_transform b_transform,
+	struct col_manifold *m)
+{
+	switch(a->type) {
+	case COL_TYPE_CIR: {
+		switch(b->type) {
+		case COL_TYPE_CIR: {
+			col_circle_to_circle_manifold(
+				a->cir.p.x + a_transform.p.x,
+				a->cir.p.y + a_transform.p.y,
+				a->cir.r,
+				b->cir.p.x + b_transform.p.x,
+				b->cir.p.y + b_transform.p.y,
+				b->cir.r,
+				m);
+		} break;
+		case COL_TYPE_AABB: {
+			col_circle_to_aabb_manifold(
+				a->cir.p.x + a_transform.p.x,
+				a->cir.p.y + a_transform.p.y,
+				a->cir.r,
+				b->aabb.min.x + b_transform.p.x,
+				b->aabb.min.y + b_transform.p.y,
+				b->aabb.max.x + b_transform.p.x,
+				b->aabb.max.y + b_transform.p.y,
+				m);
+		} break;
+		case COL_TYPE_POLY: {
+			col_circle_to_poly_manifold(
+				a->cir.p.x + a_transform.p.x,
+				a->cir.p.y + a_transform.p.y,
+				a->cir.r,
+				b->poly,
+				&b_transform,
+				m);
+		} break;
+		default: {
+			dbg_sentinel("dbg_shape");
+		} break;
+		}
+	} break;
+	case COL_TYPE_AABB: {
+		switch(b->type) {
+		case COL_TYPE_CIR: {
+			col_aabb_to_circle_manifold(
+				a->aabb.min.x + a_transform.p.x,
+				a->aabb.min.y + a_transform.p.y,
+				a->aabb.max.x + a_transform.p.x,
+				a->aabb.max.y + a_transform.p.y,
+				b->cir.p.x + b_transform.p.x,
+				b->cir.p.y + b_transform.p.y,
+				b->cir.r,
+				m);
+		} break;
+		case COL_TYPE_AABB: {
+			col_aabb_to_aabb_manifold(
+				a->aabb.min.x + a_transform.p.x,
+				a->aabb.min.y + a_transform.p.y,
+				a->aabb.max.x + a_transform.p.x,
+				a->aabb.max.y + a_transform.p.y,
+				b->aabb.min.x + b_transform.p.x,
+				b->aabb.min.y + b_transform.p.y,
+				b->aabb.max.x + b_transform.p.x,
+				b->aabb.max.y + b_transform.p.y,
+				m);
+		} break;
+		case COL_TYPE_POLY: {
+			col_aabb_to_poly_manifold(
+				a->aabb.min.x + a_transform.p.x,
+				a->aabb.min.y + a_transform.p.y,
+				a->aabb.max.x + a_transform.p.x,
+				a->aabb.max.y + a_transform.p.y,
+				b->poly,
+				&b_transform,
+				m);
+		} break;
+		default: {
+			dbg_sentinel("dbg_shape");
+		} break;
+		}
+	} break;
+	case COL_TYPE_POLY: {
+		switch(b->type) {
+		case COL_TYPE_CIR: {
+			col_circle_to_poly_manifold(
+				b->cir.p.x + b_transform.p.x,
+				b->cir.p.y + b_transform.p.y,
+				b->cir.r,
+				a->poly,
+				&a_transform,
+				m);
+			m->normal.x = -m->normal.x;
+			m->normal.y = -m->normal.y;
+		} break;
+		case COL_TYPE_AABB: {
+			col_aabb_to_poly_manifold(
+				b->aabb.min.x + b_transform.p.x,
+				b->aabb.min.y + b_transform.p.y,
+				b->aabb.max.x + b_transform.p.x,
+				b->aabb.max.y + b_transform.p.y,
+				a->poly,
+				&a_transform,
+				m);
+			m->normal.x = -m->normal.x;
+			m->normal.y = -m->normal.y;
+		} break;
+		case COL_TYPE_POLY: {
+			col_poly_to_poly_manifold(
+				a->poly,
+				&a_transform,
+				b->poly,
+				&b_transform,
+				m);
+		} break;
+		default: {
+			dbg_sentinel("invalid collision shape");
+		} break;
+		}
+	} break;
+	default: {
+		dbg_sentinel("invalid collision shape");
+	} break;
+	}
+
+error:;
+}
