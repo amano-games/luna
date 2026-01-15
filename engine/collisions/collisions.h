@@ -181,3 +181,5 @@ void col_poly_to_poly_manifold(struct col_poly a, struct col_transform *ax, stru
 
 v2 col_aabb_cntr(struct col_aabb aabb);
 rec_i32 col_aabb_to_rec_i32(struct col_aabb aabb);
+
+void col_vs_col_manifold(struct col_shape *a, struct col_transform a_transform, struct col_shape *b, struct col_transform b_transform, struct col_manifold *m);
