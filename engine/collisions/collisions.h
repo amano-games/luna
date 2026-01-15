@@ -152,7 +152,7 @@ col_aabb_from_rec_i32(rec_i32 rec)
 
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
-struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p, f32 *t, v2 *closest);
+struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p);
 struct col_aabb col_shapes_get_bounding_box(struct col_shapes shapes);
 struct col_aabb col_shape_get_bounding_box(struct col_shape shape);
 
@@ -170,7 +170,7 @@ struct col_toi col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb
 
 void col_circle_to_circle_manifold(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br, struct col_manifold *m);
 void col_circle_to_aabb_manifold(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2, struct col_manifold *m);
-void col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m, f32 *t, v2 *closest);
+void col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m);
 void col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_transform *bx, struct col_manifold *m);
 
 void col_aabb_to_circle_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 bx, f32 by, f32 br, struct col_manifold *m);
