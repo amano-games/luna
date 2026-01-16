@@ -76,15 +76,6 @@ c2toi_to_toi(c2TOIResult *c2toi, struct col_toi *toi)
 	toi->iterations = c2toi->iterations;
 }
 
-static inline struct col_transform
-col_transform_identity(void)
-{
-	return (struct col_transform){
-		.p = {0, 0},
-		.r = {1, 0},
-	};
-}
-
 static inline c2x
 col_transform_to_c2x(const struct col_transform *bx)
 {
@@ -177,12 +168,13 @@ col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2)
 }
 
 struct col_cir
-col_capsule_get_circle_col(struct col_capsule capsule, v2 p)
+col_capsule_get_circle_col(struct col_capsule capsule, f32 x, f32 y)
 {
 	TRACE_START(__func__);
 	v2 closest           = {0};
 	v2 closest_tangent_p = {0};
 	f32 t                = 0.0;
+	v2 p                 = {x, y};
 	{
 		// First we get the closest point from the ball to the tangent A
 		v2 ta = {0};
@@ -213,21 +205,21 @@ col_capsule_get_circle_col(struct col_capsule capsule, v2 p)
 	return res;
 }
 
-int
-col_circle_to_capsule(struct col_cir a, struct col_capsule b)
+i32
+col_circle_to_capsule(f32 x, f32 y, f32 r, struct col_capsule b)
 {
 	TRACE_START(__func__);
-	struct col_cir circle_b = col_capsule_get_circle_col(b, a.p);
-	int r                   = col_circle_to_circle(
-        a.p.x,
-        a.p.y,
-        a.r,
+	struct col_cir circle_b = col_capsule_get_circle_col(b, x, y);
+	i32 res                 = col_circle_to_circle(
+        x,
+        y,
+        r,
         circle_b.p.x,
         circle_b.p.y,
         circle_b.r);
 
 	TRACE_END();
-	return r;
+	return res;
 }
 
 int
@@ -420,12 +412,57 @@ col_poly_to_poly_manifold(
 }
 
 void
-col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m)
+col_circle_to_capsule_manifold(
+	f32 x,
+	f32 y,
+	f32 r,
+
+	f32 x1b,
+	f32 y1b,
+	f32 r1b,
+
+	f32 x2b,
+	f32 y2b,
+	f32 r2b,
+
+	f32 t1ax,
+	f32 t1ay,
+	f32 t1bx,
+	f32 t1by,
+
+	f32 t2ax,
+	f32 t2ay,
+	f32 t2bx,
+	f32 t2by,
+
+	struct col_manifold *m)
 {
 	TRACE_START(__func__);
-	struct col_cir b_cir = col_capsule_get_circle_col(b, a.p);
+	struct col_capsule b = {
+		.a = {
+			.p.x = x1b,
+			.p.y = y1b,
+			.r   = r1b,
+		},
+		.b = {
+			.p.x = x2b,
+			.p.y = y2b,
+			.r   = r2b,
+		},
+		.tangents = {
+			.a.a.x = t1ax,
+			.a.a.y = t1ay,
+			.a.b.x = t1bx,
+			.a.b.y = t1by,
+
+			.b.a.x = t2ax,
+			.b.a.y = t2ay,
+			.b.b.x = t2bx,
+			.b.b.y = t2by,
+		}};
+	struct col_cir b_cir = col_capsule_get_circle_col(b, x, y);
 	struct c2Circle c2b  = cir_to_c2cir(b_cir);
-	c2Circle c2a         = cir_to_c2cir(a);
+	c2Circle c2a         = {.p.x = x, .p.y = y, .r = r};
 	c2Manifold res       = {0};
 	c2CircletoCircleManifold(c2a, c2b, &res);
 	TRACE_END();
@@ -446,21 +483,28 @@ col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_t
 }
 
 // TODO: optimize division
+// If divisions are expensive, the division operation can be postponed by multiply-
+// ing both sides of the comparisons by the denominator, which as a square term is
+// guaranteed to be nonnegative.
+f32
+col_point_to_line_t(v2 c, v2 a, v2 b)
+{
+	f32 res = 0.0f;
+	v2 ab   = v2_sub(b, a);
+	v2 ac   = v2_sub(c, a);
+	f32 t   = v2_dot(ac, ab) / v2_dot(ab, ab); // project c onto ab, computing parametrized position
+	res     = clamp_f32(t, 0.0f, 1.0f);        // clamp t if outside of segment
+	return res;
+}
+
 void
 col_point_to_line(v2 c, v2 a, v2 b, f32 *const t_out, v2 *const d_out)
 {
 	TRACE_START(__func__);
 	v2 ab = v2_sub(b, a);
 	v2 ac = v2_sub(c, a);
-	f32 t = 0;
 	v2 d  = {0};
-
-	// project c onto ab, computing parametrized position
-	t = v2_dot(ac, ab) / v2_dot(ab, ab);
-
-	// clamp t if outside of segment
-	if(t < 0.0f) t = 0.0f;
-	if(t > 1.0f) t = 1.0f;
+	f32 t = col_point_to_line_t(c, a, b);
 
 	// Compute projected position from the clamped t
 	d = v2_add(a, v2_mul(ab, t));
@@ -585,7 +629,7 @@ error:
 }
 
 void
-col_vs_col_manifold(
+col_to_col_manifold(
 	struct col_shape *a,
 	struct col_transform a_transform,
 	struct col_shape *b,
@@ -623,6 +667,32 @@ col_vs_col_manifold(
 				a->cir.r,
 				b->poly,
 				&b_transform,
+				m);
+		} break;
+		case COL_TYPE_CAPSULE: {
+			col_circle_to_capsule_manifold(
+				a->cir.p.x + a_transform.p.x,
+				a->cir.p.y + a_transform.p.y,
+				a->cir.r,
+
+				b->capsule.a.p.x + b_transform.p.x,
+				b->capsule.a.p.y + b_transform.p.y,
+				b->capsule.a.r,
+
+				b->capsule.b.p.x + b_transform.p.x,
+				b->capsule.b.p.y + b_transform.p.y,
+				b->capsule.b.r,
+
+				b->capsule.tangents.a.a.x + b_transform.p.x,
+				b->capsule.tangents.a.a.y + b_transform.p.y,
+				b->capsule.tangents.a.b.x + b_transform.p.x,
+				b->capsule.tangents.a.b.y + b_transform.p.y,
+
+				b->capsule.tangents.b.a.x + b_transform.p.x,
+				b->capsule.tangents.a.a.y + b_transform.p.y,
+				b->capsule.tangents.b.b.x + b_transform.p.x,
+				b->capsule.tangents.b.b.y + b_transform.p.y,
+
 				m);
 		} break;
 		default: {
@@ -665,6 +735,8 @@ col_vs_col_manifold(
 				&b_transform,
 				m);
 		} break;
+		case COL_TYPE_CAPSULE: {
+		} break;
 		default: {
 			dbg_sentinel("dbg_shape");
 		} break;
@@ -702,6 +774,46 @@ col_vs_col_manifold(
 				b->poly,
 				&b_transform,
 				m);
+		} break;
+		default: {
+			dbg_sentinel("invalid collision shape");
+		} break;
+		}
+	} break;
+	case COL_TYPE_CAPSULE: {
+		switch(b->type) {
+		case COL_TYPE_CIR: {
+			col_circle_to_capsule_manifold(
+				b->cir.p.x + b_transform.p.x,
+				b->cir.p.y + b_transform.p.y,
+				b->cir.r,
+
+				a->capsule.a.p.x + a_transform.p.x,
+				a->capsule.a.p.y + a_transform.p.y,
+				a->capsule.a.r,
+
+				a->capsule.b.p.x + a_transform.p.x,
+				a->capsule.b.p.y + a_transform.p.y,
+				a->capsule.b.r,
+
+				a->capsule.tangents.a.a.x + a_transform.p.x,
+				a->capsule.tangents.a.a.y + a_transform.p.y,
+				a->capsule.tangents.a.b.x + a_transform.p.x,
+				a->capsule.tangents.a.b.y + a_transform.p.y,
+
+				a->capsule.tangents.b.a.x + a_transform.p.x,
+				a->capsule.tangents.a.a.y + a_transform.p.y,
+				a->capsule.tangents.b.b.x + a_transform.p.x,
+				a->capsule.tangents.b.b.y + a_transform.p.y,
+				m);
+			m->normal.x = -m->normal.x;
+			m->normal.y = -m->normal.y;
+		} break;
+		case COL_TYPE_AABB: {
+		} break;
+		case COL_TYPE_POLY: {
+		} break;
+		case COL_TYPE_CAPSULE: {
 		} break;
 		default: {
 			dbg_sentinel("invalid collision shape");
