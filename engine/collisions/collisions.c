@@ -689,7 +689,7 @@ col_to_col_manifold(
 				b->capsule.tangents.a.b.y + b_transform.p.y,
 
 				b->capsule.tangents.b.a.x + b_transform.p.x,
-				b->capsule.tangents.a.a.y + b_transform.p.y,
+				b->capsule.tangents.b.a.y + b_transform.p.y,
 				b->capsule.tangents.b.b.x + b_transform.p.x,
 				b->capsule.tangents.b.b.y + b_transform.p.y,
 
