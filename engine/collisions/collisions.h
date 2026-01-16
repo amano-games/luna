@@ -98,6 +98,15 @@ struct col_shapes {
 	struct col_shape items[COL_SHAPES_MAX];
 };
 
+static inline struct col_transform
+col_transform_identity(void)
+{
+	return (struct col_transform){
+		.p = {0, 0},
+		.r = {1, 0},
+	};
+}
+
 static inline f32
 col_aabb_w(struct col_aabb aabb)
 {
@@ -152,34 +161,36 @@ col_aabb_from_rec_i32(rec_i32 rec)
 
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
-struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, v2 p);
+struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, f32 x, f32 y);
 struct col_aabb col_shapes_get_bounding_box(struct col_shapes shapes);
 struct col_aabb col_shape_get_bounding_box(struct col_shape shape);
 
 void col_point_to_line(v2 c, v2 a, v2 b, f32 *t, v2 *d);
+f32 col_point_to_line_t(v2 c, v2 a, v2 b);
 int col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc);
 int col_point_to_aabb(f32 xa, f32 ya, f32 x1b, f32 y1b, f32 x2b, f32 y2b);
 int col_circle_to_circle(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br);
 int col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2);
-int col_circle_to_capsule(struct col_cir a, struct col_capsule b);
+i32 col_circle_to_capsule(f32 x, f32 y, f32 r, struct col_capsule b);
 int col_circle_to_poly(struct col_cir a, struct col_poly b, struct col_transform *bx);
 
 int col_aabb_to_aabb(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b);
 int col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b);
+
 struct col_toi col_circle_toi(struct col_cir a, v2 va, struct col_shape b, v2 vb);
 
 void col_circle_to_circle_manifold(f32 ax, f32 ay, f32 ar, f32 bx, f32 by, f32 br, struct col_manifold *m);
 void col_circle_to_aabb_manifold(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2, struct col_manifold *m);
-void col_circle_to_capsule_manifold(struct col_cir a, struct col_capsule b, struct col_manifold *m);
+void col_circle_to_capsule_manifold(f32 x, f32 y, f32 r, f32 x1b, f32 y1b, f32 r1b, f32 x2b, f32 y2b, f32 r2b, f32 t1ax, f32 t1ay, f32 t1bx, f32 t1by, f32 t2ax, f32 t2ay, f32 t2bx, f32 t2by, struct col_manifold *m);
 void col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_transform *bx, struct col_manifold *m);
 
 void col_aabb_to_circle_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 bx, f32 by, f32 br, struct col_manifold *m);
 void col_aabb_to_aabb_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, f32 x1b, f32 y1b, f32 x2b, f32 y2b, struct col_manifold *m);
-void col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly p, struct col_transform *bx, struct col_manifold *m);
+void col_aabb_to_poly_manifold(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b, struct col_transform *bx, struct col_manifold *m);
 
 void col_poly_to_poly_manifold(struct col_poly a, struct col_transform *ax, struct col_poly b, struct col_transform *bx, struct col_manifold *m);
 
 v2 col_aabb_cntr(struct col_aabb aabb);
 rec_i32 col_aabb_to_rec_i32(struct col_aabb aabb);
 
-void col_vs_col_manifold(struct col_shape *a, struct col_transform a_transform, struct col_shape *b, struct col_transform b_transform, struct col_manifold *m);
+void col_to_col_manifold(struct col_shape *a, struct col_transform a_transform, struct col_shape *b, struct col_transform b_transform, struct col_manifold *m);

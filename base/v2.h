@@ -102,9 +102,7 @@ v2_abs(v2 a)
 static inline f32
 v2_len_sq(v2 a)
 {
-	f32 x = abs_f32(a.x);
-	f32 y = abs_f32(a.y);
-	return x * x + y * y;
+	return a.x * a.x + a.y * a.y;
 }
 
 static inline f32
