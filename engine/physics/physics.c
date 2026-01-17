@@ -193,8 +193,15 @@ body_positional_correction(struct physics *physics, struct body *a, struct body 
 	f32 correction_mag = max_f32(penetration - slop, 0.0f) / (a->mass_inv + b->mass_inv);
 	v2 correction      = v2_mul(m->normal, correction_mag * percent);
 
+	//BUG: Here we would accumulate the positiond delta not override it
+	//later on we average this position
+#if 1
 	a->p_delta = v2_mul(correction, -a->mass_inv);
 	b->p_delta = v2_mul(correction, b->mass_inv);
+#else
+	a->p_delta = v2_add(a->p_delta, v2_mul(correction, -a->mass_inv));
+	b->p_delta = v2_add(b->p_delta, v2_mul(correction, b->mass_inv));
+#endif
 }
 
 void
