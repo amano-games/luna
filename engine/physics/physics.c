@@ -227,7 +227,7 @@ body_impulse_correction(
 		restitution = 0.0f;
 	}
 
-	float vrel_dot_n   = v2_dot(rv, m->normal);
+	f32 vrel_dot_n     = v2_dot(rv, m->normal);
 	f32 ra_crs_n       = v2_crs_v2(ra, m->normal);
 	f32 rb_crs_n       = v2_crs_v2(rb, m->normal);
 	f32 ra_crs_n2      = ra_crs_n * ra_crs_n;
