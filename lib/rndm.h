@@ -26,3 +26,4 @@ v2 rndm_point_out_cir(struct rndm *rndm, i32 x, i32 y, i32 r);
 v2 rndm_point_in_cir(struct rndm *rndm, f32 x, f32 y, f32 r);
 i32 rndm_weighted_choice_i32(struct rndm *rndm, struct rndm_weighted_choice *choices, usize count);
 void rndm_shuffle_arr_f32(struct rndm *rndm, f32 *arr, usize count);
+void rndm_shuffle_arr_i32(struct rndm *rndm, i32 *arr, usize count);
