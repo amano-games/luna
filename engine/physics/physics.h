@@ -19,7 +19,7 @@ struct physics {
 struct body {
 	u32 flags;
 
-	i32 col_count;
+	u8 col_count;
 	v2 p;         // position
 	v2 p_delta;   // position correction
 	v2 vel;       // velocity
