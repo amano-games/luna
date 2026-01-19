@@ -6,8 +6,6 @@
     "DISABLED",
     "GRAVITY",
     "STATIC",
-    "TMP_IS_DIRTY_AVG_P",
-    "TMP_IS_DIRTY_AVG_ANG",
   ]
 }
 
