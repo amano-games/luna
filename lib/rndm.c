@@ -123,6 +123,19 @@ error:
 }
 
 void
+rndm_shuffle_arr_i32(struct rndm *rndm, i32 *arr, usize count)
+{
+	if(count > 1) {
+		for(usize i = 0; i < count - 1; i++) {
+			usize j = i + rndm_range_i32(rndm, 0, count - i - 1);
+			i32 t   = arr[j];
+			arr[j]  = arr[i];
+			arr[i]  = t;
+		}
+	}
+}
+
+void
 rndm_shuffle_arr_f32(struct rndm *rndm, f32 *arr, usize count)
 {
 	if(count > 1) {
