@@ -127,7 +127,7 @@ qop_gen_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				qop_gen_recursive(qop_f, str8_cstr(file.path), out_path, arena);
+				qop_gen_recursive(qop, str8_cstr(file.path), out_path, arena);
 			}
 		} else {
 		}
