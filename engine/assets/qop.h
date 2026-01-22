@@ -42,20 +42,20 @@ struct {
 
 typedef struct {
 	u64 hash;
-	u32 offset;
-	u32 size;
+	ssize offset;
+	ssize size;
 	u16 path_len;
 	u16 flags;
 } qop_file;
 
 typedef struct {
 	void *fh;
-	qop_file *hashmap;
-	u32 files_offset;
-	u32 index_offset;
-	u32 index_len;
-	u32 hashmap_len;
-	u32 hashmap_size;
+	qop_file *ht;
+	ssize files_offset;
+	ssize index_offset;
+	ssize index_len;
+	ssize hashmap_len;
+	ssize hashmap_size;
 } qop_desc;
 
 // Open an archive at path. The supplied qop_desc will be filled with the
@@ -89,4 +89,4 @@ i32 qop_read(qop_desc *qop, qop_file *file, u8 *dest);
 // Read part of a file into dest. The dest buffer must be at least len bytes
 // long.
 // Returns the number of bytes read.
-i32 qop_read_ex(qop_desc *qop, qop_file *file, u8 *dest, u32 start, u32 len);
+i32 qop_read_ex(qop_desc *qop, qop_file *file, u8 *dest, ssize start, ssize len);

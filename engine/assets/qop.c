@@ -58,23 +58,23 @@ qop_open(str8 path, qop_desc *qop)
 		return 0;
 	}
 
-	qop->fh          = fh;
-	qop->hashmap     = NULL;
-	u32 index_len    = qop_read_u32(fh);
-	u32 archive_size = qop_read_u32(fh);
-	u32 magic        = qop_read_u32(fh);
+	qop->fh            = fh;
+	qop->ht            = NULL;
+	ssize index_len    = qop_read_u32(fh);
+	ssize archive_size = qop_read_u32(fh);
+	ssize magic        = qop_read_u32(fh);
 
 	// Check magic, make sure index_len is possible with the file size
 	if(
 		magic != QOP_MAGIC ||
-		index_len * QOP_INDEX_SIZE > (u32)(size - QOP_HEADER_SIZE)) {
+		index_len * QOP_INDEX_SIZE > (ssize)(size - QOP_HEADER_SIZE)) {
 		sys_file_close(fh);
 		return 0;
 	}
 
 	// Find a good size for the hashmap: power of 2, at least 1.5x num entries
-	u32 hashmap_len     = 1;
-	u32 min_hashmap_len = index_len * 1.5;
+	ssize hashmap_len     = 1;
+	ssize min_hashmap_len = index_len * 1.5;
 	while(hashmap_len < min_hashmap_len) {
 		hashmap_len <<= 1;
 	}
@@ -90,24 +90,24 @@ qop_open(str8 path, qop_desc *qop)
 i32
 qop_read_index(qop_desc *qop, void *buffer)
 {
-	qop->hashmap = buffer;
-	i32 mask     = qop->hashmap_len - 1;
+	qop->ht  = buffer;
+	i32 mask = qop->hashmap_len - 1;
 
-	mclr(qop->hashmap, qop->hashmap_size);
+	mclr(qop->ht, qop->hashmap_size);
 	sys_file_seek_set(qop->fh, qop->index_offset);
 
-	for(u32 i = 0; i < qop->index_len; i++) {
+	for(ssize i = 0; i < qop->index_len; i++) {
 		u64 hash = qop_read_u64(qop->fh);
 
 		i32 idx = hash & mask;
-		while(qop->hashmap[idx].size > 0) {
+		while(qop->ht[idx].size > 0) {
 			idx = (idx + 1) & mask;
 		}
-		qop->hashmap[idx].hash     = hash;
-		qop->hashmap[idx].offset   = qop_read_u32(qop->fh);
-		qop->hashmap[idx].size     = qop_read_u32(qop->fh);
-		qop->hashmap[idx].path_len = qop_read_u16(qop->fh);
-		qop->hashmap[idx].flags    = qop_read_u16(qop->fh);
+		qop->ht[idx].hash     = hash;
+		qop->ht[idx].offset   = qop_read_u32(qop->fh);
+		qop->ht[idx].size     = qop_read_u32(qop->fh);
+		qop->ht[idx].path_len = qop_read_u16(qop->fh);
+		qop->ht[idx].flags    = qop_read_u16(qop->fh);
 	}
 	return qop->index_len;
 }
@@ -121,7 +121,7 @@ qop_close(qop_desc *qop)
 qop_file *
 qop_find(qop_desc *qop, str8 path)
 {
-	if(qop->hashmap == NULL) {
+	if(qop->ht == NULL) {
 		return NULL;
 	}
 
@@ -129,9 +129,9 @@ qop_find(qop_desc *qop, str8 path)
 
 	u64 hash = hash_murmuroaat_str8(path);
 	i32 idx  = hash & mask;
-	while(qop->hashmap[idx].size > 0) {
-		if(qop->hashmap[idx].hash == hash) {
-			return &qop->hashmap[idx];
+	while(qop->ht[idx].size > 0) {
+		if(qop->ht[idx].hash == hash) {
+			return &qop->ht[idx];
 		}
 		idx = (idx + 1) & mask;
 	}
@@ -153,7 +153,7 @@ qop_read(qop_desc *qop, qop_file *file, u8 *dest)
 }
 
 i32
-qop_read_ex(qop_desc *qop, qop_file *file, u8 *dest, u32 start, u32 len)
+qop_read_ex(qop_desc *qop, qop_file *file, u8 *dest, ssize start, ssize len)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset + file->path_len + start);
 	return sys_file_r(qop->fh, dest, len);
