@@ -239,7 +239,7 @@ mus_play_by_path(
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){
-		.path_hash = hash_string(path),
+		.path_hash = hash_fnv1a_str8(path),
 	};
 	mus_play(handle, channel_id, vol, loop);
 }

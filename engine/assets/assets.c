@@ -57,7 +57,7 @@ i32
 asset_tex_get_id(str8 path)
 {
 	i32 res = asset_db_tex_get_id(&ASSETS.db, (struct asset_handle){
-												  .path_hash = hash_string(path),
+												  .path_hash = hash_fnv1a_str8(path),
 												  .type      = ASSET_TYPE_TEXTURE,
 											  });
 	return res;
@@ -92,7 +92,7 @@ i32
 asset_fnt_get_id(str8 path)
 {
 	i32 res = asset_db_fnt_get_id(&ASSETS.db, (struct asset_handle){
-												  .path_hash = hash_string(path),
+												  .path_hash = hash_fnv1a_str8(path),
 												  .type      = ASSET_TYPE_FONT,
 											  });
 	return res;
@@ -160,7 +160,7 @@ i32
 asset_snd_get_id(str8 path)
 {
 	i32 res = asset_db_snd_get_id(&ASSETS.db, (struct asset_handle){
-												  .path_hash = hash_string(path),
+												  .path_hash = hash_fnv1a_str8(path),
 												  .type      = ASSET_TYPE_SOUND,
 											  });
 	return res;
@@ -196,7 +196,7 @@ i32
 asset_bet_get_id(str8 path)
 {
 	i32 res = asset_db_bet_get_id(&ASSETS.db, (struct asset_handle){
-												  .path_hash = hash_string(path),
+												  .path_hash = hash_fnv1a_str8(path),
 												  .type      = ASSET_TYPE_BET,
 											  });
 	return res;
