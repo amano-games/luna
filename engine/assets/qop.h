@@ -1,6 +1,8 @@
 #pragma once
 
 /*
+
+https://phoboslab.org/log/2024/09/qop
 -- File format description (pseudo code)
 
 struct {
