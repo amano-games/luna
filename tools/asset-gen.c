@@ -1,4 +1,5 @@
 #include <tinydir.h>
+#include "engine/assets/qop.h"
 #include "sys/sys-io.h"
 #include "tools/aseprite/aseprite.h"
 #include "whereami.c"
@@ -55,6 +56,15 @@
 #define FNT_EXT           "fnt"
 #define ASSETS_DB_EXT     "tsj"
 #define PINBALL_TABLE_EXT "pinbjson"
+#define QOP               true
+
+struct qop_w {
+	void *f;
+	ssize len;
+	ssize cap;
+	ssize size;
+	struct qop_file *files;
+};
 
 b32
 file_cpy_raw(const str8 in_path, const str8 out_path)
@@ -97,7 +107,35 @@ error:;
 }
 
 void
-handle_asset_recursive(
+qop_gen_recursive(
+	struct qop_w *qop,
+	const str8 in_dir,
+	const str8 out_dir,
+	struct marena *arena)
+{
+	dbg_assert(qop);
+	struct alloc alloc = marena_allocator(arena);
+	tinydir_dir dir;
+	tinydir_open(&dir, (char *)in_dir.str);
+	while(dir.has_next) {
+		tinydir_file file;
+		tinydir_readfile(&dir, &file);
+
+		str8 file_name = str8_cstr(file.name);
+		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
+		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", out_dir.size, out_dir.str, file_name.size, file_name.str);
+		if(file.is_dir) {
+			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
+				sys_make_dir(out_path);
+				qop_gen_recursive(qop_f, str8_cstr(file.path), out_path, arena);
+			}
+		} else {
+		}
+	}
+}
+
+void
+asset_gen_recursive(
 	const str8 in_dir,
 	const str8 out_dir,
 	struct marena *arena)
@@ -118,7 +156,7 @@ handle_asset_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				handle_asset_recursive(str8_cstr(file.path), out_path, arena);
+				asset_gen_recursive(str8_cstr(file.path), out_path, arena);
 			}
 		} else {
 			void *reset_p  = arena->p;
@@ -151,6 +189,18 @@ handle_asset_recursive(
 	tinydir_close(&dir);
 }
 
+void
+qop_pack(str8 in_path, str8 out_path, struct marena *arena)
+{
+	// TODO: Figure out real out path out_path/assets.qop?
+	void *file_out = sys_file_open_w(out_path);
+	dbg_check(file_out, "qop", "failed to open file: %s", out_path);
+
+	struct qop_w qop = {0};
+
+error:;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -176,7 +226,11 @@ main(int argc, char *argv[])
 	struct marena arena = {0};
 	marena_init(&arena, mem, mem_size);
 
-	handle_asset_recursive(in_path, out_path, &arena);
+#if defined(QOP)
+	asset_gen_recursive(in_path, out_path, &arena);
+#else
+	qop_pack(in_path, out_path, &arena);
+#endif
 
 	res = EXIT_SUCCESS;
 

@@ -44,7 +44,7 @@ qop_read_u64(void *fh)
 }
 
 i32
-qop_open(str8 path, qop_desc *qop)
+qop_open(str8 path, struct qop_desc *qop)
 {
 	void *fh = sys_file_open_r(path);
 	if(!fh) {
@@ -83,12 +83,12 @@ qop_open(str8 path, qop_desc *qop)
 	qop->index_len    = index_len;
 	qop->index_offset = size - qop->index_len * QOP_INDEX_SIZE - QOP_HEADER_SIZE;
 	qop->hashmap_len  = hashmap_len;
-	qop->hashmap_size = qop->hashmap_len * sizeof(qop_file);
+	qop->hashmap_size = qop->hashmap_len * sizeof(struct qop_file);
 	return size;
 }
 
 i32
-qop_read_index(qop_desc *qop, void *buffer)
+qop_read_index(struct qop_desc *qop, void *buffer)
 {
 	qop->ht  = buffer;
 	i32 mask = qop->hashmap_len - 1;
@@ -113,13 +113,13 @@ qop_read_index(qop_desc *qop, void *buffer)
 }
 
 void
-qop_close(qop_desc *qop)
+qop_close(struct qop_desc *qop)
 {
 	sys_file_close(qop->fh);
 }
 
-qop_file *
-qop_find(qop_desc *qop, str8 path)
+struct qop_file *
+qop_find(struct qop_desc *qop, str8 path)
 {
 	if(qop->ht == NULL) {
 		return NULL;
@@ -139,21 +139,21 @@ qop_find(qop_desc *qop, str8 path)
 }
 
 i32
-qop_read_path(qop_desc *qop, qop_file *file, char *dest)
+qop_read_path(struct qop_desc *qop, struct qop_file *file, char *dest)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset);
 	return sys_file_r(qop->fh, dest, file->path_len);
 }
 
 i32
-qop_read(qop_desc *qop, qop_file *file, u8 *dest)
+qop_read(struct qop_desc *qop, struct qop_file *file, u8 *dest)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset + file->path_len);
 	return sys_file_r(qop->fh, dest, file->size);
 }
 
 i32
-qop_read_ex(qop_desc *qop, qop_file *file, u8 *dest, ssize start, ssize len)
+qop_read_ex(struct qop_desc *qop, struct qop_file *file, u8 *dest, ssize start, ssize len)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset + file->path_len + start);
 	return sys_file_r(qop->fh, dest, len);
