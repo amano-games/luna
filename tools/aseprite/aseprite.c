@@ -99,7 +99,7 @@ aseprite_to_ani(
 		.info = {
 			.cell_size = {ase->w, ase->h},
 			.tex_size  = {ase->w * ase->frame_count, ase->h},
-			.path_hash = hash_string(asset_path),
+			.path_hash = hash_fnv1a_str8(asset_path),
 		},
 	};
 	asset.clips = arr_new(scratch, asset.clips, ase->tag_count);
