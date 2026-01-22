@@ -59,7 +59,7 @@ struct asset_handle
 asset_db_handle_from_path(str8 path, enum asset_type type)
 {
 	return (struct asset_handle){
-		.path_hash = hash_string(path),
+		.path_hash = hash_fnv1a_str8(path),
 		.type      = type,
 	};
 }
@@ -75,7 +75,7 @@ asset_db_path_push(struct asset_db *db, str8 path)
 	// Can we add the string?
 	dbg_check(table_len + path.size <= table_cap, "AssetsDB", "Out of memory");
 
-	u64 key     = hash_string(path);
+	u64 key     = hash_fnv1a_str8(path);
 	u32 value   = ht_get_u32(&table->ht, key);
 	b32 has_key = value != 0;
 
@@ -116,7 +116,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 
 	// Can we add the string?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex");
-	u64 key                    = hash_string(path);
+	u64 key                    = hash_fnv1a_str8(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_tex asset_tex = {.path_hash = key, .tex = tex};
@@ -190,7 +190,7 @@ asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info inf
 	// Can we add the string?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex info");
 
-	u64 key     = hash_string(path);
+	u64 key     = hash_fnv1a_str8(path);
 	u32 value   = ht_get_u32(&table->ht, key);
 	b32 has_key = value != 0;
 
@@ -263,7 +263,7 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Cant push animation slice");
 
-	u64 key     = hash_string(path);
+	u64 key     = hash_fnv1a_str8(path);
 	u32 value   = ht_get_u32(&table->ht, key);
 	b32 has_key = value != 0;
 
@@ -302,7 +302,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add snd");
 
-	u64 key                    = hash_string(path);
+	u64 key                    = hash_fnv1a_str8(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_snd asset_snd = {.path_hash = key, .snd = snd};
@@ -377,7 +377,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add fnt");
 
-	u64 key                    = hash_string(path);
+	u64 key                    = hash_fnv1a_str8(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_fnt asset_fnt = {.path_hash = key, .fnt = fnt};
@@ -437,7 +437,7 @@ asset_db_bet_push(
 	// Can we add the item?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push bet");
 
-	u64 key                    = hash_string(path);
+	u64 key                    = hash_fnv1a_str8(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
 	b32 has_key                = value != 0;
 	usize timestamp            = sys_file_modified(path);
