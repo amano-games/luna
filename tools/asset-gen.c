@@ -2,6 +2,7 @@
 #include "engine/assets/qop.h"
 #include "sys/sys-io.h"
 #include "tools/aseprite/aseprite.h"
+#include "tools/asset/asset.h"
 #include "whereami.c"
 
 #include "sys/sys.h"
@@ -35,6 +36,7 @@
 #include "./png/png.c"
 #include "./aseprite/aseprite.c"
 
+#include "tools/asset/asset.c"
 #include "tools/btree/btree.h"
 #include "tools/btree/btree.c"
 #include "tools/tsj/tsj.h"
@@ -162,7 +164,11 @@ asset_gen_recursive(
 			void *reset_p  = arena->p;
 			str8 extension = str8_cstr(file.extension);
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
-				b32 res = png_to_tex(in_path, out_path, alloc);
+				struct asset_blob blob = {0};
+				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob);
+				str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(TEX_EXT));
+				b32 res            = asset_blob_w(blob, out_file_path);
+				sys_free(blob.data);
 			} else if(str8_match(extension, str8_lit(ASE_EXT), 0)) {
 				b32 res = aseprite_to_assets(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ANI_EXT), 0)) {
