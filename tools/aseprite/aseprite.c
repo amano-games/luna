@@ -7,6 +7,8 @@
 #include "engine/animation/animation.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
+#include "tools/asset/asset-defs.h"
+#include "tools/asset/asset.h"
 #include "tools/tsj/tsj.h"
 
 #define CUTE_ASEPRITE_IMPLEMENTATION
@@ -21,13 +23,21 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 	b32 res    = false;
 	ase_t *ase = cute_aseprite_load_from_file((char *)in_path.str, NULL);
 	dbg_check(ase, "aseprite", "failed to load file %s", in_path.str);
+	struct asset_blob blob = {0};
 
-	aseprite_to_tex(ase, in_path, out_path, scratch);
+	{
+		str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
+		aseprite_to_tex(ase, scratch, sys_allocator(), &blob);
+		res = asset_blob_w(blob, out_file_path);
+	}
 	aseprite_to_ani(ase, in_path, out_path, scratch);
 
 	res = true;
 
 error:;
+	if(blob.data) {
+		sys_free(blob.data);
+	}
 	if(ase) {
 		cute_aseprite_free(ase);
 	}
@@ -35,11 +45,9 @@ error:;
 }
 
 b32
-aseprite_to_tex(const ase_t *ase, const str8 in_path, const str8 out_path, struct alloc scratch)
+aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out)
 {
 	b32 res                     = false;
-	struct alloc alloc          = sys_allocator();
-	str8 out_file_path          = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
 	i32 sheet_w                 = ase->w * ase->frame_count;
 	i32 sheet_h                 = ase->h;
 	struct pixel_u8 *sheet_data = alloc_arr(alloc, sheet_data, sheet_w * sheet_h);
@@ -65,9 +73,19 @@ aseprite_to_tex(const ase_t *ase, const str8 in_path, const str8 out_path, struc
 		}
 	}
 
-	res = tex_from_rgba_w((const struct pixel_u8 *)sheet_data, sheet_w, sheet_h, out_file_path);
-	dbg_check(res, "ase", "failed to write tex file %s", out_file_path.str);
-	log_info("ase-tex", "%s -> %s", in_path.str, out_path.str);
+	const struct pixel_u8 *in_data = (const struct pixel_u8 *)sheet_data;
+
+	ssize out_size = tex_from_rgb(in_data, sheet_w, sheet_h, NULL, 0);
+	dbg_check(out_size > 0, "ase", "Invalid tex size");
+
+	void *out_data = alloc_size(alloc, out_size, 4, false);
+	dbg_check_mem(out_data, "ase");
+
+	dbg_check(tex_from_rgb(in_data, sheet_w, sheet_h, out_data, out_size) == out_size, "ase", "convertion failed");
+
+	out->data = out_data;
+	out->size = out_size;
+	res       = true;
 
 error:;
 	if(sheet_data != NULL) {
