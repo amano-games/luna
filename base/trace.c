@@ -1,4 +1,5 @@
 #include "trace.h"
+#include "base/dbg.h"
 #include "sys/sys-io.h"
 #include "base/log.h"
 #include "sys/sys.h"
@@ -40,19 +41,20 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 	spall_auto_thread_init(thread_id, SPALL_DEFAULT_BUFFER_SIZE);
 #else
 	log_info("trace", "Init (Manual)");
-	void *f   = sys_file_open_w(file_name);
-	SPALL_CTX = spall_init_callbacks(
-		1,
-		&trace_fwrite,
-		&trace_fflush,
-		&trace_fclose,
-		f,
-		false);
+	void *f      = sys_file_open_w(file_name);
 	SPALL_BUFFER = (SpallBuffer){
 		.length = size,
 		.data   = buffer,
 	};
 	spall_buffer_init(&SPALL_CTX, &SPALL_BUFFER);
+	b32 res = spall_init_callbacks(
+		1,
+		&trace_fwrite,
+		&trace_fflush,
+		&trace_fclose,
+		f,
+		&SPALL_CTX);
+	dbg_assert(res);
 #endif
 }
 
