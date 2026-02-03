@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 
 #define SOKOL_LOG_IMPL
+#define SOKOL_TIME_IMPL
 #include "sokol/sokol_log.h"
+#include "sokol/sokol_time.h"
 
 struct cli_state {
 	struct sys_process_info process_info;
@@ -138,6 +140,30 @@ b32
 sys_file_del(str8 path)
 {
 	return 0;
+}
+
+f32
+sys_seconds(void)
+{
+	return stm_sec(stm_since(0));
+}
+
+u64
+sys_time_ms(void)
+{
+	return stm_ms(stm_since(0));
+}
+
+u64
+sys_time_us(void)
+{
+	return stm_us(stm_since(0));
+}
+
+u64
+sys_time_ns(void)
+{
+	return stm_ns(stm_since(0));
 }
 
 str8

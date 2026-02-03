@@ -2,7 +2,6 @@
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
-#include "base/trace.h"
 #include "lib/tex/tex.h"
 #include "sys-debug-draw.h"
 #include "base/types.h"
@@ -99,6 +98,7 @@ struct sys_opts {
 
 struct sokol_state {
 	i32 state;
+	u64 tick_start;
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -170,6 +170,7 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	stm_setup();
+	SOKOL_STATE.tick_start = stm_now();
 	{
 		usize mem_size = MMEGABYTE(1);
 		void *mem      = sys_alloc(NULL, mem_size, 4);
@@ -716,6 +717,24 @@ f32
 sys_seconds(void)
 {
 	return stm_sec(stm_since(0));
+}
+
+u64
+sys_time_ns(void)
+{
+	return stm_ns(stm_since(SOKOL_STATE.tick_start));
+}
+
+u64
+sys_time_us(void)
+{
+	return stm_us(stm_since(SOKOL_STATE.tick_start));
+}
+
+u64
+sys_time_ms(void)
+{
+	return stm_ms(stm_since(SOKOL_STATE.tick_start));
 }
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL

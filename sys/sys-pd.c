@@ -82,6 +82,7 @@ static void (*PD_GRAPHICS_MARK_UPDATED_ROWS)(int a, int b);
 static float (*PD_SYSTEM_GET_CRANK_ANGLE)(void);
 static int (*PD_SYSTEM_IS_CRANK_DOCKED)(void);
 static float (*PD_SYSTEM_GET_ELAPSED_TIME)(void);
+static void (*PD_SYSTEM_RESET_ELAPSED_TIME)(void);
 static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
@@ -113,6 +114,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_SYSTEM_REALLOC                 = PD->system->realloc;
 		PD_GRAPHICS_MARK_UPDATED_ROWS     = PD->graphics->markUpdatedRows;
 		PD_SYSTEM_GET_ELAPSED_TIME        = PD->system->getElapsedTime;
+		PD_SYSTEM_RESET_ELAPSED_TIME      = PD->system->resetElapsedTime;
 		PD_SYSTEM_GET_SECONDS_SINCE_EPOCH = PD->system->getSecondsSinceEpoch;
 		PD_SYSTEM_GET_BUTTON_STATE        = PD->system->getButtonState;
 		PD_SYSTEM_GET_CRANK_ANGLE         = PD->system->getCrankAngle;
@@ -246,6 +248,40 @@ f32
 sys_seconds(void)
 {
 	return PD_SYSTEM_GET_ELAPSED_TIME();
+}
+
+// Nanoseconds
+u64
+sys_time_ns(void)
+{
+	/*
+  https://devforum.play.date/t/get-cycle-count-on-playdate-hardware/10800/2
+  The getElapsedTime() function uses the DWT->CYCCNT register to implement a fairly accurate timer:
+
+    float playdate->system->getElapsedTime(void)
+
+    Returns the number of seconds since playdate.resetElapsedTime() was called. The value is a floating-point number with microsecond accuracy.
+
+"microsecond accuracy" there is roughly speaking. Since it returns a floating point value the accuracy depends on how large that value gets, but there's nothing in the code limiting accuracy to 1 uS. Calling resetElapsedTime() before the code you're measuring then getElapsedTime() right after should give you a very accurate measure of execution time, and with some testing you can figure out how much of that is overhead of the reset/getElapsedTime() calls themselves and adjust for that.
+*/
+	// Playdate has microsecond resolution
+	f64 sec = PD_SYSTEM_GET_ELAPSED_TIME();
+	u64 us  = (u64)(sec * (f64)1000000.0);
+	return us * 1000ull;
+}
+
+// Microseconds
+u64
+sys_time_us(void)
+{
+	return sys_time_ns() / 1000ull;
+}
+
+// Milliseconds
+u64
+sys_time_ms(void)
+{
+	return sys_time_ns() / 1000000ull;
 }
 
 u32
