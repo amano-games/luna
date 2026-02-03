@@ -1,7 +1,11 @@
 #include "trace.h"
+#include "base/log.h"
+#if defined(TRACE_AUTO)
+#include "spall_native_auto.h"
+#else
 #include "base/dbg.h"
 #include "sys/sys-io.h"
-#include "base/log.h"
+#endif
 
 void
 trace_ini(str8 file_name, u8 *buffer, usize size)
@@ -10,9 +14,10 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 #if defined(TRACE_AUTO)
 	log_info("Trace", "Init (Auto)");
 
-	spall_auto_init(file_name);
+	spall_auto_init((char *)file_name.str);
 	int thread_id = 0;
 	spall_auto_thread_init(thread_id, SPALL_DEFAULT_BUFFER_SIZE);
+
 #else
 	log_info("trace", "Init (Manual)");
 	void *f = sys_file_open_w(file_name);

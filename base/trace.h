@@ -1,11 +1,13 @@
 #pragma once
 
 #include "base/types.h"
-#include "sys/sys-io.h"
+
+#define TRACE_AUTO
 #if defined(TRACE_AUTO)
 #define SPALL_AUTO_IMPLEMENTATION
 #include "spall_native_auto.h"
 #else
+#include "sys/sys-io.h"
 #include "spall.h"
 static SpallProfile SPALL_CTX;
 static SpallBuffer SPALL_BUFFER;
