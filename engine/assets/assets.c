@@ -16,7 +16,7 @@ void
 assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
-	void *mem = alloc.allocf(alloc.ctx, size, 4);
+	void *mem = alloc.allocf(alloc.ctx, size, 1);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();
@@ -47,9 +47,7 @@ error: {
 struct tex
 asset_tex(i32 id)
 {
-	TRACE_START(__func__);
 	struct asset_tex res = asset_db_tex_get_by_id(&ASSETS.db, id);
-	TRACE_END();
 	return res.tex;
 }
 
@@ -205,16 +203,12 @@ asset_bet_get_id(str8 path)
 struct tex_rec
 asset_tex_rec(i32 id, i32 x, i32 y, i32 w, i32 h)
 {
-	TRACE_START(__func__);
-
 	struct tex_rec res = {0};
 	res.t              = asset_db_tex_get_by_id(&ASSETS.db, id).tex;
 	res.r.x            = x;
 	res.r.y            = y;
 	res.r.w            = w;
 	res.r.h            = h;
-
-	TRACE_END();
 	return res;
 }
 

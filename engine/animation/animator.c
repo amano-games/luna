@@ -22,7 +22,6 @@ animator_init(struct animator *animator, f32 timestamp)
 b32
 animator_update(struct animator *animator, f32 timestamp)
 {
-	TRACE_START(__func__);
 	b32 res                      = false;
 	u8 current_animation         = animator->index;
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, animator->clips_handle);
@@ -30,14 +29,12 @@ animator_update(struct animator *animator, f32 timestamp)
 	if(slice.size > 0) {
 		res = animation_update(&animator->animation, timestamp);
 	}
-	TRACE_END();
 	return res;
 }
 
 void
 animator_animation_play(struct animator *animator, usize index, f32 timestamp)
 {
-	TRACE_START(__func__);
 	dbg_assert(index > 0);
 	dbg_assert(animator->clips_handle.path_hash != 0);
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, animator->clips_handle);
@@ -46,7 +43,6 @@ animator_animation_play(struct animator *animator, usize index, f32 timestamp)
 		animator_animation_set(animator, index);
 	}
 	animation_start(&animator->animation, timestamp);
-	TRACE_END();
 }
 
 void

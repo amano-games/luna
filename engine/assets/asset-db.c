@@ -146,7 +146,6 @@ asset_db_tex_get(struct asset_db *db, struct asset_handle handle)
 struct str8
 asset_db_tex_path_get(struct asset_db *db, u32 id)
 {
-	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->textures.arr));
@@ -154,29 +153,24 @@ asset_db_tex_path_get(struct asset_db *db, u32 id)
 	struct asset_tex asset_tex = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset_tex.path_hash, .type = ASSET_TYPE_TEXTURE};
 	res                        = asset_db_path_get(db, handle);
-	TRACE_END();
 	return res;
 }
 
 i32
 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	struct tex_table *table = &db->textures;
 	u32 res                 = ht_get_u32(&table->ht, handle.path_hash);
-	TRACE_END();
 	return res;
 }
 
 struct asset_tex
 asset_db_tex_get_by_id(struct asset_db *db, u32 id)
 {
-	TRACE_START(__func__);
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->textures.arr));
 	struct tex_table *table = &db->textures;
 	struct asset_tex res    = table->arr[id];
-	TRACE_END();
 	return res;
 }
 
@@ -228,7 +222,6 @@ asset_db_animation_clip_push(struct asset_db *db, struct animation_clip clip)
 struct animation_clip
 asset_db_animation_clip_get(struct asset_db *db, struct asset_handle handle, usize index)
 {
-	TRACE_START(__func__);
 	struct animation_clip res    = {0};
 	struct animation_slice slice = asset_db_animation_slice_get(db, handle);
 
@@ -238,7 +231,6 @@ asset_db_animation_clip_get(struct asset_db *db, struct asset_handle handle, usi
 		res                         = *clip;
 	}
 
-	TRACE_END();
 	return res;
 }
 
@@ -283,17 +275,14 @@ error:
 struct animation_slice
 asset_db_animation_slice_get(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index                  = ht_get_u32(&db->animations.ht, handle.path_hash);
 	struct animation_slice res = db->animations.arr[index];
-	TRACE_END();
 	return res;
 }
 
 u32
 asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 {
-	TRACE_START(__func__);
 	u32 res                 = 0;
 	struct snd_table *table = &db->snds;
 	usize table_len         = arr_len(table->arr);
@@ -317,24 +306,20 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	}
 
 error:
-	TRACE_END();
 	return res;
 }
 
 struct asset_snd
 asset_db_snd_get(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index            = ht_get_u32(&db->snds.ht, handle.path_hash);
 	struct asset_snd res = db->snds.arr[index];
-	TRACE_END();
 	return res;
 }
 
 str8
 asset_db_snd_path_get(struct asset_db *db, u32 id)
 {
-	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->snds.arr));
@@ -342,16 +327,13 @@ asset_db_snd_path_get(struct asset_db *db, u32 id)
 	struct asset_snd asset_snd = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset_snd.path_hash, .type = ASSET_TYPE_SOUND};
 	res                        = asset_db_path_get(db, handle);
-	TRACE_END();
 	return res;
 }
 
 u32
 asset_db_snd_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 res = ht_get_u32(&db->snds.ht, handle.path_hash);
-	TRACE_END();
 	return res;
 }
 
@@ -360,9 +342,7 @@ asset_db_snd_get_by_id(struct asset_db *db, u32 id)
 {
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->snds.arr));
-	TRACE_START(__func__);
 	struct asset_snd res = db->snds.arr[id];
-	TRACE_END();
 	return res;
 }
 
@@ -398,19 +378,15 @@ error:
 struct asset_fnt
 asset_db_fnt_get(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index            = ht_get_u32(&db->fonts.ht, handle.path_hash);
 	struct asset_fnt res = db->fonts.arr[index];
-	TRACE_END();
 	return res;
 }
 
 u32
 asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 res = ht_get_u32(&db->fonts.ht, handle.path_hash);
-	TRACE_END();
 	return res;
 }
 
@@ -459,47 +435,38 @@ error:
 struct asset_bet_handle
 asset_db_bet_handle_get(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index                   = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet_handle res = (struct asset_bet_handle){.id = index};
-	TRACE_END();
 	return res;
 }
 
 struct asset_bet
 asset_db_bet_get(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index            = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet res = db->bets.arr[index];
-	TRACE_END();
 	return res;
 }
 
 struct asset_bet
 asset_db_bet_get_by_id(struct asset_db *db, u32 id)
 {
-	TRACE_START(__func__);
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->bets.arr));
 	struct asset_bet res = db->bets.arr[id];
-	TRACE_END();
 	return res;
 }
 
 u32
 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 res = ht_get_u32(&db->bets.ht, handle.path_hash);
-	TRACE_END();
 	return res;
 }
 
 struct str8
 asset_db_bet_path_get(struct asset_db *db, u32 id)
 {
-	TRACE_START(__func__);
 	str8 res = {0};
 	dbg_assert(id > 0);
 	dbg_assert((ssize)id < arr_len(db->textures.arr));
@@ -507,27 +474,22 @@ asset_db_bet_path_get(struct asset_db *db, u32 id)
 	struct asset_bet asset     = table->arr[id];
 	struct asset_handle handle = {.path_hash = asset.path_hash, .type = ASSET_TYPE_BET};
 	res                        = asset_db_path_get(db, handle);
-	TRACE_END();
 	return res;
 }
 
 usize
 asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle)
 {
-	TRACE_START(__func__);
 	u32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
 	struct asset_bet *res = db->bets.arr + index;
-	TRACE_END();
 	return res->timestamp;
 }
 
 usize
 asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
-	TRACE_START(__func__);
 	dbg_assert(handle.id < arr_len(db->bets.arr));
 	u32 index             = handle.id;
 	struct asset_bet *res = db->bets.arr + index;
-	TRACE_END();
 	return res->timestamp;
 }

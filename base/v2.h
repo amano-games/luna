@@ -237,7 +237,6 @@ v2_from(f32 a, f32 mag)
 static inline v2
 v2_rot_anchor(v2 v, rot2 rot, v2 p)
 {
-	TRACE_START(__func__);
 	f32 cos_theta = rot.c;
 	f32 sin_theta = rot.s;
 
@@ -245,7 +244,6 @@ v2_rot_anchor(v2 v, rot2 rot, v2 p)
 	f32 y = (sin_theta * (v.x - p.x) + cos_theta * (v.y - p.y) + p.y);
 
 	v2 r = {.x = x, .y = y};
-	TRACE_END();
 
 	return r;
 }

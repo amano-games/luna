@@ -1,7 +1,6 @@
 #include "input.h"
 #include "base/dbg.h"
 #include "base/str.h"
-#include "base/trace.h"
 #include "base/utils.h"
 
 static struct inp INP;
@@ -9,7 +8,6 @@ static struct inp INP;
 void
 inp_upd(void)
 {
-	TRACE_START(__func__);
 	INP.prev = INP.curr;
 	mcpy(INP.prev.keys, INP.curr.keys, sizeof(INP.curr.keys));
 	INP.curr.btn          = sys_inp();
@@ -18,7 +16,6 @@ inp_upd(void)
 	INP.curr.mouse_x      = sys_mouse_x();
 	INP.curr.mouse_y      = sys_mouse_y();
 	sys_keys(INP.curr.keys, ARRLEN(INP.curr.keys));
-	TRACE_END();
 }
 
 void

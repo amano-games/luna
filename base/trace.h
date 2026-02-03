@@ -1,25 +1,24 @@
 #pragma once
 
+#include "base/log.h"
 #include "base/types.h"
 
-#define TRACE_AUTO
 #if defined(TRACE_AUTO)
 #define SPALL_AUTO_IMPLEMENTATION
 #include "spall_native_auto.h"
-#else
+#endif
+
+#if defined(TRACE)
 #include "sys/sys-io.h"
 #include "spall.h"
 static SpallProfile SPALL_CTX;
 static SpallBuffer SPALL_BUFFER;
 #endif
 
-void trace_ini(str8 file_name, uchar *buffer, usize size);
-void trace_buffer_close(void);
+void trace_ini(str8 file_name, u8 *buffer, usize size);
 void trace_close(void);
 
-double trace_get_time_in_micros(void);
-
-#if defined(TRACE) && !defined(TRACE_AUTO)
+#if defined(TRACE)
 #define TRACE_START(s) spall_buffer_begin( \
 	&SPALL_CTX, \
 	&SPALL_BUFFER, \
@@ -36,7 +35,7 @@ double trace_get_time_in_micros(void);
 #define TRACE_END(...)
 #endif
 
-#if !defined(TRACE_AUTO)
+#if defined(TRACE)
 SPALL_NOINSTRUMENT
 bool
 trace_fwrite(SpallProfile *self, const void *p, size_t length)
