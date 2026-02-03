@@ -358,7 +358,6 @@ spr_blit_fwd_x(
 void
 gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
-	TRACE_START(__func__);
 	// area bounds on canvas [x1/y1, x2/y2)
 	int x1 = max_i32(px, ctx.clip_x1);               // inclusive
 	int y1 = max_i32(py, ctx.clip_y1);               // inclusive
@@ -437,8 +436,7 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 		}
 	}
 
-cleanup:
-	TRACE_END();
+cleanup:;
 }
 
 void

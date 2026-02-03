@@ -59,7 +59,6 @@ animation_resume(struct animation *ani, f32 timestamp)
 b32 // finished?
 animation_update(struct animation *ani, f32 timestamp)
 {
-	TRACE_START(__func__);
 	b32 res = false;
 	if(ani->is_stopped) { goto cleanup; }
 	if(ani->is_paused) { goto cleanup; }
@@ -74,14 +73,12 @@ animation_update(struct animation *ani, f32 timestamp)
 	res             = ani->is_stopped;
 
 cleanup:
-	TRACE_END();
 	return res;
 }
 
 static inline u8
 animation_get_last_frame(struct animation_track *track)
 {
-	TRACE_START(__func__);
 
 	usize res = 0;
 	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) { goto cleanup; }
@@ -90,28 +87,24 @@ animation_get_last_frame(struct animation_track *track)
 	res               = track->frames.items[frame_index];
 
 cleanup:
-	TRACE_END();
 	return res;
 }
 
 usize
 animation_get_first_frame(struct animation_track *track)
 {
-	TRACE_START(__func__);
 	usize res = 0;
 	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) { goto cleanup; }
 	dbg_assert(track->frames.len > 0);
 	res = track->frames.items[0];
 
 cleanup:
-	TRACE_END();
 	return res;
 }
 
 usize
 animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
-	TRACE_START(__func__);
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
 	usize res                     = 0;
@@ -140,14 +133,12 @@ animation_get_frame_index(struct animation *ani, enum animation_track_type track
 	res = delta * ani->clip.frame_duration_inv;
 
 cleanup:
-	TRACE_END();
 	return res;
 }
 
 u8
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
 {
-	TRACE_START(__func__);
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
 	u8 res                        = 0;
@@ -177,7 +168,6 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	res             = track->frames.items[(usize)frame_index];
 
 cleanup:
-	TRACE_END();
 	return res;
 }
 

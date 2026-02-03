@@ -63,18 +63,15 @@ struct ht_u32 {
 i32
 ht_lookup(u64 hash, int exp, i32 idx)
 {
-	TRACE_START(__func__);
 	u32 mask = ((u64)1 << exp) - 1;
 	u32 step = (hash >> (64 - exp)) | 1;
 	i32 res  = (idx + step) & mask;
-	TRACE_END();
 	return res;
 }
 
 u32
 ht_get_u32(struct ht_u32 *t, u64 key)
 {
-	TRACE_START(__func__);
 	u32 res = 0;
 	for(int32_t i = key;;) {
 		i = ht_lookup(key, t->exp, i);
@@ -87,14 +84,12 @@ ht_get_u32(struct ht_u32 *t, u64 key)
 		}
 	}
 cleanup:
-	TRACE_END();
 	return res;
 }
 
 u32
 ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
 {
-	TRACE_START(__func__);
 	u32 res = -1;
 	for(int32_t i = key;;) {
 		i = ht_lookup(key, t->exp, i);
@@ -112,7 +107,6 @@ ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
 		}
 	}
 cleanup:
-	TRACE_END();
 	return res;
 }
 

@@ -75,13 +75,11 @@ gfx_pattern_8x8(i32 p0, i32 p1, i32 p2, i32 p3, i32 p4, i32 p5, i32 p6, i32 p7)
 struct gfx_pattern
 gfx_pattern_bayer_4x4(i32 i)
 {
-	TRACE_START(__func__);
 	static const u32 ditherpat[GFX_PATTERN_NUM * 4] = {
 		0x00000000U, 0x00000000U, 0x00000000U, 0x00000000U, 0x88888888U, 0x00000000U, 0x00000000U, 0x00000000U, 0x88888888U, 0x00000000U, 0x22222222U, 0x00000000U, 0xAAAAAAAAU, 0x00000000U, 0x22222222U, 0x00000000U, 0xAAAAAAAAU, 0x00000000U, 0xAAAAAAAAU, 0x00000000U, 0xAAAAAAAAU, 0x44444444U, 0xAAAAAAAAU, 0x00000000U, 0xAAAAAAAAU, 0x44444444U, 0xAAAAAAAAU, 0x11111111U, 0xAAAAAAAAU, 0x55555555U, 0xAAAAAAAAU, 0x11111111U, 0xAAAAAAAAU, 0x55555555U, 0xAAAAAAAAU, 0x55555555U, 0xEEEEEEEEU, 0x55555555U, 0xAAAAAAAAU, 0x55555555U, 0xEEEEEEEEU, 0x55555555U, 0xBBBBBBBBU, 0x55555555U, 0xFFFFFFFFU, 0x55555555U, 0xBBBBBBBBU, 0x55555555U, 0xFFFFFFFFU, 0x55555555U, 0xFFFFFFFFU, 0x55555555U, 0xFFFFFFFFU, 0xDDDDDDDDU, 0xFFFFFFFFU, 0x55555555U, 0xFFFFFFFFU, 0xDDDDDDDDU, 0xFFFFFFFFU, 0x77777777U, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0x77777777U, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU};
 
 	const u32 *p           = &ditherpat[clamp_i32(i, 0, GFX_PATTERN_MAX) << 2];
 	struct gfx_pattern pat = {{p[0], p[1], p[2], p[3], p[0], p[1], p[2], p[3]}};
-	TRACE_END();
 	return pat;
 }
 
@@ -113,9 +111,7 @@ gfx_ctx_default(struct tex dst)
 struct gfx_ctx
 gfx_ctx_display(void)
 {
-	TRACE_START(__func__);
 	struct gfx_ctx ctx = gfx_ctx_default(tex_frame_buffer());
-	TRACE_END();
 	return ctx;
 }
 
@@ -303,7 +299,6 @@ gfx_rec(
 void
 gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode)
 {
-	TRACE_START(__func__);
 	i32 x1 = max_i32(x, ctx.clip_x1); // area bounds on canvas [x1/y1, x2/y2]
 	i32 y1 = max_i32(y, ctx.clip_y1);
 	i32 x2 = min_i32(x + w - 1, ctx.clip_x2);
@@ -325,8 +320,7 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode
 		}
 	}
 
-cleanup:
-	TRACE_END();
+cleanup:;
 }
 
 void

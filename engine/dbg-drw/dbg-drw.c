@@ -20,11 +20,9 @@ void
 dbg_drw(i32 x, i32 y)
 {
 #if defined(DEBUG) && !defined(TARGET_PD_DEVICE) && !defined(APP_DISABLE_DEBUG_DRAW)
-	TRACE_START(__func__);
 	dbg_drw_offset_set(x, y);
 	sys_debug_draw(DBG_DRW_STATE.shapes, arr_len(DBG_DRW_STATE.shapes));
 	dbg_drw_clr();
-	TRACE_END();
 #endif
 }
 
