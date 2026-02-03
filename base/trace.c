@@ -2,32 +2,6 @@
 #include "base/dbg.h"
 #include "sys/sys-io.h"
 #include "base/log.h"
-#include "sys/sys.h"
-
-#if !defined(TRACE_AUTO)
-SPALL_NOINSTRUMENT
-bool
-trace_fwrite(SpallProfile *self, const void *p, size_t length)
-{
-	int res = sys_file_w(self->data, p, length);
-	return res;
-}
-
-SPALL_NOINSTRUMENT
-bool
-trace_fflush(SpallProfile *self)
-{
-	return sys_file_flush(self->data);
-}
-
-SPALL_NOINSTRUMENT
-void
-trace_fclose(SpallProfile *self)
-{
-	sys_file_flush(self->data);
-	sys_file_close(self->data);
-}
-#endif
 
 void
 trace_ini(str8 file_name, u8 *buffer, usize size)
@@ -41,12 +15,7 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 	spall_auto_thread_init(thread_id, SPALL_DEFAULT_BUFFER_SIZE);
 #else
 	log_info("trace", "Init (Manual)");
-	void *f      = sys_file_open_w(file_name);
-	SPALL_BUFFER = (SpallBuffer){
-		.length = size,
-		.data   = buffer,
-	};
-	spall_buffer_init(&SPALL_CTX, &SPALL_BUFFER);
+	void *f = sys_file_open_w(file_name);
 	b32 res = spall_init_callbacks(
 		1,
 		&trace_fwrite,
@@ -55,6 +24,12 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 		f,
 		&SPALL_CTX);
 	dbg_assert(res);
+
+	SPALL_BUFFER = (SpallBuffer){
+		.length = size,
+		.data   = buffer,
+	};
+	spall_buffer_init(&SPALL_CTX, &SPALL_BUFFER);
 #endif
 }
 
@@ -75,10 +50,4 @@ trace_close(void)
 #else
 	spall_quit(&SPALL_CTX);
 #endif
-}
-
-double
-trace_get_time_in_micros(void)
-{
-	return (((double)sys_seconds() * 1000000));
 }
