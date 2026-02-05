@@ -265,7 +265,7 @@ sys_time_ns(void)
 "microsecond accuracy" there is roughly speaking. Since it returns a floating point value the accuracy depends on how large that value gets, but there's nothing in the code limiting accuracy to 1 uS. Calling resetElapsedTime() before the code you're measuring then getElapsedTime() right after should give you a very accurate measure of execution time, and with some testing you can figure out how much of that is overhead of the reset/getElapsedTime() calls themselves and adjust for that.
 */
 	// Playdate has microsecond resolution
-	f64 sec = PD_SYSTEM_GET_ELAPSED_TIME();
+	f64 sec = (f64)PD_SYSTEM_GET_ELAPSED_TIME();
 	u64 us  = (u64)(sec * (f64)1000000.0);
 	return us * 1000ull;
 }
