@@ -36,6 +36,8 @@ trace_ini(str8 file_name, u8 *buffer, usize size)
 	};
 	spall_buffer_init(&SPALL_CTX, &SPALL_BUFFER);
 #endif
+
+	goto error;
 error:;
 }
 
