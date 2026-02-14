@@ -12,6 +12,7 @@
 #include "sokol/sokol_time.h"
 
 struct cli_state {
+	u64 tick_start;
 	struct sys_process_info process_info;
 };
 
@@ -143,9 +144,15 @@ sys_file_del(str8 path)
 }
 
 f32
-sys_seconds(void)
+sys_time_elapsed(void)
 {
-	return stm_sec(stm_since(0));
+	return stm_sec(stm_since(CLI_STATE.tick_start));
+}
+
+void
+sys_time_elapsed_reset(void)
+{
+	CLI_STATE.tick_start = stm_now();
 }
 
 u64

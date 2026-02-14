@@ -539,7 +539,7 @@ sokol_frame(void)
 {
 	f32 win_w                       = sapp_widthf();
 	f32 win_h                       = sapp_heightf();
-	s_params_t params               = {.time = sys_seconds()};
+	s_params_t params               = {.time = sys_time_elapsed()};
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	usize size                      = ARRLEN(SOKOL_PIXELS);
@@ -714,9 +714,15 @@ sys_mouse_y(void)
 }
 
 f32
-sys_seconds(void)
+sys_time_elapsed(void)
 {
-	return stm_sec(stm_since(0));
+	return stm_sec(stm_since(SOKOL_STATE.tick_start));
+}
+
+void
+sys_time_elapsed_reset(void)
+{
+	SOKOL_STATE.tick_start = stm_now();
 }
 
 u64
