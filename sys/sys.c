@@ -9,6 +9,7 @@
 
 #define SYS_MEM_POISON_PATTERN 0xCD
 #define SYS_LOG_LABEL          "sys"
+#define SYS_RESET_TIME
 
 enum SYS_TIMERS {
 	SYS_TIMER_ABS, // Always accumulates never resets
@@ -116,9 +117,14 @@ sys_internal_init(void)
 i32
 sys_internal_update(void)
 {
+#if defined SYS_RESET_TIME
+	f32 time_delta = sys_time_elapsed();
+	sys_time_elapsed_reset();
+#else
 	f32 time       = sys_time_elapsed();
 	f32 time_delta = time - SYS.last_time;
 	SYS.last_time  = time;
+#endif
 	SYS.ups_time_acc += time_delta;
 	SYS.timers[SYS_TIMER_ABS] += time_delta;
 	SYS.timers[SYS_TIMER_APP] += time_delta;
