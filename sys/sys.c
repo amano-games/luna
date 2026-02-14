@@ -10,21 +10,33 @@
 #define SYS_MEM_POISON_PATTERN 0xCD
 #define SYS_LOG_LABEL          "sys"
 
+enum SYS_TIMERS {
+	SYS_TIMER_ABS, // Always accumulates never resets
+	SYS_TIMER_APP, // Accumulates app can reset
+	SYS_TIMER_NUM_COUNT,
+};
+
 struct sys_data {
 	void *frame_buffer;
+
 	u32 tick;
 	f32 last_time;
-	f32 ups_time_acc;
+
+	f32 ups_time_acc; // fixed timestep delta accumulator
 	f32 fps_time_acc;
+
 	f32 ups_ft_acc;
 	f32 fps_ft_acc;
+
 	u16 fps_counter;
 	u16 ups_counter;
+
+	f32 timers[SYS_TIMER_NUM_COUNT];
+
 	u16 fps; // rendered frames per second
 	u16 ups; // updates per second
 	u16 ups_ft;
 	u16 fps_ft;
-	void *menu_items[8];
 	struct sys_mem mem;
 };
 
@@ -91,8 +103,9 @@ void
 sys_internal_init(void)
 {
 	SYS.fps          = SYS_UPS;
-	SYS.last_time    = sys_seconds();
+	SYS.last_time    = sys_time_elapsed();
 	SYS.frame_buffer = sys_1bit_buffer();
+	mclr_array(SYS.timers);
 	app_init(SYS_MAX_MEM);
 }
 
@@ -103,17 +116,19 @@ sys_internal_init(void)
 i32
 sys_internal_update(void)
 {
-	f32 time       = sys_seconds();
+	f32 time       = sys_time_elapsed();
 	f32 time_delta = time - SYS.last_time;
 	SYS.last_time  = time;
 	SYS.ups_time_acc += time_delta;
+	SYS.timers[SYS_TIMER_ABS] += time_delta;
+	SYS.timers[SYS_TIMER_APP] += time_delta;
 
 	if(SYS_UPS_DT_CAP < SYS.ups_time_acc) {
 		SYS.ups_time_acc = SYS_UPS_DT_CAP;
 	}
 
 #if SYS_SHOW_FPS
-	f32 tu1 = sys_seconds();
+	f32 tu1 = sys_time_elapsed();
 #endif
 
 	b32 updated = 0;
@@ -126,15 +141,15 @@ sys_internal_update(void)
 		app_tick(SYS_UPS_DT);
 	}
 #if SYS_SHOW_FPS
-	f32 tu2 = sys_seconds();
+	f32 tu2 = sys_time_elapsed();
 	SYS.ups_ft_acc += tu2 - tu1;
 #endif
 
 	if(updated) {
 #if SYS_SHOW_FPS
-		f32 tf1 = sys_seconds();
+		f32 tf1 = sys_time_elapsed();
 		app_draw();
-		f32 tf2 = sys_seconds();
+		f32 tf2 = sys_time_elapsed();
 		SYS.fps_ft_acc += tf2 - tf1;
 		SYS.fps_counter++;
 
@@ -180,8 +195,8 @@ sys_internal_update(void)
 		} else {
 			SYS.fps_ft = U16_MAX;
 		}
-		SYS.fps_ft_acc = 0.f;
-		SYS.ups_ft_acc = 0.f;
+		SYS.fps_ft_acc = 0.0f;
+		SYS.ups_ft_acc = 0.0f;
 	}
 #endif
 	return updated;
@@ -191,11 +206,11 @@ void
 sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 {
 #if SYS_SHOW_FPS
-	f32 tu1 = sys_seconds();
+	f32 tu1 = sys_time_elapsed();
 #endif
 	app_audio(lbuf, rbuf, len);
 #if SYS_SHOW_FPS
-	f32 tu2 = sys_seconds();
+	f32 tu2 = sys_time_elapsed();
 	SYS.ups_ft_acc += tu2 - tu1;
 #endif
 }
@@ -216,10 +231,10 @@ sys_blit_text(char *str, i32 tile_x, i32 tile_y)
 	}
 }
 
-u32
+f32
 sys_time(void)
 {
-	return SYS.tick;
+	return SYS.timers[SYS_TIMER_APP];
 }
 
 void

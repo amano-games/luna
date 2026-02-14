@@ -245,9 +245,15 @@ sys_mouse_y(void)
 }
 
 f32
-sys_seconds(void)
+sys_elapsed_time(void)
 {
 	return PD_SYSTEM_GET_ELAPSED_TIME();
+}
+
+void
+sys_elapsed_time_reset(void)
+{
+	return PD_SYSTEM_RESET_ELAPSED_TIME();
 }
 
 // Nanoseconds
