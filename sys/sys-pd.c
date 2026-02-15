@@ -245,13 +245,13 @@ sys_mouse_y(void)
 }
 
 f32
-sys_elapsed_time(void)
+sys_time_elapsed(void)
 {
 	return PD_SYSTEM_GET_ELAPSED_TIME();
 }
 
 void
-sys_elapsed_time_reset(void)
+sys_time_elapsed_reset(void)
 {
 	PD_SYSTEM_RESET_ELAPSED_TIME();
 }
