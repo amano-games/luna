@@ -253,7 +253,7 @@ sys_elapsed_time(void)
 void
 sys_elapsed_time_reset(void)
 {
-	return PD_SYSTEM_RESET_ELAPSED_TIME();
+	PD_SYSTEM_RESET_ELAPSED_TIME();
 }
 
 // Nanoseconds
