@@ -195,8 +195,8 @@ sys_pd_update(void *pd)
 	f32 sec      = PD_SYSTEM_GET_ELAPSED_TIME();
 	u32 delta_us = (u32)(sec * 1000000.0f + 0.5f);
 
-	SYS_TIME.time_us_acc += delta_us;
-	SYS_TIME.time_elapsed += delta_us;
+	PD_STATE.us_monotonic += delta_us;
+	PD_STATE.us_elapsed += delta_us;
 
 	PD_SYSTEM_RESET_ELAPSED_TIME();
 
@@ -259,7 +259,7 @@ sys_time_elapsed(void)
 {
 	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
 	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
-	u32 total   = SYS_TIME.us_elapsed + partial;
+	u32 total   = PD_STATE.us_elapsed + partial;
 	return (f32)total * 1e-6f;
 }
 
@@ -285,7 +285,7 @@ sys_time_us(void)
 */
 	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
 	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
-	return SYS_TIME.time_us_acc + partial;
+	return PD_STATE.us_monotonic + partial;
 }
 
 // Milliseconds
