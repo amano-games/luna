@@ -9,37 +9,6 @@
 
 #define SYS_MEM_POISON_PATTERN 0xCD
 #define SYS_LOG_LABEL          "sys"
-#define SYS_RESET_TIME
-
-enum SYS_TIMERS {
-	SYS_TIMER_ABS, // Always accumulates never resets
-	SYS_TIMER_APP, // Accumulates app can reset
-	SYS_TIMER_NUM_COUNT,
-};
-
-struct sys_data {
-	void *frame_buffer;
-
-	u32 tick;
-	f32 last_time;
-
-	f32 ups_time_acc; // fixed timestep delta accumulator
-	f32 fps_time_acc;
-
-	f32 ups_ft_acc;
-	f32 fps_ft_acc;
-
-	u16 fps_counter;
-	u16 ups_counter;
-
-	f32 timers[SYS_TIMER_NUM_COUNT];
-
-	u16 fps; // rendered frames per second
-	u16 ups; // updates per second
-	u16 ups_ft;
-	u16 fps_ft;
-	struct sys_mem mem;
-};
 
 struct sys_data SYS;
 
@@ -104,9 +73,8 @@ void
 sys_internal_init(void)
 {
 	SYS.fps          = SYS_UPS;
-	SYS.last_time    = sys_time_elapsed();
+	SYS.last_time_us = sys_time_us();
 	SYS.frame_buffer = sys_1bit_buffer();
-	mclr_array(SYS.timers);
 	app_init(SYS_MAX_MEM);
 }
 
@@ -117,46 +85,41 @@ sys_internal_init(void)
 i32
 sys_internal_update(void)
 {
-#if defined SYS_RESET_TIME
-	f32 time_delta = sys_time_elapsed();
-	sys_time_elapsed_reset();
-#else
-	f32 time       = sys_time_elapsed();
-	f32 time_delta = time - SYS.last_time;
-	SYS.last_time  = time;
-#endif
-	SYS.ups_time_acc += time_delta;
-	SYS.timers[SYS_TIMER_ABS] += time_delta;
-	SYS.timers[SYS_TIMER_APP] += time_delta;
+	u32 now          = sys_time_us();
+	u32 time_delta   = now - SYS.last_time_us;
+	SYS.last_time_us = now;
 
-	if(SYS_UPS_DT_CAP < SYS.ups_time_acc) {
-		SYS.ups_time_acc = SYS_UPS_DT_CAP;
+	SYS.ups_time_acc_us += time_delta;
+
+	if(SYS_UPS_DT_CAP_US < SYS.ups_time_acc_us) {
+		SYS.ups_time_acc_us = SYS_UPS_DT_CAP_US;
 	}
 
 #if SYS_SHOW_FPS
-	f32 tu1 = sys_time_elapsed();
+	u32 tu1 = sys_time_us();
 #endif
 
 	b32 updated = 0;
 
-	while(SYS_UPS_DT_TEST <= SYS.ups_time_acc) {
-		SYS.ups_time_acc -= SYS_UPS_DT;
+	while(SYS.ups_time_acc_us >= SYS_UPS_DT_US) {
+		SYS.ups_time_acc_us -= SYS_UPS_DT_US;
 		SYS.tick++;
 		SYS.ups_counter++;
 		updated = 1;
-		app_tick(SYS_UPS_DT);
+		app_tick((f32)SYS_UPS_DT_US * 1e-6f);
 	}
+
 #if SYS_SHOW_FPS
-	f32 tu2 = sys_time_elapsed();
-	SYS.ups_ft_acc += tu2 - tu1;
+	u32 tu2 = sys_time_us();
+	SYS.ups_ft_acc_us += tu2 - tu1;
 #endif
 
 	if(updated) {
 #if SYS_SHOW_FPS
-		f32 tf1 = sys_time_elapsed();
+		u32 tf1 = sys_time_us();
 		app_draw();
-		f32 tf2 = sys_time_elapsed();
-		SYS.fps_ft_acc += tf2 - tf1;
+		u32 tf2 = sys_time_us();
+		SYS.fps_ft_acc_us += tf2 - tf1;
 		SYS.fps_counter++;
 
 		i32 fps_ft = 100 <= SYS.fps_ft ? 99 : SYS.fps_ft;
@@ -176,7 +139,7 @@ sys_internal_update(void)
 			'0' + (ups_ft % 10),
 			'\0',
 		};
-		sys_blit_text(fps, 0, 29);
+		sys_blit_text(&SYS, fps, 0, 29);
 		// sys_blit_text(ups, 0, 1);
 #else
 		app_draw();
@@ -184,25 +147,25 @@ sys_internal_update(void)
 	}
 
 #if SYS_SHOW_FPS
-	SYS.fps_time_acc += time_delta;
-	if(1.f <= SYS.fps_time_acc) {
-		SYS.fps_time_acc -= 1.f;
+	SYS.fps_time_acc_us += time_delta;
+	if(1000000u <= SYS.fps_time_acc_us) {
+		SYS.fps_time_acc_us -= 1000000u;
 		SYS.fps         = SYS.fps_counter;
 		SYS.ups         = SYS.ups_counter;
 		SYS.ups_counter = 0;
 		SYS.fps_counter = 0;
 		if(0 < SYS.ups) {
-			SYS.ups_ft = (i32)(SYS.ups_ft_acc * 1000.5f) / SYS.ups;
+			SYS.ups_ft = (u16)((SYS.ups_ft_acc_us) / SYS.ups);
 		} else {
 			SYS.ups_ft = U16_MAX;
 		}
 		if(0 < SYS.fps) {
-			SYS.fps_ft = (i32)(SYS.fps_ft_acc * 1000.5f) / SYS.fps;
+			SYS.fps_ft = (u16)((SYS.fps_ft_acc_us) / SYS.fps);
 		} else {
 			SYS.fps_ft = U16_MAX;
 		}
-		SYS.fps_ft_acc = 0.0f;
-		SYS.ups_ft_acc = 0.0f;
+		SYS.fps_ft_acc_us = 0;
+		SYS.ups_ft_acc_us = 0;
 	}
 #endif
 	return updated;
@@ -212,35 +175,13 @@ void
 sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 {
 #if SYS_SHOW_FPS
-	f32 tu1 = sys_time_elapsed();
+	u32 tu1 = sys_time_us();
 #endif
 	app_audio(lbuf, rbuf, len);
 #if SYS_SHOW_FPS
-	f32 tu2 = sys_time_elapsed();
-	SYS.ups_ft_acc += tu2 - tu1;
+	u32 tu2 = sys_time_us();
+	SYS.ups_ft_acc_us += tu2 - tu1;
 #endif
-}
-
-void
-sys_blit_text(char *str, i32 tile_x, i32 tile_y)
-{
-	u8 *fb = (u8 *)SYS.frame_buffer;
-	i32 i  = tile_x;
-	for(char *c = str; *c != '\0'; c++) {
-		i32 cx = ((i32)*c & 31);
-		i32 cy = ((i32)*c >> 5) << 3;
-		for(i32 n = 0; n < 8; n++) {
-			fb[i + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] =
-				((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
-		}
-		i++;
-	}
-}
-
-f32
-sys_time(void)
-{
-	return SYS.timers[SYS_TIMER_APP];
 }
 
 void
@@ -260,4 +201,20 @@ void
 sys_internal_resume(void)
 {
 	app_resume();
+}
+
+void
+sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
+{
+	u8 *fb = (u8 *)sys->frame_buffer;
+	i32 x  = tile_x;
+	for(char *c = str; *c != '\0'; c++) {
+		i32 cx = ((i32)*c & 31);
+		i32 cy = ((i32)*c >> 5) << 3;
+		for(i32 n = 0; n < 8; n++) {
+			fb[x + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] =
+				((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
+		}
+		x++;
+	}
 }

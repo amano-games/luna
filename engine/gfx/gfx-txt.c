@@ -2,7 +2,6 @@
 #include "base/mathfunc.h"
 #include "engine/gfx/gfx-spr.h"
 #include "base/dbg.h"
-#include "base/trace.h"
 
 void
 fnt_draw_str(

@@ -1,5 +1,6 @@
 #include "sys-cli.h"
 
+#include "sys-defs.h"
 #include "base/str.h"
 #include "sys-io.h"
 #include "base/log.h"
@@ -12,7 +13,7 @@
 #include "sokol/sokol_time.h"
 
 struct cli_state {
-	u64 tick_start;
+	u32 tick_start;
 	struct sys_process_info process_info;
 };
 
@@ -155,13 +156,13 @@ sys_time_elapsed_reset(void)
 	CLI_STATE.tick_start = stm_now();
 }
 
-u64
+u32
 sys_time_ms(void)
 {
 	return stm_ms(stm_since(0));
 }
 
-u64
+u32
 sys_time_us(void)
 {
 	return stm_us(stm_since(0));

@@ -62,6 +62,8 @@ struct pd_scores_state {
 };
 
 struct pd_state {
+	u32 us_monotonic;
+	u32 us_elapsed;
 	PDButtons b;
 	b32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
@@ -190,6 +192,14 @@ sys_pd_update_rows(i32 from_incl, i32 to_incl)
 int
 sys_pd_update(void *pd)
 {
+	f32 sec      = PD_SYSTEM_GET_ELAPSED_TIME();
+	u32 delta_us = (u32)(sec * 1000000.0f + 0.5f);
+
+	SYS_TIME.time_us_acc += delta_us;
+	SYS_TIME.time_elapsed += delta_us;
+
+	PD_SYSTEM_RESET_ELAPSED_TIME();
+
 	return sys_internal_update();
 }
 
@@ -247,18 +257,21 @@ sys_mouse_y(void)
 f32
 sys_time_elapsed(void)
 {
-	return PD_SYSTEM_GET_ELAPSED_TIME();
+	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
+	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
+	u32 total   = SYS_TIME.us_elapsed + partial;
+	return (f32)total * 1e-6f;
 }
 
 void
 sys_time_elapsed_reset(void)
 {
-	PD_SYSTEM_RESET_ELAPSED_TIME();
+	PD_STATE.us_elapsed = 0;
 }
 
-// Nanoseconds
-u64
-sys_time_ns(void)
+// Microseconds
+u32
+sys_time_us(void)
 {
 	/*
   https://devforum.play.date/t/get-cycle-count-on-playdate-hardware/10800/2
@@ -270,24 +283,16 @@ sys_time_ns(void)
 
 "microsecond accuracy" there is roughly speaking. Since it returns a floating point value the accuracy depends on how large that value gets, but there's nothing in the code limiting accuracy to 1 uS. Calling resetElapsedTime() before the code you're measuring then getElapsedTime() right after should give you a very accurate measure of execution time, and with some testing you can figure out how much of that is overhead of the reset/getElapsedTime() calls themselves and adjust for that.
 */
-	// Playdate has microsecond resolution
-	f64 sec = (f64)PD_SYSTEM_GET_ELAPSED_TIME();
-	u64 us  = (u64)(sec * (f64)1000000.0);
-	return us * 1000ull;
-}
-
-// Microseconds
-u64
-sys_time_us(void)
-{
-	return sys_time_ns() / 1000ull;
+	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
+	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
+	return SYS_TIME.time_us_acc + partial;
 }
 
 // Milliseconds
-u64
+u32
 sys_time_ms(void)
 {
-	return sys_time_ns() / 1000000ull;
+	return sys_time_us() / 1000u;
 }
 
 u32
