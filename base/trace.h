@@ -51,6 +51,12 @@ struct prof {
 
 static struct prof PROFILER;
 
+#define prof_block(name) prof_block_start(name, __COUNTER__)
+/* #define prof_block(name) prof_block_start(name, \
+ 	({ static int i = -1; if (i == -1) i = prof_next_block_idx(); i; })) */
+
+#define prof_func() prof_block(__func__)
+
 static ssize
 prof_next_block_idx(void)
 {
@@ -82,13 +88,10 @@ prof_record_bytes(ssize bytes)
 	prof->frames[prof->frame_count - 1].block->byte_count += bytes;
 }
 
-#define prof_block(name) profile_block_start(name, \
-	({ static int i = -1; if (i == -1) i = profile_next_block_index(); i; }))
-
 void
-prof_block_done(void)
+prof_block_end(void)
 {
-	u32 nowtsc        = sys_time_ns();
+	u32 nowtsc        = sys_time_us();
 	struct prof *prof = &PROFILER;
 	dbg_assert(prof->frame_count);
 	struct prof_frame *frame = &prof->frames[--prof->frame_count];
@@ -114,7 +117,7 @@ void
 prof_end(void)
 {
 	struct prof *prof = &PROFILER;
-	prof->tsc_end     = sys_time_ns();
+	prof->tsc_end     = sys_time_us();
 }
 
 void trace_ini(str8 file_name, u8 *buffer, usize size);
@@ -126,12 +129,12 @@ void trace_close(void);
  	&SPALL_BUFFER, \
  	s, \
  	sizeof(s) - 1, \
- 	sys_time_ns())
+ 	sys_time_us())
 
  #define TRACE_END() spall_buffer_end( \
  	&SPALL_CTX, \
  	&SPALL_BUFFER, \
- 	sys_time_ns())
+ 	sys_time_us())
 */
 #define TRACE_START(...)
 #define TRACE_END(...)
