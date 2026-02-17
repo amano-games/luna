@@ -11,7 +11,6 @@
 void
 trace_ini(str8 file_name, u8 *buffer, usize size)
 {
-
 #if defined(TRACE_AUTO)
 	log_info("Trace", "Init (Auto)");
 	spall_auto_init((char *)file_name.str);
