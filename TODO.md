@@ -85,5 +85,9 @@
 
 # Tracing
 
+- ElapsedTime() and ResetElapsedTime() are moved one layer up. On playdate we call the playdate reset elapsed time every frame and get the nano seconds out of the f32 we accumulate that on an f32 and when the elapsed time is called we return that.
+- We use sys_time_ns and friends for tracing
+- Convert everything to 32 bits
+
 - Improve spall on device (playdate)
 - Auto tracing

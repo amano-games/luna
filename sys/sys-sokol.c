@@ -98,7 +98,7 @@ struct sys_opts {
 
 struct sokol_state {
 	i32 state;
-	u64 tick_start;
+	u32 tick_start;
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -728,19 +728,19 @@ sys_time_elapsed_reset(void)
 u64
 sys_time_ns(void)
 {
-	return stm_ns(stm_since(SOKOL_STATE.tick_start));
+	return stm_ns(stm_since(0));
 }
 
-u64
+u32
 sys_time_us(void)
 {
-	return stm_us(stm_since(SOKOL_STATE.tick_start));
+	return stm_us(stm_since(0));
 }
 
-u64
+u32
 sys_time_ms(void)
 {
-	return stm_ms(stm_since(SOKOL_STATE.tick_start));
+	return stm_ms(stm_since(0));
 }
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL

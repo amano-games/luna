@@ -3,28 +3,7 @@
 #include "base/types.h"
 #include "base/mem.h"
 #include "lib/tex/tex.h"
-
-#define SYS_UPS            50
-#define SYS_DISPLAY_W      400
-#define SYS_DISPLAY_H      240
-#define SYS_DISPLAY_WBYTES 52
-#define SYS_DISPLAY_WWORDS 13
-
-#define SYS_UPS_DT      0.0200f // elapsed seconds per update step (1/UPS)
-#define SYS_UPS_DT_TEST 0.0195f // elapsed seconds required to run a tick - improves frame skips at max FPS
-#define SYS_UPS_DT_CAP  0.0600f // max elapsed seconds
-
-#if defined BACKEND_PD
-#define SYS_ACCELEROMETER_SUPPORT 1
-#else
-#define SYS_ACCELEROMETER_SUPPORT 0
-#endif
-
-#if defined(DEBUG)
-#define SYS_MAX_MEM MGIGABYTE(1)
-#else
-#define SYS_MAX_MEM MMEGABYTE(15)
-#endif
+#include "sys/sys-defs.h"
 
 #if defined(BACKEND_SOKOL)
 #include "sys-sokol.h"
@@ -33,33 +12,6 @@
 #else
 #include "sys-cli.h"
 #endif
-
-struct mem_block {
-	usize size;
-	alignas(8) void *buffer;
-};
-
-struct sys_mem {
-	struct mem_block app_mem;
-};
-
-struct sys_process_info {
-	u32 pid;
-	str8 exe_path;
-	str8 module_path;
-	str8 base_path;
-	str8 initial_path;
-	str8 data_path;
-	str8 environment;
-};
-
-struct app_mem {
-	struct mem_block permanent;
-	struct mem_block transient;
-	struct mem_block debug;
-
-	bool is_initialized;
-};
 
 #if defined BACKEND_PD
 #define sys_audio_set_volume(V)
@@ -85,15 +37,12 @@ void *sys_alloc(void *ptr, ssize size, ssize align);
 struct alloc sys_allocator(void);
 void sys_free(void *ptr);
 
-void sys_blit_text(char *str, i32 tile_x, i32 tile_y);
 f32 sys_time_elapsed(void);
 void sys_time_elapsed_reset(void);
 
-u64 sys_time_ms(void);
-u64 sys_time_us(void);
-u64 sys_time_ns(void);
+u32 sys_time_ms(void);
+u32 sys_time_us(void);
 
-f32 sys_time(void);
 u32 sys_epoch_2000(u32 *milliseconds);
 
 void sys_1bit_invert(b32 i);
@@ -121,3 +70,5 @@ void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
 str8 sys_get_current_path(struct alloc alloc);
 struct sys_process_info sys_process_info(void);
+
+void sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y);
