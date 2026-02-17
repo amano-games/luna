@@ -8,9 +8,8 @@
 #define SYS_DISPLAY_WBYTES 52
 #define SYS_DISPLAY_WWORDS 13
 
-#define SYS_UPS_DT_US      20000u // 20.0 ms (50 UPS) elapsed seconds per update step (1/UPS)
-#define SYS_UPS_DT_TEST_US 19500u // 19.5 ms tolerance elapsed seconds required to run a tick - improves frame skips at max FPS
-#define SYS_UPS_DT_CAP_US  60000u // 60.0 ms clamp max elapsed seconds
+#define SYS_UPS_DT_US     20000u // 20.0 ms (50 UPS) elapsed seconds per update step (1/UPS)
+#define SYS_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
 
 #if defined BACKEND_PD
 #define SYS_ACCELEROMETER_SUPPORT 1
