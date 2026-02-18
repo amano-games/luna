@@ -4,7 +4,6 @@
 #include "engine/animation/animation.h"
 
 #include "engine/assets/assets.h"
-#include "base/trace.h"
 
 static inline void animator_animation_set(struct animator *animator, usize index);
 

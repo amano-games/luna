@@ -7,7 +7,6 @@
 #include "base/log.h"
 #include "base/log.h"
 #include "base/dbg.h"
-#include "base/trace.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)

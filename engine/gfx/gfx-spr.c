@@ -3,7 +3,6 @@
 #include "gfx.h"
 #include "sys/sys-intrin.h"
 #include "base/mathfunc.h"
-#include "base/trace.h"
 #include "base/dbg.h"
 
 static void

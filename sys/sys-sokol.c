@@ -98,7 +98,9 @@ struct sys_opts {
 
 struct sokol_state {
 	i32 state;
-	u32 tick_start;
+
+	u64 tick_start;
+	u64 tick_elapsed;
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -170,7 +172,8 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	stm_setup();
-	SOKOL_STATE.tick_start = stm_now();
+	SOKOL_STATE.tick_start   = stm_now();
+	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
 	{
 		usize mem_size = MMEGABYTE(1);
 		void *mem      = sys_alloc(NULL, mem_size, 4);
@@ -713,35 +716,39 @@ sys_mouse_y(void)
 	return SOKOL_STATE.mouse_y;
 }
 
+// seconds since last reset
 f32
 sys_time_elapsed(void)
 {
-	return stm_sec(stm_since(SOKOL_STATE.tick_start));
+	return stm_sec(stm_since(SOKOL_STATE.tick_elapsed));
 }
 
 void
 sys_time_elapsed_reset(void)
 {
-	SOKOL_STATE.tick_start = stm_now();
+	SOKOL_STATE.tick_elapsed = stm_now();
 }
 
-u64
-sys_time_ns(void)
-{
-	return stm_ns(stm_since(0));
-}
-
+// Microseconds since app start (wraps every ~71 minutes)
 u32
 sys_time_us(void)
 {
-	return stm_us(stm_since(0));
+	return (u32)(stm_us(stm_since(SOKOL_STATE.tick_start)));
 }
 
 u32
 sys_time_ms(void)
 {
-	return stm_ms(stm_since(0));
+	return (u32)(stm_ms(stm_since(SOKOL_STATE.tick_start)));
 }
+
+#if 0
+u64
+sys_time_ns(void)
+{
+	return stm_ns(stm_since(0));
+}
+#endif
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL
 #if !defined(TARGET_WIN)

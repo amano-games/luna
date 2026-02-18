@@ -1,6 +1,5 @@
 #pragma once
 
-#include "base/trace.h"
 #include "base/types.h"
 #include "base/mathfunc.h"
 

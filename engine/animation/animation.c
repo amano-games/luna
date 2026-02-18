@@ -5,7 +5,6 @@
 #include "base/dbg.h"
 
 #include "base/mathfunc.h"
-#include "base/trace.h"
 
 void
 animation_clip_init(struct animation_clip *data)

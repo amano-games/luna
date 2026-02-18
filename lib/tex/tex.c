@@ -4,7 +4,6 @@
 #include "engine/gfx/gfx-defs.h"
 #include "sys/sys-intrin.h"
 #include "sys/sys-io.h"
-#include "base/trace.h"
 
 // mask is almost always = 1
 struct tex
@@ -74,7 +73,6 @@ error:;
 void
 tex_clr(struct tex dst, i32 col)
 {
-	TRACE_START(__func__);
 	i32 nn = dst.wword * dst.h;
 	u32 *p = dst.px;
 	if(!p) return;
@@ -116,7 +114,6 @@ tex_clr(struct tex dst, i32 col)
 		}
 		break;
 	}
-	TRACE_END();
 }
 
 static i32
