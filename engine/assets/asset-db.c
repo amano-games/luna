@@ -6,7 +6,6 @@
 #include "lib/bet/bet.h"
 #include "base/ht.h"
 #include "base/log.h"
-#include "base/trace.h"
 
 void
 asset_db_ini(

@@ -3,7 +3,6 @@
 #include "base/dbg.h"
 #include "base/types.h"
 
-#include "base/trace.h"
 #include "base/mathfunc.h"
 #include "lib/tri.h"
 #include "base/v2.h"

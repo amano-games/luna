@@ -5,7 +5,6 @@
 #include "base/mem.h"
 #include "base/types.h"
 #include "base/dbg.h"
-#include "base/trace.h"
 
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
