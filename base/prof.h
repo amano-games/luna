@@ -9,7 +9,7 @@
 #define PROF_ANCHOR_SIZE 4096
 
 struct prof_block {
-	char const *label;
+	str8 label;
 	// Total time this block was on the stack.
 	u32 us_total;
 
@@ -21,9 +21,6 @@ struct prof_block {
 
 	// Total number of times we entered this block.
 	u32 hit_count;
-
-	// Total number of bytes this block processed.
-	u32 byte_count;
 };
 
 struct prof_frame {
@@ -43,14 +40,14 @@ struct prof {
 
 static struct prof PROFILER;
 
-#define prof_block(name) prof_block_start(name, __COUNTER__)
+#define prof_block(name) prof_block_start(name, __COUNTER__ + 1)
 /* #define prof_block(name) prof_block_start(name, \
  	({ static int i = -1; if (i == -1) i = prof_next_block_idx(); i; })) */
 
-#define prof_func() prof_block(__func__)
+#define prof_block_func() prof_block(__func__)
 
 static void
-prof_init(void)
+prof_ini(void)
 {
 	struct prof *prof = &PROFILER;
 	mclr_struct(prof);
@@ -73,7 +70,7 @@ prof_next_block_idx(void)
 }
 
 void
-prof_block_start(const char *label, ssize block_idx)
+prof_block_start(str8 label, ssize block_idx)
 {
 	struct prof *prof = &PROFILER;
 	dbg_assert(block_idx < (ssize)ARRLEN(prof->blocks));
@@ -89,19 +86,11 @@ prof_block_start(const char *label, ssize block_idx)
 }
 
 void
-prof_record_bytes(ssize bytes)
-{
-	struct prof *prof = &PROFILER;
-	dbg_assert(prof->frame_count);
-	prof->frames[prof->frame_count - 1].block->byte_count += bytes;
-}
-
-void
 prof_block_end(void)
 {
 	u32 now_us        = sys_time_us();
 	struct prof *prof = &PROFILER;
-	dbg_assert(prof->frame_count);
+	if(prof->frame_count == 0) { return; } // if we just initialized in the middle a profiler then ignore this block
 	struct prof_frame *frame = &prof->frames[--prof->frame_count];
 	u32 time_total           = now_us - frame->us_start;
 	u32 time_exclusive       = time_total - frame->child_time;
@@ -126,45 +115,54 @@ prof_str8(struct alloc alloc)
 {
 	struct prof *prof     = &PROFILER;
 	struct str8_list list = {0};
+	u32 us_end            = prof->us_end;
+	if(!us_end) {
+		us_end = sys_time_us();
+	}
 
-	if(!prof->us_end) { prof_close(); }
+	u32 total_time = us_end - prof->us_start;
 
-	u32 total_time = prof->us_end - prof->us_start;
-	str8_list_pushf(alloc, &list, "%-18s %8s %12s %12s %6s", "Block", "Hits", "Total(us)", "Excl(us)", "%");
+	// Header: 60 columns exactly
+	// Name(14) Hits(7) Tot(9) Exc(9) Avg(9) %(6)
+	str8_list_pushf(alloc, &list, "%-12s %7s %9s %9s %9s %6s", "Block", "Hits", "Tot(us)", "Exc(us)", "Avg(us)", "Pct");
 	str8_list_pushf(alloc, &list, "%.*s", 60, "------------------------------------------------------------");
 
+	f32 acc_perc = 0.0f;
 	dbg_assert(prof->frame_count == 0);
+
 	for(size_t i = 0; i < ARRLEN(prof->blocks); i++) {
 		struct prof_block *block = prof->blocks + i;
+
+		if(block->label.size == 0 || block->hit_count == 0) { continue; }
 		dbg_assert(block->frame_count == 0);
-		if(block->label == NULL) { continue; }
-		f32 percent = total_time ? (100.0f * (f32)block->us_exclusive / (f32)total_time) : 0.0f;
+
+		f32 percent  = total_time ? (100.0f * (f32)block->us_exclusive / (f32)total_time) : 0.0f;
+		f32 avg_excl = (f32)block->us_exclusive / (f32)block->hit_count;
+		acc_perc += percent;
 
 		str8_list_pushf(
 			alloc,
 			&list,
-			"%-18s %8" PRIu32 " %12" PRIu32 " %12" PRIu32 " %5.1f%%",
-			block->label,
+			"%-12.12s %7" PRIu32 " %9" PRIu32 " %9" PRIu32 " %9.2f %5.1f%%",
+			block->label.str,
 			block->hit_count,
 			block->us_total,
 			block->us_exclusive,
+			(double)avg_excl,
 			(double)percent);
-
-		if(block->byte_count) {
-			// sys_printf(" %4.2f GiB/s", calculate_gib_per_s(block->byte_count, block->total_time));
-		}
 	}
 
 	str8_list_pushf(alloc, &list, "%.*s", 60, "------------------------------------------------------------");
 	str8_list_pushf(
 		alloc,
 		&list,
-		"%-18s %8s %12" PRIu32 " %12s %6s",
-		"Total",
+		"%-12s %7s %9" PRIu32 " %9s %9s %5.1f%%",
+		"TOTAL TIME",
 		"",
 		total_time,
 		"",
-		"");
+		"",
+		(double)acc_perc);
 
 	struct str_join params = {.sep = str8_lit("\n")};
 	return str8_list_join(alloc, &list, &params);
