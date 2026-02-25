@@ -311,7 +311,7 @@ prof_drw(
 	i32 record_count = min_i32(report->entry_count, max_records);
 
 #if 1
-	gfx_rec_fill(ctx, sx, sy, full_width, line_spacing - 1, PRIM_MODE_WHITE);
+	gfx_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
 	if(report->headers[0].size > 0) {
 		txt_drw(sx, sy, report->headers[0], SPR_MODE_BLACK);
 	}
