@@ -1,4 +1,5 @@
 #include "sys.h"
+#include "base/prof.h"
 #include "sys-font.h"
 #include "base/log.h"
 #include "base/dbg.h"
@@ -88,8 +89,11 @@ sys_internal_update(void)
 	u32 now          = sys_time_us();
 	u32 time_delta   = now - SYS.last_time_us;
 	SYS.last_time_us = now;
-
 	SYS.ups_time_acc_us += time_delta;
+
+#if defined(PROF)
+	prof_upd(true);
+#endif
 
 	if(SYS_UPS_DT_CAP_US < SYS.ups_time_acc_us) {
 		SYS.ups_time_acc_us = SYS_UPS_DT_CAP_US;
@@ -106,7 +110,9 @@ sys_internal_update(void)
 		SYS.tick++;
 		SYS.ups_counter++;
 		updated = 1;
+		prof_block("upd");
 		app_tick((f32)SYS_UPS_DT_US * 1e-6f);
+		prof_block_end();
 	}
 
 #if SYS_SHOW_FPS
@@ -117,7 +123,9 @@ sys_internal_update(void)
 	if(updated) {
 #if SYS_SHOW_FPS
 		u32 tf1 = sys_time_us();
+		prof_block("drw");
 		app_draw();
+		prof_block_end();
 		u32 tf2 = sys_time_us();
 		SYS.fps_ft_acc_us += tf2 - tf1;
 		SYS.fps_counter++;
@@ -177,7 +185,9 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 #if SYS_SHOW_FPS
 	u32 tu1 = sys_time_us();
 #endif
+	prof_block("aud");
 	app_audio(lbuf, rbuf, len);
+	prof_block_end();
 #if SYS_SHOW_FPS
 	u32 tu2 = sys_time_us();
 	SYS.ups_ft_acc_us += tu2 - tu1;
