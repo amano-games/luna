@@ -199,6 +199,14 @@ str8_cpy_push(struct alloc alloc, str8 src)
 	return dst;
 }
 
+inline void
+str8_cat_in_place(str8 *dst, str8 *src)
+{
+	mcpy(dst->str + dst->size, src->str, src->size);
+	dst->size += src->size;
+	dst->str[dst->size] = 0;
+}
+
 inline str8
 str8_cat_push(struct alloc alloc, str8 s1, str8 s2)
 {

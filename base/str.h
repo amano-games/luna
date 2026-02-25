@@ -78,6 +78,7 @@ usize str8_find_needle_reverse(str8 str, usize start_pos, str8 needle, str_match
 void str8_cpy(str8 *a, str8 *b);
 str8 str8_cpy_push(struct alloc alloc, str8 src);
 str8 str8_cat_push(struct alloc alloc, str8 s1, str8 s2);
+void str8_cat_in_place(str8 *dst, str8 *src);
 str8 str8_fmtv_push(struct alloc alloc, char *fmt, va_list args);
 str8 str8_fmt_push(struct alloc alloc, char *fmt, ...);
 

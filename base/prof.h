@@ -12,6 +12,9 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
+// #if !defined(PROF)
+// #define PROF
+// #endif
 // #define PROF_UNIQUE_NAMES
 #if defined(PROF)
 
@@ -45,6 +48,8 @@
 #define prof_block_end(...)
 #endif
 
+#define PROF_TRACKER_HISTORTY_SLOTS 3
+
 struct prof_anchor {
 	u32 us_exclusive; // Does not include children
 	u32 us_inclusive; // Does include children
@@ -65,36 +70,70 @@ struct prof_frame {
 	const char *label;
 };
 
+struct prof_history_scalar {
+	f32 values[PROF_TRACKER_HISTORTY_SLOTS];
+	f32 variances[PROF_TRACKER_HISTORTY_SLOTS];
+};
+
 struct prof {
 	u16 parent_idx;
+	u8 smooth_slot;
+
+	u32 update_idx; // 2^31 at 100fps = 280 days
+	u32 last_upd_us;
+	u32 frame_dt_us;
 
 	u32 us_start;
 	u32 us_end;
 
 	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
 	struct prof_frame frames[PROF_FRAMES_SIZE];
+
+	u32 history_idx;
 	// u32 history[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE]; // 256K
+
+	struct prof_history_scalar frame_time_history;
 
 	ssize anchor_count;
 	ssize frame_count;
 };
 
+static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORTY_SLOTS];
+static f32 PROF_PRECOMPUTED_FACTORS[PROF_TRACKER_HISTORTY_SLOTS];
+
 static struct prof PROFILER;
+
 static char INT_TO_STRING[100][4];
 static char INT_TO_STRING_DECIMAL[100][4];
 static char INT_TO_STRING_MID_DECIMAL[100][4];
+static str8 INT_TO_STR8[100];
+static str8 INT_TO_STR8_DECIMAL[100];
+static str8 INT_TO_STR8_MID_DECIMAL[100];
+
 static void
 int_to_string_ini(void)
 {
 	int i;
 	for(i = 0; i < 100; ++i) {
-		sprintf(INT_TO_STRING[i], "%d", i);
-		sprintf(INT_TO_STRING_DECIMAL[i], ".%02d", i);
-		sprintf(INT_TO_STRING_MID_DECIMAL[i], "%d.%d", i / 10, i % 10);
+		// INT
+		int len             = sys_sprintf(INT_TO_STRING[i], "%d", i);
+		INT_TO_STR8[i].str  = (u8 *)INT_TO_STRING[i];
+		INT_TO_STR8[i].size = len;
+
+		// .XX
+		len                         = sys_sprintf(INT_TO_STRING_DECIMAL[i], ".%02d", i);
+		INT_TO_STR8_DECIMAL[i].str  = (u8 *)INT_TO_STRING_DECIMAL[i];
+		INT_TO_STR8_DECIMAL[i].size = len;
+
+		// X.X
+		len                             = sys_sprintf(INT_TO_STRING_MID_DECIMAL[i], "%d.%d", i / 10, i % 10);
+		INT_TO_STR8_MID_DECIMAL[i].str  = (u8 *)INT_TO_STRING_MID_DECIMAL[i];
+		INT_TO_STR8_MID_DECIMAL[i].size = len;
 	}
 }
 
-static inline void prof_f32_to_str8(u8 *buf, f32 value, i32 precision);
+static inline str8 prof_f32_to_str8(u8 *buf, f32 value, i32 precision);
+static inline void prof_f32_to_str(u8 *buf, f32 value, i32 precision);
 
 static void
 prof_ini(void)
@@ -104,6 +143,12 @@ prof_ini(void)
 	dbg_assert(ARRLEN(prof->frames) < U16_MAX);
 	mclr_struct(prof);
 	prof->us_start = sys_time_us();
+
+	{
+		PROF_TIMES_TO_REACH_90_PERCENT[0] = 0.1f;
+		PROF_TIMES_TO_REACH_90_PERCENT[1] = 0.8f;
+		PROF_TIMES_TO_REACH_90_PERCENT[2] = 2.5f;
+	}
 }
 
 void
@@ -156,7 +201,7 @@ prof_block_end_internal(void)
 }
 
 #define PROF_REPORT_NUM_VALUES 3
-#define PROF_REPORT_NUM_TITLES 2
+#define PROF_REPORT_NUM_TITLES 3
 #define PROF_REPORT_NUM_HEADER (PROF_REPORT_NUM_VALUES + 1)
 
 struct prof_report_entry {
@@ -203,6 +248,9 @@ prof_report_create(struct alloc alloc)
 {
 	struct prof *prof       = &PROFILER;
 	struct prof_report *res = alloc_struct_clr(alloc, res);
+
+	if(!INT_TO_STRING[0][0])
+		int_to_string_ini();
 
 	u32 now         = prof->us_end ? prof->us_end : sys_time_us();
 	res->total_time = now - prof->us_start;
@@ -253,16 +301,25 @@ prof_report_create(struct alloc alloc)
 		sizeof(struct prof_report_entry),
 		prof_report_sort_inclusive_desc);
 
-	// TODO: Title should change depending if the report is sorted by self or hier, and if history is enabled should show how many frames
-	// res->titles[0] = str8_fmt_push(
-	// 	alloc,
-	// 	"%3.3lf ms/frame (fps: (%e.2lf) %s",
-	// 	(double)0.2f,
-	// 	50,
-	// 	"sort self - current frame");
-	res->titles[0] = str8_fmt_push(alloc, "%s", "sort exclusive - current frame");
+	// TODO: convert to enum
+	prof->smooth_slot     = 2;
+	f32 avg_frame_time_us = prof->frame_time_history.values[prof->smooth_slot];
 
-	// TODO: Show warning on wrong timer?
+	if(avg_frame_time_us == 0) {
+		avg_frame_time_us = SYS_UPS_DT_US;
+	}
+	f32 fps = 1000000.0f / avg_frame_time_us;
+	f32 ms  = avg_frame_time_us * 1e-3f;
+	u8 fps_buf[32];
+	u8 ms_buf[32];
+	str8 fps_str = prof_f32_to_str8(fps_buf, fps, 3);
+	str8 ms_str  = prof_f32_to_str8(ms_buf, ms, 2);
+
+	res->titles[0] = str8_fmt_push(alloc, "%s ms/frame (fps: %s)", ms_str.str, fps_str.str);
+	// TODO: Sort should be configurable
+	// res->titles[1] = str8_lit("sort exclusive - current frame");
+
+	// TODO: Show warning on wrong timer title[2]
 
 	res->headers[0] = str8_lit("zone");
 	res->headers[1] = str8_lit("excl");
@@ -270,6 +327,69 @@ prof_report_create(struct alloc alloc)
 	res->headers[3] = str8_lit("count");
 
 	return res;
+}
+
+void
+prof_upd(b32 record)
+{
+	struct prof *prof = &PROFILER;
+	u32 now_us        = sys_time_us();
+	u32 dt_us         = 0;
+
+	if(prof->update_idx == 0) {
+		dt_us = SYS_UPS_DT_US;
+	} else {
+		dt_us = now_us - prof->last_upd_us;
+		if(dt_us == 0) {
+			dt_us = 1;
+		}
+	}
+
+	prof->last_upd_us = now_us;
+	prof->frame_dt_us = dt_us;
+	f32 dt_seconds    = (f32)dt_us * 1e-6f;
+
+	if(!record) {
+		return;
+	}
+
+	{
+		PROF_PRECOMPUTED_FACTORS[0] = 0.0f; // instantaneous
+		for(ssize i = 1; i < (ssize)ARRLEN(PROF_TIMES_TO_REACH_90_PERCENT); ++i) {
+			f32 t90 = PROF_TIMES_TO_REACH_90_PERCENT[i];
+			if(t90 > 0.0f) {
+				PROF_PRECOMPUTED_FACTORS[i] =
+					pow_f32(0.1f, dt_seconds / t90);
+			} else {
+				PROF_PRECOMPUTED_FACTORS[i] = 0.0f;
+			}
+		}
+	}
+
+	{
+		// history update us
+
+		f32 sample                    = (f32)dt_us;
+		f32 *factors                  = PROF_PRECOMPUTED_FACTORS;
+		struct prof_history_scalar *h = &prof->frame_time_history;
+
+		h->values[0]    = sample;
+		h->variances[0] = 0.0f;
+
+		for(ssize i = 1; i < (ssize)ARRLEN(h->variances); ++i) {
+			f32 f        = factors[i];
+			f32 old      = h->values[i];
+			f32 new_val  = old * f + sample * (1.0f - f);
+			h->values[i] = new_val;
+
+			f32 old_var     = h->variances[i];
+			f32 new_var     = old_var * f + (sample * sample) * (1.0f - f);
+			h->variances[i] = new_var;
+		}
+	}
+
+	++prof->update_idx;
+	// prof->history_idx = (prof->history_idx + 1) % ARRLEN(prof->history);
 }
 
 void
@@ -285,21 +405,20 @@ prof_drw(
 	void (*txt_drw)(i32 x, i32 y, str8 txt, i32 spr_mode),
 	i32 (*txt_width)(str8 str))
 {
-	i32 field_width = txt_width(str8_lit("5555.55"));
-	i32 name_width  = full_width - field_width * 3;
-
-	if(!INT_TO_STRING[0][0])
-		int_to_string_ini();
+	i32 pad                    = 1;
 	struct prof_report *report = prof_report_create(alloc);
+	i32 field_width            = txt_width(str8_lit("5555.55"));
+	i32 name_width             = full_width - (field_width * (ARRLEN(report->headers) - 1));
+	precision                  = clamp_i32(precision, 1, 4);
 
-#if 0
+#if 1
 	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
 		if(report->titles[i].size > 0) {
 			i32 title_x0 = sx;
 			i32 title_x1 = title_x0 + full_width;
-			gfx_rec_fill(ctx, title_x0, sy, full_width, line_spacing + 2, PRIM_MODE_BLACK);
+			gfx_rec_fill(ctx, title_x0, sy, full_width, line_spacing + pad, PRIM_MODE_BLACK);
 
-			txt_drw(sx + 2, sy + 1, report->titles[i], SPR_MODE_WHITE);
+			txt_drw(sx + pad, sy + pad, report->titles[i], SPR_MODE_WHITE);
 
 			sy += line_spacing;
 			height -= abs_i32(line_spacing);
@@ -313,26 +432,23 @@ prof_drw(
 #if 1
 	gfx_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
 	if(report->headers[0].size > 0) {
-		txt_drw(sx, sy, report->headers[0], SPR_MODE_BLACK);
+		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_BLACK);
 	}
 
 	for(ssize j = 1; j < (ssize)ARRLEN(report->headers); ++j) {
 		if(report->headers[j].size > 0) {
-			txt_drw(
-				sx + name_width + field_width * (j - 1) + field_width / 2 - txt_width(report->headers[j]) / 2,
-				sy,
-				report->headers[j],
-				SPR_MODE_BLACK);
+			i32 col_x = sx + name_width + pad + field_width * (j - 1);
+			txt_drw(col_x, sy + pad, report->headers[j], SPR_MODE_BLACK);
 		}
 	}
 	sy += line_spacing;
 #endif
 
 	// Draw bg
-	gfx_rec_fill(ctx, sx, sy, full_width, line_spacing * record_count, PRIM_MODE_BLACK);
+	gfx_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
 	for(ssize i = 0; i < record_count; ++i) {
-		u8 buf[256];
-		u8 *b                       = buf;
+		u8 buf[128];
+		str8 str;
 		struct prof_report_entry *r = &report->entries[i];
 		i32 x                       = sx;
 
@@ -340,7 +456,8 @@ prof_drw(
 		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
 			if(j == 2) {
 				// hit count stays integer
-				sys_sprintf((char *)buf, "%" PRIu32, r->values[j]);
+				str.size = sys_sprintf((char *)buf, "%" PRIu32, r->values[j]);
+				str.str  = buf;
 			} else {
 				i32 hit_count = r->hit_count;
 				f32 avg_ms    = 0.0f;
@@ -350,13 +467,13 @@ prof_drw(
 					avg_ms = (us / (f32)hit_count) / 1000.0f;
 				}
 
-				prof_f32_to_str8(buf, avg_ms, precision);
+				str = prof_f32_to_str8(buf, avg_ms, precision);
 			}
 
-			txt_drw(sx + name_width + field_width * j, sy, str8_cstr((char *)buf), SPR_MODE_WHITE);
+			txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
 		}
 
-		sy += line_spacing;
+		sy += line_spacing + pad;
 	}
 }
 
@@ -419,19 +536,20 @@ prof_str8(struct alloc alloc)
 }
 
 static inline void
-prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
+prof_f32_to_str(u8 *b, f32 value, i32 precision)
 {
-	i32 x, y;
+	int x, y;
+	char *buf               = (char *)b;
 	static char *formats[5] = {"%.0f", "%.1f", "%.2f", "%.3f", "%.4f"};
-	char *b                 = (char *)buf;
+
 	switch(precision) {
 	case 2:
 		if(value < 0 || value >= 100)
 			break;
 		x = value;
 		y = (value - x) * 100;
-		strcpy(b, INT_TO_STRING[x]);
-		strcat(b, INT_TO_STRING_DECIMAL[y]);
+		strcpy(buf, INT_TO_STRING[x]);
+		strcat(buf, INT_TO_STRING_DECIMAL[y]);
 		return;
 	case 3:
 		if(value < 0 || value >= 10)
@@ -439,19 +557,73 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 		value *= 10;
 		x = value;
 		y = (value - x) * 100;
-		strcpy(b, INT_TO_STRING_MID_DECIMAL[x]);
-		strcat(b, INT_TO_STRING_DECIMAL[y] + 1);
+		strcpy(buf, INT_TO_STRING_MID_DECIMAL[x]);
+		strcat(buf, INT_TO_STRING_DECIMAL[y] + 1);
 		return;
 	case 4:
 		if(value < 0 || value >= 1)
 			break;
 		value *= 100;
-		x    = value;
-		y    = (value - x) * 100;
-		b[0] = '0';
-		strcpy(b + 1, INT_TO_STRING_DECIMAL[x]);
-		strcat(b, INT_TO_STRING_DECIMAL[y] + 1);
+		x      = value;
+		y      = (value - x) * 100;
+		buf[0] = '0';
+		strcpy(buf + 1, INT_TO_STRING_DECIMAL[x]);
+		strcat(buf, INT_TO_STRING_DECIMAL[y] + 1);
 		return;
 	}
-	sys_sprintf(b, formats[precision], (double)value);
+	sprintf(buf, formats[precision], (double)value);
+}
+
+static inline str8
+prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
+{
+	i32 x, y;
+	str8 res                = {.str = buf, .size = 0};
+	static char *formats[5] = {"%.0f", "%.1f", "%.2f", "%.3f", "%.4f"};
+	switch(precision) {
+	case 2: {
+		if(value < 0 || value >= 100) break;
+
+		x = value;
+		y = (value - x) * 100;
+
+		str8_cpy(&INT_TO_STR8[x], &res);
+		str8_cat_in_place(&res, &INT_TO_STR8_DECIMAL[y]);
+		return res;
+	}
+	case 3: {
+		if(value < 0 || value >= 10) break;
+		value *= 10.0f;
+
+		x = value;
+		y = (value - x) * 100;
+
+		str8 b = INT_TO_STR8_DECIMAL[y];
+		b.str += 1;
+		b.size -= 1;
+		str8_cpy(&INT_TO_STR8[x], &res);
+		str8_cat_in_place(&res, &b);
+		return res;
+	}
+	case 4: {
+		if(value < 0 || value >= 1) break;
+
+		value *= 100;
+		x = value;
+		y = (value - x) * 100;
+
+		res.str[0] = '0';
+		res.size   = 1;
+		res.str[1] = 0;
+		str8_cat_in_place(&res, &INT_TO_STR8_DECIMAL[x]);
+		str8 b = INT_TO_STR8_DECIMAL[y];
+		b.str += 1;
+		b.size -= 1;
+		str8_cat_in_place(&res, &b);
+		return res;
+	}
+	}
+	sys_sprintf((char *)buf, formats[precision], (double)value);
+	res.size = cstr8_len(buf);
+	return res;
 }
