@@ -24,6 +24,14 @@ fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 	return x;
 }
 
+i32
+fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking)
+{
+	if(str.size == 0) return 0;
+
+	return str.size * fnt.cell_w + (str.size - 1) * tracking;
+}
+
 v2_i32
 fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 {
