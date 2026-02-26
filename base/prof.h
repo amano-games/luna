@@ -12,9 +12,9 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-#if !defined(PROF)
-#define PROF
-#endif
+// #if !defined(PROF)
+// #define PROF
+// #endif
 // #define PROF_UNIQUE_NAMES
 #if defined(PROF)
 
