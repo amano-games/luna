@@ -12,15 +12,16 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-// #if !defined(PROF)
-// #define PROF
-// #endif
+#if !defined(PROF)
+#define PROF
+#endif
 // #define PROF_UNIQUE_NAMES
 #if defined(PROF)
 
-#define PROF_HISTORY_SIZE 128 // number of frames of history to keep
-#define PROF_ANCHORS_SIZE 100 // number of unique zones allowed in the entire application
-#define PROF_FRAMES_SIZE  64  // Number of call depth allowed
+#define PROF_HISTORY_SIZE        1     // number of frames of history to keep
+#define PROF_ANCHORS_SIZE        96    // number of unique zones allowed in the entire application
+#define PROF_FRAMES_SIZE         64    // Number of call depth allowed
+#define PROF_INT_ZERO_THRESHHOLD 0.25f // threshhold for a moving average of an integer to be at zero
 
 #if defined(PROF_UNIQUE_NAMES)
 #define prof_stringize_2(x) #x
@@ -51,7 +52,7 @@
 #define PROF_TRACKER_HISTORTY_SLOTS  3
 #define PROF_THROWAWAY_UPDATES_COUNT 3
 
-struct prof_history_scalar {
+struct prof_hist_scalar {
 	f32 values[PROF_TRACKER_HISTORTY_SLOTS];
 	f32 variances[PROF_TRACKER_HISTORTY_SLOTS];
 };
@@ -62,11 +63,13 @@ struct prof_anchor {
 
 	u32 hit_count;
 
-	struct prof_history_scalar excl_hist;
-	struct prof_history_scalar incl_hist;
-	struct prof_history_scalar hit_hist;
-
 	const char *label;
+};
+
+struct prof_anchor_hist {
+	struct prof_hist_scalar us_exclusive;
+	struct prof_hist_scalar us_inclusive;
+	struct prof_hist_scalar hit_count;
 };
 
 struct prof_frame {
@@ -82,7 +85,7 @@ struct prof_frame {
 
 struct prof {
 	u16 parent_idx;
-	u8 smooth_slot;
+	u16 smooth_slot;
 
 	u32 update_idx; // 2^31 at 100fps = 280 days
 	u32 last_upd_us;
@@ -90,15 +93,38 @@ struct prof {
 	u32 frame_sum_us;
 
 	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
+	struct prof_anchor_hist anchors_hist[PROF_ANCHORS_SIZE];
 	struct prof_frame frames[PROF_FRAMES_SIZE];
 
-	u32 history_idx;
-	// u32 history[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE]; // 256K
+	struct prof_hist_scalar frame_time;
 
-	struct prof_history_scalar frame_time;
+	u16 anchor_count;
+	u16 frame_count;
+};
 
-	ssize anchor_count;
-	ssize frame_count;
+#define PROF_REPORT_NUM_VALUES 3
+#define PROF_REPORT_NUM_TITLES 3
+#define PROF_REPORT_NUM_HEADER (PROF_REPORT_NUM_VALUES + 1)
+
+struct prof_report_entry {
+	str8 label;
+	union {
+		struct {
+			f32 ms_exclusive;
+			f32 ms_inclusive;
+			f32 hit_count;
+		};
+		f32 values[PROF_REPORT_NUM_VALUES];
+	};
+};
+
+// Title is: 32.180 ms/frame (fps: 31.14) sort self - current time
+// Header is zone self hier count
+struct prof_report {
+	str8 titles[PROF_REPORT_NUM_TITLES];
+	str8 headers[PROF_REPORT_NUM_HEADER];
+	u32 entry_count;
+	struct prof_report_entry entries[PROF_ANCHORS_SIZE];
 };
 
 static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORTY_SLOTS];
@@ -137,8 +163,9 @@ int_to_string_ini(void)
 
 static inline str8 prof_f32_to_str8(u8 *buf, f32 value, i32 precision);
 
-static inline void prof_history_scalar_upd(struct prof_history_scalar *h, f32 sample, f32 *factors);
-static inline void prof_history_scalar_eternity(struct prof_history_scalar *h, f32 new_value);
+static inline void prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sample, f32 *factors);
+static inline void prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value);
+static inline void prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
 
 static void
 prof_ini(void)
@@ -193,6 +220,7 @@ prof_block_end_internal(void)
 	struct prof_anchor *parent = prof->anchors + frame->parent_idx;
 	struct prof_anchor *anchor = prof->anchors + frame->anchor_idx;
 
+	// dbg_assert(elapsed < 100000l);
 	parent->us_exclusive -= elapsed;
 	anchor->us_exclusive += elapsed;
 	anchor->us_inclusive = frame->prev_us_inclusive + elapsed;
@@ -200,43 +228,13 @@ prof_block_end_internal(void)
 	anchor->label = frame->label;
 }
 
-#define PROF_REPORT_NUM_VALUES 3
-#define PROF_REPORT_NUM_TITLES 3
-#define PROF_REPORT_NUM_HEADER (PROF_REPORT_NUM_VALUES + 1)
-
-struct prof_report_entry {
-	str8 label;
-	union {
-		struct {
-			u32 us_exclusive;
-			u32 us_inclusive;
-			u32 hit_count;
-		};
-		u32 values[PROF_REPORT_NUM_VALUES];
-	};
-};
-
-// Title is: 32.180 ms/frame (fps: 31.14) sort self - current time
-// Header is zone self hier count
-struct prof_report {
-	u32 total_time;
-	str8 titles[PROF_REPORT_NUM_TITLES];
-	str8 headers[PROF_REPORT_NUM_HEADER];
-	i32 hilight;
-
-	ssize entry_count;
-	struct prof_report_entry entries[PROF_ANCHORS_SIZE];
-};
-
 static int
 prof_report_sort_inclusive_desc(const void *a, const void *b)
 {
 	const struct prof_report_entry *aa = a;
 	const struct prof_report_entry *bb = b;
-	dbg_assert(aa->hit_count > 0);
-	dbg_assert(bb->hit_count > 0);
-	f32 a_value = (f32)aa->us_exclusive / (f32)(aa->hit_count > 0 ? aa->hit_count : 1);
-	f32 b_value = (f32)bb->us_exclusive / (f32)(aa->hit_count > 0 ? bb->hit_count : 1);
+	f32 a_value                        = aa->ms_exclusive;
+	f32 b_value                        = bb->ms_exclusive;
 
 	if(b_value > a_value) return 1;
 	if(b_value < a_value) return -1;
@@ -246,27 +244,38 @@ prof_report_sort_inclusive_desc(const void *a, const void *b)
 struct prof_report *
 prof_report_create(struct alloc alloc)
 {
-	struct prof *prof       = &PROFILER;
 	struct prof_report *res = alloc_struct_clr(alloc, res);
+	struct prof *prof       = &PROFILER;
+	prof->smooth_slot       = 2; // TODO: convert to enum
 
 	if(!INT_TO_STRING[0][0])
 		int_to_string_ini();
 
 	u32 now = sys_time_us();
+	f32 fps = 0;
+	f32 ms  = 0;
+
+	{
+		f32 avg_frame_time_us = prof->frame_time.values[prof->smooth_slot];
+
+		if(avg_frame_time_us == 0) {
+			avg_frame_time_us = SYS_UPS_DT_US;
+		}
+		fps = 1000000.0f / avg_frame_time_us;
+		ms  = avg_frame_time_us * 1e-3f;
+	}
 
 	for(ssize i = 0; i < prof->anchor_count; ++i) {
-		struct prof_anchor *a = prof->anchors + i;
+		struct prof_anchor *a      = prof->anchors + i;
+		struct prof_anchor_hist *h = prof->anchors_hist + i;
 
 		if(!a->label) continue;
-		if(a->hit_count == 0 && a->us_inclusive == 0) continue;
 
-		struct prof_report_entry *e =
-			&res->entries[res->entry_count++];
-
-		e->label        = str8_cstr((char *)a->label);
-		e->hit_count    = a->hit_count;
-		e->us_inclusive = a->us_inclusive;
-		e->us_exclusive = a->us_exclusive;
+		struct prof_report_entry *e = &res->entries[res->entry_count++];
+		e->label                    = str8_cstr((char *)a->label);
+		e->hit_count                = h->hit_count.values[prof->smooth_slot];
+		e->ms_inclusive             = h->us_inclusive.values[prof->smooth_slot] * 1e-3f;
+		e->ms_exclusive             = h->us_exclusive.values[prof->smooth_slot] * 1e-3f;
 	}
 
 	/* ------------------------------------------------------------
@@ -277,29 +286,21 @@ prof_report_create(struct alloc alloc)
 		sizeof(struct prof_report_entry),
 		prof_report_sort_inclusive_desc);
 
-	// TODO: convert to enum
-	prof->smooth_slot     = 2;
-	f32 avg_frame_time_us = prof->frame_time.values[prof->smooth_slot];
+	{
+		u8 fps_buf[32];
+		u8 ms_buf[32];
+		str8 fps_str   = prof_f32_to_str8(fps_buf, fps, 3);
+		str8 ms_str    = prof_f32_to_str8(ms_buf, ms, 2);
+		res->titles[0] = str8_fmt_push(alloc, "%s ms/frame fps: %s", ms_str.str, fps_str.str);
+		// TODO: Split ms/frame, fps?
+		// TODO: Sort should be configurable
+		// res->titles[1] = str8_lit("sort exclusive - current frame");
 
-	if(avg_frame_time_us == 0) {
-		avg_frame_time_us = SYS_UPS_DT_US;
+		res->headers[0] = str8_lit("zone");
+		res->headers[1] = str8_lit("excl");
+		res->headers[2] = str8_lit("incl");
+		res->headers[3] = str8_lit("count");
 	}
-	f32 fps = 1000000.0f / avg_frame_time_us;
-	f32 ms  = avg_frame_time_us * 1e-3f;
-	u8 fps_buf[32];
-	u8 ms_buf[32];
-	str8 fps_str = prof_f32_to_str8(fps_buf, fps, 3);
-	str8 ms_str  = prof_f32_to_str8(ms_buf, ms, 2);
-
-	res->titles[0] = str8_fmt_push(alloc, "%s ms/frame (fps: %s)", ms_str.str, fps_str.str);
-	// TODO: Split ms/frame, fps?
-	// TODO: Sort should be configurable
-	// res->titles[1] = str8_lit("sort exclusive - current frame");
-
-	res->headers[0] = str8_lit("zone");
-	res->headers[1] = str8_lit("excl");
-	res->headers[2] = str8_lit("incl");
-	res->headers[3] = str8_lit("count");
 
 	return res;
 }
@@ -350,49 +351,46 @@ prof_upd(b32 record_data)
 	}
 #endif
 
-	if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
-		// Avoid smoothing when the profiler is starting up
-		prof_history_scalar_eternity(&prof->frame_time, dt_us);
-	} else {
-		prof_history_scalar_upd(
-			&prof->frame_time,
-			dt_us,
-			PROF_PRECOMPUTED_FACTORS);
+	if(record_data) {
+		{
+			// Prof_traverse(update_history);
+			for(ssize i = 0; i < prof->anchor_count; ++i) {
+				struct prof_anchor *a      = &prof->anchors[i];
+				struct prof_anchor_hist *h = &prof->anchors_hist[i];
+
+				if(!a->label) continue;
+
+				if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
+					prof_history_scalar_eternity(&h->us_exclusive, (f32)a->us_exclusive);
+					prof_history_scalar_eternity(&h->us_inclusive, (f32)a->us_inclusive);
+					prof_history_scalar_eternity(&h->hit_count, (f32)a->hit_count);
+				} else {
+					prof_history_scalar_upd(&h->us_exclusive, (f32)a->us_exclusive, PROF_PRECOMPUTED_FACTORS);
+					prof_history_scalar_upd(&h->us_inclusive, (f32)a->us_inclusive, PROF_PRECOMPUTED_FACTORS);
+					prof_history_scalar_upd(&h->hit_count, (f32)a->hit_count, PROF_PRECOMPUTED_FACTORS);
+				}
+			}
+		}
+
+		{
+			// Update frame time
+			if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
+				// Avoid smoothing when the profiler is starting up
+				prof_history_scalar_eternity(&prof->frame_time, dt_us);
+			} else {
+				prof_history_scalar_upd(&prof->frame_time, dt_us, PROF_PRECOMPUTED_FACTORS);
+			}
+		}
+
+		++prof->update_idx;
+		// history_index = (history_index + 1) % NUM_FRAME_SLOTS;
 	}
 
 	for(ssize i = 0; i < prof->anchor_count; ++i) {
-		struct prof_anchor *a = &prof->anchors[i];
-
-		if(!a->label) continue;
-
-		if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
-			prof_history_scalar_eternity(&a->excl_hist, (f32)a->us_exclusive);
-			prof_history_scalar_eternity(&a->incl_hist, (f32)a->us_inclusive);
-			prof_history_scalar_eternity(&a->hit_hist, (f32)a->hit_count);
-		} else {
-			prof_history_scalar_upd(&a->excl_hist, (f32)a->us_exclusive, PROF_PRECOMPUTED_FACTORS);
-			prof_history_scalar_upd(&a->incl_hist, (f32)a->us_inclusive, PROF_PRECOMPUTED_FACTORS);
-			prof_history_scalar_upd(&a->hit_hist, (f32)a->hit_count, PROF_PRECOMPUTED_FACTORS);
-		}
-	}
-
-	if(!record_data) {
-		for(ssize i = 0; i < prof->anchor_count; ++i) {
-			prof->anchors[i].us_exclusive = 0;
-			prof->anchors[i].us_inclusive = 0;
-			prof->anchors[i].hit_count    = 0;
-		}
-		return;
-	}
-
-	for(ssize i = 0; i < prof->anchor_count; ++i) {
+		prof->anchors[i].hit_count    = 0;
 		prof->anchors[i].us_exclusive = 0;
 		prof->anchors[i].us_inclusive = 0;
-		prof->anchors[i].hit_count    = 0;
 	}
-
-	++prof->update_idx;
-	// prof->history_idx = (prof->history_idx + 1) % ARRLEN(prof->history);
 }
 
 void
@@ -408,6 +406,7 @@ prof_drw(
 	void (*txt_drw)(i32 x, i32 y, str8 txt, i32 spr_mode),
 	i32 (*txt_width)(str8 str))
 {
+	prof_block("prof_drw");
 	i32 pad                    = 1;
 	struct prof_report *report = prof_report_create(alloc);
 	i32 field_width            = txt_width(str8_lit("5555.55"));
@@ -419,7 +418,7 @@ prof_drw(
 		if(report->titles[i].size > 0) {
 			i32 title_x0 = sx;
 			i32 title_x1 = title_x0 + full_width;
-			gfx_rec_fill(ctx, title_x0, sy, full_width, line_spacing + pad, PRIM_MODE_BLACK);
+			prof_rec_fill(ctx, title_x0, sy, full_width, line_spacing + pad, PRIM_MODE_BLACK);
 
 			txt_drw(sx + pad, sy + pad, report->titles[i], SPR_MODE_WHITE);
 
@@ -433,7 +432,7 @@ prof_drw(
 	i32 record_count = min_i32(report->entry_count, max_records);
 
 #if 1
-	gfx_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
+	prof_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
 	if(report->headers[0].size > 0) {
 		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_BLACK);
 	}
@@ -448,44 +447,36 @@ prof_drw(
 #endif
 
 	// Draw bg
-	gfx_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
+	prof_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
 	for(ssize i = 0; i < record_count; ++i) {
-		u8 buf[128];
+		u8 buf[64];
 		str8 str;
 		struct prof_report_entry *r = &report->entries[i];
 		i32 x                       = sx;
 
 		txt_drw(x + 1, sy, r->label, SPR_MODE_WHITE);
 		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
-			if(j == 2) {
-				// hit count stays integer
-				str.size = sys_sprintf((char *)buf, "%" PRIu32, r->values[j]);
-				str.str  = buf;
-			} else {
-				str = prof_f32_to_str8(buf, r->values[j], precision);
-			}
-
+			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
 			txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
 		}
 
 		sy += line_spacing + pad;
 	}
+	prof_block_end();
 }
 
 static inline void
-prof_history_scalar_eternity(struct prof_history_scalar *h, f32 new_value)
+prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value)
 {
 	f32 new_variance = new_value * new_value;
-	for(ssize i = 1; i < (ssize)ARRLEN(h->variances); ++i) {
+	for(ssize i = 0; i < (ssize)ARRLEN(h->variances); ++i) {
 		h->values[i]    = new_value;
 		h->variances[i] = new_variance;
 	}
-
-	// TODO: history
 }
 
 static inline void
-prof_history_scalar_upd(struct prof_history_scalar *h, f32 sample, f32 *factors)
+prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sample, f32 *factors)
 {
 	h->values[0]    = sample;
 	h->variances[0] = 0.0f;
@@ -554,4 +545,84 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 	sys_sprintf((char *)buf, formats[precision], (double)value);
 	res.size = cstr8_len(buf);
 	return res;
+}
+
+struct prof_span_blit {
+	u32 *dp;  //pixel
+	u16 dmax; // count of dst words -1
+	u16 dadd;
+	u32 ml;   // boundary mask left
+	u32 mr;   // boundary mask right
+	i16 mode; // drawing mode
+	i16 doff; // bitoffset of first dst bit
+	u16 dst_wword;
+	i16 y;
+};
+
+static inline void
+prof_apply_prim_mode_x(u32 *restrict dp, u32 sm, enum prim_mode mode)
+{
+	switch(mode) {
+	case PRIM_MODE_WHITE: *dp |= sm; break;
+	case PRIM_MODE_BLACK: *dp &= ~sm; break;
+	default: dbg_sentinel("prof");
+	}
+error:;
+}
+
+static inline void
+prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode)
+{
+	dbg_assert(w > 0 && h > 0);
+
+	i32 x1 = x;
+	i32 y1 = y;
+	i32 x2 = x + w - 1;
+	i32 y2 = y + h - 1;
+
+	dbg_assert(x1 >= ctx.clip_x1);
+	dbg_assert(y1 >= ctx.clip_y1);
+	dbg_assert(x2 <= ctx.clip_x2);
+	dbg_assert(y2 <= ctx.clip_y2);
+
+	struct tex dtex = ctx.dst;
+	dbg_assert(dtex.fmt == TEX_FMT_OPAQUE);
+
+	u32 *base  = dtex.px;
+	i32 stride = dtex.wword; // words per row
+
+	i32 start_w = x1 >> 5;
+	i32 end_w   = x2 >> 5;
+
+	i32 start_bit = x1 & 31;
+	i32 end_bit   = x2 & 31;
+
+	// left mask
+	u32 left_mask = 0xFFFFFFFFu >> start_bit;
+
+	// right mask
+	u32 right_mask = 0xFFFFFFFFu << (31 - end_bit);
+
+	for(i32 row = y1; row <= y2; row++) {
+		u32 *dp = base + row * stride + start_w;
+
+		if(start_w == end_w) {
+			// Rectangle fits inside one word
+			u32 mask = left_mask & right_mask;
+			prof_apply_prim_mode_x(dp, mask, mode);
+		} else {
+			// Left partial word
+			prof_apply_prim_mode_x(dp, left_mask, mode);
+			dp++;
+
+			// Middle full words
+			for(i32 widx = start_w + 1; widx < end_w; widx++) {
+				prof_apply_prim_mode_x(dp, 0xFFFFFFFFu, mode);
+				dp++;
+			}
+
+			// Right partial word
+			prof_apply_prim_mode_x(dp, right_mask, mode);
+		}
+	}
 }
