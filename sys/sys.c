@@ -76,6 +76,9 @@ sys_internal_init(void)
 	SYS.fps          = SYS_UPS;
 	SYS.last_time_us = sys_time_us();
 	SYS.frame_buffer = sys_1bit_buffer();
+#if defined(PROF)
+	prof_ini();
+#endif
 	app_init(SYS_MAX_MEM);
 }
 

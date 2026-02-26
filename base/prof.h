@@ -12,9 +12,9 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-// #if !defined(PROF)
-// #define PROF
-// #endif
+#if !defined(PROF)
+#define PROF
+#endif
 // #define PROF_UNIQUE_NAMES
 #if defined(PROF)
 
@@ -48,13 +48,23 @@
 #define prof_block_end(...)
 #endif
 
-#define PROF_TRACKER_HISTORTY_SLOTS 3
+#define PROF_TRACKER_HISTORTY_SLOTS  3
+#define PROF_THROWAWAY_UPDATES_COUNT 3
+
+struct prof_history_scalar {
+	f32 values[PROF_TRACKER_HISTORTY_SLOTS];
+	f32 variances[PROF_TRACKER_HISTORTY_SLOTS];
+};
 
 struct prof_anchor {
 	u32 us_exclusive; // Does not include children
 	u32 us_inclusive; // Does include children
 
 	u32 hit_count;
+
+	struct prof_history_scalar excl_hist;
+	struct prof_history_scalar incl_hist;
+	struct prof_history_scalar hit_hist;
 
 	const char *label;
 };
@@ -70,11 +80,6 @@ struct prof_frame {
 	const char *label;
 };
 
-struct prof_history_scalar {
-	f32 values[PROF_TRACKER_HISTORTY_SLOTS];
-	f32 variances[PROF_TRACKER_HISTORTY_SLOTS];
-};
-
 struct prof {
 	u16 parent_idx;
 	u8 smooth_slot;
@@ -82,9 +87,7 @@ struct prof {
 	u32 update_idx; // 2^31 at 100fps = 280 days
 	u32 last_upd_us;
 	u32 frame_dt_us;
-
-	u32 us_start;
-	u32 us_end;
+	u32 frame_sum_us;
 
 	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
 	struct prof_frame frames[PROF_FRAMES_SIZE];
@@ -92,7 +95,7 @@ struct prof {
 	u32 history_idx;
 	// u32 history[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE]; // 256K
 
-	struct prof_history_scalar frame_time_history;
+	struct prof_history_scalar frame_time;
 
 	ssize anchor_count;
 	ssize frame_count;
@@ -133,7 +136,9 @@ int_to_string_ini(void)
 }
 
 static inline str8 prof_f32_to_str8(u8 *buf, f32 value, i32 precision);
-static inline void prof_f32_to_str(u8 *buf, f32 value, i32 precision);
+
+static inline void prof_history_scalar_upd(struct prof_history_scalar *h, f32 sample, f32 *factors);
+static inline void prof_history_scalar_eternity(struct prof_history_scalar *h, f32 new_value);
 
 static void
 prof_ini(void)
@@ -142,20 +147,15 @@ prof_ini(void)
 	dbg_assert(ARRLEN(prof->anchors) < U16_MAX);
 	dbg_assert(ARRLEN(prof->frames) < U16_MAX);
 	mclr_struct(prof);
-	prof->us_start = sys_time_us();
 
 	{
 		PROF_TIMES_TO_REACH_90_PERCENT[0] = 0.1f;
 		PROF_TIMES_TO_REACH_90_PERCENT[1] = 0.8f;
 		PROF_TIMES_TO_REACH_90_PERCENT[2] = 2.5f;
 	}
-}
-
-void
-prof_close(void)
-{
-	struct prof *prof = &PROFILER;
-	prof->us_end      = sys_time_us();
+	for(ssize i = 0; i < (ssize)ARRLEN(prof->frame_time.values); ++i) {
+		prof->frame_time.values[i] = SYS_UPS_DT_US;
+	}
 }
 
 void
@@ -252,34 +252,10 @@ prof_report_create(struct alloc alloc)
 	if(!INT_TO_STRING[0][0])
 		int_to_string_ini();
 
-	u32 now         = prof->us_end ? prof->us_end : sys_time_us();
-	res->total_time = now - prof->us_start;
+	u32 now = sys_time_us();
 
-	/* ------------------------------------------------------------
-	   Copy anchors so we don't mutate profiler state
-	------------------------------------------------------------ */
-	struct prof_anchor temp[PROF_ANCHORS_SIZE];
-	mcpy(temp, prof->anchors, sizeof(temp));
-
-	/* ------------------------------------------------------------
-	   Account for currently open frames
-	------------------------------------------------------------ */
-	for(ssize i = 0; i < prof->frame_count; ++i) {
-		struct prof_frame *frame = &prof->frames[i];
-
-		u32 elapsed = now - frame->us_start;
-
-		struct prof_anchor *anchor = &temp[frame->anchor_idx];
-
-		anchor->us_inclusive = frame->prev_us_inclusive + elapsed;
-		anchor->us_exclusive += elapsed;
-	}
-
-	/* ------------------------------------------------------------
-	   Collect valid anchors
-	------------------------------------------------------------ */
 	for(ssize i = 0; i < prof->anchor_count; ++i) {
-		struct prof_anchor *a = &temp[i];
+		struct prof_anchor *a = prof->anchors + i;
 
 		if(!a->label) continue;
 		if(a->hit_count == 0 && a->us_inclusive == 0) continue;
@@ -303,7 +279,7 @@ prof_report_create(struct alloc alloc)
 
 	// TODO: convert to enum
 	prof->smooth_slot     = 2;
-	f32 avg_frame_time_us = prof->frame_time_history.values[prof->smooth_slot];
+	f32 avg_frame_time_us = prof->frame_time.values[prof->smooth_slot];
 
 	if(avg_frame_time_us == 0) {
 		avg_frame_time_us = SYS_UPS_DT_US;
@@ -316,10 +292,9 @@ prof_report_create(struct alloc alloc)
 	str8 ms_str  = prof_f32_to_str8(ms_buf, ms, 2);
 
 	res->titles[0] = str8_fmt_push(alloc, "%s ms/frame (fps: %s)", ms_str.str, fps_str.str);
+	// TODO: Split ms/frame, fps?
 	// TODO: Sort should be configurable
 	// res->titles[1] = str8_lit("sort exclusive - current frame");
-
-	// TODO: Show warning on wrong timer title[2]
 
 	res->headers[0] = str8_lit("zone");
 	res->headers[1] = str8_lit("excl");
@@ -330,7 +305,7 @@ prof_report_create(struct alloc alloc)
 }
 
 void
-prof_upd(b32 record)
+prof_upd(b32 record_data)
 {
 	struct prof *prof = &PROFILER;
 	u32 now_us        = sys_time_us();
@@ -349,43 +324,71 @@ prof_upd(b32 record)
 	prof->frame_dt_us = dt_us;
 	f32 dt_seconds    = (f32)dt_us * 1e-6f;
 
-	if(!record) {
+	{
+		// Update PROF_PRECOMPUTED_FACTORS using the current dt
+		for(ssize i = 1; i < (ssize)ARRLEN(PROF_TIMES_TO_REACH_90_PERCENT); ++i) {
+			dbg_assert(PROF_TIMES_TO_REACH_90_PERCENT[i] != 0);
+			PROF_PRECOMPUTED_FACTORS[i] = pow_f32(0.1f, dt_seconds / PROF_TIMES_TO_REACH_90_PERCENT[i]);
+		}
+		PROF_PRECOMPUTED_FACTORS[0] = 0.0f; // instantaneous
+	}
+
+#if 0
+	// calculate the total time between frames to use for normalization and percentage calculations later on
+	{
+		if(prof->update_idx == 0) {
+			prof->frame_sum_us = 0;
+			for(ssize i = 0; i < prof->anchor_count; ++i) {
+				prof->frame_sum_us += prof->anchors[i].us_exclusive;
+			}
+		} else {
+			prof->frame_sum_us = dt_us;
+		}
+		if(prof->frame_sum_us == 0) {
+			prof->frame_sum_us = 1;
+		}
+	}
+#endif
+
+	if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
+		// Avoid smoothing when the profiler is starting up
+		prof_history_scalar_eternity(&prof->frame_time, dt_us);
+	} else {
+		prof_history_scalar_upd(
+			&prof->frame_time,
+			dt_us,
+			PROF_PRECOMPUTED_FACTORS);
+	}
+
+	for(ssize i = 0; i < prof->anchor_count; ++i) {
+		struct prof_anchor *a = &prof->anchors[i];
+
+		if(!a->label) continue;
+
+		if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
+			prof_history_scalar_eternity(&a->excl_hist, (f32)a->us_exclusive);
+			prof_history_scalar_eternity(&a->incl_hist, (f32)a->us_inclusive);
+			prof_history_scalar_eternity(&a->hit_hist, (f32)a->hit_count);
+		} else {
+			prof_history_scalar_upd(&a->excl_hist, (f32)a->us_exclusive, PROF_PRECOMPUTED_FACTORS);
+			prof_history_scalar_upd(&a->incl_hist, (f32)a->us_inclusive, PROF_PRECOMPUTED_FACTORS);
+			prof_history_scalar_upd(&a->hit_hist, (f32)a->hit_count, PROF_PRECOMPUTED_FACTORS);
+		}
+	}
+
+	if(!record_data) {
+		for(ssize i = 0; i < prof->anchor_count; ++i) {
+			prof->anchors[i].us_exclusive = 0;
+			prof->anchors[i].us_inclusive = 0;
+			prof->anchors[i].hit_count    = 0;
+		}
 		return;
 	}
 
-	{
-		PROF_PRECOMPUTED_FACTORS[0] = 0.0f; // instantaneous
-		for(ssize i = 1; i < (ssize)ARRLEN(PROF_TIMES_TO_REACH_90_PERCENT); ++i) {
-			f32 t90 = PROF_TIMES_TO_REACH_90_PERCENT[i];
-			if(t90 > 0.0f) {
-				PROF_PRECOMPUTED_FACTORS[i] =
-					pow_f32(0.1f, dt_seconds / t90);
-			} else {
-				PROF_PRECOMPUTED_FACTORS[i] = 0.0f;
-			}
-		}
-	}
-
-	{
-		// history update us
-
-		f32 sample                    = (f32)dt_us;
-		f32 *factors                  = PROF_PRECOMPUTED_FACTORS;
-		struct prof_history_scalar *h = &prof->frame_time_history;
-
-		h->values[0]    = sample;
-		h->variances[0] = 0.0f;
-
-		for(ssize i = 1; i < (ssize)ARRLEN(h->variances); ++i) {
-			f32 f        = factors[i];
-			f32 old      = h->values[i];
-			f32 new_val  = old * f + sample * (1.0f - f);
-			h->values[i] = new_val;
-
-			f32 old_var     = h->variances[i];
-			f32 new_var     = old_var * f + (sample * sample) * (1.0f - f);
-			h->variances[i] = new_var;
-		}
+	for(ssize i = 0; i < prof->anchor_count; ++i) {
+		prof->anchors[i].us_exclusive = 0;
+		prof->anchors[i].us_inclusive = 0;
+		prof->anchors[i].hit_count    = 0;
 	}
 
 	++prof->update_idx;
@@ -459,15 +462,7 @@ prof_drw(
 				str.size = sys_sprintf((char *)buf, "%" PRIu32, r->values[j]);
 				str.str  = buf;
 			} else {
-				i32 hit_count = r->hit_count;
-				f32 avg_ms    = 0.0f;
-
-				if(hit_count > 0) {
-					f32 us = (f32)r->values[j];
-					avg_ms = (us / (f32)hit_count) / 1000.0f;
-				}
-
-				str = prof_f32_to_str8(buf, avg_ms, precision);
+				str = prof_f32_to_str8(buf, r->values[j], precision);
 			}
 
 			txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
@@ -477,101 +472,34 @@ prof_drw(
 	}
 }
 
-str8
-prof_str8(struct alloc alloc)
+static inline void
+prof_history_scalar_eternity(struct prof_history_scalar *h, f32 new_value)
 {
-	struct prof *prof     = &PROFILER;
-	struct str8_list list = {0};
-	u32 us_end            = prof->us_end;
-	if(!us_end) {
-		us_end = sys_time_us();
+	f32 new_variance = new_value * new_value;
+	for(ssize i = 1; i < (ssize)ARRLEN(h->variances); ++i) {
+		h->values[i]    = new_value;
+		h->variances[i] = new_variance;
 	}
 
-	u32 total_time = us_end - prof->us_start;
-
-	// Header: 60 columns exactly
-	// Name(14) Hits(7) Tot(9) Exc(9) Avg(9) %(6)
-	str8_list_pushf(alloc, &list, "%-12s %7s %9s %9s %9s %6s", "Block", "Hits", "Tot(us)", "Exc(us)", "Avg(us)", "Pct");
-	str8_list_pushf(alloc, &list, "%.*s", 60, "------------------------------------------------------------");
-
-	f32 acc_perc = 0.0f;
-	dbg_assert(prof->frame_count == 0);
-
-	for(size_t i = 0; i < ARRLEN(prof->anchors); i++) {
-		struct prof_anchor *item = prof->anchors + i;
-
-		if(item->label == NULL || item->hit_count == 0) { continue; }
-		// dbg_assert(item->frame_count == 0);
-
-		f32 percent  = total_time ? (100.0f * (f32)item->us_exclusive / (f32)total_time) : 0.0f;
-		f32 avg_excl = (f32)item->us_exclusive / (f32)item->hit_count;
-		acc_perc += percent;
-
-		str8_list_pushf(
-			alloc,
-			&list,
-			"%-12.12s %7" PRIu32 " %9" PRIu32 " %9" PRIu32 " %9.2f %5.1f%%",
-			item->label,
-			item->hit_count,
-			item->us_inclusive,
-			item->us_exclusive,
-			(double)avg_excl,
-			(double)percent);
-	}
-
-	str8_list_pushf(alloc, &list, "%.*s", 60, "------------------------------------------------------------");
-	str8_list_pushf(
-		alloc,
-		&list,
-		"%-12s %7s %9" PRIu32 " %9s %9s %5.1f%%",
-		"TOTAL TIME",
-		"",
-		total_time,
-		"",
-		"",
-		(double)acc_perc);
-
-	struct str_join params = {.sep = str8_lit("\n")};
-	return str8_list_join(alloc, &list, &params);
+	// TODO: history
 }
 
 static inline void
-prof_f32_to_str(u8 *b, f32 value, i32 precision)
+prof_history_scalar_upd(struct prof_history_scalar *h, f32 sample, f32 *factors)
 {
-	int x, y;
-	char *buf               = (char *)b;
-	static char *formats[5] = {"%.0f", "%.1f", "%.2f", "%.3f", "%.4f"};
+	h->values[0]    = sample;
+	h->variances[0] = 0.0f;
 
-	switch(precision) {
-	case 2:
-		if(value < 0 || value >= 100)
-			break;
-		x = value;
-		y = (value - x) * 100;
-		strcpy(buf, INT_TO_STRING[x]);
-		strcat(buf, INT_TO_STRING_DECIMAL[y]);
-		return;
-	case 3:
-		if(value < 0 || value >= 10)
-			break;
-		value *= 10;
-		x = value;
-		y = (value - x) * 100;
-		strcpy(buf, INT_TO_STRING_MID_DECIMAL[x]);
-		strcat(buf, INT_TO_STRING_DECIMAL[y] + 1);
-		return;
-	case 4:
-		if(value < 0 || value >= 1)
-			break;
-		value *= 100;
-		x      = value;
-		y      = (value - x) * 100;
-		buf[0] = '0';
-		strcpy(buf + 1, INT_TO_STRING_DECIMAL[x]);
-		strcat(buf, INT_TO_STRING_DECIMAL[y] + 1);
-		return;
+	for(ssize i = 1; i < (ssize)ARRLEN(h->variances); ++i) {
+		f32 f        = factors[i];
+		f32 old      = h->values[i];
+		f32 new_val  = old * f + sample * (1.0f - f);
+		h->values[i] = new_val;
+
+		f32 old_var     = h->variances[i];
+		f32 new_var     = old_var * f + (sample * sample) * (1.0f - f);
+		h->variances[i] = new_var;
 	}
-	sprintf(buf, formats[precision], (double)value);
 }
 
 static inline str8
