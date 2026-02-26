@@ -126,9 +126,11 @@ sys_internal_update(void)
 	if(updated) {
 #if SYS_SHOW_FPS
 		u32 tf1 = sys_time_us();
+
 		prof_block("drw");
 		app_draw();
 		prof_block_end();
+
 		u32 tf2 = sys_time_us();
 		SYS.fps_ft_acc_us += tf2 - tf1;
 		SYS.fps_counter++;
@@ -188,9 +190,7 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 #if SYS_SHOW_FPS
 	u32 tu1 = sys_time_us();
 #endif
-	prof_block("aud");
 	app_audio(lbuf, rbuf, len);
-	prof_block_end();
 #if SYS_SHOW_FPS
 	u32 tu2 = sys_time_us();
 	SYS.ups_ft_acc_us += tu2 - tu1;
