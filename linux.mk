@@ -33,6 +33,7 @@ RELEASE_CFLAGS += $(WARN_FLAGS)
 RELEASE_CFLAGS += -fno-omit-frame-pointer
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0 -finstrument-functions 
+DEBUG_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
