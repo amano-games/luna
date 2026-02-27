@@ -61,6 +61,7 @@ struct sys_data {
 	u16 ups; // updates per second
 	u16 ups_ft;
 	u16 fps_ft;
+	b32 prof_record_data;
 	struct sys_mem mem;
 };
 
