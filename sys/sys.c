@@ -95,7 +95,7 @@ sys_internal_update(void)
 	SYS.ups_time_acc_us += time_delta;
 
 #if defined(PROF)
-	prof_upd(true);
+	prof_upd(SYS.prof_record_data);
 #endif
 
 	if(SYS_UPS_DT_CAP_US < SYS.ups_time_acc_us) {
@@ -230,4 +230,16 @@ sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 		}
 		x++;
 	}
+}
+
+void
+sys_prof_pause(void)
+{
+	SYS.prof_record_data = false;
+}
+
+void
+sys_prof_resume(void)
+{
+	SYS.prof_record_data = true;
 }

@@ -62,11 +62,12 @@ struct prof_anchor {
 	u32 us_inclusive; // Does include children
 
 	u32 hit_count;
-
-	const char *label;
 };
 
 struct prof_anchor_hist {
+	u32 us_inclusive_min;
+	u32 us_inclusive_max;
+
 	struct prof_hist_scalar us_exclusive;
 	struct prof_hist_scalar us_inclusive;
 	struct prof_hist_scalar hit_count;
@@ -92,6 +93,7 @@ struct prof {
 	u32 frame_dt_us;
 	u32 frame_sum_us;
 
+	const char *anchor_labels[PROF_ANCHORS_SIZE];
 	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
 	struct prof_anchor_hist anchors_hist[PROF_ANCHORS_SIZE];
 	struct prof_frame frames[PROF_FRAMES_SIZE];
@@ -102,17 +104,19 @@ struct prof {
 	u16 frame_count;
 };
 
-#define PROF_REPORT_NUM_VALUES 3
+#define PROF_REPORT_NUM_VALUES 5
 #define PROF_REPORT_NUM_TITLES 3
 #define PROF_REPORT_NUM_HEADER (PROF_REPORT_NUM_VALUES + 1)
 
 struct prof_report_entry {
-	str8 label;
+	const char *label;
 	union {
 		struct {
 			f32 ms_exclusive;
 			f32 ms_inclusive;
 			f32 hit_count;
+			f32 ms_inclusive_min;
+			f32 ms_inclusive_max;
 		};
 		f32 values[PROF_REPORT_NUM_VALUES];
 	};
@@ -173,7 +177,6 @@ prof_ini(void)
 	struct prof *prof = &PROFILER;
 	dbg_assert(ARRLEN(prof->anchors) < U16_MAX);
 	dbg_assert(ARRLEN(prof->frames) < U16_MAX);
-	mclr_struct(prof);
 
 	{
 		PROF_TIMES_TO_REACH_90_PERCENT[0] = 0.1f;
@@ -225,7 +228,7 @@ prof_block_end_internal(void)
 	anchor->us_exclusive += elapsed;
 	anchor->us_inclusive = frame->prev_us_inclusive + elapsed;
 	++anchor->hit_count;
-	anchor->label = frame->label;
+	prof->anchor_labels[frame->anchor_idx] = frame->label;
 }
 
 static int
@@ -244,7 +247,7 @@ prof_report_sort_inclusive_desc(const void *a, const void *b)
 struct prof_report *
 prof_report_create(struct alloc alloc)
 {
-	struct prof_report *res = alloc_struct_clr(alloc, res);
+	struct prof_report *res = alloc_struct(alloc, res);
 	struct prof *prof       = &PROFILER;
 	prof->smooth_slot       = 2; // TODO: convert to enum
 
@@ -265,17 +268,18 @@ prof_report_create(struct alloc alloc)
 		ms  = avg_frame_time_us * 1e-3f;
 	}
 
-	for(ssize i = 0; i < prof->anchor_count; ++i) {
-		struct prof_anchor *a      = prof->anchors + i;
-		struct prof_anchor_hist *h = prof->anchors_hist + i;
-
-		if(!a->label) continue;
-
+	res->entry_count = 0;
+	for(ssize i = 1; i < prof->anchor_count; ++i) {
+		struct prof_anchor *a       = prof->anchors + i;
+		struct prof_anchor_hist *h  = prof->anchors_hist + i;
+		const char *label           = prof->anchor_labels[i];
 		struct prof_report_entry *e = &res->entries[res->entry_count++];
-		e->label                    = str8_cstr((char *)a->label);
+		e->label                    = label;
 		e->hit_count                = h->hit_count.values[prof->smooth_slot];
 		e->ms_inclusive             = h->us_inclusive.values[prof->smooth_slot] * 1e-3f;
 		e->ms_exclusive             = h->us_exclusive.values[prof->smooth_slot] * 1e-3f;
+		e->ms_inclusive_min         = h->us_inclusive_min * 1e-3f;
+		e->ms_inclusive_max         = h->us_inclusive_max * 1e-3f;
 	}
 
 	/* ------------------------------------------------------------
@@ -292,6 +296,8 @@ prof_report_create(struct alloc alloc)
 		str8 fps_str   = prof_f32_to_str8(fps_buf, fps, 3);
 		str8 ms_str    = prof_f32_to_str8(ms_buf, ms, 2);
 		res->titles[0] = str8_fmt_push(alloc, "%s ms/frame fps: %s", ms_str.str, fps_str.str);
+		res->titles[1] = str8_lit("");
+		res->titles[2] = str8_lit("");
 		// TODO: Split ms/frame, fps?
 		// TODO: Sort should be configurable
 		// res->titles[1] = str8_lit("sort exclusive - current frame");
@@ -339,7 +345,7 @@ prof_upd(b32 record_data)
 	{
 		if(prof->update_idx == 0) {
 			prof->frame_sum_us = 0;
-			for(ssize i = 0; i < prof->anchor_count; ++i) {
+			for(ssize i = 1; i < prof->anchor_count; ++i) {
 				prof->frame_sum_us += prof->anchors[i].us_exclusive;
 			}
 		} else {
@@ -354,20 +360,23 @@ prof_upd(b32 record_data)
 	if(record_data) {
 		{
 			// Prof_traverse(update_history);
-			for(ssize i = 0; i < prof->anchor_count; ++i) {
+			for(ssize i = 1; i < prof->anchor_count; ++i) {
 				struct prof_anchor *a      = &prof->anchors[i];
 				struct prof_anchor_hist *h = &prof->anchors_hist[i];
-
-				if(!a->label) continue;
+				const char *label          = prof->anchor_labels[i];
 
 				if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
 					prof_history_scalar_eternity(&h->us_exclusive, (f32)a->us_exclusive);
 					prof_history_scalar_eternity(&h->us_inclusive, (f32)a->us_inclusive);
 					prof_history_scalar_eternity(&h->hit_count, (f32)a->hit_count);
+					h->us_inclusive_min = UINT32_MAX;
+					h->us_inclusive_max = 0;
 				} else {
 					prof_history_scalar_upd(&h->us_exclusive, (f32)a->us_exclusive, PROF_PRECOMPUTED_FACTORS);
 					prof_history_scalar_upd(&h->us_inclusive, (f32)a->us_inclusive, PROF_PRECOMPUTED_FACTORS);
 					prof_history_scalar_upd(&h->hit_count, (f32)a->hit_count, PROF_PRECOMPUTED_FACTORS);
+					h->us_inclusive_min = MIN(h->us_inclusive_min, a->us_inclusive);
+					h->us_inclusive_max = MAX(h->us_inclusive_max, a->us_inclusive);
 				}
 			}
 		}
@@ -386,10 +395,8 @@ prof_upd(b32 record_data)
 		// history_index = (history_index + 1) % NUM_FRAME_SLOTS;
 	}
 
-	for(ssize i = 0; i < prof->anchor_count; ++i) {
-		prof->anchors[i].hit_count    = 0;
-		prof->anchors[i].us_exclusive = 0;
-		prof->anchors[i].us_inclusive = 0;
+	if(prof->anchor_count > 0) {
+		mclr(prof->anchors + 1, (prof->anchor_count - 1) * sizeof(prof->anchors[0]));
 	}
 }
 
@@ -410,7 +417,8 @@ prof_drw(
 	i32 pad                    = 1;
 	struct prof_report *report = prof_report_create(alloc);
 	i32 field_width            = txt_width(str8_lit("5555.55"));
-	i32 name_width             = full_width - (field_width * (ARRLEN(report->headers) - 1));
+	i32 max_columns            = 3;
+	i32 name_width             = full_width - (field_width * max_columns);
 	precision                  = clamp_i32(precision, 1, 4);
 
 #if 1
@@ -437,7 +445,7 @@ prof_drw(
 		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_BLACK);
 	}
 
-	for(ssize j = 1; j < (ssize)ARRLEN(report->headers); ++j) {
+	for(ssize j = 1; j < max_columns + 1; ++j) {
 		if(report->headers[j].size > 0) {
 			i32 col_x = sx + name_width + pad + field_width * (j - 1);
 			txt_drw(col_x, sy + pad, report->headers[j], SPR_MODE_BLACK);
@@ -453,9 +461,10 @@ prof_drw(
 		str8 str;
 		struct prof_report_entry *r = &report->entries[i];
 		i32 x                       = sx;
+		if(!r->label) { continue; }
 
-		txt_drw(x + 1, sy, r->label, SPR_MODE_WHITE);
-		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
+		txt_drw(x + 1, sy, str8_cstr((char *)r->label), SPR_MODE_WHITE);
+		for(ssize j = 0; j < max_columns; ++j) {
 			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
 			txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
 		}
@@ -625,4 +634,57 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 			prof_apply_prim_mode_x(dp, right_mask, mode);
 		}
 	}
+}
+
+str8
+prof_csv(struct alloc alloc, u32 max_records)
+{
+	str8 res                   = {0};
+	str8 delimiter             = str8_lit(",");
+	struct prof_report *report = prof_report_create(alloc);
+	u32 record_count           = min_i32(max_records, report->entry_count);
+	struct str8_list list      = {0};
+	str8 headers[]             = {
+        str8_lit("zone"),
+        str8_lit("exlusive"),
+        str8_lit("inclusive"),
+        str8_lit("count"),
+        str8_lit("inclusive_min"),
+        str8_lit("inclusive_max"),
+    };
+
+	for(ssize i = 0; i < (ssize)ARRLEN(headers); ++i) {
+		if(i > 0) {
+			str8_list_push(alloc, &list, delimiter);
+		}
+		str8_list_push(alloc, &list, headers[i]);
+	}
+
+	str8_list_push(alloc, &list, str8_lit("\n"));
+
+	i32 precision = 4;
+	for(u32 i = 0; i < record_count; ++i) {
+		u8 buf[64];
+		str8 str;
+		struct prof_report_entry *r = &report->entries[i];
+		if(!r->label) { continue; }
+
+		if(i > 0) {
+			str8_list_push(alloc, &list, str8_lit("\n"));
+		}
+
+		str8_list_push(alloc, &list, str8_cstr((char *)r->label));
+		str8_list_push(alloc, &list, delimiter);
+
+		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
+			if(j > 0) {
+				str8_list_push(alloc, &list, delimiter);
+			}
+			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
+			str8_list_push(alloc, &list, str8_cpy_push(alloc, str));
+		}
+	}
+	res = str8_list_join(alloc, &list, NULL);
+
+	return res;
 }

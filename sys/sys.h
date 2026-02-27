@@ -72,3 +72,6 @@ str8 sys_get_current_path(struct alloc alloc);
 struct sys_process_info sys_process_info(void);
 
 void sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y);
+
+void sys_prof_pause(void);
+void sys_prof_resume(void);
