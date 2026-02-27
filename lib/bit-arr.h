@@ -13,6 +13,7 @@ bit_arr_u32_new(usize count, struct alloc alloc)
 	return res;
 }
 
+// 7.7 Avoiding Retesting 341 Real time collision detection
 static b32
 bit_arr_u32_exists_and_set(u32 *arr, usize count, usize index)
 {
