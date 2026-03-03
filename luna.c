@@ -33,6 +33,7 @@
 #include "engine/dbg-drw/dbg-drw-cam.c"
 #include "engine/dbg-drw/dbg-drw.c"
 #include "engine/gfx/gfx-spr.c"
+#include "engine/gfx/gfx-patch.c"
 #include "engine/gfx/gfx-txt.c"
 #include "engine/gfx/gfx.c"
 #include "engine/input.c"
