@@ -16,11 +16,8 @@ fnt_draw_str(
 {
 	dbg_assert(fnt.cell_h > 0);
 	dbg_assert(fnt.cell_w > 0);
-	v2_i32 p         = (v2_i32){x, y};
-	struct tex_rec t = {0};
-	t.t              = fnt.t;
-	t.r.w            = fnt.cell_w;
-	t.r.h            = fnt.cell_h;
+	v2_i32 p         = {x, y};
+	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
 	for(usize n = 0; n < str.size; n++) {
 		i32 ci         = str.str[n];
 		i32 cbi        = (n < str.size - 1) ? str.str[n + 1] : -1;
@@ -40,6 +37,38 @@ fnt_draw_str(
 }
 
 void
+fnt_mono_draw_str(
+	struct gfx_ctx ctx,
+	struct fnt fnt,
+	str8 str,
+	i32 x,
+	i32 y,
+	i32 tracking,
+	i32 leading,
+	i32 mode)
+{
+	dbg_assert(fnt.cell_h > 0);
+	dbg_assert(fnt.cell_w > 0);
+	i32 px           = x;
+	i32 py           = y;
+	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
+	for(usize n = 0; n < str.size; n++) {
+		i32 ci         = str.str[n];
+		i32 is_newline = (ci == '\n');
+		px             = is_newline ? x : px;
+		py             = py + (is_newline * (fnt.cell_h + leading));
+		if(!is_newline) {
+			dbg_assert(ci > 31);
+			i32 glyph = ci - 32;
+			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
+			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
+			gfx_spr(ctx, t, px, py, 0, mode);
+			px += fnt.cell_w + tracking;
+		}
+	}
+}
+
+void
 fnt_mono_draw_str_sl(
 	struct gfx_ctx ctx,
 	struct fnt fnt,
@@ -52,10 +81,7 @@ fnt_mono_draw_str_sl(
 	dbg_assert(fnt.cell_h > 0);
 	dbg_assert(fnt.cell_w > 0);
 	i32 px           = x;
-	struct tex_rec t = {0};
-	t.t              = fnt.t;
-	t.r.w            = fnt.cell_w;
-	t.r.h            = fnt.cell_h;
+	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
 	for(usize n = 0; n < str.size; n++) {
 		i32 ci = str.str[n];
 		dbg_assert(ci != '\n');
