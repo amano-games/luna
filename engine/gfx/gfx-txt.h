@@ -17,5 +17,6 @@ enum fnt_align {
 
 void fnt_draw_str(struct gfx_ctx ctx, struct fnt fnt, str8 str, i32 x, i32 y, i32 tracking, i32 leading, i32 mode);
 void fnt_mono_draw_str_sl(struct gfx_ctx ctx, struct fnt fnt, str8 str, i32 x, i32 y, i32 tracking, i32 mode);
+void fnt_mono_draw_str(struct gfx_ctx ctx, struct fnt fnt, str8 str, i32 x, i32 y, i32 tracking, i32 leading, i32 mode);
 rec_i32 fnt_draw_str_pivot(struct gfx_ctx ctx, struct fnt fnt, str8 str, i32 tracking, i32 leading, i32 x, i32 y, v2 pivot, enum spr_mode mode);
 rec_i32 fnt_draw_str_block(struct gfx_ctx ctx, struct fnt fnt, struct str8_list lines, rec_i32 layout, i32 tracking, i32 leading, enum spr_mode mode, u32 align_flags);
