@@ -19,6 +19,7 @@ struct pixel_u8 {
 };
 
 struct tex_header {
+	u32 fmt;
 	u32 w;
 	u32 h;
 };

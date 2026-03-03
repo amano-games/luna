@@ -5,37 +5,32 @@
 #include "sys/sys-intrin.h"
 #include "sys/sys-io.h"
 
-// mask is almost always = 1
 struct tex
 tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
 {
-	struct tex t = {0};
-
-	// NOTICE: Seems that the tex should be padded on creation
+	struct tex res = {0};
+	b32 m          = mask != 0;
+	// NOTE: Seems that the tex should be padded on creation
 	// If not the correct size won't be calculated
 	// Align the next multiple of 32 greater than or equal to the
-	i32 width_alinged = (w + 31) & ~31;
-
+	u32 waligned = (w + 31) & ~31;
 	// Calculates the number of words needed for the width of the texture
 	// It multiplies by 2 if it uses a mask (transparency)
 	// by shifting it by 1 << (0 < mask)
-	i32 width_word = (width_alinged / 32) << (0 < mask);
-
+	u32 wword = (waligned >> 5) << (i32)m;
 	// So each `word` is a row of pixels aligned
 	// To get the size we multiply by the height
 	// getting the full size of the image aligned.
-	usize size = sizeof(u32) * width_word * h * 2;
-
-	void *mem = alloc.allocf(alloc.ctx, size, 4 << (0 < mask));
-
-	if(!mem) return t;
-
-	t.px    = (u32 *)mem;
-	t.fmt   = (0 < mask);
-	t.w     = w;
-	t.h     = h;
-	t.wword = width_word;
-	return t;
+	u32 size  = sizeof(u32) * wword * h;
+	void *mem = alloc_size(alloc, size, 32, false);
+	if(mem) {
+		res.px    = (u32 *)mem;
+		res.fmt   = m;
+		res.w     = w;
+		res.h     = h;
+		res.wword = wword;
+	}
+	return res;
 }
 
 struct tex
@@ -60,9 +55,8 @@ tex_load(str8 path, struct alloc alloc)
 	struct tex_header header = {0};
 	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)), "tex", "failed to read tex header %s", path.str);
 
-	i32 width_alinged = (header.w + 31) & ~31;
-	usize tex_size    = ((width_alinged * header.h) * 2) / 8;
-	struct tex t      = tex_create(header.w, header.h, alloc);
+	struct tex t   = tex_create_internal(header.w, header.h, header.fmt, alloc);
+	ssize tex_size = sizeof(u32) * t.wword * t.h;
 	sys_file_r(f, t.px, tex_size);
 
 error:;
@@ -289,9 +283,11 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 		return -1;
 	}
 
+	// TODO: Support tex fmt opaque
 	struct tex_header header = {
-		.w = w,
-		.h = h,
+		.w   = w,
+		.h   = h,
+		.fmt = TEX_FMT_MASK,
 	};
 
 	mcpy(dst, &header, sizeof(header));
