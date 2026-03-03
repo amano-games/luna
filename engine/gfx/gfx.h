@@ -31,6 +31,7 @@ enum spr_flip {
 };
 
 struct tex_rec {
+	// alignas(32) // 32 bytes on PD cacheline
 	struct tex t;
 	rec_i32 r;
 };
@@ -50,16 +51,21 @@ struct tex_patch {
 };
 
 struct gfx_pattern {
+	// alignas(32) // 32 bytes cacheline
 	u32 p[8];
 };
 
 struct gfx_ctx {
+	// alignas(32) // 64 bytes on PD cacheline
 	struct tex dst;
-	struct gfx_pattern pat;
+
 	i32 clip_x1;
 	i32 clip_x2;
 	i32 clip_y1;
 	i32 clip_y2;
+
+	// alignas(32) // cacheline
+	struct gfx_pattern pat;
 };
 
 #define gfx_pattern_100()   gfx_pattern_bayer_4x4(16)
