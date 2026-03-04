@@ -336,8 +336,9 @@ main(i32 argc, char *argv[])
 		return res;
 	}
 
+	// TODO: fix memory leak on recursive path gen
 	str8 in_path        = str8_cstr(argv[1]);
-	usize mem_size      = MMEGABYTE(1);
+	usize mem_size      = MMEGABYTE(2);
 	u8 *mem             = sys_alloc(NULL, mem_size, 1);
 	struct marena arena = {0};
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
