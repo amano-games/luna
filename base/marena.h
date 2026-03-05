@@ -16,6 +16,11 @@ struct marena_tmp {
 	void *p;
 };
 
+#define marena_stack(name, size) \
+	u8 name##_mem[(size)] = {0}; \
+	struct marena name    = {0}; \
+	marena_init(&name, name##_mem, (size))
+
 void marena_init(struct marena *m, void *buf, ssize bufsize);
 void *marena_alloc(struct marena *m, ssize size, ssize align);
 void *marena_state(struct marena *m);
