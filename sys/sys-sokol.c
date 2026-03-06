@@ -1193,7 +1193,7 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 	i32 idx = rndm_range_i32(NULL, 0, (i32)(sizeof(names) / sizeof(names[0])) - 1);
 	if(callback) {
 		res                             = 0;
-		i32 scores_count                = rndm_range_i32(NULL, 10, 10);
+		i32 scores_count                = rndm_range_i32(NULL, 10, 11);
 		u32 last_updated                = sys_epoch_2000(NULL);
 		struct sys_scores_res score_res = {
 			.type = SYS_SCORE_RES_SCORES_GET,
@@ -1227,7 +1227,7 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 
 				entries->items[i] = (struct sys_score){
 					.value  = score,
-					.rank   = i,
+					.rank   = i > 9 ? rndm_range_i32(NULL, 11, 17000) : i,
 					.player = player,
 				};
 			}
