@@ -1150,7 +1150,13 @@ error:
 }
 
 int
-sys_scores_clear_queue(void)
+sys_scores_queries_clear_queue(void)
+{
+	return 0;
+}
+
+int
+sys_scores_mutations_clear_queue(void)
 {
 	return 0;
 }

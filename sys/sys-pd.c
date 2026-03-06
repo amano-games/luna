@@ -58,7 +58,7 @@ struct pd_scores_state {
 	b32 busy;
 	u8 start;
 	u8 end;
-	struct pd_scores_req reqs[10];
+	struct pd_scores_req reqs[20];
 };
 
 struct pd_state {
@@ -69,7 +69,8 @@ struct pd_state {
 	u8 keyboard_keys[SYS_KEYS_LEN];
 	LCDBitmap *menu_bitmap;
 	PDMenuItem *menu_items[5];
-	struct pd_scores_state scores_state;
+	struct pd_scores_state scores_queries_state;
+	struct pd_scores_state scores_mutations_state;
 	struct sys_process_info process_info;
 };
 
@@ -661,9 +662,8 @@ sys_set_menu_image(struct tex tex, i32 x_offset)
 }
 
 void
-pd_scores_start_next(void)
+pd_scores_start_next(struct pd_scores_state *state)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 
@@ -695,11 +695,26 @@ error:
 }
 
 int
-sys_scores_clear_queue(void)
+sys_scores_queries_clear_queue(void)
 {
 	int res                       = 0;
-	struct pd_scores_state *state = &PD_STATE.scores_state;
-	log_info("sys-scores", "Clear scores queue, start: %d, end: %d", (int)state->start, (int)state->end);
+	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
+	log_info("sys-scores", "Clear scores queries queue, start: %d, end: %d", (int)state->start, (int)state->end);
+	if(!state->busy) {
+		state->start = 0;
+		state->end   = 0;
+	} else {
+		state->end = (state->start + 1) % ARRLEN(state->reqs);
+	}
+	return res;
+}
+
+int
+sys_scores_mutations_clear_queue(void)
+{
+	int res                       = 0;
+	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
+	log_info("sys-scores", "Clear scores mutations queue, start: %d, end: %d", (int)state->start, (int)state->end);
 	if(!state->busy) {
 		state->start = 0;
 		state->end   = 0;
@@ -717,7 +732,7 @@ sys_score_add(
 	void *userdata)
 {
 	dbg_check(value != 0, "sys-scores", "Submited value of 0");
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
 	dbg_check(next != state->start, "sys-scores", "Score add queue Full");
@@ -734,7 +749,7 @@ sys_score_add(
 	log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 	state->end = next;
 
-	if(!state->busy) { pd_scores_start_next(); }
+	if(!state->busy) { pd_scores_start_next(state); }
 
 	return 0;
 
@@ -745,7 +760,7 @@ error:
 void
 pd_add_score_callback(PDScore *score, const char *error_message)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
 	if(state->start == state->end) return; // nothing in queue
@@ -759,7 +774,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 		log_error("sys-scores", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
-			pd_scores_start_next();
+			pd_scores_start_next(state);
 			log_info("sys-scores", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
 			return;
 		}
@@ -782,7 +797,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	state->start = (state->start + 1) % ARRLEN(state->reqs);
 	state->busy  = false;
 
-	pd_scores_start_next();
+	pd_scores_start_next(state);
 	PD_FREE_SCORE(score);
 }
 
@@ -793,7 +808,7 @@ sys_scores_get(
 	void *userdata,
 	struct alloc alloc)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
 	dbg_check(next != state->start, "sys-scores", "Scores get queue Full");
@@ -809,7 +824,7 @@ sys_scores_get(
 	req->get.board_id         = board_id;
 	state->end                = next;
 
-	if(!state->busy) { pd_scores_start_next(); }
+	if(!state->busy) { pd_scores_start_next(state); }
 
 	return 0;
 
@@ -820,7 +835,7 @@ error:
 void
 pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
 	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
@@ -875,7 +890,7 @@ error:
 	state->start = (state->start + 1) % ARRLEN(state->reqs);
 	state->busy  = false;
 	PD_FREE_SCORES_LIST(scores);
-	pd_scores_start_next();
+	pd_scores_start_next(state);
 	return;
 }
 
@@ -885,7 +900,7 @@ sys_scores_personal_best_get(
 	sys_scores_req_callback callback,
 	void *userdata)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
 	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
 
 	dbg_check(next != state->start, "sys-scores", "Personal best queue Full");
@@ -900,7 +915,7 @@ sys_scores_personal_best_get(
 	req->personal_best.board_id = board_id;
 	state->end                  = next;
 
-	if(!state->busy) { pd_scores_start_next(); }
+	if(!state->busy) { pd_scores_start_next(state); }
 
 	return 0;
 
@@ -911,7 +926,7 @@ error:
 void
 pd_personal_best_get_callback(PDScore *score, const char *error_message)
 {
-	struct pd_scores_state *state = &PD_STATE.scores_state;
+	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
 	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
@@ -946,7 +961,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	state->start = (state->start + 1) % ARRLEN(state->reqs);
 	state->busy  = false;
 
-	pd_scores_start_next();
+	pd_scores_start_next(state);
 	PD_FREE_SCORE(score);
 }
 
