@@ -19,6 +19,7 @@ void rndm_seed(struct rndm *rndm, u32 seed);
 i32 rndm_next_i32(struct rndm *rndm);
 f32 rndm_next_f32(struct rndm *rndm);
 i32 rndm_range_i32(struct rndm *rndm, i32 min, i32 max);
+i32 rndm_range_u32(struct rndm *rndm, u32 min, u32 max);
 f32 rndm_range_f32(struct rndm *rndm, f32 min, f32 max);
 v2 rndm_point_out_rec(struct rndm *rndm, i32 x, i32 y, i32 w, i32 h);
 v2 rndm_point_in_rec(struct rndm *rndm, i32 x, i32 y, i32 w, i32 h);

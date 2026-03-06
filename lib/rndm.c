@@ -32,6 +32,17 @@ rndm_range_i32(struct rndm *rndm, i32 min, i32 max)
 	return rnd_pcg_range(&rndm->pcg, min, max);
 }
 
+i32
+rndm_range_u32(struct rndm *rndm, u32 min, u32 max)
+{
+	if(rndm == NULL) { rndm = &RNDM; }
+	u32 range = max - min + 1;
+	if(range == 0) { // full u32 range
+		return rnd_pcg_next(&rndm->pcg);
+	}
+	return min + (rnd_pcg_next(&rndm->pcg) % range);
+}
+
 f32
 rndm_range_f32(struct rndm *rndm, f32 min, f32 max)
 {
