@@ -1232,7 +1232,7 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 				};
 			}
 		}
-		// callback(0, score_res, userdata);
+		callback(0, score_res, userdata);
 	}
 
 	return res;
