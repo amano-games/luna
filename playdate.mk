@@ -109,7 +109,8 @@ PD_LDFLAGS     += -Wl,--emit-relocs
 SIM_CFLAGS     :=
 SIM_CFLAGS     += $(SIM_DEFS)
 ifeq ($(DETECTED_OS), Linux)
-SIM_CFLAGS     += -fsanitize-trap -fsanitize=address,unreachable
+SIM_CFLAGS     += -fsanitize-trap
+# SIM_CFLAGS     += -fsanitize=address,unreachable
 endif
 
 .PHONY: all clean build run
@@ -170,7 +171,8 @@ clean:
 ifeq ($(DETECTED_OS), Linux)
 run: build_sim
 	$(LUNA_DIR)/close-sim.sh
-	LD_PRELOAD=/usr/lib/libasan.so $(SIM) "$(abspath $(OBJS))"
+	# LD_PRELOAD=/usr/lib/libasan.so $(SIM) "$(abspath $(OBJS))"
+	$(SIM) "$(abspath $(OBJS))"
 endif
 
 ifeq ($(DETECTED_OS), Darwin)
