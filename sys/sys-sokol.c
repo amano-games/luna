@@ -1158,10 +1158,11 @@ sys_scores_clear_queue(void)
 int
 sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
 {
-	dbg_not_implemeneted("sokol");
 
-error:
 	return 0;
+
+	// error:
+	// 	return -1;
 }
 
 int
