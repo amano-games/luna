@@ -13,6 +13,18 @@ sys_file_open(str8 path, i32 sys_file_mode)
 	return NULL;
 }
 
+b32
+sys_file_exists(str8 path, i32 sys_file_mode)
+{
+	b32 res = false;
+	void *f = sys_file_open(path, sys_file_mode);
+	if(f != NULL) {
+		res = true;
+		sys_file_close(f);
+	}
+	return res;
+}
+
 struct sys_full_file_res
 sys_load_full_file(str8 path, struct alloc alloc)
 {
