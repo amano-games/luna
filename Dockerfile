@@ -1,4 +1,5 @@
-FROM registry.gitlab.steamos.cloud/steamrt/scout/sdk:latest
+FROM registry.gitlab.steamos.cloud/steamrt/soldier/sdk:latest
+
 
 WORKDIR /app
 

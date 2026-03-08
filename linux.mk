@@ -37,7 +37,7 @@ DEBUG_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
-DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
+# DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -58,7 +58,7 @@ RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_6
 all: build run
 
 $(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-	make -f $(LUNA_DIR)/tools.mk tools-asset
+	make -f $(LUNA_DIR)/tools.mk tools-asset DEBUG=1
 
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p $(ASSETS_OUT)

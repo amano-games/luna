@@ -8,7 +8,7 @@
 #if __GNUC__
 #define dbg_assert(c) \
 	if(!(c)) __builtin_trap()
-#elif _MSC_VER
+#elif defined(_MSC_VER) && _MSC_VER
 #define dbg_assert(c) \
 	if(!(c)) __debugbreak()
 #else
