@@ -37,6 +37,8 @@ void *sys_file_open(str8 path, i32 sys_file_mode);
 void *sys_file_open_r(str8 path);
 void *sys_file_open_w(str8 path);
 void *sys_file_open_a(str8 path);
+
+b32 sys_file_exists(str8 path, i32 sys_file_mode);
 b32 sys_file_close(void *f);
 b32 sys_file_del(str8 path);
 b32 sys_file_rename(str8 from, str8 to);
