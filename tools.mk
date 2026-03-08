@@ -14,7 +14,7 @@ EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS       := $(SRC_DIR) $(LUNA_DIR)
 INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
-LDLIBS  := -lm
+LDLIBS  := -lm -lrt
 LDFLAGS :=
 
 override CDEFS := $(CDEFS) -DBACKEND_CLI
@@ -24,7 +24,7 @@ RELEASE_CFLAGS += -std=gnu11 -g3
 
 DEBUG_CFLAGS := -std=gnu11 -g3 -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
-DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
+# DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
