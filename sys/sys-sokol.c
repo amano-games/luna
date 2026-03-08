@@ -949,7 +949,7 @@ sys_file_seek_end(void *f, i32 pos)
 b32
 sys_file_del(str8 path)
 {
-	return 0;
+	return remove((char *)path.str) == 0;
 }
 
 b32
