@@ -14,7 +14,7 @@ EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS       := $(SRC_DIR) $(LUNA_DIR)
 INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
-LDLIBS  := -lm -lrt
+LDLIBS  := -lm
 LDFLAGS :=
 
 override CDEFS := $(CDEFS) -DBACKEND_CLI
