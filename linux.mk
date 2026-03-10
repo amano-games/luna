@@ -58,7 +58,7 @@ RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_6
 all: build run
 
 $(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-	make -f $(LUNA_DIR)/tools.mk tools-asset DEBUG=1
+	make -f $(LUNA_DIR)/tools.mk tools-asset
 
 $(ASSETS_OUT): $(ASSETS_BIN)
 	mkdir -p $(ASSETS_OUT)
