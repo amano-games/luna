@@ -100,6 +100,7 @@ struct sys_opts {
 };
 
 struct sokol_state {
+	b32 reload;
 	i32 state;
 
 	u64 tick_start;
@@ -175,6 +176,7 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	stm_setup();
+	SOKOL_STATE.reload       = false;
 	SOKOL_STATE.tick_start   = stm_now();
 	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
 	{
@@ -387,6 +389,7 @@ sokol_init(void)
 
 	sapp_show_mouse(true);
 	sokol_set_icon();
+
 	sys_internal_init();
 }
 
@@ -433,7 +436,7 @@ sokol_event(const sapp_event *ev)
 #else
 			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
 #endif
-				sys_internal_init();
+				SOKOL_STATE.reload = true;
 			}
 		} break;
 		case SAPP_KEYCODE_Q: {
@@ -610,6 +613,10 @@ sokol_frame(void)
 			rec->len = MIN(rec->len + 1, rec->cap);
 		}
 #endif
+	}
+	if(SOKOL_STATE.reload) {
+		sys_internal_init();
+		SOKOL_STATE.reload = false;
 	}
 }
 
