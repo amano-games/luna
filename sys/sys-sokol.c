@@ -2,6 +2,7 @@
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
+#include "engine/gfx/gfx-spr.h"
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
 #include "sys-debug-draw.h"
@@ -99,9 +100,26 @@ struct sys_opts {
 	struct sys_recording_opts recording;
 };
 
+enum sokol_status {
+	SOKOL_STATUS_NONE,
+
+	SOKOL_STATUS_INI,
+	SOKOL_STATUS_PAUSED,
+	SOKOL_STATUS_RELOAD,
+
+	SOKOL_STATUS_NUM_COUNT,
+};
+
+struct sokol_paused_state {
+	f32 timestamp;
+	i32 x_offset;
+	struct tex frame_tex;
+	struct tex menu_tex;
+	struct gfx_ctx ctx;
+};
+
 struct sokol_state {
-	b32 reload;
-	i32 state;
+	enum sokol_status status;
 
 	u64 tick_start;
 	u64 tick_elapsed;
@@ -117,6 +135,8 @@ struct sokol_state {
 	sg_pass_action pass_action;
 
 	f32 mouse_scroll_sensitivity;
+
+	struct sokol_paused_state paused_state;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx debug_ctx;
@@ -161,6 +181,8 @@ void sokol_frame(void);
 void sokol_event(const sapp_event *ev);
 void sokol_stream_cb(f32 *buffer, int num_frames, int num_channels);
 void sokol_cleanup(void);
+void sokol_pause(void);
+void sokol_resume(void);
 
 static void sokol_process_info_set(void);
 static void sokol_set_icon(void);
@@ -176,7 +198,6 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	stm_setup();
-	SOKOL_STATE.reload       = false;
 	SOKOL_STATE.tick_start   = stm_now();
 	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
 	{
@@ -233,6 +254,22 @@ sokol_main(i32 argc, char **argv)
 		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
 	}
 
+	{
+		struct tex tex               = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
+		SOKOL_STATE.paused_state.ctx = gfx_ctx_default(tex);
+		dbg_check(tex.px, "sokol", "Failed to create paused gfx ctx");
+	}
+	{
+		struct tex tex                     = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
+		SOKOL_STATE.paused_state.frame_tex = tex;
+		dbg_check(tex.px, "sokol", "Failed to create paused frame tex");
+	}
+	{
+		struct tex tex                    = tex_create(SYS_DISPLAY_W, SYS_DISPLAY_H, SOKOL_STATE.alloc);
+		SOKOL_STATE.paused_state.menu_tex = tex;
+		dbg_check(tex.px, "sokol", "Failed to create menu tex");
+	}
+
 #if defined(SOKOL_RECORDING_ENABLED)
 	{
 		struct recording_1b *rec = &SOKOL_STATE.recording;
@@ -283,7 +320,7 @@ sokol_main(i32 argc, char **argv)
 		sys_make_dir(dir_path);
 	}
 
-	SOKOL_STATE.state = 1;
+	SOKOL_STATE.status = SOKOL_STATUS_INI;
 
 error:;
 	sapp_desc res = {
@@ -401,6 +438,11 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.keys[ev->key_code] = 1;
 		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
+			if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+				sokol_pause();
+			} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+				sokol_resume();
+			}
 		} break;
 		case SAPP_KEYCODE_F6: {
 			sokol_screenshot_save(SOKOL_STATE.frame_ctx.dst);
@@ -436,7 +478,7 @@ sokol_event(const sapp_event *ev)
 #else
 			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
 #endif
-				SOKOL_STATE.reload = true;
+				SOKOL_STATE.status = SOKOL_STATUS_RELOAD;
 			}
 		} break;
 		case SAPP_KEYCODE_Q: {
@@ -506,7 +548,8 @@ void
 sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
 #if !defined(SOKOL_DISABLE_AUDIO)
-	if(SOKOL_STATE.state == 1) {
+
+	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		dbg_assert(num_channels == SOKOL_AUDIO_CHANNEL_COUNT);
 		// dbg_assert(num_frames == SOKOL_AUDIO_FRAMES);
 		dbg_assert(num_frames < SOKOL_AUDIO_BUFFER_CAP);
@@ -600,30 +643,58 @@ sokol_frame(void)
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
-	b32 updated = sys_internal_update();
-	if(updated) {
+
+	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+		b32 updated = sys_internal_update();
+		if(updated) {
 #if defined(SOKOL_RECORDING_ENABLED)
-		{
-			struct alloc scratch     = SOKOL_STATE.scratch;
-			struct recording_1b *rec = &SOKOL_STATE.recording;
-			struct tex *src          = &SOKOL_STATE.frame_ctx.dst;
-			struct tex *dst          = rec->frames + rec->idx;
-			tex_cpy(dst, src);
-			rec->idx = (rec->idx + 1) % rec->cap;
-			rec->len = MIN(rec->len + 1, rec->cap);
-		}
+			{
+				struct alloc scratch     = SOKOL_STATE.scratch;
+				struct recording_1b *rec = &SOKOL_STATE.recording;
+				struct tex *src          = &SOKOL_STATE.frame_ctx.dst;
+				struct tex *dst          = rec->frames + rec->idx;
+				tex_cpy(dst, src);
+				rec->idx = (rec->idx + 1) % rec->cap;
+				rec->len = MIN(rec->len + 1, rec->cap);
+			}
 #endif
+		}
+	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+		{
+			struct gfx_ctx ctx = SOKOL_STATE.paused_state.ctx;
+			tex_clr(ctx.dst, GFX_COL_BLACK);
+			{
+				struct tex tex     = SOKOL_STATE.paused_state.frame_tex;
+				struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+				gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+				ctx.pat = gfx_pattern_50();
+				gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
+				ctx.pat = gfx_pattern_100();
+			}
+			{
+				struct tex tex     = SOKOL_STATE.paused_state.menu_tex;
+				struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+				gfx_spr(ctx, src, -SOKOL_STATE.paused_state.x_offset, 0, 0, SPR_MODE_COPY);
+			}
+		}
+		{
+			struct gfx_ctx ctx = SOKOL_STATE.frame_ctx;
+			struct tex tex     = SOKOL_STATE.paused_state.ctx.dst;
+			struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+			gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+		}
 	}
-	if(SOKOL_STATE.reload) {
+
+	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
 		sys_internal_init();
-		SOKOL_STATE.reload = false;
+		SOKOL_STATE.status = SOKOL_STATUS_INI;
 	}
 }
 
 void
 sokol_cleanup(void)
 {
-	SOKOL_STATE.state = 0;
+	SOKOL_STATE.status = 0;
 	sys_internal_close();
 	sys_free(SOKOL_STATE.marena.buf);
 	sg_shutdown();
@@ -1148,12 +1219,33 @@ sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal)
 }
 
 void
+sokol_pause(void)
+{
+	SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
+	tex_cpy(&SOKOL_STATE.paused_state.frame_tex, &SOKOL_STATE.frame_ctx.dst);
+	sys_internal_pause();
+}
+
+void
+sokol_resume(void)
+{
+	SOKOL_STATE.status = SOKOL_STATUS_INI;
+	sys_internal_resume();
+}
+
+void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	dbg_not_implemeneted("sokol");
+	SOKOL_STATE.paused_state.x_offset = x_offset;
+	if(tex.px == NULL) {
+		tex_clr(SOKOL_STATE.paused_state.menu_tex, GFX_COL_CLEAR);
+		return;
+	}
 
-error:
-	return;
+	tex_clr(SOKOL_STATE.paused_state.menu_tex, GFX_COL_CLEAR);
+	struct gfx_ctx ctx = gfx_ctx_default(SOKOL_STATE.paused_state.menu_tex);
+	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 }
 
 int
