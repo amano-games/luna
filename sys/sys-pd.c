@@ -166,6 +166,10 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 	case kEventKeyReleased: {
 		PD_STATE.keyboard_keys[char_to_upper(arg)] = 0;
 	} break;
+	case kEventMirrorStarted: {
+	} break;
+	case kEventMirrorEnded: {
+	} break;
 
 	default: break;
 	}
