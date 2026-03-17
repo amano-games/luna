@@ -2,14 +2,13 @@
 
 #include "base/types.h"
 
-#define SYS_UPS            50
 #define SYS_DISPLAY_W      400
 #define SYS_DISPLAY_H      240
 #define SYS_DISPLAY_WBYTES 52
 #define SYS_DISPLAY_WWORDS 13
 
-#define SYS_UPS_DT_US     20000u // 20.0 ms (50 UPS) elapsed seconds per update step (1/UPS)
-#define SYS_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
+#define SYS_DEFAULT_UPS           50
+#define SYS_DEFAULT_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
 
 #if defined BACKEND_PD
 #define SYS_ACCELEROMETER_SUPPORT 1
@@ -42,25 +41,35 @@ struct sys_process_info {
 	str8 environment;
 };
 
+struct sys_timing {
+	u16 ups_target; // target update rate
+	u16 ups;        // updates updates/sec
+	u16 fps;        // mesured frames/sec
+
+	u32 dt_us;     // microseconds per update
+	u32 dt_cap_us; // max delta clamp
+
+	u32 acc_us;            // fixed timestep delta accumulator
+	u32 stats_time_acc_us; // Accumulates time to measure 1 second window
+
+	u32 cpu_time_acc_us; // acc us spent in upd + audio over the current stats window
+	u32 fps_dt_acc_us;   // acc us spent in rendering (draw calls)
+
+	u16 ups_counter; // update ticks executed in the current stats window(per second)
+	u16 fps_counter; // frames drawn in the current stats window (per second)
+
+	u32 ups_avg_cpu_us; // avg us per update tick (includes update + audio)
+	u32 fps_avg_cpu_us; // avg us per frame (render/draw)
+};
+
 struct sys_data {
 	void *frame_buffer;
 
 	u32 tick;
 	u32 last_time_us;
 
-	u32 ups_time_acc_us; // fixed timestep delta accumulator
-	u32 fps_time_acc_us;
+	struct sys_timing timing;
 
-	u32 ups_ft_acc_us;
-	u32 fps_ft_acc_us;
-
-	u16 fps_counter;
-	u16 ups_counter;
-
-	u16 fps; // rendered frames per second
-	u16 ups; // updates per second
-	u16 ups_ft;
-	u16 fps_ft;
 	b32 prof_record_data;
 	struct sys_mem mem;
 };

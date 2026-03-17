@@ -184,7 +184,7 @@ prof_ini(void)
 		PROF_TIMES_TO_REACH_90_PERCENT[2] = 2.5f;
 	}
 	for(ssize i = 0; i < (ssize)ARRLEN(prof->frame_time.values); ++i) {
-		prof->frame_time.values[i] = SYS_UPS_DT_US;
+		prof->frame_time.values[i] = sys_dt_us_target_get();
 	}
 }
 
@@ -262,7 +262,7 @@ prof_report_create(struct alloc alloc)
 		f32 avg_frame_time_us = prof->frame_time.values[prof->smooth_slot];
 
 		if(avg_frame_time_us == 0) {
-			avg_frame_time_us = SYS_UPS_DT_US;
+			avg_frame_time_us = sys_dt_us_target_get();
 		}
 		fps = 1000000.0f / avg_frame_time_us;
 		ms  = avg_frame_time_us * 1e-3f;
@@ -319,7 +319,7 @@ prof_upd(b32 record_data)
 	u32 dt_us         = 0;
 
 	if(prof->update_idx == 0) {
-		dt_us = SYS_UPS_DT_US;
+		dt_us = sys_dt_us_target_get();
 	} else {
 		dt_us = now_us - prof->last_upd_us;
 		if(dt_us == 0) {
