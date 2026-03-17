@@ -32,6 +32,8 @@ void app_audio(i16 *lbuf, i16 *rbuf, i32 len);
 void app_close(void);
 void app_pause(void);
 void app_resume(void);
+void app_stream_start(void);
+void app_stream_end(void);
 
 void *sys_alloc(void *ptr, ssize size, ssize align);
 struct alloc sys_allocator(void);
@@ -58,6 +60,8 @@ void sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len);
 void sys_internal_close(void);
 void sys_internal_pause(void);
 void sys_internal_resume(void);
+void sys_internal_stream_start(void);
+void sys_internal_stream_end(void);
 
 // TODO: Should we do this only on playdate?
 void sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg);

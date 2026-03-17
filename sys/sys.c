@@ -217,6 +217,18 @@ sys_internal_resume(void)
 }
 
 void
+sys_internal_stream_start(void)
+{
+	app_stream_start();
+}
+
+void
+sys_internal_stream_end(void)
+{
+	app_stream_end();
+}
+
+void
 sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 {
 	u8 *fb = (u8 *)sys->frame_buffer;
