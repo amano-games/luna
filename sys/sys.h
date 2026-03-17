@@ -54,6 +54,14 @@ void sys_accelerometer_set(b32 enabled);
 void sys_accelerometer(f32 *x, f32 *y, f32 *z);
 struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, b32 clear);
 
+void sys_ups_target_set(u32 value);
+u32 sys_ups_target_get(void);
+
+u32 sys_dt_us_target_get(void);
+
+void sys_dt_cap_us_set(u32 value);
+u32 sys_dt_cap_us_get(void);
+
 void sys_internal_init(void);
 i32 sys_internal_update(void);
 void sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len);
