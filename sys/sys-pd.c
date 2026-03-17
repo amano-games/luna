@@ -167,8 +167,10 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_STATE.keyboard_keys[char_to_upper(arg)] = 0;
 	} break;
 	case kEventMirrorStarted: {
+		sys_internal_stream_start();
 	} break;
 	case kEventMirrorEnded: {
+		sys_internal_stream_end();
 	} break;
 
 	default: break;
