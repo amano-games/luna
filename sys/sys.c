@@ -84,6 +84,20 @@ sys_ups_target_get(void)
 	return SYS.timing.ups_target;
 }
 
+void
+sys_fps_target_set(u32 value)
+{
+	dbg_assert(value > 0);
+	SYS.timing.fps_target   = value;
+	SYS.timing.render_dt_us = 1000000u / value;
+}
+
+u32
+sys_fps_target_get(void)
+{
+	return SYS.timing.fps_target;
+}
+
 u32
 sys_dt_us_target_get(void)
 {
@@ -128,6 +142,7 @@ sys_internal_update(void)
 	u32 time_delta       = now - sys->last_time_us;
 	sys->last_time_us    = now;
 	sys->timing.acc_us += time_delta;
+	sys->timing.render_acc_us += time_delta;
 
 #if defined(PROF)
 	prof_upd(sys->prof_record_data);
@@ -141,16 +156,19 @@ sys_internal_update(void)
 	u32 tu1 = sys_time_us();
 #endif
 
-	b32 updated = 0;
-
 	while(sys->timing.acc_us >= sys->timing.dt_us) {
 		sys->timing.acc_us -= sys->timing.dt_us;
 		sys->tick++;
 		sys->timing.ups_counter++;
-		updated = 1;
 		prof_block("upd");
 		app_tick((f32)sys->timing.dt_us * 1e-6f);
 		prof_block_end();
+	}
+
+	b32 should_render = false;
+	if(sys->timing.render_acc_us >= sys->timing.render_dt_us) {
+		sys->timing.render_acc_us -= sys->timing.render_dt_us;
+		should_render = true;
 	}
 
 #if SYS_SHOW_FPS
@@ -158,7 +176,7 @@ sys_internal_update(void)
 	sys->timing.cpu_time_acc_us += tu2 - tu1;
 #endif
 
-	if(updated) {
+	if(should_render) {
 #if SYS_SHOW_FPS
 		u32 tf1 = sys_time_us();
 
@@ -216,7 +234,7 @@ sys_internal_update(void)
 		sys->timing.cpu_time_acc_us = 0;
 	}
 #endif
-	return updated;
+	return should_render;
 }
 
 void

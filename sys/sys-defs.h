@@ -44,12 +44,16 @@ struct sys_process_info {
 struct sys_timing {
 	u16 ups_target; // target update rate
 	u16 ups;        // updates updates/sec
+
+	u16 fps_target; // target frames/sec
 	u16 fps;        // mesured frames/sec
+	u32 render_dt_us;
 
 	u32 dt_us;     // microseconds per update
 	u32 dt_cap_us; // max delta clamp
 
-	u32 acc_us;            // fixed timestep delta accumulator
+	u32 acc_us; // fixed timestep delta accumulator
+	u32 render_acc_us;
 	u32 stats_time_acc_us; // Accumulates time to measure 1 second window
 
 	u32 cpu_time_acc_us; // acc us spent in upd + audio over the current stats window

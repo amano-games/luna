@@ -57,6 +57,9 @@ struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, b32 c
 void sys_ups_target_set(u32 value);
 u32 sys_ups_target_get(void);
 
+void sys_fps_target_set(u32 value);
+u32 sys_fps_target_get(void);
+
 u32 sys_dt_us_target_get(void);
 
 void sys_dt_cap_us_set(u32 value);
