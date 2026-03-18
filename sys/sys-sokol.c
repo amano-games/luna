@@ -271,10 +271,12 @@ sokol_main(i32 argc, char **argv)
 	}
 
 #if defined(SOKOL_RECORDING_ENABLED)
+	// TODO: use sys_ups_target_get and when fps is changed change recording
+	u32 ups = SYS_DEFAULT_UPS;
 	{
 		struct recording_1b *rec = &SOKOL_STATE.recording;
 		struct alloc alloc       = SOKOL_STATE.alloc;
-		rec->cap                 = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
+		rec->cap                 = ups * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                 = 0;
 		rec->idx                 = 0;
 		rec->frames              = alloc_arr(alloc, rec->frames, rec->cap);
@@ -286,7 +288,7 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct recording_aud *rec = &SOKOL_STATE.recording_aud;
 		struct alloc alloc        = SOKOL_STATE.alloc;
-		rec->cap                  = SYS_UPS * SOKOL_STATE.opts.recording.seconds_count;
+		rec->cap                  = ups * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                  = 0;
 		rec->idx                  = 0;
 		rec->frames               = alloc_arr(alloc, rec->frames, rec->cap);
@@ -1765,7 +1767,7 @@ sokol_recording_write(struct recording_1b *recording)
 		str8_lit(SOKOL_NAME));
 
 	// Construct ffmpeg command
-	i32 fps                   = SYS_UPS;
+	i32 fps                   = sys_ups_target_get();
 	i32 scale                 = SOKOL_STATE.opts.recording.scale;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
