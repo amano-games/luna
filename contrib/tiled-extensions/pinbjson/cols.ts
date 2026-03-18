@@ -46,6 +46,8 @@ export function getColType(a: MapObjectShape, b?: MapObjectShape) {
 
     case 5:
       return COL_TYPE_POINT;
+    case 6:
+      return COL_TYPE_POINT;
     default:
       tiled.log(`Shape type unknown ${aType}`);
   }
