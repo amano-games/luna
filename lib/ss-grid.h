@@ -9,12 +9,10 @@ struct ss_cell {
 	i16 y;
 	u16 index;
 	u16 count;
-	u16 tick;
 };
 
 // TODO: To avoid having to perform a hash table lookup to find out that a cell is in fact empty and is not in the table, a dense bit array with 1 bit per cell in the grid can be used s a quick pretest indicator of whether a cell is empty or not p. 288
 struct ss_grid {
-	u32 tick;
 	i32 cell_size;
 	f32 cell_size_inv;
 	u32 columns;
