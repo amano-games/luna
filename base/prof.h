@@ -12,9 +12,9 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-#if !defined(PROF)
-#define PROF
-#endif
+// #if !defined(PROF)
+// #define PROF
+// #endif
 // #define PROF_UNIQUE_NAMES
 #if defined(PROF)
 
@@ -41,9 +41,9 @@
 
 #else
 
-#define PROF_ANCHORS_SIZE 1
-#define PROF_HISTORY_SIZE 1
-#define PROF_FRAMES_SIZE  1
+#define PROF_ANCHORS_SIZE 2
+#define PROF_HISTORY_SIZE 2
+#define PROF_FRAMES_SIZE  2
 #define prof_block(...)
 #define prof_block_func(...)
 #define prof_block_end(...)
