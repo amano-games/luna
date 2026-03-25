@@ -142,9 +142,11 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 
 	u8 res                        = 0;
 	usize track_index             = track_type - 1;
-	struct animation_track *track = &ani->clip.tracks[track_index];
+	struct animation_clip *clip   = &ani->clip;
+	struct animation_track *track = &clip->tracks[track_index];
+	struct frames *frames         = &track->frames;
 
-	if(track->frames.len == 0) {
+	if(frames->len == 0) {
 		res = 0;
 		goto cleanup;
 	}
@@ -159,12 +161,12 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 	b32 loop    = ani->clip.count <= 0;
 
 	if(!loop) {
-		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
+		delta = min_f32(delta, clip->clip_duration * clip->count);
 	}
 
-	i32 frame_index = delta * ani->clip.frame_duration_inv;
-	frame_index     = mod_euc_i32(frame_index, track->frames.len);
-	res             = track->frames.items[(usize)frame_index];
+	i32 frame_index = (i32)(delta * clip->frame_duration_inv);
+	frame_index     = mod_euc_i32(frame_index, frames->len);
+	res             = frames->items[(usize)frame_index];
 
 cleanup:
 	return res;
