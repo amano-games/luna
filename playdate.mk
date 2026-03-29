@@ -79,8 +79,6 @@ ELF_OUT        := $(BUILD_DIR)/tmp/pdex.elf
 PD_CC          := arm-none-eabi-gcc
 
 PD_CFLAGS      :=
-PD_CFLAGS      += -mcpu=arm7tdmi
-PD_CFLAGS      += -mtune=arm7tdmi
 PD_CFLAGS      += -specs=nosys.specs
 PD_CFLAGS      += -mword-relocations
 PD_CFLAGS      += -fdata-sections
