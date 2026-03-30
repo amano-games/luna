@@ -4,12 +4,12 @@
 
 #include "lib/tex/tex.h"
 #include "sys/sys-debug-draw.h"
-#include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
 #include "base/types.h"
 #include "base/log.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
+#include "sys/sys-pd-scores.h"
 
 PlaydateAPI *PD;
 
@@ -21,34 +21,26 @@ struct pd_state {
 	u8 keyboard_keys[SYS_KEYS_LEN];
 	LCDBitmap *menu_bitmap;
 	PDMenuItem *menu_items[5];
-	struct pd_scores_state scores_queries_state;
-	struct pd_scores_state scores_mutations_state;
 	struct sys_process_info process_info;
 };
 
 static struct pd_state PD_STATE;
 
-void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *fmt, ...);
-int (*PD_SYSTEM_PARSE_STR)(const char *str, const char *format, ...);
-void *(*PD_SYSTEM_REALLOC)(void *ptr, usize size);
+void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
+int (*PD_SYS_PARSE_STR)(const char *str, const char *format, ...);
+void *(*PD_SYS_REALLOC)(void *ptr, usize size);
 
-static void (*PD_SYSTEM_GET_BUTTON_STATE)(PDButtons *a, PDButtons *b, PDButtons *c);
-static void (*PD_GRAPHICS_MARK_UPDATED_ROWS)(int a, int b);
-static float (*PD_SYSTEM_GET_CRANK_ANGLE)(void);
-static int (*PD_SYSTEM_IS_CRANK_DOCKED)(void);
-static float (*PD_SYSTEM_GET_ELAPSED_TIME)(void);
-static void (*PD_SYSTEM_RESET_ELAPSED_TIME)(void);
-static unsigned int (*PD_SYSTEM_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
+static void (*PD_SYS_GET_BUTTON_STATE)(PDButtons *a, PDButtons *b, PDButtons *c);
+static void (*PD_GFX_MARK_UPDATED_ROWS)(int a, int b);
+static float (*PD_SYS_GET_CRANK_ANGLE)(void);
+static int (*PD_SYS_IS_CRANK_DOCKED)(void);
+static float (*PD_SYS_GET_ELAPSED_TIME)(void);
+static void (*PD_SYS_RESET_ELAPSED_TIME)(void);
+static unsigned int (*PD_SYS_GET_SECONDS_SINCE_EPOCH)(unsigned int *milliseconds);
 int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
 
-int (*PD_ADD_SCORE)(const char *board_id, uint32_t value, AddScoreCallback callback);
-void (*PD_FREE_SCORE)(PDScore *score);
-int (*PD_GET_SCORES)(const char *board_id, ScoresCallback callback);
-void (*PD_FREE_SCORES_LIST)(PDScoresList *scores_list);
-void (*PD_FREE_SCORE)(PDScore *score);
-int (*PD_GET_PERSONAL_BEST)(const char *board_id, PersonalBestCallback callback);
-void (*PD_SET_AUTO_LOCK_DISABLED)(int disable);
+void (*PD_SYS_SET_AUTO_LOCK_DISABLED)(int disable);
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
@@ -60,25 +52,28 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 	case kEventInit:
 		PD = pd;
 
-		PD_SYSTEM_LOG_TO_CONSOLE          = PD->system->logToConsole;
-		PD_SYSTEM_PARSE_STR               = PD->system->parseString;
-		PD_SYSTEM_REALLOC                 = PD->system->realloc;
-		PD_GRAPHICS_MARK_UPDATED_ROWS     = PD->graphics->markUpdatedRows;
-		PD_SYSTEM_GET_ELAPSED_TIME        = PD->system->getElapsedTime;
-		PD_SYSTEM_RESET_ELAPSED_TIME      = PD->system->resetElapsedTime;
-		PD_SYSTEM_GET_SECONDS_SINCE_EPOCH = PD->system->getSecondsSinceEpoch;
-		PD_SYSTEM_GET_BUTTON_STATE        = PD->system->getButtonState;
-		PD_SYSTEM_GET_CRANK_ANGLE         = PD->system->getCrankAngle;
-		PD_SYSTEM_IS_CRANK_DOCKED         = PD->system->isCrankDocked;
-		PD_SET_AUTO_LOCK_DISABLED         = PD->system->setAutoLockDisabled;
-		PD_FILE_READ                      = PD->file->read;
-		PD_FILE_WRITE                     = PD->file->write;
-		PD_ADD_SCORE                      = PD->scoreboards->addScore;
-		PD_FREE_SCORE                     = PD->scoreboards->freeScore;
-		PD_GET_SCORES                     = PD->scoreboards->getScores;
-		PD_FREE_SCORES_LIST               = PD->scoreboards->freeScoresList;
-		PD_GET_PERSONAL_BEST              = PD->scoreboards->getPersonalBest;
-		PD_FREE_SCORE                     = PD->scoreboards->freeScore;
+		PD_SYS_LOG_TO_CONSOLE          = PD->system->logToConsole;
+		PD_SYS_PARSE_STR               = PD->system->parseString;
+		PD_SYS_REALLOC                 = PD->system->realloc;
+		PD_SYS_GET_ELAPSED_TIME        = PD->system->getElapsedTime;
+		PD_SYS_RESET_ELAPSED_TIME      = PD->system->resetElapsedTime;
+		PD_SYS_GET_SECONDS_SINCE_EPOCH = PD->system->getSecondsSinceEpoch;
+		PD_SYS_GET_BUTTON_STATE        = PD->system->getButtonState;
+		PD_SYS_GET_CRANK_ANGLE         = PD->system->getCrankAngle;
+		PD_SYS_IS_CRANK_DOCKED         = PD->system->isCrankDocked;
+		PD_SYS_SET_AUTO_LOCK_DISABLED  = PD->system->setAutoLockDisabled;
+
+		PD_GFX_MARK_UPDATED_ROWS = PD->graphics->markUpdatedRows;
+
+		PD_FILE_READ  = PD->file->read;
+		PD_FILE_WRITE = PD->file->write;
+
+		PD_SCORE_ADD         = PD->scoreboards->addScore;
+		PD_SCORE_FREE        = PD->scoreboards->freeScore;
+		PD_SCORES_GET        = PD->scoreboards->getScores;
+		PD_SCORES_LIST_FREE  = PD->scoreboards->freeScoresList;
+		PD_PERSONAL_BEST_GET = PD->scoreboards->getPersonalBest;
+		PD_SCORE_FREE        = PD->scoreboards->freeScore;
 
 		PD->system->setUpdateCallback(sys_pd_update, PD);
 		PD->sound->addSource(sys_pd_audio, NULL, 0);
@@ -141,19 +136,19 @@ sys_pd_reduce_flicker(void)
 void
 sys_pd_update_rows(i32 from_incl, i32 to_incl)
 {
-	PD_GRAPHICS_MARK_UPDATED_ROWS(from_incl, to_incl);
+	PD_GFX_MARK_UPDATED_ROWS(from_incl, to_incl);
 }
 
 int
 sys_pd_update(void *pd)
 {
-	f32 sec      = PD_SYSTEM_GET_ELAPSED_TIME();
+	f32 sec      = PD_SYS_GET_ELAPSED_TIME();
 	u32 delta_us = (u32)(sec * 1000000.0f + 0.5f);
 
 	PD_STATE.us_monotonic += delta_us;
 	PD_STATE.us_elapsed += delta_us;
 
-	PD_SYSTEM_RESET_ELAPSED_TIME();
+	PD_SYS_RESET_ELAPSED_TIME();
 
 	return sys_internal_update();
 }
@@ -169,7 +164,7 @@ int
 sys_inp(void)
 {
 	PDButtons b;
-	PD_SYSTEM_GET_BUTTON_STATE(&b, NULL, NULL);
+	PD_SYS_GET_BUTTON_STATE(&b, NULL, NULL);
 	return (int)b;
 }
 
@@ -188,13 +183,13 @@ sys_keys(u8 *dest, usize count)
 f32
 sys_crank(void)
 {
-	return (PD_SYSTEM_GET_CRANK_ANGLE() * DEG_TO_TURN);
+	return (PD_SYS_GET_CRANK_ANGLE() * DEG_TO_TURN);
 }
 
 int
 sys_crank_docked(void)
 {
-	return PD_SYSTEM_IS_CRANK_DOCKED();
+	return PD_SYS_IS_CRANK_DOCKED();
 }
 
 f32
@@ -212,7 +207,7 @@ sys_mouse_y(void)
 f32
 sys_time_elapsed(void)
 {
-	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
+	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
 	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
 	u32 total   = PD_STATE.us_elapsed + partial;
 	return (f32)total * 1e-6f;
@@ -238,7 +233,7 @@ sys_time_us(void)
 
 "microsecond accuracy" there is roughly speaking. Since it returns a floating point value the accuracy depends on how large that value gets, but there's nothing in the code limiting accuracy to 1 uS. Calling resetElapsedTime() before the code you're measuring then getElapsedTime() right after should give you a very accurate measure of execution time, and with some testing you can figure out how much of that is overhead of the reset/getElapsedTime() calls themselves and adjust for that.
 */
-	f32 sec     = PD_SYSTEM_GET_ELAPSED_TIME();
+	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
 	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
 	return PD_STATE.us_monotonic + partial;
 }
@@ -253,7 +248,7 @@ sys_time_ms(void)
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
-	return PD_SYSTEM_GET_SECONDS_SINCE_EPOCH((unsigned int *)milliseconds);
+	return PD_SYS_GET_SECONDS_SINCE_EPOCH((unsigned int *)milliseconds);
 }
 
 void
@@ -281,7 +276,7 @@ sys_allocator(void)
 void *
 sys_alloc(void *ptr, ssize size, ssize align)
 {
-	void *res = PD_SYSTEM_REALLOC(ptr, size);
+	void *res = PD_SYS_REALLOC(ptr, size);
 	dbg_check(res, "sys-pd", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
 
 error:
@@ -291,7 +286,7 @@ error:
 void
 sys_free(void *ptr)
 {
-	PD_SYSTEM_REALLOC(ptr, 0);
+	PD_SYS_REALLOC(ptr, 0);
 }
 
 void
@@ -440,7 +435,7 @@ sys_file_r(void *f, void *buf, u32 buf_size)
 void
 sys_set_auto_lock_disabled(int disable)
 {
-	PD_SET_AUTO_LOCK_DISABLED(disable);
+	PD_SYS_SET_AUTO_LOCK_DISABLED(disable);
 }
 
 void
@@ -644,362 +639,4 @@ sys_make_dir(str8 path)
 {
 	b32 res = PD->file->mkdir((const char *)path.str) == 0;
 	return res;
-}
-
-// Scores API
-
-#define PD_SCORES_ADD_MAX_RETRY 3
-
-enum pd_scores_req_type {
-	PD_SCORES_REQ_TYPE_NONE,
-
-	PD_SCORES_REQ_TYPE_GET,
-	PD_SCORES_REQ_TYPE_ADD,
-	PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET,
-
-	PD_SCORES_REQ_TYPE_NUM_COUNT,
-
-};
-
-struct pd_scores_req_get {
-	str8 board_id;
-	struct alloc alloc;
-};
-
-struct pd_scores_req_personal_best {
-	str8 board_id;
-};
-
-struct pd_scores_req_add {
-	usize attemps;
-	str8 board_id;
-	u32 value;
-};
-
-struct pd_scores_req {
-	u32 id;
-	enum pd_scores_req_type type;
-	enum sys_scores_req_state state;
-	sys_scores_req_callback callback;
-	union {
-		struct pd_scores_req_get get;
-		struct pd_scores_req_add add;
-		struct pd_scores_req_personal_best personal_best;
-	};
-	void *userdata;
-};
-
-struct pd_scores_state {
-	u32 next_id;
-	b16 busy;
-	u8 start;
-	u8 end;
-	struct pd_scores_req reqs[20];
-};
-
-void
-pd_scores_start_next(struct pd_scores_state *state)
-{
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-
-	if(state->start == state->end) {
-		state->busy = false;
-		return;
-	}
-
-	struct pd_scores_req *req = state->reqs + state->start;
-	state->busy               = true;
-	switch(req->type) {
-	case PD_SCORES_REQ_TYPE_GET: {
-		PD_GET_SCORES((const char *)req->get.board_id.str, pd_get_scores_callback);
-	} break;
-	case PD_SCORES_REQ_TYPE_ADD: {
-		log_info("sys-scores", "Adding score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
-		PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, pd_add_score_callback);
-	} break;
-	case PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET: {
-		PD_GET_PERSONAL_BEST((const char *)req->personal_best.board_id.str, pd_personal_best_get_callback);
-	} break;
-	default: {
-		dbg_sentinel("sys-scores");
-	} break;
-	}
-
-error:
-	return;
-}
-
-int
-sys_scores_queries_clear_queue(void)
-{
-	int res                       = 0;
-	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
-	log_info("sys-scores", "Clear scores queries queue, start: %d, end: %d", (int)state->start, (int)state->end);
-	if(!state->busy) {
-		state->start = 0;
-		state->end   = 0;
-	} else {
-		state->end = (state->start + 1) % ARRLEN(state->reqs);
-	}
-	return res;
-}
-
-int
-sys_scores_mutations_clear_queue(void)
-{
-	int res                       = 0;
-	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
-	log_info("sys-scores", "Clear scores mutations queue, start: %d, end: %d", (int)state->start, (int)state->end);
-	if(!state->busy) {
-		state->start = 0;
-		state->end   = 0;
-	} else {
-		state->end = (state->start + 1) % ARRLEN(state->reqs);
-	}
-	return res;
-}
-
-int
-sys_score_add(
-	str8 board_id,
-	u32 value,
-	sys_scores_req_callback callback,
-	void *userdata)
-{
-	dbg_check(value != 0, "sys-scores", "Submited value of 0");
-	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
-	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-
-	dbg_check(next != state->start, "sys-scores", "Score add queue Full");
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	struct pd_scores_req *req = state->reqs + state->end;
-	req->type                 = PD_SCORES_REQ_TYPE_ADD;
-	req->userdata             = userdata;
-	req->callback             = callback;
-	req->id                   = state->next_id++;
-	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
-	req->add.board_id         = board_id; // TODO: copy board_id
-	req->add.value            = value;
-	req->add.attemps          = 0;
-	log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
-	state->end = next;
-
-	if(!state->busy) { pd_scores_start_next(state); }
-
-	return 0;
-
-error:
-	return -1;
-}
-
-void
-pd_add_score_callback(PDScore *score, const char *error_message)
-{
-	struct pd_scores_state *state = &PD_STATE.scores_mutations_state;
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
-
-	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->type == PD_SCORES_REQ_TYPE_ADD);
-	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
-
-	if(error_message) {
-		log_error("sys-scores", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
-		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
-			req->add.attemps++;
-			PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, pd_add_score_callback);
-			log_info("sys-scores", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
-			return;
-		}
-		res.error_message = str8_cstr((char *)error_message);
-	} else {
-		log_info("sys-scores", "Submited score for board %s: %d. %s %" PRIu32 "", req->add.board_id.str, score->rank, score->player, score->value);
-		res.add = (struct sys_scores_res_add){
-			.score = (struct sys_score){
-				.rank   = score->rank,
-				.value  = score->value,
-				.player = str8_cstr(score->player),
-			},
-		};
-	}
-
-	if(req->callback) {
-		req->callback(req->id, res, req->userdata);
-	}
-
-	state->start = (state->start + 1) % ARRLEN(state->reqs);
-	state->busy  = false;
-
-	pd_scores_start_next(state);
-	if(score != NULL) {
-		PD_FREE_SCORE(score);
-	}
-}
-
-int
-sys_scores_get(
-	str8 board_id,
-	sys_scores_req_callback callback,
-	void *userdata,
-	struct alloc alloc)
-{
-	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
-	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-
-	dbg_check(next != state->start, "sys-scores", "Scores get queue Full");
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	struct pd_scores_req *req = state->reqs + state->end;
-	req->type                 = PD_SCORES_REQ_TYPE_GET;
-	req->userdata             = userdata;
-	req->callback             = callback;
-	req->id                   = state->next_id++;
-	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
-	req->get.alloc            = alloc;
-	req->get.board_id         = board_id;
-	state->end                = next;
-
-	if(!state->busy) { pd_scores_start_next(state); }
-
-	return 0;
-
-error:
-	return -1;
-}
-
-void
-pd_get_scores_callback(PDScoresList *scores, const char *error_message)
-{
-	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
-	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_GET};
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
-
-	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
-
-	if(error_message) {
-		log_error("sys-scores", "Failed to get scores for board %s: %s", req->get.board_id.str, error_message);
-		res.error_message = str8_cstr((char *)error_message);
-		goto error;
-	} else {
-		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
-		for(ssize i = 0; i < (ssize)scores->count; ++i) {
-			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
-		}
-		res.get = (struct sys_scores_res_get){
-			.board_id        = req->get.board_id,
-			.last_updated    = scores->lastUpdated,
-			.player_included = scores->playerIncluded,
-		};
-
-		if(scores->count > 0) {
-			struct sys_score_arr *entries = &res.get.entries;
-			if(req->get.alloc.allocf != NULL) {
-				entries->items = alloc_arr(req->get.alloc, entries->items, scores->count);
-			}
-			if(entries->items == NULL) {
-				log_error("sys-scores", "Failed to allocate memory for %d scores", scores->count);
-			} else {
-				entries->cap = scores->count;
-				entries->len = scores->count;
-				for(usize i = 0; i < scores->count; ++i) {
-					entries->items[i] = (struct sys_score){
-						.value  = scores->scores[i].value,
-						.rank   = scores->scores[i].rank,
-						.player = str8_cstr(scores->scores[i].player),
-					};
-				}
-			}
-		}
-	}
-
-error:
-	if(req->callback) {
-		req->callback(req->id, res, req->userdata);
-	}
-
-	state->start = (state->start + 1) % ARRLEN(state->reqs);
-	state->busy  = false;
-	if(scores != NULL) {
-		PD_FREE_SCORES_LIST(scores);
-	}
-	pd_scores_start_next(state);
-	return;
-}
-
-int
-sys_scores_personal_best_get(
-	str8 board_id,
-	sys_scores_req_callback callback,
-	void *userdata)
-{
-	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
-	u8 next                       = (state->end + 1) % ARRLEN(state->reqs);
-
-	dbg_check(next != state->start, "sys-scores", "Personal best queue Full");
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	struct pd_scores_req *req   = state->reqs + state->end;
-	req->type                   = PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET;
-	req->userdata               = userdata;
-	req->callback               = callback;
-	req->id                     = state->next_id++;
-	req->state                  = SYS_SCORE_REQ_STATE_QUEUE;
-	req->personal_best.board_id = board_id;
-	state->end                  = next;
-
-	if(!state->busy) { pd_scores_start_next(state); }
-
-	return 0;
-
-error:
-	return -1;
-}
-
-void
-pd_personal_best_get_callback(PDScore *score, const char *error_message)
-{
-	struct pd_scores_state *state = &PD_STATE.scores_queries_state;
-	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET};
-	dbg_assert(state->start < ARRLEN(state->reqs));
-	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
-
-	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
-
-	if(error_message) {
-		log_error("sys-scores", "Failed to get personal best for board %s: %s", req->personal_best.board_id.str, error_message);
-		res.error_message = str8_cstr((char *)error_message);
-	} else {
-		if(score) {
-			log_info("sys-scores", "Personal best for board %s: %" PRIu32 "", req->personal_best.board_id.str, score->value);
-			res.personal_best = (struct sys_scores_res_personal_best){
-				.score = (struct sys_score){
-					.rank   = score->rank,
-					.value  = score->value,
-					.player = str8_cstr(score->player),
-				},
-			};
-		} else {
-			log_info("sys-scores", "No personal best for board %s", req->personal_best.board_id.str);
-		}
-	}
-
-	if(req->callback) {
-		req->callback(req->id, res, req->userdata);
-	}
-
-	state->start = (state->start + 1) % ARRLEN(state->reqs);
-	state->busy  = false;
-
-	pd_scores_start_next(state);
-	if(score != NULL) {
-		PD_FREE_SCORE(score);
-	}
 }

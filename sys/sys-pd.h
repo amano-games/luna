@@ -5,7 +5,7 @@
 #include "pd_api.h"
 extern PlaydateAPI *PD;
 
-extern void (*PD_SYSTEM_LOG_TO_CONSOLE)(const char *fmt, ...);
+extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
 
 b32 sys_pd_reduce_flicker(void);
 f32 sys_pd_crank_deg(void);
