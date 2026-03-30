@@ -13,54 +13,6 @@
 
 PlaydateAPI *PD;
 
-#define PD_SCORES_ADD_MAX_RETRY 3
-
-enum pd_scores_req_type {
-	PD_SCORES_REQ_TYPE_NONE,
-
-	PD_SCORES_REQ_TYPE_GET,
-	PD_SCORES_REQ_TYPE_ADD,
-	PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET,
-
-	PD_SCORES_REQ_TYPE_NUM_COUNT,
-
-};
-
-struct pd_scores_req_get {
-	str8 board_id;
-	struct alloc alloc;
-};
-
-struct pd_scores_req_personal_best {
-	str8 board_id;
-};
-
-struct pd_scores_req_add {
-	usize attemps;
-	str8 board_id;
-	u32 value;
-};
-
-struct pd_scores_req {
-	u32 id;
-	enum pd_scores_req_type type;
-	enum sys_scores_req_state state;
-	sys_scores_req_callback callback;
-	union {
-		struct pd_scores_req_get get;
-		struct pd_scores_req_add add;
-		struct pd_scores_req_get personal_best;
-	};
-	void *userdata;
-};
-
-struct pd_scores_state {
-	b32 busy;
-	u8 start;
-	u8 end;
-	struct pd_scores_req reqs[20];
-};
-
 struct pd_state {
 	u32 us_monotonic;
 	u32 us_elapsed;
@@ -100,10 +52,6 @@ void (*PD_SET_AUTO_LOCK_DISABLED)(int disable);
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
-
-void pd_add_score_callback(PDScore *score, const char *error_message);
-void pd_get_scores_callback(PDScoresList *scores, const char *error_message);
-void pd_personal_best_get_callback(PDScore *score, const char *error_message);
 
 int
 eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
@@ -668,6 +616,88 @@ sys_set_menu_image(struct tex tex, i32 x_offset)
 }
 
 void
+sys_set_app_name(str8 value)
+{
+}
+
+struct sys_process_info
+sys_process_info(void)
+{
+	return PD_STATE.process_info;
+}
+
+str8
+sys_get_current_path(struct alloc alloc)
+{
+	return str8_cpy_push(alloc, str8_lit(""));
+}
+
+str8
+sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
+{
+	str8 res = str8_cpy_push(alloc, path);
+	return res;
+}
+
+b32
+sys_make_dir(str8 path)
+{
+	b32 res = PD->file->mkdir((const char *)path.str) == 0;
+	return res;
+}
+
+// Scores API
+
+#define PD_SCORES_ADD_MAX_RETRY 3
+
+enum pd_scores_req_type {
+	PD_SCORES_REQ_TYPE_NONE,
+
+	PD_SCORES_REQ_TYPE_GET,
+	PD_SCORES_REQ_TYPE_ADD,
+	PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET,
+
+	PD_SCORES_REQ_TYPE_NUM_COUNT,
+
+};
+
+struct pd_scores_req_get {
+	str8 board_id;
+	struct alloc alloc;
+};
+
+struct pd_scores_req_personal_best {
+	str8 board_id;
+};
+
+struct pd_scores_req_add {
+	usize attemps;
+	str8 board_id;
+	u32 value;
+};
+
+struct pd_scores_req {
+	u32 id;
+	enum pd_scores_req_type type;
+	enum sys_scores_req_state state;
+	sys_scores_req_callback callback;
+	union {
+		struct pd_scores_req_get get;
+		struct pd_scores_req_add add;
+		struct pd_scores_req_personal_best personal_best;
+	};
+	void *userdata;
+};
+
+struct pd_scores_state {
+	u32 next_id;
+	b16 busy;
+	u8 start;
+	u8 end;
+	struct pd_scores_req reqs[20];
+};
+
+void
 pd_scores_start_next(struct pd_scores_state *state)
 {
 	dbg_assert(state->start < ARRLEN(state->reqs));
@@ -748,10 +778,11 @@ sys_score_add(
 	req->type                 = PD_SCORES_REQ_TYPE_ADD;
 	req->userdata             = userdata;
 	req->callback             = callback;
-	req->id                   = state->end;
+	req->id                   = state->next_id++;
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
-	req->add.board_id         = board_id;
+	req->add.board_id         = board_id; // TODO: copy board_id
 	req->add.value            = value;
+	req->add.attemps          = 0;
 	log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 	state->end = next;
 
@@ -772,7 +803,6 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_ADD);
 	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
 
@@ -780,7 +810,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 		log_error("sys-scores", "Failed to submit score to board %s: %s", req->add.board_id.str, error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
-			pd_scores_start_next(state);
+			PD_ADD_SCORE((const char *)req->add.board_id.str, req->add.value, pd_add_score_callback);
 			log_info("sys-scores", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->add.board_id.str);
 			return;
 		}
@@ -804,7 +834,9 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	state->busy  = false;
 
 	pd_scores_start_next(state);
-	PD_FREE_SCORE(score);
+	if(score != NULL) {
+		PD_FREE_SCORE(score);
+	}
 }
 
 int
@@ -824,7 +856,7 @@ sys_scores_get(
 	req->type                 = PD_SCORES_REQ_TYPE_GET;
 	req->userdata             = userdata;
 	req->callback             = callback;
-	req->id                   = state->end;
+	req->id                   = state->next_id++;
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
 	req->get.alloc            = alloc;
 	req->get.board_id         = board_id;
@@ -848,7 +880,6 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
 
 	if(error_message) {
@@ -860,7 +891,6 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		for(ssize i = 0; i < (ssize)scores->count; ++i) {
 			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
 		}
-		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
 		res.get = (struct sys_scores_res_get){
 			.board_id        = req->get.board_id,
 			.last_updated    = scores->lastUpdated,
@@ -895,7 +925,9 @@ error:
 
 	state->start = (state->start + 1) % ARRLEN(state->reqs);
 	state->busy  = false;
-	PD_FREE_SCORES_LIST(scores);
+	if(scores != NULL) {
+		PD_FREE_SCORES_LIST(scores);
+	}
 	pd_scores_start_next(state);
 	return;
 }
@@ -916,7 +948,7 @@ sys_scores_personal_best_get(
 	req->type                   = PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET;
 	req->userdata               = userdata;
 	req->callback               = callback;
-	req->id                     = state->end;
+	req->id                     = state->next_id++;
 	req->state                  = SYS_SCORE_REQ_STATE_QUEUE;
 	req->personal_best.board_id = board_id;
 	state->end                  = next;
@@ -939,7 +971,6 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	if(state->start == state->end) return; // nothing in queue
 
 	struct pd_scores_req *req = state->reqs + state->start;
-	dbg_assert(req->id == state->start);
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
 
 	if(error_message) {
@@ -968,36 +999,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	state->busy  = false;
 
 	pd_scores_start_next(state);
-	PD_FREE_SCORE(score);
-}
-
-void
-sys_set_app_name(str8 value)
-{
-}
-
-struct sys_process_info
-sys_process_info(void)
-{
-	return PD_STATE.process_info;
-}
-
-str8
-sys_get_current_path(struct alloc alloc)
-{
-	return str8_cpy_push(alloc, str8_lit(""));
-}
-
-str8
-sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
-{
-	str8 res = str8_cpy_push(alloc, path);
-	return res;
-}
-
-b32
-sys_make_dir(str8 path)
-{
-	b32 res = PD->file->mkdir((const char *)path.str) == 0;
-	return res;
+	if(score != NULL) {
+		PD_FREE_SCORE(score);
+	}
 }
