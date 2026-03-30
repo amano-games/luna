@@ -18,7 +18,7 @@ enum sys_log_level {
 #else
 #if defined(BACKEND_PD)
 #include "sys/sys-pd.h"
-#define sys_printf(...) PD_SYSTEM_LOG_TO_CONSOLE(__VA_ARGS__)
+#define sys_printf(...) PD_SYS_LOG_TO_CONSOLE(__VA_ARGS__)
 #else
 #include <stdio.h>
 #define sys_printf(...) (printf(__VA_ARGS__), printf("\n"))

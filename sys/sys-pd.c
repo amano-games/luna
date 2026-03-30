@@ -10,6 +10,7 @@
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
 #include "sys/sys-pd-scores.h"
+#include "sys/sys-pd-scores.c"
 
 PlaydateAPI *PD;
 
@@ -41,6 +42,13 @@ int (*PD_FILE_WRITE)(SDFile *file, const void *buf, uint len);
 int (*PD_FILE_READ)(SDFile *file, void *buf, uint len);
 
 void (*PD_SYS_SET_AUTO_LOCK_DISABLED)(int disable);
+
+int (*PD_SCORE_ADD)(const char *board_id, uint32_t value, AddScoreCallback callback);
+void (*PD_SCORE_FREE)(PDScore *score);
+int (*PD_SCORES_GET)(const char *board_id, ScoresCallback callback);
+void (*PD_SCORES_LIST_FREE)(PDScoresList *scores_list);
+void (*PD_SCORE_FREE)(PDScore *score);
+int (*PD_PERSONAL_BEST_GET)(const char *board_id, PersonalBestCallback callback);
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
