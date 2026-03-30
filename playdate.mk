@@ -101,7 +101,7 @@ ARCH           := $(MCFLAGS)
 PD_LDFLAGS     := $(ARCH)
 PD_LDFLAGS     += -nostartfiles
 PD_LDFLAGS     += -T$(LDSCRIPT)
-PD_LDFLAGS     += -Wl,--emit-relocs
+PD_LDFLAGS     += -Wl,--emit-relocs,--gc-sections,--no-warn-mismatch
 # PD_LDFLAGS     += -Wl,--cref,--gc-sections,--no-warn-mismatch,--emit-relocs
 
 SIM_CFLAGS     :=
