@@ -34,6 +34,9 @@
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 
+#define MG_IMPLEMENTATION
+#include "minigamepad.h"
+
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_app.h"
 #include "sokol/sokol_time.h"
@@ -150,6 +153,8 @@ struct sokol_state {
 	f32 mouse_y;
 	u32 mouse_btns;
 
+	mg_gamepads gamepads;
+
 	struct sys_opts opts;
 
 	struct recording_1b recording;
@@ -193,6 +198,8 @@ static void sokol_screenshot_save(struct tex tex);
 static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
+static inline i32 sokol_gamepads_upd(void);
+static inline void sokol_gamepads_ev(void);
 
 sapp_desc
 sokol_main(i32 argc, char **argv)
@@ -428,6 +435,9 @@ sokol_init(void)
 
 	sapp_show_mouse(true);
 	sokol_set_icon();
+#if !defined(TARGET_MACOS)
+	mg_gamepads_init(&SOKOL_STATE.gamepads);
+#endif
 
 	sys_internal_init();
 }
@@ -597,6 +607,9 @@ sokol_frame(void)
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	usize size                      = ARRLEN(SOKOL_PIXELS);
+#if !defined(TARGET_MACOS)
+	sokol_gamepads_ev();
+#endif
 
 	mcpy_struct(&colors.color_black, &COL_BLACK);
 	mcpy_struct(&colors.color_white, &COL_WHITE);
@@ -759,6 +772,10 @@ sys_inp(void)
 	if((SOKOL_STATE.mouse_btns & (1 << SAPP_MOUSEBUTTON_MIDDLE)) == (1 << SAPP_MOUSEBUTTON_MIDDLE)) {
 		b |= SYS_INP_MOUSE_MIDDLE;
 	}
+
+#if !defined(TARGET_MACOS)
+	b |= sokol_gamepads_upd();
+#endif
 
 	return b;
 }
@@ -1813,4 +1830,144 @@ error:;
 	if(pipe) {
 		pclose(pipe);
 	}
+}
+
+static inline i32
+sokol_gamepads_upd(void)
+{
+	i32 res                      = 0;
+	struct mg_gamepads *gamepads = &SOKOL_STATE.gamepads;
+	mg_gamepads_poll(gamepads);
+
+	mg_gamepad *gamepad = gamepads->list.head;
+
+	if(!gamepad) { goto end; }
+
+	for(ssize i = 0; i < MG_BUTTON_COUNT; i++) {
+		mg_button button_type  = i;
+		mg_button_state button = gamepad->buttons[i];
+		if(button.supported == MG_FALSE) continue;
+		if(button.current == MG_FALSE) continue;
+
+		switch(button_type) {
+		case MG_BUTTON_SOUTH: {
+			res |= SYS_INP_A;
+		} break;
+		case MG_BUTTON_EAST: {
+			res |= SYS_INP_B;
+		} break;
+		case MG_BUTTON_WEST: {
+			res |= SYS_INP_A;
+		} break;
+		case MG_BUTTON_NORTH: {
+			res |= SYS_INP_B;
+		} break;
+		case MG_BUTTON_LEFT_SHOULDER: {
+			res |= SYS_INP_B;
+		} break;
+		case MG_BUTTON_RIGHT_SHOULDER: {
+			res |= SYS_INP_A;
+		} break;
+		case MG_BUTTON_DPAD_LEFT: {
+			res |= SYS_INP_DPAD_L;
+		} break;
+		case MG_BUTTON_DPAD_RIGHT: {
+			res |= SYS_INP_DPAD_R;
+		} break;
+		case MG_BUTTON_DPAD_UP: {
+			res |= SYS_INP_DPAD_U;
+		} break;
+		case MG_BUTTON_DPAD_DOWN: {
+			res |= SYS_INP_DPAD_D;
+		} break;
+		default: {
+		} break;
+		}
+	}
+
+	for(ssize i = 0; i < MG_AXIS_COUNT; i++) {
+		mg_axis axis_type  = i;
+		mg_axis_state axis = gamepad->axes[i];
+		f32 value          = axis.value;
+		switch(axis_type) {
+		case MG_AXIS_LEFT_X: {
+			if(value > 0.8f) {
+				res |= SYS_INP_DPAD_R;
+			}
+			if(value < -0.8f) {
+				res |= SYS_INP_DPAD_L;
+			}
+		} break;
+		case MG_AXIS_LEFT_Y: {
+			if(value > 0.8f) {
+				res |= SYS_INP_DPAD_D;
+			}
+			if(value < -0.8f) {
+				res |= SYS_INP_DPAD_U;
+			}
+		} break;
+		case MG_AXIS_LEFT_TRIGGER: {
+			if(value > 0.8f) {
+				res |= SYS_INP_B;
+			}
+		} break;
+		case MG_AXIS_RIGHT_TRIGGER: {
+			if(value > 0.8f) {
+				res |= SYS_INP_A;
+			}
+		} break;
+		default: {
+		} break;
+		}
+	}
+
+end:;
+	return res;
+}
+
+static inline void
+sokol_gamepads_ev(void)
+{
+	i32 res                      = 0;
+	struct mg_gamepads *gamepads = &SOKOL_STATE.gamepads;
+	mg_gamepads_poll(gamepads);
+	mg_gamepad *gamepad = gamepads->list.head;
+
+	if(!gamepad) { goto end; }
+
+	mg_event ev;
+	while(mg_gamepads_check_event(gamepads, &ev)) {
+		switch(ev.type) {
+		case MG_EVENT_BUTTON_PRESS: {
+			switch(ev.button) {
+			case MG_BUTTON_BACK: {
+				if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+					sokol_pause();
+				} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+					sokol_resume();
+				}
+			} break;
+			case MG_BUTTON_START: {
+				if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+					sokol_pause();
+				} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+					sokol_resume();
+				}
+			} break;
+			}
+		} break;
+		case MG_EVENT_BUTTON_RELEASE: {
+			switch(ev.button) {
+			case MG_BUTTON_BACK: {
+			} break;
+			case MG_BUTTON_GUIDE: {
+			} break;
+			}
+		} break;
+		default: {
+		} break;
+		}
+	}
+
+end:;
 }
