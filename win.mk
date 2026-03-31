@@ -51,6 +51,7 @@ else
 CFLAGS := $(RELEASE_CFLAGS)
 endif
 
+CFLAGS += -static -static-libgcc -static-libstdc++ -lwinpthread
 CFLAGS += $(CDEFS)
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
