@@ -71,7 +71,7 @@ b32
 wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	b32 res                          = false;
-	struct sys_full_file_res in_data = sys_load_full_file(in_path, sys_allocator());
+	struct sys_full_file_res in_data = sys_load_full_file(sys_allocator(), in_path);
 	void *out_file                   = NULL;
 	u8 *out_data                     = NULL;
 	struct wav wav                   = {0};

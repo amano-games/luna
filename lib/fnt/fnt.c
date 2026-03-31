@@ -200,7 +200,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * kern_pairs_size);
 
 	dbg_assert(str8_ends_with(path, fnt_ext, 0));
-	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
+	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
 	if(file_res.data == NULL) {
 		log_error("fnt", "Failed loading info: %s", path.str);
 		return res;

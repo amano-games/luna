@@ -4,21 +4,20 @@
 #include "lib/serialize/serialize.h"
 
 i32 pinb_write(struct ser_writer *w, struct pinb_table *pinb);
-i32 pinb_read(struct ser_reader *r, struct pinb_table *table, struct alloc alloc);
-i32 pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc);
+i32 pinb_read(struct alloc alloc, struct ser_reader *r, struct pinb_table *table);
+i32 pinb_inspect(struct alloc alloc, str8 path, struct ser_reader *r);
 
 void pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity);
-struct pinb_entity pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
-struct pinb_entity pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_entity pinb_entity_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_ball_write(struct ser_writer *w, struct pinb_entity *entity);
 struct pinb_ball pinb_ball_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_entity_spr_write(struct ser_writer *w, struct pinb_spr *spr);
-struct pinb_spr pinb_spr_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_spr pinb_spr_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_entity_bet_write(struct ser_writer *w, struct pinb_bet *bet);
-struct pinb_bet pinb_bet_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_bet pinb_bet_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_counter_write(struct ser_writer *w, struct pinb_counter *value);
 struct pinb_counter pinb_counter_read(struct ser_reader *r, struct ser_value obj);
@@ -78,7 +77,7 @@ void pinb_reset_write(struct ser_writer *w, struct pinb_reset *value);
 struct pinb_reset pinb_reset_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_animator_write(struct ser_writer *w, struct pinb_animator *value);
-struct pinb_animator pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_animator pinb_animator_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_animator_transitions_write(struct ser_writer *w, struct pinb_animator_transitions *value);
 
@@ -89,7 +88,7 @@ void pinb_entity_list_write(struct ser_writer *w, struct pinb_entity_list *value
 struct pinb_entity_list pinb_entity_list_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_spawner_write(struct ser_writer *w, struct pinb_spawner *value);
-struct pinb_spawner pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_spawner pinb_spawner_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_spawn_zone_write(struct ser_writer *w, struct pinb_spawn_zone *value);
 struct pinb_spawn_zone pinb_spawn_zone_read(struct ser_reader *r, struct ser_value obj);
@@ -102,30 +101,30 @@ struct pinb_mover_path pinb_mover_path_read(struct ser_reader *r, struct ser_val
 
 void pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences *value);
 
-struct pinb_sfx_sequence pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
-struct pinb_sfx_sequences pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_sfx_sequence pinb_sfx_sequence_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
+struct pinb_sfx_sequences pinb_sfx_sequences_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_sfx_sequence_write(struct ser_writer *w, struct pinb_sfx_sequence *value);
 
 void pinb_messages_write(struct ser_writer *w, struct pinb_messages *value);
-struct pinb_messages pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_messages pinb_messages_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_message_write(struct ser_writer *w, struct pinb_message *value);
-struct pinb_message pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_message pinb_message_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_actions_write(struct ser_writer *w, struct pinb_actions *value);
-struct pinb_actions pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_actions pinb_actions_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_action_write(struct ser_writer *w, struct pinb_action *value);
 struct pinb_action pinb_action_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data *value);
-struct pinb_custom_data pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_custom_data pinb_custom_data_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_prop_write(struct ser_writer *w, struct pinb_prop *value);
-struct pinb_prop pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc);
+struct pinb_prop pinb_prop_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
-struct pinb_table_props pinb_table_props_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_table_props pinb_table_props_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 void pinb_table_props_write(struct ser_writer *w, struct pinb_table_props *props);
 
 void pinb_table_switcher_write(struct ser_writer *w, struct pinb_table_switcher *value);

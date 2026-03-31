@@ -19,7 +19,7 @@
 #if defined(DEBUG)
 #define SYS_MAX_MEM MGIGABYTE(1)
 #else
-#define SYS_MAX_MEM MMEGABYTE(15)
+#define SYS_MAX_MEM MMEGABYTE(14)
 #endif
 
 struct mem_block {

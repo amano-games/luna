@@ -26,7 +26,7 @@ sys_file_exists(str8 path, i32 sys_file_mode)
 }
 
 struct sys_full_file_res
-sys_load_full_file(str8 path, struct alloc alloc)
+sys_load_full_file(struct alloc alloc, str8 path)
 {
 	struct sys_full_file_res res = {0};
 	void *f                      = sys_file_open_r(path);
@@ -39,7 +39,7 @@ sys_load_full_file(str8 path, struct alloc alloc)
 	sys_file_seek_set(f, 0);
 
 	// Alloc memory
-	void *data = alloc.allocf(alloc.ctx, f_size, 4);
+	void *data = alloc_size(alloc, f_size, 4, false);
 	dbg_check(data != NULL, "io", "Failed alloc mem for: %*.s", (int)path.size, path.str);
 
 	// Read contents

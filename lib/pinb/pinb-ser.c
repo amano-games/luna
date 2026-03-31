@@ -14,9 +14,9 @@
 
 i32
 pinb_read(
+	struct alloc alloc,
 	struct ser_reader *r,
-	struct pinb_table *table,
-	struct alloc alloc)
+	struct pinb_table *table)
 {
 	i32 res               = 0;
 	struct ser_value root = ser_read(r);
@@ -31,7 +31,7 @@ pinb_read(
 			table->flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("props"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
-			table->props = pinb_table_props_read(r, value);
+			table->props = pinb_table_props_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
 			table->entities_count = ser_get_i32(value);
 			table->entities       = arr_new(alloc, table->entities, table->entities_count);
@@ -41,7 +41,7 @@ pinb_read(
 			dbg_assert(value.type == SER_TYPE_ARRAY);
 			struct ser_value val;
 			while(ser_iter_array(r, value, &val)) {
-				arr_push(table->entities, pinb_entity_read(r, val, alloc));
+				arr_push(table->entities, pinb_entity_read(alloc, r, val));
 			}
 			dbg_assert(arr_len(table->entities) == table->entities_count);
 		}
@@ -59,7 +59,7 @@ pinb_read(
 }
 
 i32
-pinb_inspect(str8 path, struct ser_reader *r, struct alloc alloc)
+pinb_inspect(struct alloc alloc, str8 path, struct ser_reader *r)
 {
 	i32 res               = 0;
 	struct ser_value root = ser_read(r);
@@ -270,7 +270,7 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 }
 
 struct pinb_entity
-pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_entity_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct pinb_entity res = {0};
@@ -286,9 +286,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("y"), 0)) {
 			res.y = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("spr"), 0)) {
-			res.spr = pinb_spr_read(r, value);
+			res.spr = pinb_spr_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("bet"), 0)) {
-			res.bet = pinb_bet_read(r, value);
+			res.bet = pinb_bet_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("reactive_impulse"), 0)) {
 			res.reactive_impulse = pinb_reactive_impulse_read(r, value);
 		} else if(str8_match(key.str, str8_lit("force_field"), 0)) {
@@ -336,9 +336,9 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("score_fx_offset"), 0)) {
 			res.score_fx_offset = ser_read_v2_i32(r, value);
 		} else if(str8_match(key.str, str8_lit("animator"), 0)) {
-			res.animator = pinb_animator_read(r, value, alloc);
+			res.animator = pinb_animator_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("spawner"), 0)) {
-			res.spawner = pinb_spawner_read(r, value, alloc);
+			res.spawner = pinb_spawner_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("spawn_zone"), 0)) {
 			res.spawn_zone = pinb_spawn_zone_read(r, value);
 		} else if(str8_match(key.str, str8_lit("mover"), 0)) {
@@ -346,15 +346,15 @@ pinb_entity_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("mover_path"), 0)) {
 			res.mover_path = pinb_mover_path_read(r, value);
 		} else if(str8_match(key.str, str8_lit("sfx_sequences"), 0)) {
-			res.sfx_sequences = pinb_sfx_sequences_read(r, value, alloc);
+			res.sfx_sequences = pinb_sfx_sequences_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("messages"), 0)) {
-			res.messages = pinb_messages_read(r, value, alloc);
+			res.messages = pinb_messages_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("actions"), 0)) {
-			res.actions = pinb_actions_read(r, value, alloc);
+			res.actions = pinb_actions_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("table_switcher"), 0)) {
 			res.table_switcher = pinb_table_switcher_read(r, value);
 		} else if(str8_match(key.str, str8_lit("custom_data"), 0)) {
-			res.custom_data = pinb_custom_data_read(r, value, alloc);
+			res.custom_data = pinb_custom_data_read(alloc, r, value);
 		}
 	}
 	return res;
@@ -764,7 +764,7 @@ pinb_spawner_write(struct ser_writer *w, struct pinb_spawner *value)
 }
 
 struct pinb_spawner
-pinb_spawner_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_spawner_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_spawner res = {0};
 	struct ser_value key, value;
@@ -980,7 +980,7 @@ pinb_sfx_sequences_write(struct ser_writer *w, struct pinb_sfx_sequences *value)
 }
 
 struct pinb_sfx_sequences
-pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_sfx_sequences_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_sfx_sequences res = {0};
 	struct ser_value key, value;
@@ -993,7 +993,7 @@ pinb_sfx_sequences_read(struct ser_reader *r, struct ser_value obj, struct alloc
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
-				arr_push(res.items, pinb_sfx_sequence_read(r, item_value, alloc));
+				arr_push(res.items, pinb_sfx_sequence_read(alloc, r, item_value));
 			}
 			dbg_assert(res.len == (ssize)arr_len(res.items));
 		}
@@ -1537,7 +1537,7 @@ pinb_reset_read(struct ser_reader *r, struct ser_value obj)
 }
 
 struct pinb_spr
-pinb_spr_read(struct ser_reader *r, struct ser_value obj)
+pinb_spr_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_spr res = {0};
 	struct ser_value key, value;
@@ -1545,7 +1545,7 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
-			res.path = ser_get_string(value);
+			res.path = str8_cpy_push(alloc, ser_get_string(value));
 		} else if(str8_match(key.str, str8_lit("flip"), 0)) {
 			res.flip = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("alpha"), 0)) {
@@ -1568,7 +1568,7 @@ pinb_spr_read(struct ser_reader *r, struct ser_value obj)
 }
 
 struct pinb_messages
-pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_messages_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_messages res = {0};
 	struct ser_value key, value;
@@ -1581,7 +1581,7 @@ pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value sequence_value;
 			while(ser_iter_array(r, value, &sequence_value)) {
-				arr_push(res.items, pinb_message_read(r, sequence_value, alloc));
+				arr_push(res.items, pinb_message_read(alloc, r, sequence_value));
 			}
 			dbg_assert(res.len == (ssize)arr_len(res.items));
 		}
@@ -1590,7 +1590,7 @@ pinb_messages_read(struct ser_reader *r, struct ser_value obj, struct alloc allo
 }
 
 struct pinb_actions
-pinb_actions_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_actions_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_actions res = {0};
 	struct ser_value key, value;
@@ -1656,7 +1656,7 @@ pinb_flippers_props_read(struct ser_reader *r, struct ser_value obj)
 }
 
 struct pinb_table_props
-pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
+pinb_table_props_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct pinb_table_props res = {0};
@@ -1668,7 +1668,7 @@ pinb_table_props_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("flippers_props"), 0)) {
 			res.flippers_props = pinb_flippers_props_read(r, value);
 		} else if(str8_match(key.str, str8_lit("bg_tex_path"), 0)) {
-			res.bg_tex_path = ser_get_string(value);
+			res.bg_tex_path = str8_cpy_push(alloc, ser_get_string(value));
 		}
 	}
 
@@ -1713,7 +1713,7 @@ pinb_animator_transitions_read(struct ser_reader *r, struct ser_value obj, struc
 }
 
 struct pinb_animator
-pinb_animator_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_animator_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct pinb_animator res = {0};
@@ -1794,7 +1794,7 @@ pinb_entity_list_read(struct ser_reader *r, struct ser_value obj)
 }
 
 struct pinb_sfx_sequence
-pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_sfx_sequence_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_sfx_sequence res = {0};
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
@@ -1821,7 +1821,7 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc 
 			struct ser_value item_value;
 			usize i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
-				res.clips[i++] = ser_get_string(item_value);
+				res.clips[i++] = str8_cpy_push(alloc, ser_get_string(item_value));
 			}
 		}
 	}
@@ -1829,7 +1829,7 @@ pinb_sfx_sequence_read(struct ser_reader *r, struct ser_value obj, struct alloc 
 }
 
 struct pinb_message
-pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_message_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_message res = {0};
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
@@ -1843,7 +1843,7 @@ pinb_message_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc
 		} else if(str8_match(key.str, str8_lit("hide_time"), 0)) {
 			res.hide_time = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("text"), 0)) {
-			res.text = ser_get_string(value);
+			res.text = str8_cpy_push(alloc, ser_get_string(value));
 		}
 	}
 	return res;
@@ -1921,7 +1921,7 @@ pinb_entity_bet_write(struct ser_writer *w, struct pinb_bet *bet)
 }
 
 struct pinb_bet
-pinb_bet_read(struct ser_reader *r, struct ser_value obj)
+pinb_bet_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_bet res = {0};
 	struct ser_value key, value;
@@ -1929,7 +1929,7 @@ pinb_bet_read(struct ser_reader *r, struct ser_value obj)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
-			res.path = ser_get_string(value);
+			res.path = str8_cpy_push(alloc, ser_get_string(value));
 		} else if(str8_match(key.str, str8_lit("is_enabled"), 0)) {
 			res.is_enabled = ser_get_i32(value);
 		}
@@ -1957,7 +1957,7 @@ pinb_custom_data_write(struct ser_writer *w, struct pinb_custom_data *value)
 }
 
 struct pinb_custom_data
-pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_custom_data_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_custom_data res = {0};
 	struct ser_value key, value;
@@ -1970,7 +1970,7 @@ pinb_custom_data_read(struct ser_reader *r, struct ser_value obj, struct alloc a
 		} else if(str8_match(key.str, str8_lit("data"), 0)) {
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
-				arr_push(res.data, pinb_prop_read(r, item_value, alloc));
+				arr_push(res.data, pinb_prop_read(alloc, r, item_value));
 			}
 			dbg_assert(res.len == (ssize)arr_len(res.data));
 		}
@@ -2009,7 +2009,7 @@ error:;
 }
 
 struct pinb_prop
-pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
+pinb_prop_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_prop res = {0};
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
@@ -2017,7 +2017,7 @@ pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("name"), 0)) {
-			res.name = ser_get_string(value);
+			res.name = str8_cpy_push(alloc, ser_get_string(value));
 		} else if(str8_match(key.str, str8_lit("i32"), 0)) {
 			res.type = PINB_PROP_TYPE_I32;
 			res.i32  = ser_get_i32(value);
@@ -2026,7 +2026,7 @@ pinb_prop_read(struct ser_reader *r, struct ser_value obj, struct alloc alloc)
 			res.f32  = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("str"), 0)) {
 			res.type = PINB_PROP_TYPE_STR;
-			res.str  = ser_get_string(value);
+			res.str  = str8_cpy_push(alloc, ser_get_string(value));
 		}
 	}
 	return res;

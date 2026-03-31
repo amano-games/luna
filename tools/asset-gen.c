@@ -72,7 +72,7 @@ b32
 file_cpy_raw(const str8 in_path, const str8 out_path)
 {
 	b32 res                         = false;
-	struct sys_full_file_res in_res = sys_load_full_file(in_path, sys_allocator());
+	struct sys_full_file_res in_res = sys_load_full_file(sys_allocator(), in_path);
 	void *out                       = sys_file_open_w(out_path);
 	dbg_check(out, "file-cpy-raw", "failed to open file to write %s", out_path.str);
 	dbg_check(sys_file_w(out, in_res.data, in_res.size), "file-cpy-raw", "failed to write: %s", out_path.str);

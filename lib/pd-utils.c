@@ -27,7 +27,7 @@ pdxinfo_parse(struct pdxinfo *info, struct alloc scratch)
 	void *f   = sys_file_open_r(str8_lit("pdxinfo"));
 	dbg_check(f, "pd", "failed to open pdxinfo");
 
-	struct sys_full_file_res res = sys_load_full_file(path, scratch);
+	struct sys_full_file_res res = sys_load_full_file(scratch, path);
 	sys_file_close(f);
 
 	str8 data = {.str = res.data, .size = res.size};
