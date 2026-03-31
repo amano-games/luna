@@ -35,6 +35,7 @@ struct pd_scores_req_add {
 
 struct pd_scores_req {
 	u32 id;
+	b32 cancelled;
 	enum pd_scores_req_type type;
 	enum sys_scores_req_state state;
 	sys_scores_req_callback callback;
@@ -72,7 +73,9 @@ sys_scores_queries_clear_queue(void)
 		state->start = 0;
 		state->end   = 0;
 	} else {
-		state->end = (state->start + 1) % ARRLEN(state->reqs);
+		struct pd_scores_req *req = state->reqs + state->start;
+		req->cancelled            = true;
+		state->end                = (state->start + 1) % ARRLEN(state->reqs);
 	}
 	return res;
 }
@@ -87,7 +90,9 @@ sys_scores_mutations_clear_queue(void)
 		state->start = 0;
 		state->end   = 0;
 	} else {
-		state->end = (state->start + 1) % ARRLEN(state->reqs);
+		struct pd_scores_req *req = state->reqs + state->start;
+		req->cancelled            = true;
+		state->end                = (state->start + 1) % ARRLEN(state->reqs);
 	}
 	return res;
 }
@@ -115,6 +120,7 @@ sys_score_add(
 	req->add.board_id         = board_id; // TODO: copy board_id
 	req->add.value            = value;
 	req->add.attemps          = 0;
+	req->cancelled            = false;
 	log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->add.board_id.str, req->add.value);
 	state->end = next;
 
@@ -147,6 +153,7 @@ sys_scores_get(
 	req->state                = SYS_SCORE_REQ_STATE_QUEUE;
 	req->get.alloc            = alloc;
 	req->get.board_id         = board_id;
+	req->cancelled            = false;
 	state->end                = next;
 
 	if(!state->busy) { pd_scores_start_next(state); }
@@ -176,6 +183,7 @@ sys_scores_personal_best_get(
 	req->id                     = state->next_id++;
 	req->state                  = SYS_SCORE_REQ_STATE_QUEUE;
 	req->personal_best.board_id = board_id;
+	req->cancelled              = false;
 	state->end                  = next;
 
 	if(!state->busy) { pd_scores_start_next(state); }
@@ -255,7 +263,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 		};
 	}
 
-	if(req->callback) {
+	if(req->callback && !req->cancelled) {
 		req->callback(req->id, res, req->userdata);
 	}
 
@@ -318,7 +326,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 	}
 
 error:
-	if(req->callback) {
+	if(req->callback && !req->cancelled) {
 		req->callback(req->id, res, req->userdata);
 	}
 
@@ -362,7 +370,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 		}
 	}
 
-	if(req->callback) {
+	if(req->callback && !req->cancelled) {
 		req->callback(req->id, res, req->userdata);
 	}
 
