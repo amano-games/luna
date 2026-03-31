@@ -1419,34 +1419,61 @@ mg_axis mg_get_gamepad_axis_platform(u32 axis) {
            return MG_AXIS_HAT_DPAD_LEFT_RIGHT;
         case ABS_HAT0Y:
            return MG_AXIS_HAT_DPAD_UP_DOWN;
-        case ABS_HAT1X:
-           return MG_AXIS_HAT1X;
-        case ABS_HAT1Y:
-           return MG_AXIS_HAT1Y;
-        case ABS_HAT2X:
-           return MG_AXIS_HAT2X;
-        case ABS_HAT2Y:
-           return MG_AXIS_HAT2Y;
-        case ABS_HAT3X:
-           return MG_AXIS_HAT3X;
-        case ABS_HAT3Y:
-           return MG_AXIS_HAT3Y;
-        case ABS_PRESSURE:
-           return MG_AXIS_PRESSURE;
-        case ABS_DISTANCE:
-           return MG_AXIS_DISTANCE;
-        case ABS_TILT_X:
-           return MG_AXIS_TILT_X;
-        case ABS_TILT_Y:
-           return MG_AXIS_TILT_Y;
-        case ABS_TOOL_WIDTH:
-           return MG_AXIS_TOOL_WIDTH;
-        case ABS_VOLUME:
-           return MG_AXIS_VOLUME;
-        case ABS_PROFILE:
-           return MG_AXIS_PROFILE;
         case ABS_MISC:
            return MG_AXIS_MISC;
+
+#if defined(ABS_HAT1X)
+        case ABS_HAT1X:
+           return MG_AXIS_HAT1X;
+#endif
+#if defined(ABS_HAT1Y)
+        case ABS_HAT1Y:
+           return MG_AXIS_HAT1Y;
+#endif
+#if defined(ABS_HAT2X)
+        case ABS_HAT2X:
+           return MG_AXIS_HAT2X;
+#endif
+#if defined(ABS_HAT2Y)
+        case ABS_HAT2Y:
+           return MG_AXIS_HAT2Y;
+#endif
+#if defined(ABS_HAT3X)
+        case ABS_HAT3X:
+           return MG_AXIS_HAT3X;
+#endif
+#if defined(ABS_HAT3Y)
+        case ABS_HAT3Y:
+           return MG_AXIS_HAT3Y;
+#endif
+#if defined(ABS_PRESSURE)
+        case ABS_PRESSURE:
+           return MG_AXIS_PRESSURE;
+#endif
+#if defined(ABS_DISTANCE)
+        case ABS_DISTANCE:
+           return MG_AXIS_DISTANCE;
+#endif
+#if defined(ABS_TILT_X)
+        case ABS_TILT_X:
+           return MG_AXIS_TILT_X;
+#endif
+#if defined(ABS_TILT_Y)
+        case ABS_TILT_Y:
+           return MG_AXIS_TILT_Y;
+#endif
+#if defined(ABS_TOOL_WIDTH)
+        case ABS_TOOL_WIDTH:
+           return MG_AXIS_TOOL_WIDTH;
+#endif
+#if defined(ABS_VOLUME)
+        case ABS_VOLUME:
+           return MG_AXIS_VOLUME;
+#endif
+#if defined(ABS_PROFILE)
+        case ABS_PROFILE:
+           return MG_AXIS_PROFILE;
+#endif
         default:
            return MG_AXIS_UNKNOWN;
     }
