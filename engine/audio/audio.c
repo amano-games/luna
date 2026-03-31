@@ -10,7 +10,7 @@
 #include "base/utils.h"
 #include "sys/sys.h"
 
-static void aud_cmds_flush(void);
+static void aud_cmds_flush(struct alloc scratch);
 static void aud_push_cmd(struct aud_cmd aud_cmd);
 static inline u32 aud_cmd_next_index(u32 i);
 
@@ -22,9 +22,9 @@ static void sfx_channel_playback(struct sfx_channel *sc, i16 *lbuf, i16 *rbuf, i
 static void sfx_channel_stop(struct sfx_channel *ch);
 
 void
-aud_do(i16 *lbuf, i16 *rbuf, i32 len)
+aud_do(struct alloc scratch, i16 *lbuf, i16 *rbuf, i32 len)
 {
-	aud_cmds_flush();
+	aud_cmds_flush(scratch);
 
 	for(usize n = 1; n < ARRLEN(AUDIO.mus_channel); n++) {
 		struct mus_channel *ch = &AUDIO.mus_channel[n];
@@ -46,7 +46,7 @@ aud_do(i16 *lbuf, i16 *rbuf, i32 len)
 }
 
 static void
-aud_cmds_flush(void)
+aud_cmds_flush(struct alloc scratch)
 {
 	while(AUDIO.i_cmd_r != AUDIO.i_cmd_w) {
 		struct aud_cmd aud_cmd = AUDIO.cmds[AUDIO.i_cmd_r];
@@ -127,7 +127,7 @@ aud_cmds_flush(void)
 				break;
 			}
 
-			str8 full_path = asset_path_to_full_path(path);
+			str8 full_path = asset_path_to_full_path(scratch, path);
 			void *f        = sys_file_open_r(full_path);
 			if(!f) {
 				log_warn("Audio", "Can't open music file: %s", path.str);

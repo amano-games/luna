@@ -20,13 +20,6 @@ assets_ini(struct alloc alloc, usize size)
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();
-
-	{
-		usize scratch_size = MKILOBYTE(50);
-		void *scratch_mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, scratch_size, 4);
-		marena_init(&ASSETS.scratch_marena, scratch_mem, scratch_size);
-		ASSETS.scratch = marena_allocator(&ASSETS.scratch_marena);
-	}
 }
 
 void *
@@ -62,10 +55,10 @@ asset_tex_get_id(str8 path)
 }
 
 i32
-asset_tex_load(str8 path, struct tex *tex)
+asset_tex_load(struct alloc scratch, str8 path, struct tex *tex)
 {
 	i32 res        = 0;
-	str8 full_path = asset_path_to_full_path(path);
+	str8 full_path = asset_path_to_full_path(scratch, path);
 	struct tex t   = tex_load(full_path, ASSETS.alloc);
 
 	if(t.px == NULL) {
@@ -97,28 +90,12 @@ asset_fnt_get_id(str8 path)
 }
 
 i32
-asset_fnt_load(str8 path, struct fnt *fnt)
+asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 {
-	i32 res = 0;
-
-	usize size = MKILOBYTE(200);
-	void *mem  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size, 4);
-	mclr(mem, size);
-	struct marena marena = {0};
-	struct alloc alloc   = {0};
-	marena_init(&marena, mem, size);
-	alloc = marena_allocator(&marena);
-
-	usize size_scratch = MKILOBYTE(200);
-	void *mem_scratch  = ASSETS.alloc.allocf(ASSETS.alloc.ctx, size_scratch, 4);
-	mclr(mem_scratch, size_scratch);
-	struct marena marena_scratch = {0};
-	struct alloc scratch         = {0};
-	marena_init(&marena_scratch, mem_scratch, size_scratch);
-	scratch = marena_allocator(&marena_scratch);
-
-	str8 full_path = asset_path_to_full_path(path);
-	struct fnt f   = fnt_load(full_path, alloc, scratch);
+	i32 res            = 0;
+	struct alloc alloc = ASSETS.alloc;
+	str8 full_path     = asset_path_to_full_path(scratch, path);
+	struct fnt f       = fnt_load(full_path, alloc, scratch);
 	if(f.t.px == NULL) {
 		log_warn("Assets", "Load failed %s", full_path.str);
 	}
@@ -126,8 +103,6 @@ asset_fnt_load(str8 path, struct fnt *fnt)
 	log_info("Assets", "Load fnt %s", path.str);
 	if(fnt) *fnt = f;
 
-	mclr(marena.p, size_scratch);
-	marena_reset_to(&ASSETS.marena, marena.p);
 	return res;
 }
 
@@ -139,11 +114,10 @@ asset_snd(i32 id)
 }
 
 i32
-asset_snd_load(str8 path, struct snd *snd)
+asset_snd_load(struct alloc scratch, str8 path, struct snd *snd)
 {
-
 	i32 res        = 0;
-	str8 full_path = asset_path_to_full_path(path);
+	str8 full_path = asset_path_to_full_path(scratch, path);
 	struct snd s   = snd_load(full_path, ASSETS.alloc);
 	if(s.len == 0) {
 		log_warn("Assets", "Load failed %s", full_path.str);
@@ -172,14 +146,12 @@ asset_bet(i32 id)
 }
 
 i32
-asset_bet_load(str8 path, struct bet *bet)
+asset_bet_load(struct alloc scratch, str8 path, struct bet *bet)
 {
-	marena_reset(&ASSETS.scratch_marena);
-	struct alloc scratch = ASSETS.scratch;
-	struct alloc alloc   = ASSETS.alloc;
-	i32 res              = 0;
-	str8 full_path       = asset_path_to_full_path(path);
-	struct bet b         = bet_load(full_path, alloc, scratch);
+	i32 res            = 0;
+	struct alloc alloc = ASSETS.alloc;
+	str8 full_path     = asset_path_to_full_path(scratch, path);
+	struct bet b       = bet_load(full_path, alloc, scratch);
 	if(b.nodes == NULL) {
 		log_warn("Assets", "Bet loading failed: %s", full_path.str);
 		return -1;
@@ -252,15 +224,13 @@ asset_path_get_type(str8 path)
 }
 
 str8
-asset_path_to_full_path(struct str8 path)
+asset_path_to_full_path(struct alloc scratch, struct str8 path)
 {
 	str8 res       = path;
 	str8 base_path = sys_base_path();
 	if(base_path.size == 0) { return res; }
 
-	marena_reset(&ASSETS.scratch_marena);
 	enum path_style path_style = path_style_from_str8(base_path);
-	struct alloc scratch       = ASSETS.scratch;
 	struct str8_list path_list = {0};
 	str8_list_push(scratch, &path_list, base_path);
 	str8_list_push(scratch, &path_list, path);

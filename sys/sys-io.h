@@ -52,7 +52,7 @@ i32 sys_file_r(void *f, void *buf, u32 bsize);
 struct sys_file_stats sys_file_stats(str8 path);
 b32 sys_make_dir(str8 path);
 
-struct sys_full_file_res sys_load_full_file(str8 path, struct alloc alloc);
+struct sys_full_file_res sys_load_full_file(struct alloc alloc, str8 path);
 usize sys_file_modified(str8 path);
 
 str8 sys_exe_path(void);

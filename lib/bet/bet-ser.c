@@ -13,7 +13,7 @@ bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
 	log_info("Bet", "Load bet %s", path.str);
 	struct bet res                    = {0};
-	struct sys_full_file_res file_res = sys_load_full_file(path, scratch);
+	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
 	char *data                        = file_res.data;
 	usize size                        = file_res.size;
 

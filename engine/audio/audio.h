@@ -117,7 +117,7 @@ struct aud {
 
 static struct aud AUDIO;
 
-void aud_do(i16 *lbuf, i16 *rbuf, i32 len);
+void aud_do(struct alloc scratch, i16 *lbuf, i16 *rbuf, i32 len);
 void aud_allow_playing_new_snd(b32 enabled);
 void aud_set_lowpass(i32 lp); // 0 for off, otherwise increasing intensity
 void aud_cmd_queue_commit(void);
