@@ -35,6 +35,18 @@
 
 #endif
 
+#ifndef _MSC_VER
+#include <stddef.h>
+#else
+#include <stddef.h>
+#ifndef max_align_t
+typedef struct {
+	long long ll;
+	long double ld;
+} max_align_t;
+#endif
+#endif
+
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;

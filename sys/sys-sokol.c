@@ -66,6 +66,10 @@
 #define SOKOL_RECORDING_ENABLED
 #define SOKOL_MOCK_PLAYER_NAME "afk"
 
+#if defined(TARGET_WIN)
+#undef SOKOL_RECORDING_ENABLED
+#endif
+
 struct touch_point_mouse_emu {
 	uintptr_t id;
 	sapp_mousebutton btn;
