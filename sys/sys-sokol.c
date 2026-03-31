@@ -2,11 +2,15 @@
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
+#include "base/rec.h"
 #include "engine/gfx/gfx-spr.h"
+#include "engine/gfx/gfx-txt.h"
+#include "lib/fnt/fnt.h"
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
 #include "sys-debug-draw.h"
 #include "base/types.h"
+#include "sys/sys-font-mono.h"
 #include "sys/sys-scoreboards.h"
 #include <stdio.h>
 #include <tinydir.h>
@@ -121,6 +125,18 @@ struct sokol_paused_state {
 	struct gfx_ctx ctx;
 };
 
+struct sokol_menu_item {
+	str8 title;
+	void (*callback)(void *arg);
+	void *arg;
+};
+
+struct sokol_menu {
+	i32 idx;
+	i32 len;
+	struct sokol_menu_item items[3];
+};
+
 struct sokol_state {
 	enum sokol_status status;
 
@@ -144,6 +160,8 @@ struct sokol_state {
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx debug_ctx;
 
+	struct sokol_menu menu;
+
 	u8 keys[SYS_KEYS_LEN];
 	b32 crank_docked;
 	f32 crank;
@@ -155,6 +173,7 @@ struct sokol_state {
 
 	mg_gamepads gamepads;
 
+	struct fnt fnt;
 	struct sys_opts opts;
 
 	struct recording_1b recording;
@@ -186,6 +205,11 @@ void sokol_frame(void);
 void sokol_event(const sapp_event *ev);
 void sokol_stream_cb(f32 *buffer, int num_frames, int num_channels);
 void sokol_cleanup(void);
+
+void sokol_pause_handle_sokol_event(const sapp_event *ev);
+void sokol_pause_handle_gamepad_event(const mg_event *ev);
+void sokol_pause_handle_buttons(i32 buttons);
+
 void sokol_pause(void);
 void sokol_resume(void);
 
@@ -198,6 +222,7 @@ static void sokol_screenshot_save(struct tex tex);
 static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
+
 static inline i32 sokol_gamepads_upd(void);
 static inline void sokol_gamepads_ev(void);
 
@@ -329,6 +354,21 @@ sokol_main(i32 argc, char **argv)
 		sys_make_dir(dir_path);
 	}
 
+	SOKOL_STATE.fnt = (struct fnt){
+		.cell_h             = 9,
+		.cell_w             = 6,
+		.grid_h             = 12,
+		.grid_w             = 10,
+		.metrics.baseline   = 8,
+		.metrics.x_height   = -1,
+		.metrics.cap_height = -1,
+		.metrics.descent    = -1,
+		.t.wword            = 4,
+		.t.fmt              = 1,
+		.t.w                = 60,
+		.t.h                = 108,
+		.t.px               = (u32 *)SYS_MONO_FONT,
+	};
 	SOKOL_STATE.status = SOKOL_STATUS_INI;
 
 error:;
@@ -553,6 +593,119 @@ sokol_event(const sapp_event *ev)
 	default: {
 	} break;
 	}
+	sokol_pause_handle_sokol_event(ev);
+}
+
+void
+sokol_pause_handle_sokol_event(const sapp_event *ev)
+{
+	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) { return; }
+
+	i32 b = 0;
+	switch(ev->type) {
+	case SAPP_EVENTTYPE_KEY_DOWN: {
+		switch(ev->key_code) {
+		case SAPP_KEYCODE_W: {
+			b |= SYS_INP_DPAD_U;
+		} break;
+		case SAPP_KEYCODE_S: {
+			b |= SYS_INP_DPAD_D;
+		} break;
+		case SAPP_KEYCODE_PERIOD: {
+			b |= SYS_INP_A;
+		} break;
+		case SAPP_KEYCODE_COMMA: {
+			b |= SYS_INP_B;
+		} break;
+		case SAPP_KEYCODE_UP: {
+			b |= SYS_INP_DPAD_U;
+		} break;
+		case SAPP_KEYCODE_DOWN: {
+			b |= SYS_INP_DPAD_D;
+		} break;
+		case SAPP_KEYCODE_X: {
+			b |= SYS_INP_A;
+		} break;
+		case SAPP_KEYCODE_Z: {
+			b |= SYS_INP_B;
+		} break;
+		case SAPP_KEYCODE_Q: {
+			b |= SYS_INP_A;
+		} break;
+		case SAPP_KEYCODE_E: {
+			b |= SYS_INP_B;
+		} break;
+		case SAPP_KEYCODE_SPACE: {
+			b |= SYS_INP_A;
+		} break;
+		default: {
+		} break;
+		}
+	} break;
+	case SAPP_EVENTTYPE_KEY_UP: {
+	} break;
+	default: {
+	} break;
+	}
+	sokol_pause_handle_buttons(b);
+}
+
+void
+sokol_pause_handle_gamepad_event(const mg_event *ev)
+{
+	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) { return; }
+
+	i32 b = 0;
+	switch(ev->type) {
+	case MG_EVENT_BUTTON_PRESS: {
+		switch(ev->button) {
+		case MG_BUTTON_DPAD_UP: {
+			b |= SYS_INP_DPAD_U;
+		} break;
+		case MG_BUTTON_DPAD_DOWN: {
+			b |= SYS_INP_DPAD_D;
+		} break;
+		case MG_BUTTON_SOUTH: {
+			b |= SYS_INP_A;
+		} break;
+		case MG_BUTTON_EAST: {
+			b |= SYS_INP_B;
+		} break;
+		default: {
+		} break;
+		}
+	} break;
+	default: {
+	} break;
+	}
+	sokol_pause_handle_buttons(b);
+}
+
+void
+sokol_pause_handle_buttons(i32 buttons)
+{
+	struct sokol_menu *menu = &SOKOL_STATE.menu;
+
+	if(menu->len > 0) {
+		struct sokol_menu_item *item = menu->items + menu->idx;
+		if(buttons & SYS_INP_A) {
+			if(item->callback) {
+				item->callback(item->arg);
+			}
+		}
+		if(buttons & SYS_INP_DPAD_U) {
+			menu->idx = max_i32(menu->idx - 1, 0);
+		}
+		if(buttons & SYS_INP_DPAD_D) {
+			menu->idx = min_i32(menu->idx + 1, menu->len - 1);
+		}
+	}
+	if((buttons & SYS_INP_A)) {
+		sokol_resume();
+	}
+	if((buttons & SYS_INP_B)) {
+		sokol_resume();
+	}
 }
 
 #define F32_SCALE (1.0f / I16_MAX)
@@ -685,6 +838,42 @@ sokol_frame(void)
 				ctx.pat = gfx_pattern_50();
 				gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
 				ctx.pat = gfx_pattern_100();
+			}
+			{
+				struct fnt fnt         = SOKOL_STATE.fnt;
+				struct sokol_menu menu = SOKOL_STATE.menu;
+				rec_i32 root           = {SYS_DISPLAY_W * 0.5f, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
+				gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
+				rec_i32_cut_left(&root, 3);
+				gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
+
+				{
+					i32 menu_height = 99;
+					rec_i32 layout  = rec_i32_cut_top(&root, menu_height);
+					i32 row_height  = menu_height / 3;
+					for(ssize i = 0; i < menu.len; ++i) {
+						rec_i32 row_layout = rec_i32_cut_top(&layout, row_height);
+						rec_i32_cut_left(&row_layout, 10);
+						rec_i32_cut_right(&row_layout, 10);
+						v2_i32 cntr = rec_i32_cntr(row_layout);
+						str8 str    = menu.items[i].title;
+						if(fnt.t.px != 0) {
+							i32 x = row_layout.x + 4;
+							i32 y = cntr.y - (fnt.cell_h * 0.5f);
+							fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
+						}
+						if(menu.idx == i) {
+							gfx_rec_fill(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, PRIM_MODE_INV);
+						}
+					}
+				}
+				{
+					rec_i32 layout = rec_i32_cut_top(&root, 2);
+					rec_i32_cut_left(&layout, 10);
+					rec_i32_cut_right(&layout, 10);
+					gfx_lin(ctx, layout.x, layout.y, layout.x + layout.w, layout.y, PRIM_MODE_BLACK);
+					gfx_lin(ctx, layout.x, layout.y + 1, layout.x + layout.w, layout.y + 1, PRIM_MODE_BLACK);
+				}
 			}
 			{
 				struct tex tex     = SOKOL_STATE.paused_state.menu_tex;
@@ -1099,8 +1288,18 @@ sys_set_auto_lock_disabled(int disable)
 }
 
 void
-sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg)
+sys_menu_item_add(
+	int id,
+	const char *title,
+	void (*callback)(void *arg),
+	void *arg)
 {
+	dbg_assert(id >= 0 && id < (ssize)ARRLEN(SOKOL_STATE.menu.items));
+	SOKOL_STATE.menu.len++;
+	struct sokol_menu_item *item = SOKOL_STATE.menu.items + id;
+	item->title                  = str8_cstr((char *)title);
+	item->arg                    = arg;
+	item->callback               = callback;
 }
 
 void
@@ -1122,6 +1321,7 @@ sys_menu_value(int id)
 void
 sys_menu_clr(void)
 {
+	mclr_struct(&SOKOL_STATE.menu);
 }
 
 void
@@ -1937,6 +2137,7 @@ sokol_gamepads_ev(void)
 
 	mg_event ev;
 	while(mg_gamepads_check_event(gamepads, &ev)) {
+		sokol_pause_handle_gamepad_event(&ev);
 		switch(ev.type) {
 		case MG_EVENT_BUTTON_PRESS: {
 			switch(ev.button) {
