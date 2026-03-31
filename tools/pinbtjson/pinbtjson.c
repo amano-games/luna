@@ -1489,7 +1489,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 
 #if defined(DEBUG)
 	{
-		struct sys_full_file_res io_res = sys_load_full_file(out_file_path, scratch);
+		struct sys_full_file_res io_res = sys_load_full_file(scratch, out_file_path);
 		struct ser_reader r             = {
 						.data = io_res.data,
 						.len  = io_res.size,

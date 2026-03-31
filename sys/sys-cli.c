@@ -220,7 +220,7 @@ sys_make_dir(str8 path)
 	b32 res = false;
 #if defined(TARGET_WIN)
 	{
-		res = _mkdir(path) == 0;
+		res = _mkdir((const char *)path.str) == 0;
 	}
 #else
 	{
