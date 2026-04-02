@@ -75,10 +75,11 @@ void sys_internal_stream_start(void);
 void sys_internal_stream_end(void);
 
 // TODO: Should we do this only on playdate?
-void sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg);
-void sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)(void *arg), void *arg);
-void sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);
+i32 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg);
+i32 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg);
+i32 sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);
 int sys_menu_value(int id);
+void sys_menu_item_remove(int id);
 void sys_menu_clr(void);
 void sys_set_menu_image(struct tex tex, i32 x_offset);
 void sys_set_auto_lock_disabled(int disabled);
