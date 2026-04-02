@@ -14,6 +14,7 @@ BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/macos
 
 LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
+LDLIBS += -framework IOKit -framework CoreFoundation
 LDFLAGS :=
 
 WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
