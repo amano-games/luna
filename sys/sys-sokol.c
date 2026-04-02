@@ -129,13 +129,26 @@ struct sokol_paused_state {
 	struct gfx_ctx ctx;
 };
 
+enum sokol_menu_item_type {
+	SOKOL_MENU_ITEM_TYPE_NONE,
+
+	SOKOL_MENU_ITEM_TYPE_ACTION,
+	SOKOL_MENU_ITEM_TYPE_BOOL,
+
+	SOKOL_MENU_ITEM_TYPE_NUM_COUNT,
+};
+
 struct sokol_menu_item {
+	i32 id;
+	enum sokol_menu_item_type type;
 	str8 title;
+	i32 value;
 	void (*callback)(void *arg);
 	void *arg;
 };
 
 struct sokol_menu {
+	i32 next_id;
 	i32 idx;
 	i32 len;
 	struct sokol_menu_item items[3];
@@ -236,6 +249,7 @@ sokol_main(i32 argc, char **argv)
 	stm_setup();
 	SOKOL_STATE.tick_start   = stm_now();
 	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
+	SOKOL_STATE.menu.next_id = 1;
 	{
 		usize mem_size = MMEGABYTE(1);
 		void *mem      = sys_alloc(NULL, mem_size, 4);
@@ -1291,41 +1305,94 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
-void
+i32
 sys_menu_item_add(
-	int id,
 	const char *title,
 	void (*callback)(void *arg),
 	void *arg)
 {
-	dbg_assert(id >= 0 && id < (ssize)ARRLEN(SOKOL_STATE.menu.items));
-	SOKOL_STATE.menu.len++;
-	struct sokol_menu_item *item = SOKOL_STATE.menu.items + id;
+	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
+	ssize idx                    = SOKOL_STATE.menu.len++;
+	struct sokol_menu_item *item = SOKOL_STATE.menu.items + idx;
+	item->id                     = SOKOL_STATE.menu.next_id++;
+	item->type                   = SOKOL_MENU_ITEM_TYPE_ACTION;
 	item->title                  = str8_cstr((char *)title);
 	item->arg                    = arg;
 	item->callback               = callback;
+	return item->id;
 }
 
-void
-sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)(void *arg), void *arg)
+i32
+sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
+	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
+	ssize idx                    = SOKOL_STATE.menu.len++;
+	struct sokol_menu_item *item = SOKOL_STATE.menu.items + idx;
+	item->type                   = SOKOL_MENU_ITEM_TYPE_BOOL;
+	item->title                  = str8_cstr((char *)title);
+	item->arg                    = arg;
+	item->callback               = callback;
+	item->value                  = val;
+	return item->id;
 }
 
-void
-sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
+i32
+sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
 {
+	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
+	return 0;
 }
 
 int
 sys_menu_value(int id)
 {
+	struct sokol_menu_item *items = SOKOL_STATE.menu.items;
+	ssize len                     = SOKOL_STATE.menu.len;
+	for(ssize i = 0; i < len; i++) {
+		if(items[i].id == id) {
+			return items[i].value;
+		}
+	}
 	return 0;
+}
+
+void
+sys_menu_item_remove(int id)
+{
+	struct sokol_menu_item *items = SOKOL_STATE.menu.items;
+	ssize len                     = SOKOL_STATE.menu.len;
+
+	// Find the index of the item with this id
+	ssize idx = -1;
+	for(ssize i = 0; i < len; i++) {
+		if(items[i].id == id) {
+			idx = i;
+			break;
+		}
+	}
+
+	// Not found → nothing to remove (or assert if you prefer)
+	if(idx == -1) {
+		return;
+	}
+
+	// Shift elements left to fill the gap
+	for(ssize i = idx; i < len - 1; i++) {
+		items[i] = items[i + 1];
+	}
+
+	// Clear last element (optional, for safety/debug)
+	mclr_struct(&items[len - 1]);
+
+	SOKOL_STATE.menu.len--;
 }
 
 void
 sys_menu_clr(void)
 {
-	mclr_struct(&SOKOL_STATE.menu);
+	mclr_array(SOKOL_STATE.menu.items);
+	SOKOL_STATE.menu.len = 0;
+	SOKOL_STATE.menu.idx = 0;
 }
 
 void

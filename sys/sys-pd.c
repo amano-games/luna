@@ -14,6 +14,18 @@
 
 PlaydateAPI *PD;
 
+struct pd_menu_item {
+	i32 id;
+	PDMenuItem *data;
+};
+
+struct pd_menu {
+	i32 next_id;
+	i32 idx;
+	i32 len;
+	struct pd_menu_item items[3];
+};
+
 struct pd_state {
 	u32 us_monotonic;
 	u32 us_elapsed;
@@ -21,7 +33,7 @@ struct pd_state {
 	b32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
 	LCDBitmap *menu_bitmap;
-	PDMenuItem *menu_items[5];
+	struct pd_menu menu;
 	struct sys_process_info process_info;
 };
 
@@ -88,7 +100,8 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
-		PD_STATE.menu_bitmap = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorClear);
+		PD_STATE.menu_bitmap  = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorClear);
+		PD_STATE.menu.next_id = 1;
 
 		PD_STATE.process_info = (struct sys_process_info){
 			.initial_path = str8_lit(""),
@@ -446,38 +459,99 @@ sys_set_auto_lock_disabled(int disable)
 	PD_SYS_SET_AUTO_LOCK_DISABLED(disable);
 }
 
-void
-sys_menu_item_add(int id, const char *title, void (*callback)(void *arg), void *arg)
+i32
+sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg)
 {
-	void *item              = PD->system->addMenuItem(title, callback, arg);
-	PD_STATE.menu_items[id] = item;
+	dbg_assert(PD_STATE.menu.len < (ssize)ARRLEN(PD_STATE.menu.items));
+	void *data                = PD->system->addMenuItem(title, callback, arg);
+	ssize idx                 = PD_STATE.menu.len++;
+	struct pd_menu_item *item = PD_STATE.menu.items + idx;
+	item->id                  = PD_STATE.menu.next_id++;
+	item->data                = data;
+	return item->id;
 }
 
-void
-sys_menu_checkmark_add(int id, const char *title, int val, void (*callback)(void *arg), void *arg)
+i32
+sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	void *item              = PD->system->addCheckmarkMenuItem(title, val, callback, arg);
-	PD_STATE.menu_items[id] = item;
+	dbg_assert(PD_STATE.menu.len < (ssize)ARRLEN(PD_STATE.menu.items));
+	void *data                = PD->system->addCheckmarkMenuItem(title, val, callback, arg);
+	ssize idx                 = PD_STATE.menu.len++;
+	struct pd_menu_item *item = PD_STATE.menu.items + idx;
+	item->id                  = PD_STATE.menu.next_id++;
+	item->data                = data;
+	return item->id;
 }
 
-void
-sys_menu_options_add(int id, const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
+i32
+sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
 {
-	PDMenuItem *item        = PD->system->addOptionsMenuItem(title, options, count, callback, arg);
-	PD_STATE.menu_items[id] = item;
+	dbg_assert(PD_STATE.menu.len < (ssize)ARRLEN(PD_STATE.menu.items));
+	PDMenuItem *data          = PD->system->addOptionsMenuItem(title, options, count, callback, arg);
+	ssize idx                 = PD_STATE.menu.len++;
+	struct pd_menu_item *item = PD_STATE.menu.items + idx;
+	item->id                  = PD_STATE.menu.next_id++;
+	item->data                = data;
+	return item->id;
 }
 
 int
 sys_menu_value(int id)
 {
-	PDMenuItem *ptr = PD_STATE.menu_items[id];
-	return (ptr ? PD->system->getMenuItemValue(ptr) : 0);
+	PDMenuItem *data = NULL;
+
+	struct pd_menu_item *items = PD_STATE.menu.items;
+	ssize len                  = PD_STATE.menu.len;
+	for(ssize i = 0; i < len; i++) {
+		if(items[i].id == id) {
+			data = items[i].data;
+			break;
+		}
+	}
+
+	return (data ? PD->system->getMenuItemValue(data) : 0);
+}
+
+void
+sys_menu_item_remove(int id)
+{
+	struct pd_menu_item *items = PD_STATE.menu.items;
+	ssize len                  = PD_STATE.menu.len;
+
+	// Find the index of the item with this id
+	ssize idx = -1;
+	for(ssize i = 0; i < len; i++) {
+		if(items[i].id == id) {
+			idx = i;
+			if(items[i].data != NULL) {
+				PD->system->removeMenuItem(items[i].data);
+			}
+			break;
+		}
+	}
+
+	// Not found → nothing to remove (or assert if you prefer)
+	if(idx == -1) {
+		return;
+	}
+
+	// Shift elements left to fill the gap
+	for(ssize i = idx; i < len - 1; i++) {
+		items[i] = items[i + 1];
+	}
+
+	// Clear last element (optional, for safety/debug)
+	mclr_struct(&items[len - 1]);
+
+	PD_STATE.menu.len--;
 }
 
 void
 sys_menu_clr(void)
 {
-	mclr(PD_STATE.menu_items, sizeof(PD_STATE.menu_items));
+	mclr_array(PD_STATE.menu.items);
+	PD_STATE.menu.len = 0;
+	PD_STATE.menu.idx = 0;
 	PD->system->removeAllMenuItems();
 }
 
