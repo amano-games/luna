@@ -294,7 +294,20 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		res.error_message = str8_cstr((char *)error_message);
 		goto error;
 	} else {
-		log_info("sys-scores", "Got scores for board %s: No. of scores: %d", req->get.board_id.str, scores->count);
+		log_info(
+			"sys-scores",
+			"Scores,"
+			" board:%s"
+			" count:%d"
+			" limit:%d"
+			" playerIncluded:%d"
+			" lastUpdated:%" PRIu32,
+
+			req->get.board_id.str,
+			(int)scores->count,
+			(int)scores->playerIncluded,
+			(int)scores->limit,
+			scores->lastUpdated);
 		for(ssize i = 0; i < (ssize)scores->count; ++i) {
 			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
 		}
@@ -357,7 +370,17 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
 		if(score) {
-			log_info("sys-scores", "Personal best for board %s: %" PRIu32 "", req->personal_best.board_id.str, score->value);
+			log_info(
+				"sys-scores",
+				"Personal best,"
+				" board:%s"
+				" rank:%d"
+				" score:%" PRIu32
+				" player:%s",
+				req->personal_best.board_id.str,
+				score->rank,
+				score->value,
+				score->player);
 			res.personal_best = (struct sys_scores_res_personal_best){
 				.score = (struct sys_score){
 					.rank   = score->rank,
