@@ -15,7 +15,7 @@ PLATFORM_DIR := platforms/macos
 
 LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
 LDLIBS += -framework IOKit -framework CoreFoundation
-LDFLAGS :=
+LDFLAGS := -arch x86_64 -arch arm64
 
 WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
 WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
@@ -49,7 +49,7 @@ else
 CFLAGS := $(RELEASE_CFLAGS)
 endif
 
-CFLAGS += $(CDEFS) -ObjC -x objective-c
+CFLAGS += $(CDEFS) -ObjC -x objective-c -arch x86_64 -arch arm64
 
 # TODO: Move assets to resources
 OBJS         := $(BUILD_DIR)/$(TARGET)
