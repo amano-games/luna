@@ -22,6 +22,7 @@ enum ser_value_type {
 	SER_TYPE_OBJECT,
 	SER_TYPE_ARRAY,
 	SER_TYPE_U8,
+	SER_TYPE_U32,
 	SER_TYPE_I32,
 	SER_TYPE_F32,
 	SER_TYPE_BOOL,
@@ -33,6 +34,7 @@ struct ser_value {
 	union {
 		str8 str;
 		u8 u8;
+		u32 u32;
 		i32 i32;
 		f32 f32;
 		b32 b32;
@@ -53,6 +55,9 @@ ser_write(struct ser_writer *w, struct ser_value val)
 	} break;
 	case SER_TYPE_I32: {
 		sys_file_w(w->f, &val.i32, sizeof(val.i32));
+	} break;
+	case SER_TYPE_U32: {
+		sys_file_w(w->f, &val.u32, sizeof(val.u32));
 	} break;
 	case SER_TYPE_F32: {
 		sys_file_w(w->f, &val.f32, sizeof(val.f32));
@@ -87,9 +92,22 @@ ser_get_u8(struct ser_value value)
 }
 
 void
+ser_write_u32(struct ser_writer *w, u32 value)
+{
+	ser_write(w, (struct ser_value){.type = SER_TYPE_U32, .u32 = value});
+}
+
+void
 ser_write_i32(struct ser_writer *w, i32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_I32, .i32 = value});
+}
+
+static inline u32
+ser_get_u32(struct ser_value value)
+{
+	dbg_assert(value.type == SER_TYPE_U32);
+	return value.u32;
 }
 
 static inline i32
@@ -186,6 +204,9 @@ ser_read(struct ser_reader *r)
 	case SER_TYPE_U8:
 		ok &= ser_safe_read(r, &res.u8, sizeof(res.u8));
 		break;
+	case SER_TYPE_U32:
+		ok &= ser_safe_read(r, &res.u32, sizeof(res.u32));
+		break;
 	case SER_TYPE_I32:
 		ok &= ser_safe_read(r, &res.i32, sizeof(res.i32));
 		break;
@@ -279,6 +300,9 @@ ser_value_push_str8_list(struct ser_reader *r, struct ser_value val, int depth, 
 	} break;
 	case SER_TYPE_U8: {
 		str8_list_pushf(alloc, list, "%d", val.u8);
+	} break;
+	case SER_TYPE_U32: {
+		str8_list_pushf(alloc, list, "%" PRIu32 "", val.u32);
 	} break;
 	case SER_TYPE_I32: {
 		str8_list_pushf(alloc, list, "%" PRId32 "", val.i32);
