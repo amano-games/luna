@@ -22,11 +22,11 @@ enum ser_value_type {
 	SER_TYPE_OBJECT,
 	SER_TYPE_ARRAY,
 	SER_TYPE_U8,
-	SER_TYPE_U32,
 	SER_TYPE_I32,
 	SER_TYPE_F32,
 	SER_TYPE_BOOL,
 	SER_TYPE_STRING,
+	SER_TYPE_U32,
 };
 
 struct ser_value {
