@@ -11,7 +11,10 @@
 #include "sys-debug-draw.h"
 #include "base/types.h"
 #include "sys/sys-font-mono.h"
+#include "sys/sys-opts.h"
 #include "sys/sys-scoreboards.h"
+
+#include <jsmn.h>
 #include <stdio.h>
 #include <tinydir.h>
 #if !defined(TARGET_WASM)
@@ -61,8 +64,6 @@
 #define SOKOL_AUDIO_VOLUME        0.1f
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
-#define SOKOL_RECORDING_SECONDS 120
-#define SOKOL_RECORDING_SCALE   1
 #define SOKOL_RECORDING_ENABLED
 #define SOKOL_MOCK_PLAYER_NAME "afk"
 
@@ -90,26 +91,6 @@ struct recording_aud {
 };
 
 static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
-
-struct sys_screenshot_opts {
-	i32 scale;
-	str8 save_path;
-	struct gfx_col_pallete colors;
-};
-
-struct sys_recording_opts {
-	i32 scale;
-	str8 save_path;
-	i32 seconds_count;
-	struct gfx_col_pallete colors;
-};
-
-struct sys_opts {
-	struct gfx_col_pallete colors;
-	struct gfx_col_pallete colors_dbg;
-	struct sys_screenshot_opts screentshot;
-	struct sys_recording_opts recording;
-};
 
 enum sokol_status {
 	SOKOL_STATUS_NONE,
@@ -287,9 +268,8 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		// Ini opts
-		SOKOL_STATE.opts.recording.seconds_count = SOKOL_RECORDING_SECONDS;
-		SOKOL_STATE.opts.recording.scale         = SOKOL_RECORDING_SCALE;
+		struct sys_opts *opts = &SOKOL_STATE.opts;
+		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
 	}
 
 	{
@@ -348,20 +328,6 @@ sokol_main(i32 argc, char **argv)
 		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording audio memory");
 	}
 #endif
-
-	{
-		SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK] = 0x110B0DFF;
-		SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE] = 0xA5A5A2FF;
-
-		SOKOL_STATE.opts.colors_dbg.colors[GFX_COL_BLACK] = 0x000000FF;
-		SOKOL_STATE.opts.colors_dbg.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
-
-		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_BLACK] = 0x000000FF;
-		SOKOL_STATE.opts.recording.colors.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
-
-		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_BLACK] = 0x000000FF;
-		SOKOL_STATE.opts.screentshot.colors.colors[GFX_COL_WHITE] = 0xFFFFFFFF;
-	}
 
 	{
 		str8 dir_path = sys_path_to_data_path(
@@ -1594,10 +1560,10 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 		struct sys_scores_res score_res = {
 			.type = SYS_SCORE_RES_SCORES_GET,
 			.get  = {
-				 .board_id        = board_id,
-				 .last_updated    = last_updated,
-				 .player_included = true,
-            },
+				.board_id        = board_id,
+				.last_updated    = last_updated,
+				.player_included = true,
+			},
 		};
 		struct sys_score_arr *entries = &score_res.get.entries;
 		if(alloc.allocf != NULL) {
@@ -2003,7 +1969,9 @@ sokol_screenshot_save(struct tex tex)
 
 	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.opts.screentshot.colors);
 	str8 path = str8_fmt_push(alloc,
-		"%s-%04d-%02d-%02d_%02d:%02d:%02d",
+		"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d",
+		(int)SOKOL_STATE.opts.screentshot.save_path.size,
+		SOKOL_STATE.opts.screentshot.save_path.str,
 		SOKOL_NAME,
 		date_time.year,
 		date_time.month,
@@ -2011,7 +1979,6 @@ sokol_screenshot_save(struct tex tex)
 		date_time.hour,
 		date_time.min,
 		date_time.sec);
-	path      = sys_path_to_data_path(alloc, path, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
 
 #if SOKOL_SCREENSHOT_FORMAT == 1
 	path = str8_fmt_push(alloc, "%s.png", path.str);
@@ -2039,20 +2006,17 @@ sokol_recording_write(struct recording_1b *recording)
 	// Generate timestamped output path
 	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
 	str8 path           = str8_fmt_push(
-        scratch,
-        "%s-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
-        SOKOL_NAME,
-        dt.year,
-        dt.month,
-        dt.day,
-        dt.hour,
-        dt.min,
-        dt.sec);
-	path = sys_path_to_data_path(
 		scratch,
-		path,
-		str8_lit(SOKOL_ORG),
-		str8_lit(SOKOL_NAME));
+		"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
+		(int)SOKOL_STATE.opts.recording.save_path.size,
+		SOKOL_STATE.opts.recording.save_path.str,
+		SOKOL_NAME,
+		dt.year,
+		dt.month,
+		dt.day,
+		dt.hour,
+		dt.min,
+		dt.sec);
 
 	// Construct ffmpeg command
 	i32 fps                   = sys_ups_target_get();

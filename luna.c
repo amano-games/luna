@@ -6,6 +6,7 @@
 
 #include "sys/sys-io.c"
 #include "sys/sys.c"
+#include "sys/sys-opts.c"
 #if defined BACKEND_SOKOL
 #include "sys/sys-sokol.c"
 #else

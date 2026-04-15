@@ -1420,7 +1420,6 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 		str8 key_str     = json_str8(json, key);
 		str8 value_str   = json_str8(json, value);
 		if(json_eq(json, key, str8_lit("version")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.version = json_parse_i32(json, value);
 			dbg_assert(res.version == 1);
 			++i;
@@ -1430,11 +1429,9 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 			res.props                     = item_res.table_props;
 			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("entities_max_id")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.entities_max_id = json_parse_i32(json, value);
 			++i;
 		} else if(json_eq(json, key, str8_lit("entities_count")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
 			res.entities_count = json_parse_i32(json, value);
 			res.entities       = arr_new(alloc, res.entities, res.entities_count);
 			++i;
@@ -1491,9 +1488,9 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	{
 		struct sys_full_file_res io_res = sys_load_full_file(scratch, out_file_path);
 		struct ser_reader r             = {
-						.data = io_res.data,
-						.len  = io_res.size,
-        };
+			.data = io_res.data,
+			.len  = io_res.size,
+		};
 		struct ser_value obj = ser_read(&r);
 	}
 #endif
