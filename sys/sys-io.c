@@ -31,7 +31,7 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	struct sys_full_file_res res = {0};
 	void *f                      = sys_file_open_r(path);
 
-	dbg_check_warn(f != NULL, "io", "Failed to open file %*.s", (int)path.size, path.str);
+	dbg_check_warn(f != NULL, "io", "Failed to open file %.*s", (int)path.size, path.str);
 
 	// Get file size
 	sys_file_seek_end(f, 0);
@@ -40,7 +40,7 @@ sys_load_full_file(struct alloc alloc, str8 path)
 
 	// Alloc memory
 	void *data = alloc_size(alloc, f_size, 4, false);
-	dbg_check(data != NULL, "io", "Failed alloc mem for: %*.s", (int)path.size, path.str);
+	dbg_check(data != NULL, "io", "Failed alloc mem for: %.*s", (int)path.size, path.str);
 
 	// Read contents
 	sys_file_r(f, data, f_size);
@@ -49,7 +49,7 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	res.data = data;
 	res.size = f_size;
 
-	log_info("sys", "Loaded full file contents %s %$$u", path.str, (uint)res.size);
+	log_info("sys", "Loaded full file contents %.*s %$$u", (int)path.size, path.str, (uint)res.size);
 
 	return res;
 
