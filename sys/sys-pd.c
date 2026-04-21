@@ -2,6 +2,7 @@
 #include "base/str.h"
 #include "base/dbg.h"
 
+#include "engine/gfx/gfx-defs.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-debug-draw.h"
 #include "sys/sys.h"
@@ -273,15 +274,58 @@ sys_epoch_2000(u32 *milliseconds)
 }
 
 void
-sys_1bit_invert(b32 i)
+sys_1bit_invert(b32 value)
 {
-	PD->display->setInverted(i);
+	PD->display->setInverted(value);
 }
 
 void *
 sys_1bit_buffer(void)
 {
 	return PD->graphics->getFrame();
+}
+
+sys_color_v4_get(enum gfx_col color)
+{
+	v4 res = {0};
+	switch(color) {
+	GFX_COL_WHITE: {
+		res = (v4){1.0f, 1.0f, 1.0f, 1.0f};
+	} break;
+	GFX_COL_BLACK: {
+		res = (v4){0.0f, 0.0f, 0.0f, 1.0f};
+	} break;
+	default: {
+	} break;
+	}
+	return res;
+}
+
+void
+sys_color_v4_set(enum gfx_col color, v4 value)
+{
+}
+
+u32
+sys_color_u32_get(enum gfx_col color)
+{
+	u32 res = 0;
+	switch(color) {
+	GFX_COL_WHITE: {
+		res = 0xFFFFFFFF;
+	} break;
+	GFX_COL_BLACK: {
+		res = 0x000000FF;
+	} break;
+	default: {
+	} break;
+	}
+	return res;
+}
+
+void
+sys_color_u32_set(enum gfx_col color, u32 value)
+{
 }
 
 struct alloc
