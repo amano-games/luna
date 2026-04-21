@@ -65,6 +65,12 @@ u32 sys_dt_us_target_get(void);
 void sys_dt_cap_us_set(u32 value);
 u32 sys_dt_cap_us_get(void);
 
+v4 sys_color_v4_get(enum gfx_col color);
+void sys_color_v4_set(enum gfx_col color, v4 value);
+
+u32 sys_color_u32_get(enum gfx_col color);
+void sys_color_u32_set(enum gfx_col color, u32 value);
+
 void sys_internal_init(void);
 i32 sys_internal_update(void);
 void sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len);

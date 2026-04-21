@@ -5,6 +5,7 @@
 #include "base/rec.h"
 #include "engine/gfx/gfx-spr.h"
 #include "engine/gfx/gfx-txt.h"
+#include "lib/color.h"
 #include "lib/fnt/fnt.h"
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
@@ -392,7 +393,15 @@ sokol_init(void)
 
 	/* a pass action to framebuffer to black */
 	SOKOL_STATE.pass_action = (sg_pass_action){
-		.colors[0] = {.load_action = SG_LOADACTION_CLEAR, .clear_value = {0.25f, 0.5f, 0.75f, 1.0f}},
+		.colors[0] = {
+			.load_action = SG_LOADACTION_CLEAR,
+			.clear_value = {
+				0.25f,
+				0.5f,
+				0.75f,
+				1.0f,
+			},
+		},
 	};
 
 	SOKOL_STATE.bind.samplers[0] = sg_make_sampler(&(sg_sampler_desc){
@@ -1058,6 +1067,32 @@ sys_1bit_invert(b32 i)
 
 error:
 	return;
+}
+
+v4
+sys_color_v4_get(enum gfx_col color)
+{
+	v4 res = color_rgba_from_u32(SOKOL_STATE.opts.colors.colors[color]);
+	return res;
+}
+
+void
+sys_color_v4_set(enum gfx_col color, v4 value)
+{
+	SOKOL_STATE.opts.colors.colors[color] = color_rgba_to_u32(value);
+}
+
+u32
+sys_color_u32_get(enum gfx_col color)
+{
+	u32 res = SOKOL_STATE.opts.colors.colors[color];
+	return res;
+}
+
+void
+sys_color_u32_set(enum gfx_col color, u32 value)
+{
+	SOKOL_STATE.opts.colors.colors[color] = value;
 }
 
 void *
