@@ -6,6 +6,7 @@
 #include <stdalign.h>
 #include <stddef.h>
 #include <inttypes.h>
+#include <float.h>
 
 #define STB_SPRINTF_IMPLEMENTATION
 #define STB_SPRINTF_STATIC
