@@ -64,6 +64,7 @@ b32 inp_was_pressed_any(int b);
 b32 inp_was_pressed_all(int b);
 b32 inp_just_pressed(int b);
 b32 inp_just_released(int b);
+b32 inp_just_pressed_all(void);
 
 b32 inp_key_pressed(int key);
 b32 inp_key_was_pressed(int key);

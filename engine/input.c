@@ -98,6 +98,12 @@ inp_just_pressed(int b)
 }
 
 b32
+inp_just_pressed_all(void)
+{
+	return (INP.curr.btn & ~INP.prev.btn) != 0;
+}
+
+b32
 inp_just_released(int b)
 {
 	b32 res = !inp_pressed(b) && inp_was_pressed(b);
