@@ -690,16 +690,14 @@ void
 sokol_pause_handle_buttons(i32 buttons)
 {
 	struct sokol_menu *menu = &SOKOL_STATE.menu;
+	b32 close               = false;
 
 	if(menu->len > 0) {
 		struct sokol_menu_item *item = menu->items + menu->idx;
 		if(buttons & SYS_INP_A) {
 			switch(item->type) {
 			case SOKOL_MENU_ITEM_TYPE_ACTION: {
-				if(item->callback) {
-					item->callback(item->arg);
-				}
-				sokol_resume();
+				close = true;
 			} break;
 			case SOKOL_MENU_ITEM_TYPE_BOOL: {
 				if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
@@ -728,11 +726,21 @@ sokol_pause_handle_buttons(i32 buttons)
 		}
 	} else {
 		if((buttons & SYS_INP_A)) {
-			sokol_resume();
+			close = true;
 		}
 	}
 
 	if((buttons & SYS_INP_B)) {
+		close = true;
+	}
+
+	if(close) {
+		if(menu->len > 0) {
+			struct sokol_menu_item *item = menu->items + menu->idx;
+			if(item->callback) {
+				item->callback(item->arg);
+			}
+		}
 		sokol_resume();
 	}
 }
