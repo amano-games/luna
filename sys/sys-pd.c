@@ -285,14 +285,15 @@ sys_1bit_buffer(void)
 	return PD->graphics->getFrame();
 }
 
+v4
 sys_color_v4_get(enum gfx_col color)
 {
 	v4 res = {0};
 	switch(color) {
-	GFX_COL_WHITE: {
+	case GFX_COL_WHITE: {
 		res = (v4){1.0f, 1.0f, 1.0f, 1.0f};
 	} break;
-	GFX_COL_BLACK: {
+	case GFX_COL_BLACK: {
 		res = (v4){0.0f, 0.0f, 0.0f, 1.0f};
 	} break;
 	default: {
@@ -311,10 +312,10 @@ sys_color_u32_get(enum gfx_col color)
 {
 	u32 res = 0;
 	switch(color) {
-	GFX_COL_WHITE: {
+	case GFX_COL_WHITE: {
 		res = 0xFFFFFFFF;
 	} break;
-	GFX_COL_BLACK: {
+	case GFX_COL_BLACK: {
 		res = 0x000000FF;
 	} break;
 	default: {

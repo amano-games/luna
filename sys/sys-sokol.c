@@ -604,6 +604,12 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 		case SAPP_KEYCODE_S: {
 			b |= SYS_INP_DPAD_D;
 		} break;
+		case SAPP_KEYCODE_A: {
+			b |= SYS_INP_DPAD_L;
+		} break;
+		case SAPP_KEYCODE_D: {
+			b |= SYS_INP_DPAD_R;
+		} break;
 		case SAPP_KEYCODE_PERIOD: {
 			b |= SYS_INP_A;
 		} break;
@@ -615,6 +621,12 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 		} break;
 		case SAPP_KEYCODE_DOWN: {
 			b |= SYS_INP_DPAD_D;
+		} break;
+		case SAPP_KEYCODE_LEFT: {
+			b |= SYS_INP_DPAD_L;
+		} break;
+		case SAPP_KEYCODE_RIGHT: {
+			b |= SYS_INP_DPAD_R;
 		} break;
 		case SAPP_KEYCODE_X: {
 			b |= SYS_INP_A;
@@ -682,8 +694,20 @@ sokol_pause_handle_buttons(i32 buttons)
 	if(menu->len > 0) {
 		struct sokol_menu_item *item = menu->items + menu->idx;
 		if(buttons & SYS_INP_A) {
-			if(item->callback) {
-				item->callback(item->arg);
+			switch(item->type) {
+			case SOKOL_MENU_ITEM_TYPE_ACTION: {
+				if(item->callback) {
+					item->callback(item->arg);
+				}
+				sokol_resume();
+			} break;
+			case SOKOL_MENU_ITEM_TYPE_BOOL: {
+				if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+					item->value = !item->value;
+				}
+			} break;
+			default: {
+			} break;
 			}
 		}
 		if(buttons & SYS_INP_DPAD_U) {
@@ -692,10 +716,22 @@ sokol_pause_handle_buttons(i32 buttons)
 		if(buttons & SYS_INP_DPAD_D) {
 			menu->idx = min_i32(menu->idx + 1, menu->len - 1);
 		}
+		if(buttons & SYS_INP_DPAD_R) {
+			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+				item->value = true;
+			}
+		}
+		if(buttons & SYS_INP_DPAD_L) {
+			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+				item->value = false;
+			}
+		}
+	} else {
+		if((buttons & SYS_INP_A)) {
+			sokol_resume();
+		}
 	}
-	if((buttons & SYS_INP_A)) {
-		sokol_resume();
-	}
+
 	if((buttons & SYS_INP_B)) {
 		sokol_resume();
 	}
@@ -845,15 +881,33 @@ sokol_frame(void)
 					rec_i32 layout  = rec_i32_cut_top(&root, menu_height);
 					i32 row_height  = menu_height / 3;
 					for(ssize i = 0; i < menu.len; ++i) {
-						rec_i32 row_layout = rec_i32_cut_top(&layout, row_height);
+						rec_i32 row_layout             = rec_i32_cut_top(&layout, row_height);
+						struct sokol_menu_item item    = menu.items[i];
+						str8 str                       = item.title;
+						i32 value                      = item.value;
+						enum sokol_menu_item_type type = item.type;
 						rec_i32_cut_left(&row_layout, 10);
 						rec_i32_cut_right(&row_layout, 10);
 						v2_i32 cntr = rec_i32_cntr(row_layout);
-						str8 str    = menu.items[i].title;
 						if(fnt.t.px != 0) {
 							i32 x = row_layout.x + 4;
 							i32 y = cntr.y - (fnt.cell_h * 0.5f);
 							fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
+						}
+						switch(type) {
+						case SOKOL_MENU_ITEM_TYPE_BOOL: {
+							i32 margin      = 4;
+							i32 checkbox_w  = 11;
+							i32 checkbox_ww = checkbox_w * 0.5f;
+							i32 x           = row_layout.x + row_layout.w - checkbox_w - margin;
+							i32 y           = cntr.y - (checkbox_ww);
+							gfx_rec_fill(ctx, x, y, checkbox_w, checkbox_w, PRIM_MODE_BLACK);
+							if(value) {
+								gfx_cir_fill(ctx, x + checkbox_ww, y + checkbox_ww, checkbox_w - 5, PRIM_MODE_WHITE);
+							}
+						} break;
+						default: {
+						} break;
 						}
 						if(menu.idx == i) {
 							gfx_rec_fill(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, PRIM_MODE_INV);
