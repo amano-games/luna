@@ -1,7 +1,7 @@
 #pragma once
 
+#include "base/mem.h"
 #include "engine/collisions/collisions.h"
-#include "sys/sys.h"
 #include "base/types.h"
 
 #define CAM_W      SYS_DISPLAY_W
