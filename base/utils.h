@@ -5,6 +5,15 @@
 #define MGIGABYTE(value) (MMEGABYTE(value) * 1024LL)
 #define MTERABYTE(value) (MGIGABYTE(value) * 1024LL)
 
+#define MILLION_U32 UINT32_C(1000000)
+#define BILLION_U32 UINT32_C(1000000000)
+#define MILLION_U64 UINT64_C(1000000)
+#define BILLION_U64 UINT64_C(1000000000)
+#define MILLION_F32 1e6f
+#define BILLION_F32 1e9f
+#define MILLION_F64 1e6
+#define BILLION_F64 1e9
+
 #undef MAX
 #undef MIN
 #define POW2(X)          ((X) * (X))
