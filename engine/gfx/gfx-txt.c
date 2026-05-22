@@ -125,6 +125,7 @@ fnt_draw_str_block(
 	rec_i32 layout,
 	i32 tracking,
 	i32 leading,
+	i32 visible_chars,
 	enum spr_mode mode,
 	u32 align_flags)
 {
@@ -165,7 +166,8 @@ fnt_draw_str_block(
 	i32 min_y = block_y;
 	i32 max_y = block_y + total_height;
 
-	i32 line_y = block_y;
+	i32 line_y          = block_y;
+	i32 remaining_chars = visible_chars;
 
 	for(struct str8_node *n = lines.first; n; n = n->next) {
 		str8 line        = n->str;
@@ -184,7 +186,12 @@ fnt_draw_str_block(
 		min_x = min_i32(min_x, line_x);
 		max_x = max_i32(max_x, line_x + line_width);
 
-		fnt_draw_str(ctx, fnt, line, line_x, line_y, tracking, leading, mode);
+		if(remaining_chars > 0) {
+			str8 visible = line;
+			visible.size = min_i32(remaining_chars, line.size);
+			fnt_draw_str(ctx, fnt, visible, line_x, line_y, tracking, leading, mode);
+			remaining_chars -= min_i32(remaining_chars, line.size);
+		}
 		line_y += fnt.cell_h + leading;
 	}
 
