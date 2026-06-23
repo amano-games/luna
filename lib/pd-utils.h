@@ -3,13 +3,13 @@
 #include "base/mem.h"
 
 struct pdxinfo {
-	char name[50];
-	char author[50];
-	char description[100];
-	char bundle_id[100];
-	char version[20];
+	str8 name;
+	str8 author;
+	str8 description;
+	str8 bundle_id;
+	str8 version;
 	int build_number;
-	char image_path[100];
+	str8 image_path;
 };
 
-void pdxinfo_parse(struct pdxinfo *pdxinfo, struct alloc scratch);
+struct pdxinfo pdxinfo_parse(struct alloc alloc, struct alloc scratch);
