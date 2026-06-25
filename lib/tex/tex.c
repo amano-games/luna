@@ -246,7 +246,9 @@ tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_
 			u32 color_word            = *src++;
 			u32 mask_word             = *src++;
 			color_dst[y * stride + x] = color_word;
-			mask_dst[y * stride + x]  = mask_word;
+			if(mask_dst != NULL) {
+				mask_dst[y * stride + x] = mask_word;
+			}
 		}
 	}
 }
