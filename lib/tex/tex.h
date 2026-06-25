@@ -43,7 +43,7 @@ void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
 
 void tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete);
 void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);
-void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 bw, i32 bh, i32 bb);
+void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes);
 
 void tex_cpy(struct tex *dst, struct tex *src);
 ssize tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize out_size);
