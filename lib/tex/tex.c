@@ -232,7 +232,6 @@ void
 tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes)
 {
 	dbg_assert(tex.fmt == TEX_FMT_MASK);
-	i32 w_aligned  = (tex.w + 31) & ~31;
 	i32 wbyte      = tex.wword * 4;
 	u32 *color_dst = (u32 *)px_out;
 	u32 *mask_dst  = (u32 *)mask_out;
@@ -240,6 +239,7 @@ tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_
 	i32 y2         = MIN(h, tex.h);
 	i32 x2         = MIN(row_bytes, wbyte) / 4;
 	i32 stride     = row_bytes / 4;
+	i32 dst_words  = ((w + 31) >> 5);
 
 	for(i32 y = 0; y < y2; ++y) {
 		for(i32 x = 0; x < x2; ++x) {

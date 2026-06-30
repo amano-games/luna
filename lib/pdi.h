@@ -32,7 +32,7 @@ struct pdi {
 	struct pdi_img_header img_header;
 	struct pdi_img_cell cell;
 	ssize data_size;
-	void *data;
+	u8 *data;
 };
 
 b32
