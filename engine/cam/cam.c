@@ -162,13 +162,13 @@ cam_data_to_str8(struct alloc alloc, struct cam_data *value)
 
 	str8_list_pushf(alloc, &list, "id:%u", value->id);
 	str8_list_pushf(alloc, &list, "drag_vel:%g", (double)value->drag_vel);
-	str8_list_pushf(alloc, &list, "hard:%.*s", hard_drag.size, hard_drag.str);
-	str8_list_pushf(alloc, &list, "soft:%.*s", soft_drag.size, soft_drag.str);
-	str8_list_pushf(alloc, &list, "limits:%.*s", soft_limits.size, soft_limits.str);
+	str8_list_pushf(alloc, &list, "hard:%.*s", str8_spread(hard_drag));
+	str8_list_pushf(alloc, &list, "soft:%.*s", str8_spread(soft_drag));
+	str8_list_pushf(alloc, &list, "limits:%.*s", str8_spread(soft_limits));
 
 	struct str_join params = {.sep = str8_lit(",")};
 	str8 str               = str8_list_join(alloc, &list, &params);
-	res                    = str8_fmt_push(alloc, "{%.*s}", str.size, str.str);
+	res                    = str8_fmt_push(alloc, "{%.*s}", str8_spread(str));
 
 	return res;
 }
