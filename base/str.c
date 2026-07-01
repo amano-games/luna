@@ -736,7 +736,7 @@ wrapped_lines_from_str(
 			if(substr.size > width_this_line) {
 				str8 line = str8_substr(str, line_range);
 				if(wrapped_indent_level > 0) {
-					line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, line.size, line.str);
+					line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, str8_spread(line));
 				}
 				str8_list_push(alloc, &list, line);
 				line_range           = rng_u64(line_range.max + 1, candidate_line_range.max);
@@ -749,7 +749,7 @@ wrapped_lines_from_str(
 	if(line_range.min < str.size && line_range.max > line_range.min) {
 		str8 line = str8_substr(str, line_range);
 		if(wrapped_indent_level > 0) {
-			line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, line.size, line.str);
+			line = str8_fmt_push(alloc, "%.*s%.*s", wrapped_indent_level, spaces, str8_spread(line));
 		}
 		str8_list_push(alloc, &list, line);
 	}

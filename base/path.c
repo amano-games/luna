@@ -56,7 +56,7 @@ str8
 path_make_file_name_with_ext(struct alloc alloc, str8 file_name, str8 ext)
 {
 	str8 file_name_no_ext = str8_chop_last_dot(file_name);
-	str8 result           = str8_fmt_push(alloc, "%.*s.%.*s", (i32)file_name_no_ext.size, file_name_no_ext.str, (i32)ext.size, ext.str);
+	str8 result           = str8_fmt_push(alloc, "%.*s.%.*s", str8_spread(file_name_no_ext), str8_spread(ext));
 	return result;
 }
 
@@ -131,7 +131,7 @@ path_absolute_dst_from_relative_dst_src(
 	str8 result               = dst;
 	enum path_style dst_style = path_style_from_str8(dst);
 	if(dst_style == path_style_relative) {
-		str8 dst_from_src_absolute            = str8_fmt_push(alloc, "%.*s/%.*s", (i32)src.size, src.str, (i32)dst.size, dst.str);
+		str8 dst_from_src_absolute            = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(src), str8_spread(dst));
 		str8 dst_from_src_absolute_normalized = path_normalized_from_string(alloc, dst_from_src_absolute, scratch);
 		result                                = dst_from_src_absolute_normalized;
 	}

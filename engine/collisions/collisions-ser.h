@@ -46,7 +46,7 @@ col_capsule_to_str8(struct alloc alloc, struct col_capsule col)
 {
 	str8 a   = col_cir_to_str8(alloc, col.a);
 	str8 b   = col_cir_to_str8(alloc, col.b);
-	str8 res = str8_fmt_push(alloc, "[%.*s,%.*s]", a.size, a.str, b.size, b.str);
+	str8 res = str8_fmt_push(alloc, "[%.*s,%.*s]", str8_spread(a), str8_spread(b));
 	return res;
 }
 
@@ -62,6 +62,6 @@ col_poly_to_str8(struct alloc alloc, struct col_poly col)
 	}
 	struct str_join params = {.sep = str8_lit(",")};
 	str8 str               = str8_list_join(alloc, &list, &params);
-	res                    = str8_fmt_push(alloc, "[%.*s]", str.size, str.str);
+	res                    = str8_fmt_push(alloc, "[%.*s]", str8_spread(str));
 	return res;
 }

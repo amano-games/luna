@@ -215,7 +215,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	fnt_read(&r, &res);
 
 	str8 base_name = str8_chop_last_dot(path);
-	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", (i32)base_name.size, base_name.str, res.cell_w, res.cell_h);
+	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", str8_spread(base_name), res.cell_w, res.cell_h);
 
 	res.t = tex_load(tex_path, alloc);
 	if(res.t.px == NULL) {

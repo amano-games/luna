@@ -62,6 +62,7 @@ usize cstr8_len(u8 *c);
 #define str8_lit_comp(S)    {(u8 *)(S), sizeof(S) - 1}
 #define str8_array(S, C)    string8((u8 *)(S), sizeof(*(S)) * (C))
 #define str8_array_fixed(S) string8((u8 *)(S), sizeof(S))
+#define str8_spread(S)      (int)(S).size, (S).str
 
 str8 string8(u8 *str, u64 size);
 str8 str8_range(u8 *first, u8 *one_past_last);

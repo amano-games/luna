@@ -194,30 +194,30 @@ gen_table(const str8 in_path, struct alloc scratch)
 	}
 
 	{
-		str8 enum_none  = str8_fmt_push(alloc, "%.*sNONE = 0", (i32)table.prefix.size, table.prefix.str);
-		str8 enum_count = str8_fmt_push(alloc, "%.*sNUM_COUNT", (i32)table.prefix.size, table.prefix.str);
+		str8 enum_none  = str8_fmt_push(alloc, "%.*sNONE = 0", str8_spread(table.prefix));
+		str8 enum_count = str8_fmt_push(alloc, "%.*sNUM_COUNT", str8_spread(table.prefix));
 
 		for(ssize i = 0; i < (ssize)arr_len(table.columns); ++i) {
 			struct column column = table.columns[i];
 
 			switch(column.type) {
 			case COLUMN_TYPE_ID: {
-				str8_list_pushf(alloc, &content, "enum %.*s {\n", (i32)table.name.size, table.name.str);
-				str8_list_pushf(alloc, &content, "  %.*s,\n\n", (i32)enum_none.size, enum_none.str);
+				str8_list_pushf(alloc, &content, "enum %.*s {\n", str8_spread(table.name));
+				str8_list_pushf(alloc, &content, "  %.*s,\n\n", str8_spread(enum_none));
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row             = table.rows[j];
 					struct row_value row_value = row.items[i];
 					dbg_assert(row_value.type == column.type);
-					str8_list_pushf(alloc, &content, "  %.*s%.*s,\n", (i32)table.prefix.size, table.prefix.str, (i32)row_value.string.size, row_value.string.str);
+					str8_list_pushf(alloc, &content, "  %.*s%.*s,\n", str8_spread(table.prefix), str8_spread(row_value.string));
 				}
-				str8_list_pushf(alloc, &content, "\n  %.*s,\n", (i32)enum_count.size, enum_count.str);
+				str8_list_pushf(alloc, &content, "\n  %.*s,\n", str8_spread(enum_count));
 				str8_list_pushf(alloc, &content, "};\n\n");
 				str8_list_pushf(alloc, &content, "\n");
 
 			} break;
 			case COLUMN_TYPE_LABEL: {
-				str8_list_pushf(alloc, &content, "static const str8 %.*sLABELS[%.*s] = {\n", (i32)table.prefix.size, table.prefix.str, (i32)enum_count.size, enum_count.str);
-				str8_list_pushf(alloc, &content, "  [%.*sNONE] = str8_lit_comp(\"NONE\"),\n", (i32)table.prefix.size, table.prefix.str);
+				str8_list_pushf(alloc, &content, "static const str8 %.*sLABELS[%.*s] = {\n", str8_spread(table.prefix), str8_spread(enum_count));
+				str8_list_pushf(alloc, &content, "  [%.*sNONE] = str8_lit_comp(\"NONE\"),\n", str8_spread(table.prefix));
 
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
@@ -228,12 +228,9 @@ gen_table(const str8 in_path, struct alloc scratch)
 						alloc,
 						&content,
 						"  [%.*s%.*s] = str8_lit_comp(\"%.*s\"),\n",
-						(i32)table.prefix.size,
-						table.prefix.str,
-						(i32)row_value_id.string.size,
-						row_value_id.string.str,
-						(i32)row_value.string.size,
-						row_value.string.str);
+						str8_spread(table.prefix),
+						str8_spread(row_value_id.string),
+						str8_spread(row_value.string));
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
 			} break;
@@ -254,12 +251,10 @@ gen_table(const str8 in_path, struct alloc scratch)
 					alloc,
 					&content,
 					"static %.*s %.*sBITMASKS[%d] = {\n",
-					(i32)bitmask_type.size,
-					bitmask_type.str,
-					(i32)table.prefix.size,
-					table.prefix.str,
+					str8_spread(bitmask_type),
+					str8_spread(table.prefix),
 					(i32)arr_len(table.rows) + 1);
-				str8_list_pushf(alloc, &content, "  [%.*sNONE] = %d,\n", (i32)table.prefix.size, table.prefix.str, 0);
+				str8_list_pushf(alloc, &content, "  [%.*sNONE] = %d,\n", str8_spread(table.prefix), 0);
 
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
@@ -270,10 +265,8 @@ gen_table(const str8 in_path, struct alloc scratch)
 						alloc,
 						&content,
 						"  [%.*s%.*s] = %" PRIu64 ",\n",
-						(i32)table.prefix.size,
-						table.prefix.str,
-						(i32)row_value_id.string.size,
-						row_value_id.string.str,
+						str8_spread(table.prefix),
+						str8_spread(row_value_id.string),
 						row_value.u64);
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
@@ -310,7 +303,7 @@ gen_tables_recursive(const str8 in_dir, struct marena *arena)
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
 		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
+		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_path), file_name.size, file_name.str);
 
 		if(file.is_dir) {
 			if(

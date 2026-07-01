@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/str.h"
 #include "base/types.h"
 #include "sys/sys-io.h"
 #include "base/dbg.h"
@@ -47,7 +48,7 @@ pdi_write(struct pdi pdi, str8 path)
 	}
 
 	f = sys_file_open_w(path);
-	dbg_check_warn(f, "pdi", "failed to open file to write %.*s", (int)path.size, path.str);
+	dbg_check_warn(f, "pdi", "failed to open file to write %.*s", str8_spread(path));
 
 	sys_file_w(f, &pdi.header, sizeof(pdi.header));
 	if(is_compressed) {
