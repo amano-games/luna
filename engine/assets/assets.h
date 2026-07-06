@@ -15,7 +15,7 @@ struct assets {
 	struct alloc alloc;
 };
 
-static struct assets ASSETS;
+extern struct assets ASSETS;
 struct alloc assets_allocator(struct assets *assets);
 
 void assets_ini(struct alloc alloc, usize size);
