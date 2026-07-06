@@ -10,6 +10,8 @@
 #include "base/str.h"
 #include "base/types.h"
 
+struct assets ASSETS;
+
 void *asset_allocf(void *ctx, ssize size, ssize align);
 
 void
@@ -20,6 +22,7 @@ assets_ini(struct alloc alloc, usize size)
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();
+	mclr_struct(&ASSETS.db);
 }
 
 void *

@@ -107,6 +107,7 @@ struct bet_table {
 
 // [id] = index and count
 struct asset_db {
+	b32 initialized;
 	struct path_table paths;
 	struct tex_info_table textures_info;
 	struct tex_table textures;

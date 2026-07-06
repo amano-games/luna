@@ -52,6 +52,8 @@ asset_db_ini(
 	db->bets.ht  = ht_new_u32(exp, alloc);
 	db->bets.arr = arr_new(alloc, db->bets.arr, bets_count + 1);
 	arr_push(db->bets.arr, (struct asset_bet){0});
+
+	db->initialized = true;
 }
 
 struct asset_handle
