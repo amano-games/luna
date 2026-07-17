@@ -1903,20 +1903,20 @@ static void
 sokol_set_icon(void)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	str8 icons_dir           = sokol_path_to_res_path(str8_lit("icons"));
-	tinydir_dir dir          = {0};
 	struct alloc scratch     = SOKOL_STATE.scratch;
+	str8 icons_dir           = sokol_path_to_res_path(str8_lit("icons"));
+	tinydir_dir *dir         = alloc_struct(scratch, dir);
 	str8 png                 = str8_lit(".png");
 	sapp_icon_desc icon_desc = {.sokol_default = true};
 
-	tinydir_open(&dir, (char *)icons_dir.str);
+	tinydir_open(dir, (char *)icons_dir.str);
 	log_info("sokol", "loading icons from: %s", icons_dir.str);
 
 	i32 icon_count = 0;
-	while(dir.has_next) {
+	while(dir->has_next) {
 		tinydir_file file;
-		tinydir_readfile(&dir, &file);
-		tinydir_next(&dir);
+		tinydir_readfile(dir, &file);
+		tinydir_next(dir);
 
 		if(file.is_dir) { continue; }
 
@@ -1948,7 +1948,7 @@ sokol_set_icon(void)
 		icon_desc.images[icon_count++] = img;
 		log_info("sokol", "Loaded icon of size %d loaded: %.*s", icon_size, (i32)full_path.size, full_path.str);
 	}
-	tinydir_close(&dir);
+	tinydir_close(dir);
 
 	if(icon_count > 0) {
 		icon_desc.sokol_default = false;

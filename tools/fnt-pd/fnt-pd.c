@@ -1,5 +1,6 @@
 #include "fnt-pd.h"
 #include "base/arr.h"
+#include "base/mem.h"
 #include "lib/fnt/fnt.h"
 #include "lib/json.h"
 #include "base/marena.h"
@@ -108,13 +109,13 @@ get_fnt_size(str8 in_path, struct alloc scratch)
 	str8 fnt_file_name = str8_cpy_push(scratch, str8_skip_last_slash(str8_chop_last_dot(in_path)));
 	str8 dir_path      = str8_cpy_push(scratch, str8_chop_last_slash(in_path));
 	str8 table_id      = str8_lit("-table-");
-	tinydir_dir dir    = {0};
-	tinydir_open(&dir, (char *)dir_path.str);
+	tinydir_dir *dir   = alloc_struct(scratch, dir);
+	tinydir_open(dir, (char *)dir_path.str);
 	v2 res = {0};
 
-	while(dir.has_next) {
+	while(dir->has_next) {
 		tinydir_file file;
-		tinydir_readfile(&dir, &file);
+		tinydir_readfile(dir, &file);
 		if(!file.is_dir) {
 			str8 file_path = str8_cstr(file.path);
 			str8 file_name = str8_cstr(file.name);
@@ -135,10 +136,10 @@ get_fnt_size(str8 in_path, struct alloc scratch)
 				}
 			}
 		}
-		tinydir_next(&dir);
+		tinydir_next(dir);
 	}
 
-	tinydir_close(&dir);
+	tinydir_close(dir);
 
 	return res;
 }
