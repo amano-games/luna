@@ -92,7 +92,7 @@ file_cpy(const str8 in_path, const str8 out_path)
 	b32 res   = false;
 	void *in  = sys_file_open_r(in_path);
 	void *out = sys_file_open_w(out_path);
-	char buffer[BUFSIZ];
+	char buffer[7192];
 	ssize n;
 
 	while((n = sys_file_r(in, buffer, sizeof(buffer)) > 0)) {
@@ -117,11 +117,11 @@ qop_gen_recursive(
 {
 	dbg_assert(qop);
 	struct alloc alloc = marena_allocator(arena);
-	tinydir_dir dir;
-	tinydir_open(&dir, (char *)in_dir.str);
-	while(dir.has_next) {
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
+	tinydir_open(dir, (char *)in_dir.str);
+	while(dir->has_next) {
 		tinydir_file file;
-		tinydir_readfile(&dir, &file);
+		tinydir_readfile(dir, &file);
 
 		str8 file_name = str8_cstr(file.name);
 		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
@@ -144,12 +144,12 @@ asset_gen_recursive(
 {
 
 	struct alloc alloc = marena_allocator(arena);
-	tinydir_dir dir;
-	tinydir_open(&dir, (char *)in_dir.str);
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
+	tinydir_open(dir, (char *)in_dir.str);
 
-	while(dir.has_next) {
+	while(dir->has_next) {
 		tinydir_file file;
-		tinydir_readfile(&dir, &file);
+		tinydir_readfile(dir, &file);
 
 		str8 file_name = str8_cstr(file.name);
 		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
@@ -189,10 +189,10 @@ asset_gen_recursive(
 			marena_reset_to(arena, reset_p);
 		}
 
-		tinydir_next(&dir);
+		tinydir_next(dir);
 	}
 
-	tinydir_close(&dir);
+	tinydir_close(dir);
 }
 
 void

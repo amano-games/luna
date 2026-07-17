@@ -17,6 +17,8 @@ WARN_FLAGS += -Wno-unused-function
 WARN_FLAGS += -Wno-unused-but-set-variable
 WARN_FLAGS += -Wno-unused-variable
 WARN_FLAGS += -Wno-unused-parameter
+WARN_FLAGS += -Wstack-usage=8192
+WARN_FLAGS += -Walloca-larger-than=8192
 
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen
