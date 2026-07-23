@@ -13,6 +13,7 @@
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/types.h"
+#include "sys/sys-sprintf.c"
 #include "base/mem.c"
 #include "base/marena.c"
 #include "base/str.h"

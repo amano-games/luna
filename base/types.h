@@ -8,11 +8,7 @@
 #include <inttypes.h>
 #include <float.h>
 
-#define STB_SPRINTF_IMPLEMENTATION
-#define STB_SPRINTF_STATIC
-#define STB_SPRINTF_NOUNALIGNED
-#define STB_SPRINTF_DECORATE(name) sys_##name
-#include "stb_sprintf.h"
+#include "sys/sys-sprintf.h"
 
 #if defined(__clang__)
 // clang supports both __attribute__ and no_sanitize
