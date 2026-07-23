@@ -7,6 +7,7 @@
 #include "sys/sys-io.c"
 #include "sys/sys.c"
 #include "sys/sys-opts.c"
+#include "sys/sys-sprintf.c"
 #if defined BACKEND_SOKOL
 #include "sys/sys-sokol.c"
 #else
