@@ -8,13 +8,15 @@ PREFIX       ?=
 PLATFORM_DIR := platforms/linux
 TARGET       := $(GAME_NAME).bin
 
+RELEASE_BINDIR := ${PREFIX}linux-release
 ifeq ($(DEBUG),0)
-BINDIR ?= ${PREFIX}linux-release
+BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}linux
 endif
 
 BUILD_DIR := ${DESTDIR}${BINDIR}
+PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -ldl -lrt -lGL -lX11 -lasound -lXi -lXcursor -lpthread
 RPATH  := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
@@ -51,7 +53,7 @@ CFLAGS += $(CDEFS)
 ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
@@ -87,7 +89,8 @@ run: build
 release:
 	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(DESTDIR)linux-release/$(GAME_NAME).zip DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-publish: $(PUBLISH_OBJS)
+publish:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux

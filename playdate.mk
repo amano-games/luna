@@ -8,13 +8,15 @@ PREFIX       ?=
 PLATFORM_DIR := platforms/playdate
 TARGET       := $(GAME_NAME).pdx
 
+RELEASE_BINDIR := ${PREFIX}playdate-release
 ifeq ($(DEBUG),0)
-BINDIR ?= ${PREFIX}playdate-release
+BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}playdate
 endif
 
 BUILD_DIR := ${DESTDIR}${BINDIR}
+PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS  := -lm
 
@@ -63,7 +65,7 @@ endif
 CFLAGS += $(CDEFS)
 
 OBJS         := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 # Stage assets outside the .pdx so mkdir does not fake an up-to-date pdx target.
 ASSETS_OUT := $(BUILD_DIR)/packed-assets
 include $(ROOT_DIR)/assets.mk
@@ -196,7 +198,6 @@ assets: $(ASSETS_TIMESTAMP)
 release:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/playdate.mk run DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
 
 clean:
 	rm -rf "$(BUILD_DIR)"
@@ -215,5 +216,7 @@ endif
 $(PUBLISH_OBJS): $(DEVICE_READY) $(OBJS) $(ASSETS_TIMESTAMP)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
 
-publish: $(PUBLISH_OBJS)
+publish:
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):playdate

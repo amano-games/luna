@@ -11,13 +11,15 @@ PREFIX       ?=
 PLATFORM_DIR := platforms/macos
 TARGET       := $(GAME_NAME).app
 
+RELEASE_BINDIR := ${PREFIX}macos-release
 ifeq ($(DEBUG),0)
-BINDIR ?= ${PREFIX}macos-release
+BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}macos
 endif
 
 BUILD_DIR := ${DESTDIR}${BINDIR}
+PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
 LDFLAGS :=
@@ -54,7 +56,7 @@ CFLAGS += $(CDEFS) -ObjC -x objective-c -arch x86_64 -arch arm64
 OBJS         := $(BUILD_DIR)/$(TARGET)
 ASSETS_OUT   := $(OBJS)/Contents/Resources/assets
 EXE_OUT      := $(OBJS)/Contents/MacOS/$(GAME_NAME)
-PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 OBJ_DIR      := $(BUILD_DIR)/obj
 
 include $(ROOT_DIR)/game.mk
@@ -101,7 +103,8 @@ build: $(EXE_OUT)
 release:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(DESTDIR)macos-release/$(GAME_NAME).zip DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-publish: $(PUBLISH_OBJS)
+publish:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):macos
