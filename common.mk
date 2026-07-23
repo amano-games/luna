@@ -20,10 +20,11 @@ WARN_FLAGS += -Wno-unused-parameter
 WARN_FLAGS += -Wstack-usage=8192
 WARN_FLAGS += -Walloca-larger-than=8192
 
+# Daily builds default to debug; pass DEBUG=0 for release.
+DEBUG ?= 1
+
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen
-
-ASSETS_WATCH_SRC := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
 
 ifeq ($(DETECTED_OS), Linux)
 SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
@@ -34,11 +35,3 @@ endif
 
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h
 
-# ASSETS_SRC := $(LUNA_DIR)/tools/asset-gen.c
-# ASSETS_WATCH_SRC  := $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
-#
-# $(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-# 	make -f $(LUNA_DIR)/tools.mk CC=$(CC) PREFIX= DESTDIR=
-#
-# $(SHADER_OBJS): $(LUNA_DIR)/shaders/sokol_shader.glsl
-# 	$(SHADER_BIN) --input $< --output $@ --slang glsl410:hlsl5:metal_macos:glsl300es

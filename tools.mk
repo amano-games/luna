@@ -16,17 +16,16 @@ INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 LDLIBS  := -lm
 LDFLAGS :=
+DEPFLAGS := -MMD -MP
 
 override CDEFS := $(CDEFS) -DBACKEND_CLI
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -g3
+RELEASE_CFLAGS += -std=gnu11 -g
 
-DEBUG_CFLAGS := -std=gnu11 -g3 -O0
+DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
-# DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable
 
-DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
 else
@@ -35,30 +34,25 @@ endif
 
 CFLAGS += $(CDEFS)
 
-# all: $(BUILD_DIR) $(BUILD_DIR)/luna-meta-gen $(BUILD_DIR)/luna-asset-gen
+ASSET_GEN := $(BUILD_DIR)/luna-asset-gen
+META_GEN  := $(BUILD_DIR)/luna-meta-gen
 
-# Create tools bin dir
+.PHONY: all clean tools-meta tools-asset
+
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
+$(META_GEN): $(SRC_DIR)/meta-gen.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INC_FLAGS) $(DEPFLAGS) -MF "$@.d" "$<" $(LDLIBS) -o "$@"
 
-$(BUILD_DIR)/luna-meta-gen: $(SRC_DIR)/meta-gen.c $(ASSETS_WATCH_SRC) $(BUILD_DIR)
-	$(CC) \
-		$(CFLAGS) \
-		$(INC_FLAGS) \
-		"$<" \
-		$(LDLIBS) \
-		-o "$@"
+$(ASSET_GEN): $(SRC_DIR)/asset-gen.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INC_FLAGS) $(DEPFLAGS) -MF "$@.d" "$<" $(LDLIBS) -o "$@"
 
-$(BUILD_DIR)/luna-asset-gen: $(SRC_DIR)/asset-gen.c $(ASSETS_WATCH_SRC) $(BUILD_DIR)
-	$(CC) \
-		$(CFLAGS) \
-		$(INC_FLAGS) \
-		"$<" $(LDLIBS) \
-		-o "$@"
+-include $(ASSET_GEN).d
+-include $(META_GEN).d
 
-tools-meta: $(BUILD_DIR)/luna-meta-gen
-tools-asset: $(BUILD_DIR)/luna-asset-gen
-# Clean tools bin
+tools-meta: $(META_GEN)
+tools-asset: $(ASSET_GEN)
+
 clean:
 	rm -rf $(BUILD_DIR)
