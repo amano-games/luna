@@ -1,4 +1,6 @@
 #include "rndm.h"
+#define RND_IMPLEMENTATION
+#include "rnd.h"
 #include "base/dbg.h"
 #include "base/v2.h"
 
