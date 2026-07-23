@@ -143,7 +143,7 @@ static str8 INT_TO_STR8[100];
 static str8 INT_TO_STR8_DECIMAL[100];
 static str8 INT_TO_STR8_MID_DECIMAL[100];
 
-static void
+static inline void
 int_to_string_ini(void)
 {
 	int i;
@@ -171,7 +171,7 @@ static inline void prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sampl
 static inline void prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value);
 static inline void prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
 
-static void
+static inline void
 prof_ini(void)
 {
 	struct prof *prof = &PROFILER;
@@ -188,7 +188,7 @@ prof_ini(void)
 	}
 }
 
-void
+static inline void
 prof_block_start(const char *label, ssize idx)
 {
 	struct prof *prof = &PROFILER;
@@ -208,7 +208,7 @@ prof_block_start(const char *label, ssize idx)
 	prof->parent_idx = idx;
 }
 
-void
+static inline void
 prof_block_end_internal(void)
 {
 	u32 now_us        = sys_time_us();
@@ -231,7 +231,7 @@ prof_block_end_internal(void)
 	prof->anchor_labels[frame->anchor_idx] = frame->label;
 }
 
-static int
+static inline int
 prof_report_sort_inclusive_desc(const void *a, const void *b)
 {
 	const struct prof_report_entry *aa = a;
@@ -244,7 +244,7 @@ prof_report_sort_inclusive_desc(const void *a, const void *b)
 	return 0;
 }
 
-struct prof_report *
+static inline struct prof_report *
 prof_report_create(struct alloc alloc)
 {
 	struct prof_report *res = alloc_struct(alloc, res);
@@ -311,7 +311,7 @@ prof_report_create(struct alloc alloc)
 	return res;
 }
 
-void
+static inline void
 prof_upd(b32 record_data)
 {
 	struct prof *prof = &PROFILER;
@@ -400,7 +400,7 @@ prof_upd(b32 record_data)
 	}
 }
 
-void
+static inline void
 prof_drw(
 	struct alloc alloc,
 	struct gfx_ctx ctx,
@@ -636,7 +636,7 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 	}
 }
 
-str8
+static inline str8
 prof_csv(struct alloc alloc, u32 max_records)
 {
 	str8 res                   = {0};

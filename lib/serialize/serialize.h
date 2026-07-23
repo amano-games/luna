@@ -42,7 +42,7 @@ struct ser_value {
 	};
 };
 
-void
+static inline void
 ser_write(struct ser_writer *w, struct ser_value val)
 {
 	// write tag byte
@@ -78,7 +78,7 @@ ser_write(struct ser_writer *w, struct ser_value val)
 	}
 }
 
-void
+static inline void
 ser_write_u8(struct ser_writer *w, u8 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_U8, .u8 = value});
@@ -91,13 +91,13 @@ ser_get_u8(struct ser_value value)
 	return value.u8;
 }
 
-void
+static inline void
 ser_write_u32(struct ser_writer *w, u32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_U32, .u32 = value});
 }
 
-void
+static inline void
 ser_write_i32(struct ser_writer *w, i32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_I32, .i32 = value});
@@ -117,7 +117,7 @@ ser_get_i32(struct ser_value value)
 	return value.i32;
 }
 
-void
+static inline void
 ser_write_f32(struct ser_writer *w, f32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_F32, .f32 = value});
@@ -130,7 +130,7 @@ ser_get_f32(struct ser_value value)
 	return value.f32;
 }
 
-void
+static inline void
 ser_write_b32(struct ser_writer *w, b32 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_BOOL, .b32 = value});
@@ -143,7 +143,7 @@ ser_get_b32(struct ser_value value)
 	return value.b32;
 }
 
-void
+static inline void
 ser_write_string(struct ser_writer *w, str8 value)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_STRING, .str = value});
@@ -156,25 +156,25 @@ ser_get_string(struct ser_value value)
 	return value.str;
 }
 
-void
+static inline void
 ser_write_object(struct ser_writer *w)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_OBJECT});
 }
 
-void
+static inline void
 ser_write_array(struct ser_writer *w)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_ARRAY});
 }
 
-void
+static inline void
 ser_write_end(struct ser_writer *w)
 {
 	ser_write(w, (struct ser_value){.type = SER_TYPE_END});
 }
 
-bool
+static inline bool
 ser_safe_read(struct ser_reader *r, void *dst, int size)
 {
 	int idx = r->cur + size;
@@ -184,7 +184,7 @@ ser_safe_read(struct ser_reader *r, void *dst, int size)
 	return true;
 }
 
-struct ser_value
+static inline struct ser_value
 ser_read(struct ser_reader *r)
 {
 	struct ser_value res = {0};
@@ -231,7 +231,7 @@ ser_read(struct ser_reader *r)
 	return ok ? res : (struct ser_value){.type = SER_TYPE_ERROR};
 }
 
-void
+static inline void
 ser_discard_until_depth(struct ser_reader *r, int depth)
 {
 	struct ser_value v = {.type = SER_TYPE_END};
@@ -240,7 +240,7 @@ ser_discard_until_depth(struct ser_reader *r, int depth)
 	}
 }
 
-b32
+static inline b32
 ser_iter_object(struct ser_reader *r, struct ser_value obj, struct ser_value *key, struct ser_value *val)
 {
 	ser_discard_until_depth(r, obj.depth);
@@ -250,7 +250,7 @@ ser_iter_object(struct ser_reader *r, struct ser_value obj, struct ser_value *ke
 	return true;
 }
 
-bool
+static inline bool
 ser_iter_array(struct ser_reader *r, struct ser_value arr, struct ser_value *val)
 {
 	ser_discard_until_depth(r, arr.depth);
@@ -258,7 +258,7 @@ ser_iter_array(struct ser_reader *r, struct ser_value arr, struct ser_value *val
 	return val->type != SER_TYPE_END;
 }
 
-void
+static inline void
 ser_indent_push(int depth, struct str8_list *list, struct alloc alloc)
 {
 	for(int i = 0; i < depth; i++) {
@@ -266,7 +266,7 @@ ser_indent_push(int depth, struct str8_list *list, struct alloc alloc)
 	}
 }
 
-void
+static inline void
 ser_value_push_str8_list(struct ser_reader *r, struct ser_value val, int depth, struct str8_list *list, struct alloc alloc)
 {
 	struct ser_value k, v;
@@ -334,7 +334,7 @@ error:
 	return;
 }
 
-str8
+static inline str8
 ser_value_to_str(struct alloc alloc, struct ser_reader *r, struct ser_value value)
 {
 	struct str8_list list = {0};

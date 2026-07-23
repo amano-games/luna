@@ -20,7 +20,7 @@ tri_barycentric(v2 p, v2 a, v2 b, v2 c, f32 *u, f32 *v, f32 *w)
 	*u        = 1.0f - *v - *w;
 }
 
-b32
+static inline b32
 tri_is_point_inside(v2 p, v2 a, v2 b, v2 c)
 {
 	f32 u = 0;

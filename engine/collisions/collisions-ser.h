@@ -27,21 +27,21 @@ struct col_ellipsis col_ellipsis_read(struct ser_reader *r, struct ser_value arr
 void col_line_write(struct ser_writer *w, struct col_line value);
 struct col_line col_line_read(struct ser_reader *r, struct ser_value arr);
 
-str8
+static inline str8
 col_aabb_to_str8(struct alloc alloc, struct col_aabb col)
 {
 	str8 res = str8_fmt_push(alloc, "[%g,%g,%g,%g]", (double)col.min.x, (double)col.min.y, (double)col.max.x, (double)col.max.y);
 	return res;
 }
 
-str8
+static inline str8
 col_cir_to_str8(struct alloc alloc, struct col_cir col)
 {
 	str8 res = str8_fmt_push(alloc, "{x:%g,y:%g,r:%g}", (double)col.p.x, (double)col.p.y, (double)col.r);
 	return res;
 }
 
-str8
+static inline str8
 col_capsule_to_str8(struct alloc alloc, struct col_capsule col)
 {
 	str8 a   = col_cir_to_str8(alloc, col.a);
@@ -50,7 +50,7 @@ col_capsule_to_str8(struct alloc alloc, struct col_capsule col)
 	return res;
 }
 
-str8
+static inline str8
 col_poly_to_str8(struct alloc alloc, struct col_poly col)
 {
 	str8 res              = {0};

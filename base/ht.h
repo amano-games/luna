@@ -22,7 +22,7 @@ hash_x_y(i32 x, i32 y, usize len)
 // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 // https://nullprogram.com/blog/2022/08/08/
 // FNV-1a
-u64
+static inline u64
 hash_fnv1a_str8(str8 v)
 {
 	u64 h = 0x100;
@@ -35,7 +35,7 @@ hash_fnv1a_str8(str8 v)
 
 // MurmurOAAT64
 // https://phoboslab.org/log/2024/09/qop
-u64
+static inline u64
 hash_murmuroaat_str8(str8 v)
 {
 	u64 h = 525201411107845655ull;
@@ -59,7 +59,7 @@ struct ht_u32 {
 };
 
 // Compute the next candidate index. Initialize idx to the hash.
-i32
+static inline i32
 ht_lookup(u64 hash, int exp, i32 idx)
 {
 	u32 mask = ((u64)1 << exp) - 1;
@@ -68,7 +68,7 @@ ht_lookup(u64 hash, int exp, i32 idx)
 	return res;
 }
 
-u32
+static inline u32
 ht_get_u32(struct ht_u32 *t, u64 key)
 {
 	u32 res = 0;
@@ -86,7 +86,7 @@ cleanup:
 	return res;
 }
 
-u32
+static inline u32
 ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
 {
 	u32 res = -1;
@@ -109,7 +109,7 @@ cleanup:
 	return res;
 }
 
-static struct ht_u32
+static inline struct ht_u32
 ht_new_u32(int exp, struct alloc alloc)
 {
 	struct ht_u32 ht = {0, exp, 0};

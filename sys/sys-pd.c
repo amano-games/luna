@@ -767,3 +767,47 @@ sys_make_dir(str8 path)
 	b32 res = PD->file->mkdir((const char *)path.str) == 0;
 	return res;
 }
+
+// NOLINTBEGIN(readability-identifier-naming)
+// make ARM linker shut up about things we aren't using (nosys lib issues):
+void
+_close(void)
+{
+}
+
+void
+_lseek(void)
+{
+}
+
+void
+_read(void)
+{
+}
+
+void
+_write(void)
+{
+}
+
+void
+_fstat(void)
+{
+}
+
+void
+_getpid(void)
+{
+}
+
+void
+_isatty(void)
+{
+}
+
+void
+_kill(void)
+{
+}
+// NOLINTEND(readability-identifier-naming)
+// end ARM linker warning hack

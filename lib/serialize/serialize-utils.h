@@ -2,7 +2,7 @@
 
 #include "lib/serialize/serialize.h"
 
-void
+static inline void
 ser_write_v2(struct ser_writer *w, v2 value)
 {
 	ser_write_array(w);
@@ -11,7 +11,7 @@ ser_write_v2(struct ser_writer *w, v2 value)
 	ser_write_end(w);
 }
 
-v2
+static inline v2
 ser_read_v2(struct ser_reader *r, struct ser_value arr)
 {
 	dbg_assert(arr.type == SER_TYPE_ARRAY);
@@ -27,7 +27,7 @@ ser_read_v2(struct ser_reader *r, struct ser_value arr)
 	return res;
 }
 
-void
+static inline void
 ser_write_v2_i32(struct ser_writer *w, v2_i32 value)
 {
 	ser_write_array(w);
@@ -38,7 +38,7 @@ ser_write_v2_i32(struct ser_writer *w, v2_i32 value)
 	ser_write_end(w);
 }
 
-struct v2_i32
+static inline struct v2_i32
 ser_read_v2_i32(struct ser_reader *r, struct ser_value arr)
 {
 	dbg_assert(arr.type == SER_TYPE_ARRAY);

@@ -182,7 +182,7 @@ rec_i32_anchor(rec_i32 parent, rec_i32 r, struct v2 pivot)
 	return res;
 }
 
-rec_i32
+static inline rec_i32
 rec_i32_cut_left(rec_i32 *r, i32 a)
 {
 	i32 cut_w   = min_i32(r->w, a);
@@ -192,7 +192,7 @@ rec_i32_cut_left(rec_i32 *r, i32 a)
 	return res;
 }
 
-rec_i32
+static inline rec_i32
 rec_i32_cut_right(rec_i32 *r, i32 a)
 {
 	i32 cut_w   = min_i32(r->w, a);
@@ -201,7 +201,7 @@ rec_i32_cut_right(rec_i32 *r, i32 a)
 	return res;
 }
 
-rec_i32
+static inline rec_i32
 rec_i32_cut_top(rec_i32 *r, i32 a)
 {
 	i32 cut_h   = min_i32(r->h, a);
@@ -211,7 +211,7 @@ rec_i32_cut_top(rec_i32 *r, i32 a)
 	return res;
 }
 
-rec_i32
+static inline rec_i32
 rec_i32_cut_bottom(rec_i32 *r, i32 a)
 {
 	i32 cut_h   = min_i32(r->h, a);
@@ -220,7 +220,7 @@ rec_i32_cut_bottom(rec_i32 *r, i32 a)
 	return res;
 }
 
-rec_i32
+static inline rec_i32
 rec_i32_cut(rec_i32 *r, enum rec_cut_side side, i32 a)
 {
 	switch(side) {
