@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base/types.h"
-#define RND_IMPLEMENTATION
 #define RND_U32 u32
 #define RND_U64 u64
 #include "rnd.h"
