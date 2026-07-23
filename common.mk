@@ -17,8 +17,8 @@ WARN_FLAGS += -Wno-unused-function
 WARN_FLAGS += -Wno-unused-but-set-variable
 WARN_FLAGS += -Wno-unused-variable
 WARN_FLAGS += -Wno-unused-parameter
-WARN_FLAGS += -Wstack-usage=8192
-WARN_FLAGS += -Walloca-larger-than=8192
+# WARN_FLAGS += -Wstack-usage=8192
+# WARN_FLAGS += -Walloca-larger-than=8192
 
 # Daily builds default to debug; pass DEBUG=0 for release.
 DEBUG ?= 1
