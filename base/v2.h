@@ -168,7 +168,7 @@ v2_clamp_mag(v2 v, f32 lo, f32 hi)
 	}
 }
 
-v2
+static inline v2
 v2_clamp_mag_sq(v2 v, float lo_sq, float hi_sq)
 {
 	float mag_sq = v2_len_sq(v);
