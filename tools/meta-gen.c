@@ -293,19 +293,20 @@ gen_table(const str8 in_path, struct alloc scratch)
 void
 gen_tables_recursive(const str8 in_dir, struct marena *arena)
 {
-	tinydir_dir dir;
 	struct alloc alloc = marena_allocator(arena);
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
 
-	if(tinydir_open(&dir, (char *)in_dir.str) == -1) {
+	if(tinydir_open(dir, (char *)in_dir.str) == -1) {
 		log_error(LOG_ID, "Cannot open directory: %s", in_dir.str);
 		return;
 	}
 
-	while(dir.has_next) {
+	while(dir->has_next) {
 		tinydir_file file;
-		tinydir_readfile(&dir, &file);
+		tinydir_readfile(dir, &file);
 		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_path), file_name.size, file_name.str);
+		void *reset_p  = arena->p;
+		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_dir), file_name.size, file_name.str);
 
 		if(file.is_dir) {
 			if(
@@ -316,9 +317,10 @@ gen_tables_recursive(const str8 in_dir, struct marena *arena)
 		} else if(str8_ends_with(file_name, str8_lit(TABLE_EXT), 0)) {
 			gen_table(in_path, alloc);
 		}
-		tinydir_next(&dir);
+		marena_reset_to(arena, reset_p);
+		tinydir_next(dir);
 	}
-	tinydir_close(&dir);
+	tinydir_close(dir);
 }
 
 i32
@@ -331,7 +333,6 @@ main(i32 argc, char *argv[])
 		return res;
 	}
 
-	// TODO: fix memory leak on recursive path gen
 	str8 in_path        = str8_cstr(argv[1]);
 	usize mem_size      = MMEGABYTE(2);
 	u8 *mem             = sys_alloc(NULL, mem_size, 1);
