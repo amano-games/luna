@@ -121,7 +121,7 @@ PD_GAME_OBJ := $(PD_OBJ_DIR)/game.o
 PD_SETUP_OBJ:= $(PD_OBJ_DIR)/setup.o
 PD_UNITY_OBJS := $(PD_LUNA_OBJ) $(PD_GAME_OBJ) $(PD_SETUP_OBJ)
 
-.PHONY: all clean build build_sim build_pd run assets assets_clean release publish
+.PHONY: all clean build build_sim build_pd run assets assets_clean release publish_release
 
 TMP_DIR := $(BUILD_DIR)/tmp
 
@@ -216,7 +216,7 @@ endif
 $(PUBLISH_OBJS): $(DEVICE_READY) $(OBJS) $(ASSETS_TIMESTAMP)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
 
-publish:
+publish_release:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):playdate

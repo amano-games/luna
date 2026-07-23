@@ -63,7 +63,7 @@ PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam run release publish
+.PHONY: all clean build steam run release publish_release
 .DEFAULT_GOAL := all
 
 all: build run
@@ -90,7 +90,7 @@ release:
 	$(MAKE) -f $(ROOT_DIR)/win.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/win.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-publish:
+publish_release:
 	$(MAKE) -f $(ROOT_DIR)/win.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	$(MAKE) -f $(ROOT_DIR)/win.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):win

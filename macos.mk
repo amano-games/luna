@@ -71,7 +71,7 @@ $(OBJS): $(BUILD_DIR)
 ASSETS_TIMESTAMP_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build run publish release sign
+.PHONY: all clean build run publish_release release sign
 
 all: build run
 
@@ -104,7 +104,7 @@ release:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-publish:
+publish_release:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):macos
