@@ -42,8 +42,16 @@
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 
+#if defined(TARGET_MACOS) || defined(TARGET_WASM)
+#define MINI_GAMEPAD_ENABLE 0
+#else
+#define MINI_GAMEPAD_ENABLE 1
+#endif
+
+#if MINI_GAMEPAD_ENABLE
 #define MG_IMPLEMENTATION
 #include "minigamepad.h"
+#endif
 
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_app.h"
@@ -170,7 +178,9 @@ struct sokol_state {
 	f32 mouse_y;
 	u32 mouse_btns;
 
+#if MINI_GAMEPAD_ENABLE
 	mg_gamepads gamepads;
+#endif
 
 	struct fnt fnt;
 	struct sys_opts opts;
@@ -206,7 +216,9 @@ void sokol_stream_cb(f32 *buffer, int num_frames, int num_channels);
 void sokol_cleanup(void);
 
 void sokol_pause_handle_sokol_event(const sapp_event *ev);
+#if MINI_GAMEPAD_ENABLE
 void sokol_pause_handle_gamepad_event(const mg_event *ev);
+#endif
 void sokol_pause_handle_buttons(i32 buttons);
 
 void sokol_pause(void);
@@ -222,8 +234,10 @@ static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 
+#if MINI_GAMEPAD_ENABLE
 static inline i32 sokol_gamepads_upd(void);
 static inline void sokol_gamepads_ev(void);
+#endif
 
 sapp_desc
 sokol_main(i32 argc, char **argv)
@@ -468,7 +482,7 @@ sokol_init(void)
 
 	sapp_show_mouse(true);
 	sokol_set_icon();
-#if !defined(TARGET_MACOS)
+#if MINI_GAMEPAD_ENABLE
 	mg_gamepads_init(&SOKOL_STATE.gamepads);
 #endif
 
@@ -655,6 +669,7 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 	sokol_pause_handle_buttons(b);
 }
 
+#if MINI_GAMEPAD_ENABLE
 void
 sokol_pause_handle_gamepad_event(const mg_event *ev)
 {
@@ -685,6 +700,7 @@ sokol_pause_handle_gamepad_event(const mg_event *ev)
 	}
 	sokol_pause_handle_buttons(b);
 }
+#endif
 
 void
 sokol_pause_handle_buttons(i32 buttons)
@@ -797,7 +813,7 @@ sokol_frame(void)
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	usize size                      = ARRLEN(SOKOL_PIXELS);
-#if !defined(TARGET_MACOS)
+#if MINI_GAMEPAD_ENABLE
 	sokol_gamepads_ev();
 #endif
 
@@ -1017,7 +1033,7 @@ sys_inp(void)
 		b |= SYS_INP_MOUSE_MIDDLE;
 	}
 
-#if !defined(TARGET_MACOS)
+#if MINI_GAMEPAD_ENABLE
 	b |= sokol_gamepads_upd();
 #endif
 
@@ -2164,6 +2180,7 @@ error:;
 	}
 }
 
+#if MINI_GAMEPAD_ENABLE
 static inline i32
 sokol_gamepads_upd(void)
 {
@@ -2304,3 +2321,4 @@ sokol_gamepads_ev(void)
 
 end:;
 }
+#endif
