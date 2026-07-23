@@ -10,6 +10,8 @@
 #include "base/arr.h"
 #include "base/marena.c"
 #include "base/mem.c"
+#include "base/types.h"
+#include "sys/sys-sprintf.c"
 #include "base/str.h"
 #include "base/str.c"
 #include "base/path.c"
