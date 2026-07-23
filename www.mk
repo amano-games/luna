@@ -9,13 +9,15 @@ PREFIX       ?=
 PLATFORM_DIR := platforms/www
 TARGET       := index.html
 
+RELEASE_BINDIR := ${PREFIX}www-release
 ifeq ($(DEBUG),0)
-BINDIR ?= ${PREFIX}www-release
+BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}www
 endif
 
 BUILD_DIR := ${DESTDIR}${BINDIR}
+PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm
 LDFLAGS :=
@@ -60,7 +62,7 @@ LINK_FLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
@@ -88,13 +90,15 @@ run: $(BINARY)
 
 build: $(BINARY)
 
-release:
-	$(MAKE) -f $(ROOT_DIR)/www.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/www.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-
 $(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/assets
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
-publish: $(PUBLISH_OBJS)
+release:
+	$(MAKE) -f $(ROOT_DIR)/www.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/www.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+
+publish:
+	$(MAKE) -f $(ROOT_DIR)/www.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):html5

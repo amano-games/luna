@@ -14,13 +14,15 @@ PREFIX       ?=
 PLATFORM_DIR := platforms/win
 TARGET       := $(GAME_NAME).exe
 
+RELEASE_BINDIR := ${PREFIX}win-release
 ifeq ($(DEBUG),0)
-BINDIR ?= ${PREFIX}win-release
+BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}win
 endif
 
 BUILD_DIR := ${DESTDIR}${BINDIR}
+PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -lkernel32 -luser32 -lshell32 -ldxgi -ld3d11 -lole32 -lgdi32
 LDFLAGS :=
@@ -56,7 +58,7 @@ CFLAGS += $(CDEFS)
 ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
@@ -87,7 +89,8 @@ build: $(BINARY)
 release:
 	$(MAKE) -f $(ROOT_DIR)/win.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/win.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/win.mk $(DESTDIR)win-release/$(GAME_NAME).zip DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-publish: $(PUBLISH_OBJS)
+publish:
+	$(MAKE) -f $(ROOT_DIR)/win.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):win
