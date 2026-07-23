@@ -11,40 +11,39 @@ CC           := x86_64-w64-mingw32-gcc
 endif
 DESTDIR      ?=
 PREFIX       ?=
-BINDIR       ?= ${PREFIX}win
-TARGET       := $(GAME_NAME).exe
-BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/win
+TARGET       := $(GAME_NAME).exe
+
+ifeq ($(DEBUG),0)
+BINDIR ?= ${PREFIX}win-release
+else
+BINDIR ?= ${PREFIX}win
+endif
+
+BUILD_DIR := ${DESTDIR}${BINDIR}
 
 LDLIBS := -lm -lkernel32 -luser32 -lshell32 -ldxgi -ld3d11 -lole32 -lgdi32
 LDFLAGS :=
 
-WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
-WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
-
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
-EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
+EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
-INC_DIRS       := src
-INC_DIRS       += $(LUNA_DIR)
-INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
-INC_FLAGS      += $(EXTERNAL_FLAGS)
+INC_DIRS  := src $(LUNA_DIR)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -mwin32 -DBACKEND_SOKOL=1 -DSOKOL_D3D11 -DTARGET_WIN
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -O2 -g3
+RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DNDEBUG
 RELEASE_CFLAGS += $(WARN_FLAGS)
 RELEASE_CFLAGS += -fno-omit-frame-pointer
 
-DEBUG_CFLAGS := -std=gnu11 -g3 -O0
+DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
-# DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
 
-DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 CFLAGS := $(DEBUG_CFLAGS)
 else
@@ -55,27 +54,24 @@ CFLAGS += -static -static-libgcc -static-libstdc++ -lwinpthread
 CFLAGS += $(CDEFS)
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
-OBJS         := $(BUILD_DIR)/$(TARGET)
+OBJ_DIR      := $(BUILD_DIR)/obj
+BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
-.PHONY: all clean build steam run
+include $(ROOT_DIR)/game.mk
+include $(ROOT_DIR)/assets.mk
+
+.PHONY: all clean build steam run release publish
 .DEFAULT_GOAL := all
 
-all: clean build run
-
-$(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-	make -f $(LUNA_DIR)/tools.mk tools-asset
-
-$(ASSETS_OUT): $(ASSETS_BIN)
-	mkdir -p $(ASSETS_OUT)
-	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
+all: build run
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
+$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) $(ASSETS_TIMESTAMP)
+	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -83,10 +79,15 @@ clean:
 run: build
 	cd $(BUILD_DIR) && wine ./$(TARGET)
 
-$(PUBLISH_OBJS): $(OBJS)
+$(PUBLISH_OBJS): $(BINARY)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
-build: $(OBJS)
-release: clean $(PUBLISH_OBJS)
+build: $(BINARY)
+
+release:
+	$(MAKE) -f $(ROOT_DIR)/win.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/win.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(DESTDIR)win-release/$(GAME_NAME).zip DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+
 publish: $(PUBLISH_OBJS)
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):win

@@ -6,42 +6,42 @@ include $(ROOT_DIR)/common.mk
 CC           := emcc
 DESTDIR      ?=
 PREFIX       ?=
-BINDIR       ?= ${PREFIX}www
-TARGET       := index.html
-BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/www
+TARGET       := index.html
+
+ifeq ($(DEBUG),0)
+BINDIR ?= ${PREFIX}www-release
+else
+BINDIR ?= ${PREFIX}www
+endif
+
+BUILD_DIR := ${DESTDIR}${BINDIR}
 
 LDLIBS := -lm
 LDFLAGS :=
 
-WATCH_SRC    := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
-WATCH_SRC    += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
-
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
-EXTERNAL_FLAGS := $(addprefix -isystem,$(EXTERNAL_DIRS))
+EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
-INC_DIRS       := src
-INC_DIRS       += $(LUNA_DIR)
-INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
-INC_FLAGS      += $(EXTERNAL_FLAGS)
+INC_DIRS  := src $(LUNA_DIR)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DBACKEND_SOKOL=1 -DTARGET_WASM=1 -DSOKOL_GLES3
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -g3
+RELEASE_CFLAGS += -std=gnu11 -g
 RELEASE_CFLAGS += -fomit-frame-pointer
 RELEASE_CFLAGS += -DNDEBUG
 RELEASE_CFLAGS += -DSOKOL_DEBUG=0
 RELEASE_CFLAGS += $(WARN_FLAGS)
 
-DEBUG_CFLAGS := -std=gnu11 -g3 -O0
+DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
 DEBUG_CFLAGS += -Wno-limited-postlink-optimizations
 DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
 
-DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
 else
@@ -49,47 +49,52 @@ else
 endif
 
 CFLAGS += $(CDEFS)
-CFLAGS += -s ALLOW_MEMORY_GROWTH=1
-CFLAGS += -s USE_WEBGL2
-CFLAGS += -s NO_EXIT_RUNTIME=1
-CFLAGS += --shell-file=$(PLATFORM_DIR)/index.html
-CFLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
-CFLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
+LINK_FLAGS :=
+LINK_FLAGS += -s ALLOW_MEMORY_GROWTH=1
+LINK_FLAGS += -s USE_WEBGL2
+LINK_FLAGS += -s NO_EXIT_RUNTIME=1
+LINK_FLAGS += --shell-file=$(PLATFORM_DIR)/index.html
+LINK_FLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
+LINK_FLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
-OBJS         := $(BUILD_DIR)/$(TARGET)
+OBJ_DIR      := $(BUILD_DIR)/obj
+BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
 
-.PHONY: all clean build run publish
+include $(ROOT_DIR)/game.mk
+include $(ROOT_DIR)/assets.mk
+
+.PHONY: all clean build run publish release
 .DEFAULT_GOAL := all
 
-all: clean build run
+all: build run
 
-$(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-	make -f $(LUNA_DIR)/tools.mk tools-asset
+# Directory existence is not enough: obj/assets may create BUILD_DIR first.
+PLATFORM_READY := $(BUILD_DIR)/icons
 
-$(ASSETS_OUT): $(ASSETS_BIN)
-	mkdir -p $(ASSETS_OUT)
-	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
-
-$(BUILD_DIR):
+$(PLATFORM_READY):
 	mkdir -p $(BUILD_DIR)
-	cp -r $(PLATFORM_DIR)/* $(BUILD_DIR)
+	cp -r $(PLATFORM_DIR)/. $(BUILD_DIR)/
 
-$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $< $(LDLIBS) $(LDFLAGS) -o $@
-
-$(PUBLISH_OBJS): $(OBJS)
-	rm -rf $(BUILD_DIR)/assets
-	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
+$(BINARY): $(UNITY_OBJS) | $(PLATFORM_READY) $(ASSETS_TIMESTAMP)
+	$(CC) $(CFLAGS) $(LINK_FLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-run: $(OBJS)
-	emrun $(OBJS)
+run: $(BINARY)
+	emrun $(BINARY)
 
-build: $(OBJS)
-release: clean build
+build: $(BINARY)
+
+release:
+	$(MAKE) -f $(ROOT_DIR)/www.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/www.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+
+$(PUBLISH_OBJS): $(BINARY)
+	rm -rf $(BUILD_DIR)/assets
+	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
+
 publish: $(PUBLISH_OBJS)
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):html5
