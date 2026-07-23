@@ -47,7 +47,7 @@ poly_reverse(v2 *verts, ssize count)
 }
 
 // https://stackoverflow.com/questions/2792443/finding-the-centroid-of-a-polygon
-v2
+static inline v2
 poly_centroid(v2 *verts, ssize verts_count)
 {
 	v2 res          = {0};
@@ -82,7 +82,7 @@ poly_centroid(v2 *verts, ssize verts_count)
 	return res;
 }
 
-b32
+static inline b32
 poly_is_convex(const v2 *verts, ssize count)
 {
 	if(count < 3) return false;

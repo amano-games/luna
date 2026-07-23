@@ -32,7 +32,7 @@ struct arr_header {
 #define arr_push_packed(ptr, item, alloc) \
 	arr_full(ptr) ? (ptr) = arr_grow_packed(ptr, arr_len(ptr) + 1, sizeof(*(ptr)), alignof(max_align_t), alloc) : 0, (ptr)[arr_header(ptr)->len++] = item
 
-void *
+static inline void *
 _arr_ini(struct alloc alloc, ssize elem_size, ssize align, ssize count, b32 clear)
 {
 	// TODO: use align instead of max align_t
@@ -51,7 +51,7 @@ error:
 	return NULL;
 }
 
-void *
+static inline void *
 arr_grow(void *a, usize size)
 {
 	// TODO: arr_ini if it's null else bat path
@@ -60,7 +60,7 @@ error:
 	return NULL;
 }
 
-void *
+static inline void *
 arr_grow_packed(void *a, ssize new_len, ssize elem_size, ssize elem_align, struct alloc alloc)
 {
 	struct arr_header *header = a ? arr_header(a) : arr_header(_arr_ini(alloc, elem_size, elem_align, new_len, false));
