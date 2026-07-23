@@ -5,41 +5,41 @@ include $(ROOT_DIR)/common.mk
 
 DESTDIR      ?=
 PREFIX       ?=
-BINDIR       ?= ${PREFIX}linux
-TARGET       := $(GAME_NAME).bin
-BUILD_DIR    := ${DESTDIR}${BINDIR}
 PLATFORM_DIR := platforms/linux
+TARGET       := $(GAME_NAME).bin
+
+ifeq ($(DEBUG),0)
+BINDIR ?= ${PREFIX}linux-release
+else
+BINDIR ?= ${PREFIX}linux
+endif
+
+BUILD_DIR := ${DESTDIR}${BINDIR}
 
 LDLIBS := -lm -ldl -lrt -lGL -lX11 -lasound -lXi -lXcursor -lpthread
-LDFLAGS :=
-
-WATCH_SRC   := $(shell find $(SRC_DIR) -name *.c -or -name *.s -or -name *.h)
-WATCH_SRC   += $(shell find $(LUNA_DIR) -name *.c -or -name *.s -or -name *.h)
+RPATH  := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
+LDFLAGS := $(RPATH)
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
-INC_DIRS       := src
-INC_DIRS       += $(LUNA_DIR)
-INC_FLAGS      += $(addprefix -I,$(INC_DIRS))
-INC_FLAGS      += $(EXTERNAL_FLAGS)
+INC_DIRS  := src $(LUNA_DIR)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DBACKEND_SOKOL=1 -DSOKOL_GLCORE -DTARGET_LINUX
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -O2 -g3
+RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DNDEBUG
 RELEASE_CFLAGS += $(WARN_FLAGS)
 RELEASE_CFLAGS += -fno-omit-frame-pointer
 
-DEBUG_CFLAGS := -std=gnu11 -g3 -O0 -finstrument-functions 
+DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
-# DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
 
-DEBUG ?= 0
 ifeq ($(DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
 else
@@ -49,37 +49,29 @@ endif
 CFLAGS += $(CDEFS)
 
 ASSETS_OUT   := $(BUILD_DIR)/assets
-OBJS         := $(BUILD_DIR)/$(TARGET)
+OBJ_DIR      := $(BUILD_DIR)/obj
+BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(BUILD_DIR)/$(GAME_NAME).zip
-RPATH        := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
 
-.PHONY: all clean build steam run
+include $(ROOT_DIR)/game.mk
+include $(ROOT_DIR)/assets.mk
+
+.PHONY: all clean build steam run release publish
 
 all: build run
-
-$(ASSETS_BIN): $(ASSETS_WATCH_SRC)
-	make -f $(LUNA_DIR)/tools.mk tools-asset
-
-$(ASSETS_OUT): $(ASSETS_BIN)
-	mkdir -p $(ASSETS_OUT)
-	$(ASSETS_BIN) $(ASSETS_DIR) $(ASSETS_OUT)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(OBJS): $(SRC_DIR)/main.c $(SHADER_OBJS) | $(BUILD_DIR) $(ASSETS_OUT) $(WATCH_SRC)
-	$(CC) \
-		$(CFLAGS) \
-		$(INC_FLAGS) $< \
-		$(LDLIBS) $(LDFLAGS) \
-		-o $@
+$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) $(ASSETS_TIMESTAMP)
+	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 $(BUILD_DIR)/steam-runtime:
 	$(LUNA_DIR)/update_runtime.sh
 	$(LUNA_DIR)/extract_runtime.sh $(ROOT_DIR)/steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
 
-$(PUBLISH_OBJS): $(OBJS) steam
+$(PUBLISH_OBJS): $(BINARY) steam
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 steam: $(BUILD_DIR)/steam-runtime
@@ -87,11 +79,15 @@ steam: $(BUILD_DIR)/steam-runtime
 clean:
 	rm -rf $(BUILD_DIR)
 
-build: $(OBJS)
+build: $(BINARY)
 
 run: build
-	cd $(BUILD_DIR) && LD_PRELOAD=/usr/lib/libasan.so ./$(TARGET)
+	cd $(BUILD_DIR) && ./$(TARGET)
 
-release: clean $(PUBLISH_OBJS)
+release:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/linux.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(DESTDIR)linux-release/$(GAME_NAME).zip DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+
 publish: $(PUBLISH_OBJS)
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux
