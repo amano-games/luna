@@ -1484,7 +1484,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	pinb_write(&w, &table);
 	sys_file_close(out_file);
 
-#if defined(DEBUG)
+#if BUILD_DEBUG
 	{
 		struct sys_full_file_res io_res = sys_load_full_file(scratch, out_file_path);
 		struct ser_reader r             = {

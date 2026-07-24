@@ -1,8 +1,8 @@
 #pragma once
 
-#include "base/types.h"
+#include "base/base_inc.h"
 
-#if defined(TARGET_PD_DEVICE)
+#if PD_DEVICE
 #define bswap_u32 __builtin_bswap32
 
 static inline u32

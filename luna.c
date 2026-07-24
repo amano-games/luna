@@ -1,5 +1,7 @@
-#if defined(BACKEND_SOKOL)
-#if !defined(TARGET_WASM)
+#include "base/base_inc.h"
+
+#if SYS_BACKEND_SOKOL
+#if !OS_WASM
 #include "whereami.c"
 #endif
 #endif
@@ -8,7 +10,7 @@
 #include "sys/sys.c"
 #include "sys/sys-opts.c"
 #include "sys/sys-sprintf.c"
-#if defined BACKEND_SOKOL
+#if SYS_BACKEND_SOKOL
 #include "sys/sys-sokol.c"
 #else
 #include "sys/sys-pd.c"

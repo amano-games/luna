@@ -18,7 +18,7 @@
 #include <jsmn.h>
 #include <stdio.h>
 #include <tinydir.h>
-#if !defined(TARGET_WASM)
+#if !OS_WASM
 #include "whereami.h"
 #endif
 
@@ -42,7 +42,7 @@
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 
-#if defined(TARGET_MACOS) || defined(TARGET_WASM)
+#if OS_MACOS || OS_WASM
 #define MINI_GAMEPAD_ENABLE 0
 #else
 #define MINI_GAMEPAD_ENABLE 1
@@ -63,7 +63,7 @@
 
 #define SOKOL_TOUCH_INVALID U8_MAX
 // #define SOKOL_PIXEL_PERFECT
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 // #define SOKOL_DISABLE_AUDIO
 #endif
 
@@ -76,7 +76,7 @@
 #define SOKOL_RECORDING_ENABLED
 #define SOKOL_MOCK_PLAYER_NAME "afk"
 
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 #undef SOKOL_RECORDING_ENABLED
 #endif
 
@@ -266,7 +266,7 @@ sokol_main(i32 argc, char **argv)
 	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
 
 	{
-#if defined TARGET_LINUX
+#if OS_LINUX
 		if(!getenv("STEAM_RUNTIME")) {
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc alloc = SOKOL_STATE.scratch;
@@ -532,7 +532,7 @@ sokol_event(const sapp_event *ev)
 #endif
 		} break;
 		case SAPP_KEYCODE_R: {
-#if defined(TARGET_MACOS)
+#if OS_MACOS
 			if(ev->modifiers & SAPP_MODIFIER_SUPER) {
 #else
 			if(ev->modifiers & SAPP_MODIFIER_CTRL) {
@@ -541,7 +541,7 @@ sokol_event(const sapp_event *ev)
 			}
 		} break;
 		case SAPP_KEYCODE_Q: {
-#if defined(TARGET_MACOS)
+#if OS_MACOS
 			if(ev->modifiers & SAPP_MODIFIER_SUPER) {
 				sapp_request_quit();
 			}
@@ -1111,7 +1111,7 @@ sys_time_ns(void)
 #endif
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL
-#if !defined(TARGET_WIN)
+#if !OS_WINDOWS
 #include <time.h>
 #include <sys/time.h>
 #endif
@@ -1121,7 +1121,7 @@ sys_time_ns(void)
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
-#if !defined(TARGET_WIN)
+#if !OS_WINDOWS
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -1341,7 +1341,7 @@ sys_file_rename(str8 from, str8 to)
 	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 #include <stdlib.h>
 #include <direct.h>
 #endif
@@ -1352,7 +1352,7 @@ sys_make_dir(str8 path)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc scratch = SOKOL_STATE.scratch;
 
-#if defined(TARGET_LINUX) || defined(TARGET_MACOS)
+#if OS_LINUX || OS_MACOS
 	{
 		str8 path_copy = str8_cpy_push(scratch, path);
 		if(mkdir((char *)path_copy.str, 0755) != -1) {
@@ -1361,11 +1361,11 @@ sys_make_dir(str8 path)
 	}
 #endif
 
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 	_mkdir((char *)path.str);
 #endif
 
-#if defined(TARGET_WIN) && 0
+#if OS_WINDOWS && 0
 	str16 name16                         = str16_from_8(scratch, path);
 	WIN32_FILE_ATTRIBUTE_DATA attributes = {0};
 	GetFileAttributesExW((WCHAR *)name16.str, GetFileExInfoStandard, &attributes);
@@ -1482,7 +1482,7 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
-#if defined(DEBUG)
+#if BUILD_DEBUG
 	struct gfx_ctx ctx = SOKOL_STATE.debug_ctx;
 	tex_clr(ctx.dst, GFX_COL_BLACK);
 
@@ -1745,7 +1745,7 @@ sokol_process_info_set(void)
 	struct alloc scratch          = SOKOL_STATE.scratch;
 	struct sys_process_info *info = &SOKOL_STATE.process_info;
 
-#if !defined(TARGET_WASM)
+#if !OS_WASM
 	{
 		// Exe PATH
 		ssize str_size = wai_getExecutablePath(NULL, 0, NULL);
@@ -1757,7 +1757,7 @@ sokol_process_info_set(void)
 	}
 #endif
 
-#if !defined(TARGET_WASM)
+#if !OS_WASM
 	{
 		// Module PATH
 		ssize str_size = wai_getModulePath(NULL, 0, NULL);
@@ -1777,7 +1777,7 @@ sokol_process_info_set(void)
 
 	{
 		// Data Path
-#if defined(TARGET_LINUX)
+#if OS_LINUX
 		{
 			// TODO: Fallback?
 			char *xdg      = getenv("XDG_DATA_HOME");
@@ -1792,7 +1792,7 @@ sokol_process_info_set(void)
 		}
 #endif
 
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 		{
 			ssize mem_size = MKILOBYTE(32);
 			u16 *buffer    = alloc_arr(scratch, buffer, mem_size);
@@ -1806,7 +1806,7 @@ sokol_process_info_set(void)
 		}
 #endif
 
-#if defined(TARGET_MACOS)
+#if OS_MACOS
 		{
 			str8 home       = str8_cstr(getenv("HOME"));
 			str8 suffix     = str8_lit("/Library/Application Support");
@@ -1817,7 +1817,7 @@ sokol_process_info_set(void)
 
 	{
 		// Base path
-#if defined(TARGET_MACOS)
+#if OS_MACOS
 		{
 			str8 exe_path = SOKOL_STATE.process_info.exe_path;
 			if(exe_path.size > 0) {
@@ -1895,7 +1895,7 @@ sys_get_current_path(struct alloc alloc)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc scratch = SOKOL_STATE.scratch;
 
-#if defined(TARGET_LINUX) || defined(TARGET_MACOS)
+#if OS_LINUX || OS_MACOS
 	{
 		char *cwdir = getcwd(0, 0);
 		res         = str8_cpy_push(alloc, str8_cstr(cwdir));
@@ -1903,7 +1903,7 @@ sys_get_current_path(struct alloc alloc)
 	}
 #endif
 
-#if defined(TARGET_WIN) && 0
+#if OS_WINDOWS && 0
 	{
 		DWORD length = GetCurrentDirectoryW(0, 0);
 		u16 *memory  = alloc_arr(scratch, memory, length + 1);
@@ -2136,7 +2136,7 @@ sokol_recording_write(struct recording_1b *recording)
 	i32 scale                 = SOKOL_STATE.opts.recording.scale;
 	struct str8_list cmd_list = {0};
 	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
-#if defined(DEBUG)
+#if BUILD_DEBUG
 	str8_list_pushf(scratch, &cmd_list, "-loglevel verbose");
 	// str8_list_pushf(scratch, &cmd_list, "-report");
 #endif

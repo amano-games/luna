@@ -611,7 +611,7 @@ sys_draw_debug_clear(void)
 void
 sys_debug_draw(struct debug_shape *shapes, int count)
 {
-#if defined(DEBUG) && !defined(TARGET_PD_DEVICE)
+#if BUILD_DEBUG && !PD_DEVICE
 	LCDBitmap *ctx = PD->graphics->getDebugBitmap();
 	PD->graphics->pushContext(ctx);
 	for(int i = 0; i < count; ++i) {

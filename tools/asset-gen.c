@@ -1,3 +1,5 @@
+#include "base/base_inc.h"
+
 #include <tinydir.h>
 #include "engine/assets/qop.h"
 #include "sys/sys-io.h"
@@ -9,14 +11,9 @@
 #include "sys/sys-cli.c"
 #include "sys/sys-io.c"
 
-#include "base/dbg.h"
-#include "base/marena.h"
-#include "base/mem.h"
-#include "base/types.h"
 #include "sys/sys-sprintf.c"
 #include "base/mem.c"
 #include "base/marena.c"
-#include "base/str.h"
 #include "base/str.c"
 #include "base/path.c"
 
