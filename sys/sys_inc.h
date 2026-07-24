@@ -1,7 +1,6 @@
 #pragma once
 
-////////////////////////////////
-// Sys layer umbrella (raddebugger-style)
+// Sys layer umbrella
 // Public API only — backends are selected in sys_inc.c.
 
 #include "sys/sys.h"

@@ -142,16 +142,9 @@ gen_table(const str8 in_path, struct alloc scratch)
 						row_value->string = json_str8_cpy_push(json, child_value, scratch, false);
 					} break;
 					case COLUMN_TYPE_BITMASK: {
-						u8 flag = j + 1;
-						if(rows_count < 8) {
-							row_value->u8 = (u8)1 << (u8)flag;
-						} else if(rows_count < 16) {
-							row_value->u16 = (u16)1 << (u16)flag;
-						} else if(rows_count < 32) {
-							row_value->u32 = (u32)1 << (u32)flag;
-						} else {
-							row_value->u64 = (u64)1 << (u64)flag;
-						}
+						/* NONE is index 0; store in u64 so emit reads a full value. */
+						u8 flag        = (u8)(j + 1);
+						row_value->u64 = (u64)1 << flag;
 					} break;
 					case COLUMN_TYPE_LABEL: {
 						row_value->string = json_str8_cpy_push(json, child_value, scratch, false);
@@ -230,14 +223,14 @@ gen_table(const str8 in_path, struct alloc scratch)
 				str8_list_pushf(alloc, &content, "};\n\n");
 			} break;
 			case COLUMN_TYPE_BITMASK: {
-				size_t rows_count = arr_len(table.rows) + 1;
+				size_t rows_count = arr_len(table.rows) + 1; /* +1 for NONE */
 				str8 bitmask_type = {0};
 				dbg_assert(rows_count <= 64);
-				if(rows_count < 8) {
+				if(rows_count <= 8) {
 					bitmask_type = str8_lit("u8");
-				} else if(rows_count < 16) {
+				} else if(rows_count <= 16) {
 					bitmask_type = str8_lit("u16");
-				} else if(rows_count < 32) {
+				} else if(rows_count <= 32) {
 					bitmask_type = str8_lit("u32");
 				} else {
 					bitmask_type = str8_lit("u64");
