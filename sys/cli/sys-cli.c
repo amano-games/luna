@@ -205,11 +205,10 @@ sys_current_path(struct alloc alloc)
 	return res;
 }
 
-struct sys_process_info
+struct sys_process_info *
 sys_process_info(void)
 {
-	struct sys_process_info res = {0};
-	return res;
+	return &CLI_STATE.process_info;
 }
 
 #if OS_WINDOWS

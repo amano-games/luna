@@ -110,12 +110,13 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_STATE.menu.next_id = 1;
 
 		PD_STATE.process_info = (struct sys_process_info){
-			.initial_path = str8_lit(""),
-			.exe_path     = str8_lit(""),
-			.base_path    = str8_lit(""),
-			.data_path    = str8_lit(""),
-			.module_path  = str8_lit(""),
-			.environment  = str8_lit(""),
+			.initial_path                 = str8_lit(""),
+			.binary_file_path             = str8_lit(""),
+			.binary_path                  = str8_lit(""),
+			.base_path                    = str8_lit(""),
+			.user_program_config_data_path = str8_lit(""),
+			.user_program_cache_data_path  = str8_lit(""),
+			.user_program_logs_data_path   = str8_lit(""),
 		};
 
 		sys_internal_init();
@@ -747,10 +748,10 @@ sys_set_app_name(str8 value)
 {
 }
 
-struct sys_process_info
+struct sys_process_info *
 sys_process_info(void)
 {
-	return PD_STATE.process_info;
+	return &PD_STATE.process_info;
 }
 
 str8
@@ -759,12 +760,6 @@ sys_get_current_path(struct alloc alloc)
 	return str8_cpy_push(alloc, str8_lit(""));
 }
 
-str8
-sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
-{
-	str8 res = str8_cpy_push(alloc, path);
-	return res;
-}
 
 b32
 sys_make_dir(str8 path)

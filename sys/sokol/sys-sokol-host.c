@@ -19,9 +19,6 @@
 #include <jsmn.h>
 #include <stdio.h>
 #include <tinydir.h>
-#if !OS_WASM
-#include "whereami.h"
-#endif
 
 #include "engine/gfx/gfx.h"
 #include "engine/gfx/gfx-defs.h"
@@ -187,8 +184,6 @@ struct sokol_state {
 	struct recording_1b recording;
 	struct recording_aud recording_aud;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
-
-	struct sys_process_info process_info;
 };
 
 static struct sokol_state SOKOL_STATE;
@@ -223,7 +218,6 @@ void sokol_pause_handle_buttons(i32 buttons);
 void sokol_pause(void);
 void sokol_resume(void);
 
-static void sokol_process_info_set(void);
 static void sokol_set_icon(void);
 static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
@@ -241,6 +235,7 @@ static inline void sokol_gamepads_ev(void);
 sapp_desc
 sokol_main(i32 argc, char **argv)
 {
+	sys_os_init();
 	stm_setup();
 	SOKOL_STATE.tick_start   = stm_now();
 	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
@@ -257,15 +252,11 @@ sokol_main(i32 argc, char **argv)
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
-	sokol_process_info_set();
 
-	struct str8 exe_path = SOKOL_STATE.process_info.exe_path;
+	struct str8 exe_path = sys_exe_path();
 	str8 base_name       = str8_chop_last_slash(exe_path);
 	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
 	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
-
-	marena_reset(&SOKOL_STATE.scratch_marena);
-	sys_os_boot_env(exe_path, SOKOL_STATE.scratch);
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
@@ -963,25 +954,6 @@ sokol_cleanup(void)
 #endif
 }
 
-struct str8
-sys_base_path(void)
-{
-	return SOKOL_STATE.process_info.base_path;
-}
-
-str8
-sys_exe_path(void)
-{
-	return SOKOL_STATE.process_info.exe_path;
-}
-
-// https://wiki.libsdl.org/SDL3/SDL_GetPrefPath
-str8
-sys_data_path(void)
-{
-	return SOKOL_STATE.process_info.data_path;
-}
-
 i32
 sys_inp(void)
 {
@@ -1095,12 +1067,6 @@ sys_time_ns(void)
 }
 #endif
 
-u32
-sys_epoch_2000(u32 *milliseconds)
-{
-	return sys_os_epoch_2000(milliseconds);
-}
-
 void
 sys_1bit_invert(b32 i)
 {
@@ -1142,32 +1108,6 @@ sys_1bit_buffer(void)
 	return SOKOL_STATE.frame_ctx.dst.px;
 }
 
-struct alloc
-sys_allocator(void)
-{
-	struct alloc alloc = {
-		.allocf = sys_alloc,
-		.ctx    = NULL,
-	};
-	return alloc;
-}
-
-void *
-sys_alloc(void *ptr, ssize size, ssize align)
-{
-	void *res = malloc(size);
-	dbg_check(res, "sys-sokol", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
-
-error:
-	return res;
-}
-
-void
-sys_free(void *ptr)
-{
-	free(ptr);
-}
-
 void
 sys_log(
 	const char *tag,
@@ -1180,140 +1120,6 @@ sys_log(
 	if(log_level <= SYS_LOG_LEVEL) {
 		slog_func(tag, log_level, log_item, msg, line_nr, filename, NULL);
 	}
-}
-
-long
-sys_sokol_file_size_get(const str8 path)
-{
-	FILE *fp = sys_file_open_r(path);
-
-	if(fp == NULL)
-		return -1;
-
-	if(fseek(fp, 0, SEEK_END) < 0) {
-		fclose(fp);
-		return -1;
-	}
-
-	long size = sys_file_tell(fp);
-	// release the resources when not required
-	fclose(fp);
-	return size;
-}
-
-struct sys_file_stats
-sys_file_stats(str8 path)
-{
-	// TODO: Fill the other stats
-	struct sys_file_stats res = {0};
-	int size                  = sys_sokol_file_size_get(path);
-	if(size < 0) {
-		log_error("IO", "failed to get file stats %s", path.str);
-	}
-	res.size = size;
-	return res;
-}
-
-void *
-sys_file_open_r(const str8 path)
-{
-	void *res = (void *)fopen((char *)path.str, "rb");
-	return res;
-}
-
-void *
-sys_file_open_w(const str8 path)
-{
-	void *res = (void *)fopen((char *)path.str, "wb");
-	return res;
-}
-
-void *
-sys_file_open_a(const str8 path)
-{
-	void *res = (void *)fopen((char *)path.str, "ab");
-	return res;
-}
-
-i32
-sys_file_close(void *f)
-{
-	return fclose((FILE *)f);
-}
-
-i32
-sys_file_flush(void *f)
-{
-	return fflush((FILE *)f);
-}
-
-i32
-sys_file_r(void *f, void *buf, u32 buf_size)
-{
-	i32 count = 1;
-	usize s   = fread(buf, buf_size, count, (FILE *)f);
-	if(s == 0) {
-		log_error("IO", "Error reading from file: %d", (int)s);
-	}
-
-	return (i32)s;
-}
-
-ssize
-sys_file_w(void *f, const void *buf, u32 buf_size)
-{
-	i32 count = 1;
-	ssize res = fwrite(buf, buf_size, count, (FILE *)f);
-	return res;
-}
-
-i32
-sys_file_tell(void *f)
-{
-	usize t = ftell((FILE *)f);
-	return (i32)t;
-}
-
-i32
-sys_file_seek_set(void *f, i32 pos)
-{
-	return (i32)fseek((FILE *)f, pos, SEEK_SET);
-}
-
-i32
-sys_file_seek_cur(void *f, i32 pos)
-{
-	return (i32)fseek((FILE *)f, pos, SEEK_CUR);
-}
-
-i32
-sys_file_seek_end(void *f, i32 pos)
-{
-	return (i32)fseek((FILE *)f, pos, SEEK_END);
-}
-
-b32
-sys_file_del(str8 path)
-{
-	return remove((char *)path.str) == 0;
-}
-
-b32
-sys_file_rename(str8 from, str8 to)
-{
-	return (rename((char *)from.str, (char *)to.str) == 0);
-}
-
-b32
-sys_make_dir(str8 path)
-{
-	marena_reset(&SOKOL_STATE.scratch_marena);
-	return sys_os_make_dir(path, SOKOL_STATE.scratch);
-}
-
-void
-sys_set_auto_lock_disabled(int disable)
-{
 }
 
 i32
@@ -1495,15 +1301,6 @@ sys_audio_unlock(void)
 	return;
 }
 
-usize
-sys_file_modified(str8 path)
-{
-	// 	dbg_not_implemeneted("sokol");
-	//
-	// error:
-	return 0;
-}
-
 static inline void
 sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal)
 {
@@ -1668,20 +1465,6 @@ sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, vo
 	return res;
 }
 
-static void
-sokol_process_info_set(void)
-{
-	marena_reset(&SOKOL_STATE.scratch_marena);
-	SOKOL_STATE.process_info = (struct sys_process_info){0};
-	sys_os_process_info_fill(&SOKOL_STATE.process_info, SOKOL_STATE.alloc, SOKOL_STATE.scratch);
-}
-
-struct sys_process_info
-sys_process_info(void)
-{
-	return SOKOL_STATE.process_info;
-}
-
 static inline b32
 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button)
 {
@@ -1726,13 +1509,6 @@ sokol_touch_remove(sapp_touchpoint point)
 	}
 
 	return res;
-}
-
-str8
-sys_get_current_path(struct alloc alloc)
-{
-	marena_reset(&SOKOL_STATE.scratch_marena);
-	return sys_os_get_current_path(alloc, SOKOL_STATE.scratch);
 }
 
 static void
@@ -1794,33 +1570,6 @@ sokol_set_icon(void)
 	for(ssize i = 0; i < icon_count; ++i) {
 		stbi_image_free((char *)icon_desc.images[i].pixels.ptr);
 	}
-}
-
-str8
-sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
-{
-	str8 res       = path;
-	str8 data_path = sys_data_path();
-	if(data_path.size == 0) { return res; }
-
-	/*
-    On Windows, the string might look like:
-    C:\\Users\\bob\\AppData\\Roaming\\My Company\\My Program Name\\
-    On Linux, the string might look like:
-    /home/bob/.local/share/My Program Name/
-    On Mac OS X, the string might look like:
-    /Users/bob/Library/Application Support/My Program Name/
-  */
-
-	// TODO: support windows
-	enum path_style path_style = path_style_from_str8(path);
-	struct str8_list path_list = {0};
-	str8_list_push(alloc, &path_list, data_path);
-	str8_list_push(alloc, &path_list, app_name);
-	str8_list_push(alloc, &path_list, path);
-	res = path_join_by_style(alloc, &path_list, path_style);
-
-	return res;
 }
 
 str8

@@ -1,6 +1,7 @@
 #include "sys/sys-io.h"
 #include "base/dbg.h"
 #include "base/log.h"
+#include "base/path.h"
 #include "base/str.h"
 
 void *
@@ -57,4 +58,21 @@ sys_load_full_file(struct alloc alloc, str8 path)
 error:
 	if(f != NULL) { sys_file_close(f); }
 	return (struct sys_full_file_res){0};
+}
+
+str8
+sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
+{
+	str8 res       = path;
+	str8 data_path = sys_data_path();
+	if(data_path.size == 0) { return str8_cpy_push(alloc, res); }
+
+	enum path_style path_style = path_style_from_str8(path);
+	struct str8_list path_list = {0};
+	str8_list_push(alloc, &path_list, data_path);
+	str8_list_push(alloc, &path_list, app_name);
+	str8_list_push(alloc, &path_list, path);
+	res = path_join_by_style(alloc, &path_list, path_style);
+
+	return res;
 }

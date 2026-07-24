@@ -88,7 +88,7 @@ void sys_set_menu_image(struct tex tex, i32 x_offset);
 void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
 str8 sys_get_current_path(struct alloc alloc);
-struct sys_process_info sys_process_info(void);
+struct sys_process_info *sys_process_info(void);
 
 // Playdate-only (not part of portable contract; Phase 4 may fold present into sys_*)
 #if SYS_BACKEND_PLAYDATE

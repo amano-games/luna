@@ -27,12 +27,14 @@ struct sys_mem {
 
 struct sys_process_info {
 	u32 pid;
-	str8 exe_path;
-	str8 module_path;
+	str8 binary_file_path;
+	str8 binary_path;
 	str8 base_path;
 	str8 initial_path;
-	str8 data_path;
-	str8 environment;
+	str8 user_program_config_data_path;
+	str8 user_program_cache_data_path;
+	str8 user_program_logs_data_path;
+	struct str8_list environment;
 };
 
 struct sys_timing {
