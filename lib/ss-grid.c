@@ -159,23 +159,23 @@ ss_grid_cell_col_with_shape(
 	case COL_TYPE_POLY: {
 		struct col_manifold m = {0};
 		res                   = col_aabb_to_poly(
-            cell_aabb.min.x,
-            cell_aabb.min.y,
-            cell_aabb.max.x,
-            cell_aabb.max.y,
-            shape.poly);
+			cell_aabb.min.x,
+			cell_aabb.min.y,
+			cell_aabb.max.x,
+			cell_aabb.max.y,
+			shape.poly);
 	} break;
 	default: {
 		struct col_aabb aabb = col_shape_get_bounding_box(shape);
 		res                  = col_aabb_to_aabb(
-            aabb.min.x,
-            aabb.min.y,
-            aabb.max.x,
-            aabb.max.y,
-            cell_aabb.min.x,
-            cell_aabb.min.y,
-            cell_aabb.max.x,
-            cell_aabb.max.y);
+			aabb.min.x,
+			aabb.min.y,
+			aabb.max.x,
+			aabb.max.y,
+			cell_aabb.min.x,
+			cell_aabb.min.y,
+			cell_aabb.max.x,
+			cell_aabb.max.y);
 	} break;
 	}
 	return res;

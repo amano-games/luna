@@ -200,12 +200,12 @@ col_circle_to_capsule(f32 x, f32 y, f32 r, struct col_capsule b)
 {
 	struct col_cir circle_b = col_capsule_get_circle_col(b, x, y);
 	i32 res                 = col_circle_to_circle(
-        x,
-        y,
-        r,
-        circle_b.p.x,
-        circle_b.p.y,
-        circle_b.r);
+		x,
+		y,
+		r,
+		circle_b.p.x,
+		circle_b.p.y,
+		circle_b.r);
 
 	return res;
 }

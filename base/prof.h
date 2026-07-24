@@ -645,13 +645,13 @@ prof_csv(struct alloc alloc, u32 max_records)
 	u32 record_count           = min_i32(max_records, report->entry_count);
 	struct str8_list list      = {0};
 	str8 headers[]             = {
-        str8_lit("zone"),
-        str8_lit("exlusive"),
-        str8_lit("inclusive"),
-        str8_lit("count"),
-        str8_lit("inclusive_min"),
-        str8_lit("inclusive_max"),
-    };
+		str8_lit("zone"),
+		str8_lit("exlusive"),
+		str8_lit("inclusive"),
+		str8_lit("count"),
+		str8_lit("inclusive_min"),
+		str8_lit("inclusive_max"),
+	};
 
 	for(ssize i = 0; i < (ssize)ARRLEN(headers); ++i) {
 		if(i > 0) {

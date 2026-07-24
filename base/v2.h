@@ -205,9 +205,9 @@ v2_rot_ang(v2 v, f32 a)
 	f32 c = cos_f32(a);
 	f32 s = sin_f32(a);
 	v2 r  = {
-		 .x = v.x * c - v.y * s,
-		 .y = v.x * s + v.y * c,
-    };
+		.x = v.x * c - v.y * s,
+		.y = v.x * s + v.y * c,
+	};
 	return r;
 }
 
