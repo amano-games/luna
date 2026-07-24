@@ -1,10 +1,10 @@
-#include "sys-cli.h"
+#include "sys/cli/sys_cli.h"
 
-#include "sys-defs.h"
+#include "sys/sys-defs.h"
 #include "base/str.h"
-#include "sys-io.h"
+#include "sys/sys-io.h"
 #include "base/log.h"
-#include "sys.h"
+#include "sys/sys.h"
 #include <sys/stat.h>
 
 #define SOKOL_LOG_IMPL

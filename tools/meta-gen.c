@@ -4,13 +4,11 @@
 #include <jsmn.h>
 #include "whereami.c"
 
-#include "sys/sys.h"
-#include "sys/sys-cli.c"
-#include "sys/sys-io.h"
+#include "sys/sys_inc.h"
+#include "sys/sys_inc.c"
 
 #include "base/marena.c"
 #include "base/mem.c"
-#include "sys/sys-sprintf.c"
 #include "base/str.c"
 #include "base/path.c"
 

@@ -4,7 +4,7 @@
 #include "base/types.h"
 #include "base/utils.h"
 #include "sys/sys-scoreboards.h"
-#include "sys/sys-pd-scores.h"
+#include "sys/playdate/sys_playdate_scores.h"
 
 #define PD_SCORES_ADD_MAX_RETRY 3
 

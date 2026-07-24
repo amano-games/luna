@@ -1,4 +1,4 @@
-#include "sys-sokol.h"
+#include "sys/sokol/sys_sokol.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
@@ -9,7 +9,7 @@
 #include "lib/fnt/fnt.h"
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
-#include "sys-debug-draw.h"
+#include "sys/sys-debug-draw.h"
 #include "base/types.h"
 #include "sys/sys-font-mono.h"
 #include "sys/sys-opts.h"
@@ -27,10 +27,10 @@
 #include "base/path.h"
 #include "base/str.h"
 #include "base/utils.h"
-#include "sys-input.h"
-#include "sys-io.h"
+#include "sys/sys-input.h"
+#include "sys/sys-io.h"
 #include "base/log.h"
-#include "sys.h"
+#include "sys/sys.h"
 #include "base/dbg.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
