@@ -60,4 +60,6 @@ str8 sys_exe_path(void);
 str8 sys_base_path(void);
 str8 sys_data_path(void);
 str8 sys_current_path(struct alloc alloc);
+
+// Shared helper over sys_data_path()
 str8 sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name);
