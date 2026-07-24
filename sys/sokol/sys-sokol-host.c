@@ -219,7 +219,6 @@ void sokol_pause(void);
 void sokol_resume(void);
 
 static void sokol_set_icon(void);
-static inline void sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 static void sokol_screenshot_save(struct tex tex);
@@ -1299,21 +1298,6 @@ sys_audio_unlock(void)
 {
 	// SDL_UnlockAudioDevice(g_SDL.audiodevID);
 	return;
-}
-
-static inline void
-sokol_tex_to_rgba(const u8 *in, u32 *out, usize size, const u32 *pal)
-{
-	u32 *pixels = out;
-	for(i32 y = 0; y < SYS_DISPLAY_H; y++) {
-		for(i32 x = 0; x < SYS_DISPLAY_W; x++) {
-			i32 src     = (x >> 3) + y * SYS_DISPLAY_WBYTES;
-			i32 dst     = x + y * SYS_DISPLAY_W;
-			i32 byt     = in[src];
-			i32 bit     = !!(byt & 0x80 >> (x & 7));
-			pixels[dst] = pal[!bit] | 0xFF000000;
-		}
-	}
 }
 
 void
