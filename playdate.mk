@@ -122,6 +122,7 @@ PD_SETUP_OBJ:= $(PD_OBJ_DIR)/setup.o
 PD_UNITY_OBJS := $(PD_LUNA_OBJ) $(PD_GAME_OBJ) $(PD_SETUP_OBJ)
 
 .PHONY: all clean build build_sim build_pd run assets assets_clean release publish_release
+.DEFAULT_GOAL := all
 
 TMP_DIR := $(BUILD_DIR)/tmp
 

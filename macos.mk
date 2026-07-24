@@ -72,8 +72,9 @@ ASSETS_TIMESTAMP_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
 .PHONY: all clean build run publish_release release sign
+.DEFAULT_GOAL := all
 
-all: build run
+all: run
 
 $(EXE_OUT): $(UNITY_OBJS) $(ASSETS_TIMESTAMP)
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents

@@ -70,7 +70,7 @@ include $(ROOT_DIR)/assets.mk
 .PHONY: all clean build run publish_release release
 .DEFAULT_GOAL := all
 
-all: build run
+all: run
 
 # Directory existence is not enough: obj/assets may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
