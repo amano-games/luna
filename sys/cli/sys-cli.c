@@ -1,7 +1,7 @@
-// @per_backend_impl CLI (tools subset)
+// @per_os_impl CLI (tools subset)
 // Alloc, time, files, paths, sys_log only — no display/input/menu/host loop.
 
-#include "sys/cli/sys_cli.h"
+#include "sys/cli/sys-cli.h"
 
 #include "sys/sys-defs.h"
 #include "base/str.h"

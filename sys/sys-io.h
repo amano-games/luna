@@ -37,7 +37,7 @@ void *sys_file_open(str8 path, i32 sys_file_mode);
 b32 sys_file_exists(str8 path, i32 sys_file_mode);
 struct sys_full_file_res sys_load_full_file(struct alloc alloc, str8 path);
 
-// @per_backend_impl File IO
+// @per_os_impl File IO
 void *sys_file_open_r(str8 path);
 void *sys_file_open_w(str8 path);
 void *sys_file_open_a(str8 path);
@@ -55,7 +55,7 @@ struct sys_file_stats sys_file_stats(str8 path);
 b32 sys_make_dir(str8 path);
 usize sys_file_modified(str8 path);
 
-// @per_backend_impl Paths
+// @per_os_impl Paths
 str8 sys_exe_path(void);
 str8 sys_base_path(void);
 str8 sys_data_path(void);
