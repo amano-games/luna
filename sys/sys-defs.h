@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/base_inc.h"
+#include "base/base-inc.h"
 
 #define SYS_DISPLAY_W      400
 #define SYS_DISPLAY_H      240

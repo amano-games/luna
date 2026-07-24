@@ -100,16 +100,22 @@
 #define PD_SIM 1
 #endif
 
-// Backend cracking — makefile BACKEND_* flags
+// Host helper / tools flags — platforms are selected by OS_*.
+// SYS_BACKEND_SOKOL means "this platform currently uses the optional Sokol helper"
+// (not a peer of Playdate). It can be omitted from makefiles for desktop/wasm.
 
-#if defined(BACKEND_SOKOL)
-#define SYS_BACKEND_SOKOL 1
+#if defined(BACKEND_CLI)
+#define SYS_BACKEND_CLI 1
 #elif defined(BACKEND_PD)
 #define SYS_BACKEND_PLAYDATE 1
-#elif defined(BACKEND_CLI)
-#define SYS_BACKEND_CLI 1
+#elif defined(BACKEND_SOKOL)
+#define SYS_BACKEND_SOKOL 1
+#elif defined(OS_LINUX) || defined(OS_MACOS) || defined(OS_WINDOWS) || defined(OS_WASM)
+#define SYS_BACKEND_SOKOL 1
+#elif defined(OS_PLAYDATE)
+#define SYS_BACKEND_PLAYDATE 1
 #else
-#error System backend not specified (expected BACKEND_SOKOL, BACKEND_PD, or BACKEND_CLI).
+#error System host not specified (expected desktop/wasm OS, Playdate, or BACKEND_CLI).
 #endif
 
 // Build option cracking

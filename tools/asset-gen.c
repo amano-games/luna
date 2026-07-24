@@ -1,4 +1,4 @@
-#include "base/base_inc.h"
+#include "base/base-inc.h"
 
 #include <tinydir.h>
 #include "engine/assets/qop.h"
@@ -6,8 +6,8 @@
 #include "tools/asset/asset.h"
 #include "whereami.c"
 
-#include "sys/sys_inc.h"
-#include "sys/sys_inc.c"
+#include "sys/sys-inc.h"
+#include "sys/sys-inc.c"
 
 #include "base/mem.c"
 #include "base/marena.c"

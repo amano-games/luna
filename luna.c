@@ -1,4 +1,4 @@
-#include "base/base_inc.h"
+#include "base/base-inc.h"
 
 #if SYS_BACKEND_SOKOL
 #if !OS_WASM
@@ -6,7 +6,7 @@
 #endif
 #endif
 
-#include "sys/sys_inc.c"
+#include "sys/sys-inc.c"
 
 #include "base/date-time.c"
 #include "base/marena.c"

@@ -1,6 +1,5 @@
-// @per_backend_impl Sokol host (linux/macos/windows/wasm)
-
-#include "sys/sokol/sys_sokol.h"
+#include "sys/sokol/sys-sokol.h"
+#include "sys/sys-os.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"
 #include "base/mem.h"
@@ -100,8 +99,6 @@ struct recording_aud {
 	ssize cap;
 	f32 *frames;
 };
-
-static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
 
 enum sokol_status {
 	SOKOL_STATUS_NONE,
@@ -267,22 +264,8 @@ sokol_main(i32 argc, char **argv)
 	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
 	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
 
-	{
-#if OS_LINUX
-		if(!getenv("STEAM_RUNTIME")) {
-			marena_reset(&SOKOL_STATE.scratch_marena);
-			struct alloc alloc = SOKOL_STATE.scratch;
-			if(exe_path.size != 0) {
-				struct str8_list path_list = {0};
-				str8_list_push(alloc, &path_list, exe_path);
-				str8_list_push(alloc, &path_list, STEAM_RUNTIME_RELATIVE_PATH);
-				str8 runtime_path = path_join_by_style(alloc, &path_list, path_style_absolute_unix);
-				log_info("SYS", "STEAM_RUNTIME %s", runtime_path.str);
-				setenv("STEAM_RUNTIME", (char *)runtime_path.str, 1);
-			}
-		}
-#endif
-	}
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	sys_os_boot_env(exe_path, SOKOL_STATE.scratch);
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
@@ -1112,32 +1095,10 @@ sys_time_ns(void)
 }
 #endif
 
-#define SECONDS_BETWEEN_1970_AND_2000 946684800LL
-#if !OS_WINDOWS
-#include <time.h>
-#include <sys/time.h>
-#endif
-// TODO: Win32 support
-// Returns seconds since 2000-01-01 UTC.
-// If milliseconds != NULL, stores the 0–999 ms remainder.
 u32
 sys_epoch_2000(u32 *milliseconds)
 {
-#if !OS_WINDOWS
-	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-
-	u64 unix_seconds = (u64)ts.tv_sec;
-	u64 seconds      = unix_seconds - SECONDS_BETWEEN_1970_AND_2000;
-
-	if(milliseconds) {
-		*milliseconds = (u32)(ts.tv_nsec / 1000000ULL); // 0–999 ms
-	}
-
-	return seconds;
-#else
-	return 0;
-#endif
+	return sys_os_epoch_2000(milliseconds);
 }
 
 void
@@ -1343,42 +1304,11 @@ sys_file_rename(str8 from, str8 to)
 	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
-#if OS_WINDOWS
-#include <stdlib.h>
-#include <direct.h>
-#endif
 b32
 sys_make_dir(str8 path)
 {
-	b32 res = false;
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	struct alloc scratch = SOKOL_STATE.scratch;
-
-#if OS_LINUX || OS_MACOS
-	{
-		str8 path_copy = str8_cpy_push(scratch, path);
-		if(mkdir((char *)path_copy.str, 0755) != -1) {
-			res = 1;
-		}
-	}
-#endif
-
-#if OS_WINDOWS
-	_mkdir((char *)path.str);
-#endif
-
-#if OS_WINDOWS && 0
-	str16 name16                         = str16_from_8(scratch, path);
-	WIN32_FILE_ATTRIBUTE_DATA attributes = {0};
-	GetFileAttributesExW((WCHAR *)name16.str, GetFileExInfoStandard, &attributes);
-	if(attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-		result = 1;
-	} else if(CreateDirectoryW((WCHAR *)name16.str, 0)) {
-		result = 1;
-	}
-#endif
-
-	return res;
+	return sys_os_make_dir(path, SOKOL_STATE.scratch);
 }
 
 void
@@ -1742,100 +1672,8 @@ static void
 sokol_process_info_set(void)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	SOKOL_STATE.process_info      = (struct sys_process_info){0};
-	struct alloc alloc            = SOKOL_STATE.alloc;
-	struct alloc scratch          = SOKOL_STATE.scratch;
-	struct sys_process_info *info = &SOKOL_STATE.process_info;
-
-#if !OS_WASM
-	{
-		// Exe PATH
-		ssize str_size = wai_getExecutablePath(NULL, 0, NULL);
-		if(str_size > 0) {
-			u8 *path = (u8 *)alloc_arr(scratch, path, str_size);
-			wai_getExecutablePath((char *)path, str_size, NULL);
-			info->exe_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
-		}
-	}
-#endif
-
-#if !OS_WASM
-	{
-		// Module PATH
-		ssize str_size = wai_getModulePath(NULL, 0, NULL);
-
-		if(str_size > 0) {
-			u8 *path = alloc_arr(scratch, path, str_size);
-			wai_getModulePath((char *)path, str_size, NULL);
-			info->module_path = str8_cpy_push(alloc, (str8){.str = (u8 *)path, .size = str_size});
-		}
-	}
-#endif
-
-	{
-		// Initial path
-		info->initial_path = sys_get_current_path(alloc);
-	}
-
-	{
-		// Data Path
-#if OS_LINUX
-		{
-			// TODO: Fallback?
-			char *xdg      = getenv("XDG_DATA_HOME");
-			char *home     = getenv("HOME");
-			str8 data_path = str8_lit("");
-			if(xdg != NULL) {
-				data_path = str8_cstr(xdg);
-			} else if(home != NULL) {
-				data_path = str8_cstr(home);
-			}
-			info->data_path = str8_cpy_push(alloc, data_path);
-		}
-#endif
-
-#if OS_WINDOWS
-		{
-			ssize mem_size = MKILOBYTE(32);
-			u16 *buffer    = alloc_arr(scratch, buffer, mem_size);
-			// TODO: split os layer in windows/linux/mac so I can inclide windows headers in a single file
-			// TODO: Support for strings u16 for windows things
-#if 0
-			if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, (WCHAR *)buffer))) {
-				info->data_path = str8_from_16(arena, str16_cstring(buffer));
-			}
-#endif
-		}
-#endif
-
-#if OS_MACOS
-		{
-			str8 home       = str8_cstr(getenv("HOME"));
-			str8 suffix     = str8_lit("/Library/Application Support");
-			info->data_path = str8_cat_push(alloc, home, suffix);
-		}
-#endif
-	}
-
-	{
-		// Base path
-#if OS_MACOS
-		{
-			str8 exe_path = SOKOL_STATE.process_info.exe_path;
-			if(exe_path.size > 0) {
-				str8 macos                 = str8_chop_last_slash(exe_path);
-				str8 contents              = str8_chop_last_slash(macos);
-				str8 resources_rel         = str8_lit("Resources");
-				enum path_style path_style = path_style_from_str8(resources_rel);
-				struct str8_list path_list = {0};
-				str8_list_push(scratch, &path_list, contents);
-				str8_list_push(scratch, &path_list, resources_rel);
-				str8 resources_path                = path_join_by_style(alloc, &path_list, path_style);
-				SOKOL_STATE.process_info.base_path = resources_path;
-			}
-		}
-#endif
-	}
+	SOKOL_STATE.process_info = (struct sys_process_info){0};
+	sys_os_process_info_fill(&SOKOL_STATE.process_info, SOKOL_STATE.alloc, SOKOL_STATE.scratch);
 }
 
 struct sys_process_info
@@ -1893,28 +1731,8 @@ sokol_touch_remove(sapp_touchpoint point)
 str8
 sys_get_current_path(struct alloc alloc)
 {
-	str8 res = {0};
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	struct alloc scratch = SOKOL_STATE.scratch;
-
-#if OS_LINUX || OS_MACOS
-	{
-		char *cwdir = getcwd(0, 0);
-		res         = str8_cpy_push(alloc, str8_cstr(cwdir));
-		free(cwdir);
-	}
-#endif
-
-#if OS_WINDOWS && 0
-	{
-		DWORD length = GetCurrentDirectoryW(0, 0);
-		u16 *memory  = alloc_arr(scratch, memory, length + 1);
-		length       = GetCurrentDirectoryW(length + 1, (WCHAR *)memory);
-		res          = str8_from_16(alloc, str16(memory, length));
-	}
-#endif
-
-	return res;
+	return sys_os_get_current_path(alloc, SOKOL_STATE.scratch);
 }
 
 static void

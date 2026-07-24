@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/base_inc.h"
+#include "base/base-inc.h"
 #include "base/mem.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
@@ -39,19 +39,19 @@ void sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y);
 void sys_prof_pause(void);
 void sys_prof_resume(void);
 
-// @per_backend_impl Memory
+// @per_os_impl Memory
 void *sys_alloc(void *ptr, ssize size, ssize align);
 struct alloc sys_allocator(void);
 void sys_free(void *ptr);
 
-// @per_backend_impl Time
+// @per_os_impl Time
 f32 sys_time_elapsed(void);
 void sys_time_elapsed_reset(void);
 u32 sys_time_ms(void);
 u32 sys_time_us(void);
 u32 sys_epoch_2000(u32 *milliseconds);
 
-// @per_backend_impl Display (1-bit framebuffer)
+// @per_os_impl Display (1-bit framebuffer)
 void sys_1bit_invert(b32 i);
 void *sys_1bit_buffer(void);
 v4 sys_color_v4_get(enum gfx_col color);
@@ -59,7 +59,7 @@ void sys_color_v4_set(enum gfx_col color, v4 value);
 u32 sys_color_u32_get(enum gfx_col color);
 void sys_color_u32_set(enum gfx_col color, u32 value);
 
-// @per_backend_impl Audio
+// @per_os_impl Audio
 // TODO: Playdate use one of the options to get volume
 // float playdate->system->getVolume(void)
 // float playdate->system->getSystemVolume(void)
@@ -76,7 +76,7 @@ void sys_audio_lock(void);
 void sys_audio_unlock(void);
 #endif
 
-// @per_backend_impl System menu / host chrome
+// @per_os_impl System menu / host chrome
 
 i32 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg);
 i32 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg);
