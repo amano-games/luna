@@ -5,14 +5,6 @@
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
 
-#if SYS_BACKEND_SOKOL
-#include "sys-sokol.h"
-#elif SYS_BACKEND_PLAYDATE
-#include "sys-pd.h"
-#else
-#include "sys-cli.h"
-#endif
-
 #if SYS_BACKEND_PLAYDATE
 #define sys_audio_set_volume(V)
 #define sys_audio_get_volume() 1.f
@@ -97,3 +89,11 @@ void sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y);
 
 void sys_prof_pause(void);
 void sys_prof_resume(void);
+
+////////////////////////////////
+// Playdate-only helpers (no pd_api / PD leak)
+#if SYS_BACKEND_PLAYDATE
+b32 sys_pd_reduce_flicker(void);
+f32 sys_pd_crank_deg(void);
+void sys_pd_update_rows(i32 from_incl, i32 to_incl);
+#endif

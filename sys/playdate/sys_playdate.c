@@ -6,12 +6,13 @@
 #include "lib/tex/tex.h"
 #include "sys/sys-debug-draw.h"
 #include "sys/sys.h"
+#include "sys/playdate/sys_playdate.h"
 #include "base/types.h"
 #include "base/log.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
-#include "sys/sys-pd-scores.h"
-#include "sys/sys-pd-scores.c"
+#include "sys/playdate/sys_playdate_scores.h"
+#include "sys/playdate/sys_playdate_scores.c"
 
 PlaydateAPI *PD;
 

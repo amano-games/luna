@@ -1,4 +1,4 @@
-#include "sys-opts.h"
+#include "sys/sys-opts.h"
 
 #include "base/arr.h"
 #include "base/mathfunc.h"

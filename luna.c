@@ -6,15 +6,7 @@
 #endif
 #endif
 
-#include "sys/sys-io.c"
-#include "sys/sys.c"
-#include "sys/sys-opts.c"
-#include "sys/sys-sprintf.c"
-#if SYS_BACKEND_SOKOL
-#include "sys/sys-sokol.c"
-#else
-#include "sys/sys-pd.c"
-#endif
+#include "sys/sys_inc.c"
 
 #include "base/date-time.c"
 #include "base/marena.c"

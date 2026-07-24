@@ -2,16 +2,13 @@
 
 #include <tinydir.h>
 #include "engine/assets/qop.h"
-#include "sys/sys-io.h"
 #include "tools/aseprite/aseprite.h"
 #include "tools/asset/asset.h"
 #include "whereami.c"
 
-#include "sys/sys.h"
-#include "sys/sys-cli.c"
-#include "sys/sys-io.c"
+#include "sys/sys_inc.h"
+#include "sys/sys_inc.c"
 
-#include "sys/sys-sprintf.c"
 #include "base/mem.c"
 #include "base/marena.c"
 #include "base/str.c"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/types.h"
+#include "sys/playdate/sys_playdate.h"
 
 extern int (*PD_SCORE_ADD)(const char *board_id, uint32_t value, AddScoreCallback callback);
 extern void (*PD_SCORE_FREE)(PDScore *score);
