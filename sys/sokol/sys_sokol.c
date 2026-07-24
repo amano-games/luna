@@ -1,3 +1,5 @@
+// @per_backend_impl Sokol host (linux/macos/windows/wasm)
+
 #include "sys/sokol/sys_sokol.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"

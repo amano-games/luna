@@ -1,3 +1,5 @@
+// Helpers, Implemented Once (shared game host loop / timing / mem split)
+
 #include "sys/sys.h"
 #include "base/prof.h"
 #include "sys/sys-font.h"
