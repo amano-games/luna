@@ -59,8 +59,9 @@ include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
 .PHONY: all clean build steam run release publish_release
+.DEFAULT_GOAL := all
 
-all: build run
+all: run
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
