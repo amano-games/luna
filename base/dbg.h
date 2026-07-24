@@ -2,7 +2,7 @@
 
 #include "base/log.h"
 
-#if defined(TARGET_PD_DEVICE) // assertions don't work on hardware - disable
+#if PD_DEVICE // assertions don't work on hardware - disable
 #define dbg_assert(X)
 #else
 #if __GNUC__

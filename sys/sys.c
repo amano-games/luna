@@ -44,7 +44,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 		(uint)sys_mem->app_mem.size,
 		sys_mem->app_mem.buffer);
 
-#if defined(DEBUG)
+#if BUILD_DEBUG
 	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, sys_mem->app_mem.size);
 #endif
 

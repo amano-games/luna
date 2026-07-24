@@ -29,7 +29,7 @@ sys_log(
 	const char *filename)
 {
 	if(log_level <= SYS_LOG_LEVEL) {
-#if defined DEBUG
+#if BUILD_DEBUG
 		const char *fn = filename;
 #else
 		const char *fn = NULL;
@@ -209,7 +209,7 @@ sys_process_info(void)
 	return res;
 }
 
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 #include <stdlib.h>
 #include <direct.h>
 #endif
@@ -218,7 +218,7 @@ sys_make_dir(str8 path)
 {
 	// TODO: OS Layer that doesn't depend on sokol
 	b32 res = false;
-#if defined(TARGET_WIN)
+#if OS_WINDOWS
 	{
 		res = _mkdir((const char *)path.str) == 0;
 	}

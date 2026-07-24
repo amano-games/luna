@@ -86,7 +86,7 @@ struct mus_channel {
 	void *stream;
 	u32 total_bytes_file;
 	struct adpcm adpcm;
-#if defined(TARGET_PD_DEVICE)
+#if PD_DEVICE
 	u8 chunk[256];
 #else
 	u8 chunk[2048];

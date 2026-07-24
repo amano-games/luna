@@ -1,23 +1,18 @@
+#include "base/base_inc.h"
+
 #include <tinydir.h>
 #include <jsmn.h>
-#include "base/dbg.h"
 #include "whereami.c"
 
 #include "sys/sys.h"
 #include "sys/sys-cli.c"
 #include "sys/sys-io.h"
 
-#include "base/arr.h"
 #include "base/marena.c"
 #include "base/mem.c"
-#include "base/types.h"
 #include "sys/sys-sprintf.c"
-#include "base/str.h"
 #include "base/str.c"
 #include "base/path.c"
-#include "base/marena.h"
-#include "base/log.h"
-#include "base/utils.h"
 
 #include "lib/json.h"
 

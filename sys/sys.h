@@ -1,19 +1,19 @@
 #pragma once
 
-#include "base/types.h"
+#include "base/base_inc.h"
 #include "base/mem.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
 
-#if defined(BACKEND_SOKOL)
+#if SYS_BACKEND_SOKOL
 #include "sys-sokol.h"
-#elif defined(BACKEND_PD)
+#elif SYS_BACKEND_PLAYDATE
 #include "sys-pd.h"
 #else
 #include "sys-cli.h"
 #endif
 
-#if defined BACKEND_PD
+#if SYS_BACKEND_PLAYDATE
 #define sys_audio_set_volume(V)
 #define sys_audio_get_volume() 1.f
 #define sys_audio_lock()

@@ -17,13 +17,15 @@ struct ring_internal {
 		type *payload; \
 	}
 
-void *
+static inline void *
 _ring_peek(struct ring_internal ring, size_t elem_size)
 {
 	return ring.items + (ring.idx * elem_size);
 }
 
-// #define ring_push(r, value) \
-// 	((typeof((sa)->payload))_sa_get(&(sa)->internal, \
-// 		index, \
-// 		sizeof(*(sa)->payload)))
+#if 0
+#define ring_push(r, value) \
+	((typeof((sa)->payload))_sa_get(&(sa)->internal, \
+		index, \
+		sizeof(*(sa)->payload)))
+#endif

@@ -1,9 +1,11 @@
 #pragma once
 
-#if defined(BACKEND_SOKOL)
+#include "base/base_inc.h"
+
+#if SYS_BACKEND_SOKOL
 #include <stdio.h>
 #define sys_parse_string(str, fmt, ...) sscanf(str, fmt, __VA_ARGS__);
-#elif defined(BACKEND_PD)
+#elif SYS_BACKEND_PLAYDATE
 extern int (*PD_SYS_PARSE_STR)(const char *str, const char *format, ...);
 #define sys_parse_string(str, fmt, ...) PD_SYS_PARSE_STR(str, fmt, __VA_ARGS__);
 #else

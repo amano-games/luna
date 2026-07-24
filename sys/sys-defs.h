@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/types.h"
+#include "base/base_inc.h"
 
 #define SYS_DISPLAY_W      400
 #define SYS_DISPLAY_H      240
@@ -10,13 +10,13 @@
 #define SYS_DEFAULT_UPS           50
 #define SYS_DEFAULT_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
 
-#if defined BACKEND_PD
+#if SYS_BACKEND_PLAYDATE
 #define SYS_ACCELEROMETER_SUPPORT 1
 #else
 #define SYS_ACCELEROMETER_SUPPORT 0
 #endif
 
-#if defined(DEBUG)
+#if BUILD_DEBUG
 #define SYS_MAX_MEM MGIGABYTE(1)
 #else
 #define SYS_MAX_MEM MMEGABYTE(14)
