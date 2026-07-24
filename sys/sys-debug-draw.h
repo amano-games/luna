@@ -47,4 +47,6 @@ struct debug_shape {
 	};
 };
 
+// @per_backend_impl Debug draw
+
 void sys_debug_draw(struct debug_shape *shapes, int count);

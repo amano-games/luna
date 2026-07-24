@@ -1,3 +1,7 @@
+// @per_backend_impl Playdate
+// Implements the portable sys_* contract for SYS_BACKEND_PLAYDATE.
+// Private PD / pd_api types stay in this TU (+ sys_playdate.h).
+
 #include "base/mathfunc.h"
 #include "base/str.h"
 #include "base/dbg.h"

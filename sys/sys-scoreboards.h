@@ -67,6 +67,8 @@ struct sys_scores_err {
 
 typedef void (*sys_scores_req_callback)(u32 id, struct sys_scores_res res, void *userdata);
 
+// @per_backend_impl Scoreboards
+
 int sys_scores_queries_clear_queue(void);
 int sys_scores_mutations_clear_queue(void);
 int sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata);

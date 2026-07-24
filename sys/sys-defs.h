@@ -10,12 +10,6 @@
 #define SYS_DEFAULT_UPS           50
 #define SYS_DEFAULT_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
 
-#if SYS_BACKEND_PLAYDATE
-#define SYS_ACCELEROMETER_SUPPORT 1
-#else
-#define SYS_ACCELEROMETER_SUPPORT 0
-#endif
-
 #if BUILD_DEBUG
 #define SYS_MAX_MEM MGIGABYTE(1)
 #else
