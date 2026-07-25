@@ -53,7 +53,6 @@
 
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_app.h"
-#include "sokol/sokol_time.h"
 #include "sokol/sokol_glue.h"
 #include "sokol/sokol_log.h"
 #include "sokol/sokol_audio.h"
@@ -142,9 +141,6 @@ struct sokol_menu {
 
 struct sokol_state {
 	enum sokol_status status;
-
-	u64 tick_start;
-	u64 tick_elapsed;
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -235,9 +231,6 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	sys_os_init();
-	stm_setup();
-	SOKOL_STATE.tick_start   = stm_now();
-	SOKOL_STATE.tick_elapsed = SOKOL_STATE.tick_start;
 	SOKOL_STATE.menu.next_id = 1;
 	{
 		usize mem_size = MMEGABYTE(1);
@@ -1031,40 +1024,6 @@ sys_mouse_y(void)
 {
 	return SOKOL_STATE.mouse_y;
 }
-
-// seconds since last reset
-f32
-sys_time_elapsed(void)
-{
-	return stm_sec(stm_since(SOKOL_STATE.tick_elapsed));
-}
-
-void
-sys_time_elapsed_reset(void)
-{
-	SOKOL_STATE.tick_elapsed = stm_now();
-}
-
-// Microseconds since app start (wraps every ~71 minutes)
-u32
-sys_time_us(void)
-{
-	return (u32)(stm_us(stm_since(SOKOL_STATE.tick_start)));
-}
-
-u32
-sys_time_ms(void)
-{
-	return (u32)(stm_ms(stm_since(SOKOL_STATE.tick_start)));
-}
-
-#if 0
-u64
-sys_time_ns(void)
-{
-	return stm_ns(stm_since(0));
-}
-#endif
 
 void
 sys_1bit_invert(b32 i)
