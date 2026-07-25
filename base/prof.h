@@ -17,8 +17,9 @@
 // #endif
 // #define PROF_UNIQUE_NAMES
 
-// Reserved indices for luna sys TU blocks. App TU __COUNTER__ must start after these
-// so the shared PROFILER state is not corrupted across the two compilation units.
+// Reserved indices for luna sys TU blocks. App call sites allocate from
+// PROF_ANCHOR_SYS_NUM_COUNT upward so the shared PROFILER is not corrupted
+// across the two compilation units.
 enum prof_anchor_sys {
 	PROF_ANCHOR_SYS_NONE,
 
@@ -35,17 +36,34 @@ enum prof_anchor_sys {
 #define PROF_FRAMES_SIZE         64    // Number of call depth allowed
 #define PROF_INT_ZERO_THRESHHOLD 0.25f // threshhold for a moving average of an integer to be at zero
 
+#define PROF_CONCAT2(a, b) a##b
+#define PROF_CONCAT(a, b)  PROF_CONCAT2(a, b)
+
 #if defined(PROF_UNIQUE_NAMES)
 #define prof_stringize_2(x) #x
 #define prof_stringize(x)   prof_stringize_2(x)
 #define prof_unique_name(name) \
 	name "_" prof_stringize(__LINE__)
 
-#define prof_block(name) prof_block_start(prof_unique_name(name), __COUNTER__ + PROF_ANCHOR_SYS_NUM_COUNT)
-/* #define prof_block(name) prof_block_start(name, \
- 	({ static int i = -1; if (i == -1) i = prof_next_block_idx(); i; })) */
+#define prof_block(name) \
+	do { \
+		static ssize PROF_CONCAT(prof_idx_, __LINE__) = -1; \
+		if(PROF_CONCAT(prof_idx_, __LINE__) < 0) { \
+			PROF_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
+		} \
+		prof_block_start(prof_unique_name(name), PROF_CONCAT(prof_idx_, __LINE__)); \
+	} while(0)
 #else
-#define prof_block(name) prof_block_start(name, __COUNTER__ + PROF_ANCHOR_SYS_NUM_COUNT)
+// Per-call-site static index (C99). __LINE__ only disambiguates the static's
+// name; the stable anchor id is assigned once via prof_next_block_idx().
+#define prof_block(name) \
+	do { \
+		static ssize PROF_CONCAT(prof_idx_, __LINE__) = -1; \
+		if(PROF_CONCAT(prof_idx_, __LINE__) < 0) { \
+			PROF_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
+		} \
+		prof_block_start((name), PROF_CONCAT(prof_idx_, __LINE__)); \
+	} while(0)
 #endif
 
 #define prof_block_func() prof_block(__func__)
@@ -183,6 +201,16 @@ static inline str8 prof_f32_to_str8(u8 *buf, f32 value, i32 precision);
 static inline void prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sample, f32 *factors);
 static inline void prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value);
 static inline void prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
+
+#if defined(PROF)
+static inline ssize
+prof_next_block_idx(void)
+{
+	static ssize next = PROF_ANCHOR_SYS_NUM_COUNT;
+	dbg_assert(next < (ssize)PROF_ANCHORS_SIZE);
+	return next++;
+}
+#endif
 
 static inline void
 prof_ini(void)
