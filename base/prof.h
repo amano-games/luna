@@ -16,6 +16,18 @@
 // #define PROF
 // #endif
 // #define PROF_UNIQUE_NAMES
+
+// Reserved indices for luna sys TU blocks. App TU __COUNTER__ must start after these
+// so the shared PROFILER state is not corrupted across the two compilation units.
+enum prof_anchor_sys {
+	PROF_ANCHOR_SYS_NONE,
+
+	PROF_ANCHOR_SYS_UPD,
+	PROF_ANCHOR_SYS_DRW,
+
+	PROF_ANCHOR_SYS_NUM_COUNT,
+};
+
 #if defined(PROF)
 
 #define PROF_HISTORY_SIZE        1     // number of frames of history to keep
@@ -29,11 +41,11 @@
 #define prof_unique_name(name) \
 	name "_" prof_stringize(__LINE__)
 
-#define prof_block(name) prof_block_start(prof_unique_name(name), __COUNTER__ + 1)
+#define prof_block(name) prof_block_start(prof_unique_name(name), __COUNTER__ + PROF_ANCHOR_SYS_NUM_COUNT)
 /* #define prof_block(name) prof_block_start(name, \
  	({ static int i = -1; if (i == -1) i = prof_next_block_idx(); i; })) */
 #else
-#define prof_block(name) prof_block_start(name, __COUNTER__ + 1)
+#define prof_block(name) prof_block_start(name, __COUNTER__ + PROF_ANCHOR_SYS_NUM_COUNT)
 #endif
 
 #define prof_block_func() prof_block(__func__)
@@ -134,7 +146,8 @@ struct prof_report {
 static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORTY_SLOTS];
 static f32 PROF_PRECOMPUTED_FACTORS[PROF_TRACKER_HISTORTY_SLOTS];
 
-static struct prof PROFILER;
+// Defined once in sys.c — must be shared across luna/game TUs.
+extern struct prof PROFILER;
 
 static char INT_TO_STRING[100][4];
 static char INT_TO_STRING_DECIMAL[100][4];
