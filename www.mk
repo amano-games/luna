@@ -70,7 +70,8 @@ include $(ROOT_DIR)/assets.mk
 .PHONY: all clean build run publish_release release
 .DEFAULT_GOAL := all
 
-all: run
+all: build
+	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
 # Directory existence is not enough: obj/assets may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
@@ -79,23 +80,24 @@ $(PLATFORM_READY):
 	mkdir -p $(BUILD_DIR)
 	cp -r $(PLATFORM_DIR)/. $(BUILD_DIR)/
 
-$(BINARY): $(UNITY_OBJS) | $(PLATFORM_READY) $(ASSETS_TIMESTAMP)
+$(BINARY): $(UNITY_OBJS) | $(PLATFORM_READY) assets
 	$(CC) $(CFLAGS) $(LINK_FLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-run: $(BINARY)
+run:
 	emrun $(BINARY)
 
-build: $(BINARY)
+build:
+	$(MAKE) -f $(ROOT_DIR)/www.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/www.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 $(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/assets
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/www.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/www.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:
