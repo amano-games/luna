@@ -134,6 +134,13 @@ SIM_BIN := $(TMP_DIR)/pdex.$(DYLIB_EXT)
 SIM_READY := $(TMP_DIR)/.sim_ready
 DEVICE_READY := $(TMP_DIR)/.device_ready
 
+# Debug builds are sim-only by default; release/dev/playtest include device.
+ifeq ($(DEBUG),1)
+BUILD_READY := $(SIM_READY)
+else
+BUILD_READY := $(SIM_READY) $(DEVICE_READY)
+endif
+
 $(SETUP_OBJ): $(SRC_SDK) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) -c "$<" -o "$@"
 
@@ -192,7 +199,7 @@ build_pd:
 
 build:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
-	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(SIM_READY) $(DEVICE_READY) assets \
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(BUILD_READY) assets \
 		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
 		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(OBJS) \
