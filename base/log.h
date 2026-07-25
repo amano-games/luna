@@ -10,7 +10,11 @@ enum sys_log_level {
 };
 
 #if !defined(SYS_LOG_LEVEL)
+#if BUILD_DEBUG
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#else
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
+#endif
 #endif
 
 #if defined(SYS_LOG_DISABLE)
