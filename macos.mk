@@ -22,7 +22,6 @@ BUILD_DIR := ${DESTDIR}${BINDIR}
 PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
-LDFLAGS :=
 LDLIBS += -framework IOKit -framework CoreFoundation
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
@@ -32,6 +31,9 @@ INC_DIRS  := src $(LUNA_DIR)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DSOKOL_DEBUG=1 -DSOKOL_METAL -DTARGET_MACOS
+
+ARCH_FLAGS := -arch x86_64 -arch arm64
+SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g
@@ -43,15 +45,19 @@ DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
-DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
+DEBUG_CFLAGS += $(SANITIZE_FLAGS)
 
 ifeq ($(DEBUG), 1)
 CFLAGS := $(DEBUG_CFLAGS)
+LDFLAGS := $(SANITIZE_FLAGS)
 else
 CFLAGS := $(RELEASE_CFLAGS)
+LDFLAGS :=
 endif
 
-CFLAGS += $(CDEFS) -ObjC -x objective-c -arch x86_64 -arch arm64
+# -x objective-c is compile-only; arch/sanitize also go on the link line via LDFLAGS.
+CFLAGS += $(CDEFS) -x objective-c $(ARCH_FLAGS)
+LDFLAGS += $(ARCH_FLAGS)
 
 OBJS         := $(BUILD_DIR)/$(TARGET)
 ASSETS_OUT   := $(OBJS)/Contents/Resources/assets
@@ -81,7 +87,7 @@ $(EXE_OUT): $(UNITY_OBJS) assets
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents
 	cp -r $(PLATFORM_DIR)/Resources/* $(BUILD_DIR)/$(TARGET)/Contents/Resources
 	cp -r $(PLATFORM_DIR)/icons $(BUILD_DIR)/$(TARGET)/Contents/Resources
-	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
+	$(CC) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 sign: $(OBJS)
 	codesign --force --deep -s - $(OBJS)
