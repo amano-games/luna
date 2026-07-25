@@ -18,6 +18,9 @@
 #include <windows.h>
 #include <shlobj.h>
 
+#define SOKOL_TIME_IMPL
+#include "sokol/sokol_time.h"
+
 #define OS_ARENA_SIZE   MMEGABYTE(1)
 #define OS_SCRATCH_SIZE MKILOBYTE(64)
 
@@ -27,6 +30,8 @@ static struct {
 	struct marena scratch_arena;
 	struct alloc scratch;
 	struct sys_process_info process_info;
+	u64 tick_start;
+	u64 tick_elapsed;
 } OS_STATE;
 
 static str8
@@ -90,8 +95,8 @@ sys_os_init(void)
 		WCHAR *buffer = alloc_arr(scratch, buffer, size);
 		DWORD length  = GetModuleFileNameW(0, buffer, size);
 		if(length > 0 && length < size) {
-			str8 name8             = sys_windows_str8_from_wide(scratch, buffer);
-			info->binary_file_path = str8_cpy_push(alloc, name8);
+			// UTF-8 into alloc: scratch is already full of WCHARs (size * sizeof(WCHAR)).
+			info->binary_file_path = sys_windows_str8_from_wide(alloc, buffer);
 			info->binary_path      = str8_chop_last_slash(info->binary_file_path);
 		}
 		marena_reset(&OS_STATE.scratch_arena);
@@ -128,6 +133,10 @@ sys_os_init(void)
 			FreeEnvironmentStringsW(env);
 		}
 	}
+
+	stm_setup();
+	OS_STATE.tick_start   = stm_now();
+	OS_STATE.tick_elapsed = OS_STATE.tick_start;
 }
 
 struct sys_process_info *
@@ -169,6 +178,30 @@ sys_epoch_2000(u32 *milliseconds)
 		*milliseconds = 0;
 	}
 	return 0;
+}
+
+f32
+sys_time_elapsed(void)
+{
+	return stm_sec(stm_since(OS_STATE.tick_elapsed));
+}
+
+void
+sys_time_elapsed_reset(void)
+{
+	OS_STATE.tick_elapsed = stm_now();
+}
+
+u32
+sys_time_us(void)
+{
+	return (u32)(stm_us(stm_since(OS_STATE.tick_start)));
+}
+
+u32
+sys_time_ms(void)
+{
+	return (u32)(stm_ms(stm_since(OS_STATE.tick_start)));
 }
 
 struct alloc

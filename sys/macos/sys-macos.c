@@ -18,6 +18,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#define SOKOL_TIME_IMPL
+#include "sokol/sokol_time.h"
+
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL
 #define OS_ARENA_SIZE                 MMEGABYTE(1)
 #define OS_SCRATCH_SIZE               MKILOBYTE(64)
@@ -28,6 +31,8 @@ static struct {
 	struct marena scratch_arena;
 	struct alloc scratch;
 	struct sys_process_info process_info;
+	u64 tick_start;
+	u64 tick_elapsed;
 } OS_STATE;
 
 // NOLINTNEXTLINE(readability-identifier-naming)
@@ -112,6 +117,10 @@ sys_os_init(void)
 			str8_list_push(alloc, &info->environment, str8_cpy_push(alloc, str8_cstr(*e)));
 		}
 	}
+
+	stm_setup();
+	OS_STATE.tick_start   = stm_now();
+	OS_STATE.tick_elapsed = OS_STATE.tick_start;
 }
 
 struct sys_process_info *
@@ -159,6 +168,30 @@ sys_epoch_2000(u32 *milliseconds)
 	}
 
 	return (u32)seconds;
+}
+
+f32
+sys_time_elapsed(void)
+{
+	return stm_sec(stm_since(OS_STATE.tick_elapsed));
+}
+
+void
+sys_time_elapsed_reset(void)
+{
+	OS_STATE.tick_elapsed = stm_now();
+}
+
+u32
+sys_time_us(void)
+{
+	return (u32)(stm_us(stm_since(OS_STATE.tick_start)));
+}
+
+u32
+sys_time_ms(void)
+{
+	return (u32)(stm_ms(stm_since(OS_STATE.tick_start)));
 }
 
 struct alloc
