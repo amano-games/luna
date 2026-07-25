@@ -68,15 +68,16 @@ $(OBJS): $(BUILD_DIR)
 	mkdir -p $(OBJS)/Contents/MacOS
 
 # App bundle dirs must exist before packing into Resources/assets.
-ASSETS_TIMESTAMP_EXTRA := $(BUILD_DIR) $(OBJS)
+ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
 .PHONY: all clean build run publish_release release sign
 .DEFAULT_GOAL := all
 
-all: run
+all: build
+	$(MAKE) -f $(ROOT_DIR)/macos.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
-$(EXE_OUT): $(UNITY_OBJS) $(ASSETS_TIMESTAMP)
+$(EXE_OUT): $(UNITY_OBJS) assets
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents
 	cp -r $(PLATFORM_DIR)/Resources/* $(BUILD_DIR)/$(TARGET)/Contents/Resources
 	cp -r $(PLATFORM_DIR)/icons $(BUILD_DIR)/$(TARGET)/Contents/Resources
@@ -92,17 +93,18 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 ifeq ($(DEBUG), 1)
-run: build
+run:
 	./$(EXE_OUT)
 else
-run: build
+run:
 	open $(OBJS)
 endif
 
-build: $(EXE_OUT)
+build:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:

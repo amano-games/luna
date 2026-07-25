@@ -135,7 +135,7 @@ SIM_READY := $(TMP_DIR)/.sim_ready
 DEVICE_READY := $(TMP_DIR)/.device_ready
 
 $(SETUP_OBJ): $(SRC_SDK) | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $(DEPFLAGS) -c "$<" -o "$@"
+	$(CC) $(CFLAGS) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(SIM_READY): $(UNITY_OBJS) $(SETUP_OBJ) | $(TMP_DIR)
 	$(CC) $(CFLAGS) $(DYLIB_FLAGS) $(UNITY_OBJS) $(SETUP_OBJ) $(LDLIBS) $(LDFLAGS) -o "$(SIM_BIN)"
@@ -145,18 +145,13 @@ $(PD_OBJ_DIR):
 	mkdir -p "$(PD_OBJ_DIR)"
 
 $(PD_LUNA_OBJ): $(LUNA_SRC) | $(PD_OBJ_DIR)
-	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) $(DEPFLAGS) -c "$<" -o "$@"
+	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(PD_GAME_OBJ): $(GAME_SRC) | $(PD_OBJ_DIR)
-	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) $(DEPFLAGS) -c "$<" -o "$@"
+	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(PD_SETUP_OBJ): $(SRC_SDK) | $(PD_OBJ_DIR)
-	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) $(DEPFLAGS) -c "$<" -o "$@"
-
--include $(PD_LUNA_OBJ:.o=.d)
--include $(PD_GAME_OBJ:.o=.d)
--include $(PD_SETUP_OBJ:.o=.d)
--include $(SETUP_OBJ:.o=.d)
+	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(ELF): $(PD_UNITY_OBJS) $(LDSCRIPT)
 	mkdir -p "$(BUILD_DIR)"
@@ -173,48 +168,58 @@ $(OBJS): | $(TMP_DIR)
 	$(PDC) $(PDCFLAGS) $(TMP_DIR) "$@"
 	mkdir -p "$@/assets"
 	cp -a "$(ASSETS_OUT)/." "$@/assets/"
-	rm -f "$@/assets/.timestamp"
 
-all: run
+all: build
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
-build_sim: $(SIM_READY) $(ASSETS_TIMESTAMP)
+build_sim:
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(SIM_READY) assets \
+		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
+		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(OBJS) \
 		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
 		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 
-build_pd: $(DEVICE_READY) $(ASSETS_TIMESTAMP)
+build_pd:
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(DEVICE_READY) assets \
+		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
+		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(OBJS) \
 		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
 		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
-build: $(SIM_READY) $(DEVICE_READY) $(ASSETS_TIMESTAMP)
+build:
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
+	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(SIM_READY) $(DEVICE_READY) assets \
+		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
+		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk $(OBJS) \
 		DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) \
 		PLATFORM_DIR=$(PLATFORM_DIR) DEBUG=$(DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 
 assets_clean:
 	rm -rf $(ASSETS_OUT)
-assets: $(ASSETS_TIMESTAMP)
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/playdate.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR)
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
 
 clean:
 	rm -rf "$(BUILD_DIR)"
 
 ifeq ($(DETECTED_OS), Linux)
-run: build_sim
+run:
 	$(LUNA_DIR)/close-sim.sh
 	$(SIM) "$(abspath $(OBJS))"
 endif
 
 ifeq ($(DETECTED_OS), Darwin)
-run: build_sim
+run:
 	open "$(abspath $(OBJS))"
 endif
 
-$(PUBLISH_OBJS): $(DEVICE_READY) $(OBJS) $(ASSETS_TIMESTAMP)
+$(PUBLISH_OBJS): $(DEVICE_READY) $(OBJS) assets
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
 
 publish_release:

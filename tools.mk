@@ -16,7 +16,6 @@ INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 LDLIBS  := -lm
 LDFLAGS :=
-DEPFLAGS := -MMD -MP
 
 override CDEFS := $(CDEFS) -DBACKEND_CLI
 
@@ -43,13 +42,10 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(META_GEN): $(SRC_DIR)/meta-gen.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $(DEPFLAGS) -MF "$@.d" "$<" $(LDLIBS) -o "$@"
+	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
 $(ASSET_GEN): $(SRC_DIR)/asset-gen.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INC_FLAGS) $(DEPFLAGS) -MF "$@.d" "$<" $(LDLIBS) -o "$@"
-
--include $(ASSET_GEN).d
--include $(META_GEN).d
+	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
 tools-meta: $(META_GEN)
 tools-asset: $(ASSET_GEN)

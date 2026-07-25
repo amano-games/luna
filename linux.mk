@@ -61,13 +61,14 @@ include $(ROOT_DIR)/assets.mk
 .PHONY: all clean build steam run release publish_release
 .DEFAULT_GOAL := all
 
-all: run
+all: build
+	$(MAKE) -f $(ROOT_DIR)/linux.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) $(ASSETS_TIMESTAMP)
+$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) assets
 	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 $(BUILD_DIR)/steam-runtime:
@@ -82,13 +83,14 @@ steam: $(BUILD_DIR)/steam-runtime
 clean:
 	rm -rf $(BUILD_DIR)
 
-build: $(BINARY)
+build:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
-run: build
+run:
 	cd $(BUILD_DIR) && ./$(TARGET)
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:

@@ -66,28 +66,30 @@ include $(ROOT_DIR)/assets.mk
 .PHONY: all clean build steam run release publish_release
 .DEFAULT_GOAL := all
 
-all: run
+all: build
+	$(MAKE) -f $(ROOT_DIR)/win.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) $(ASSETS_TIMESTAMP)
+$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) assets
 	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-run: build
+run:
 	cd $(BUILD_DIR) && wine ./$(TARGET)
 
 $(PUBLISH_OBJS): $(BINARY)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
-build: $(BINARY)
+build:
+	$(MAKE) -f $(ROOT_DIR)/win.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/win.mk clean DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/win.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:
