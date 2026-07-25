@@ -130,6 +130,10 @@
 #endif
 #endif
 
+#if BUILD_DEBUG && !defined(PROF)
+#define PROF
+#endif
+
 // Zero all undefined options
 
 #if !defined(ARCH_32BIT)
