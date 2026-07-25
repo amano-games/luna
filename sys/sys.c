@@ -14,6 +14,7 @@
 #define SYS_LOG_LABEL          "sys"
 
 struct sys_data SYS;
+struct prof PROFILER;
 
 struct app_mem
 sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
@@ -162,9 +163,13 @@ sys_internal_update(void)
 		sys->timing.acc_us -= sys->timing.dt_us;
 		sys->tick++;
 		sys->timing.ups_counter++;
-		prof_block("upd");
+#if defined(PROF)
+		prof_block_start("upd", PROF_ANCHOR_SYS_UPD);
+#endif
 		app_tick((f32)sys->timing.dt_us * 1e-6f);
-		prof_block_end();
+#if defined(PROF)
+		prof_block_end_internal();
+#endif
 	}
 
 	b32 should_render = false;
@@ -181,11 +186,15 @@ sys_internal_update(void)
 	if(should_render) {
 #if SYS_SHOW_FPS
 		u32 tf1 = sys_time_us();
-
-		prof_block("drw");
+#endif
+#if defined(PROF)
+		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
+#endif
 		app_draw();
-		prof_block_end();
-
+#if defined(PROF)
+		prof_block_end_internal();
+#endif
+#if SYS_SHOW_FPS
 		u32 tf2 = sys_time_us();
 		sys->timing.fps_dt_acc_us += tf2 - tf1;
 		sys->timing.fps_counter++;
@@ -209,8 +218,6 @@ sys_internal_update(void)
 		};
 		sys_blit_text(&SYS, fps, 0, 29);
 		// sys_blit_text(ups, 0, 1);
-#else
-		app_draw();
 #endif
 	}
 
