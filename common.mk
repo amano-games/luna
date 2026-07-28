@@ -1,5 +1,5 @@
-space := $(null) $(null)
-ROOT_DIR := $(subst $(space),\ ,$(shell dirname "$(realpath $(firstword $(MAKEFILE_LIST)))"))
+# Keep relative so recursive $(MAKE) -f stays free of spaces in MAKEFILE_LIST.
+ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 SRC_DIR      ?= src
 LUNA_DIR     ?= luna
