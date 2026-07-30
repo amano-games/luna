@@ -9,6 +9,9 @@
 #define SYS_RECORDING_SCALE_DEFAULT   1
 
 #define SYS_OPTS_COLOR_PALLETE_KEY "game-colors"
+#define SYS_OPTS_VIDEO_KEY         "video"
+#define SYS_OPTS_VIDEO_SCALING_KEY "scaling"
+#define SYS_OPTS_VIDEO_FILTER_KEY  "filter"
 
 #define SYS_OPTS_RECORDING_KEY               "recording"
 #define SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "seconds"
@@ -24,6 +27,20 @@
 #define SYS_OPTS_COLOR_PALLETE_WHITE_KEY "white"
 #define SYS_OPTS_COLOR_PALLETE_CLEAR_KEY "clear"
 
+static const str8 SYS_VIDEO_SCALING_LABELS[SYS_VIDEO_SCALING_NUM_COUNT] = {
+	[SYS_VIDEO_SCALING_NONE]      = str8_lit_comp("none"),
+	[SYS_VIDEO_SCALING_INTEGER]   = str8_lit_comp("integer"),
+	[SYS_VIDEO_SCALING_OVERSCALE] = str8_lit_comp("overscale"),
+	[SYS_VIDEO_SCALING_FIT]       = str8_lit_comp("fit"),
+};
+
+static const str8 SYS_VIDEO_FILTER_LABELS[SYS_VIDEO_FILTER_NUM_COUNT] = {
+	[SYS_VIDEO_FILTER_NONE]     = str8_lit_comp("none"),
+	[SYS_VIDEO_FILTER_NEAREST]  = str8_lit_comp("nearest"),
+	[SYS_VIDEO_FILTER_BILINEAR] = str8_lit_comp("bilinear"),
+	[SYS_VIDEO_FILTER_SHARP]    = str8_lit_comp("sharp"),
+};
+
 static void sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user);
 
 static void sys_opts_parse_color_palette(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user);
@@ -36,6 +53,11 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 full_path         = sys_path_to_data_path(scratch, path, org, name);
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {
+		.video = {
+			.scaling = SYS_VIDEO_SCALING_FIT,
+			.filter  = SYS_VIDEO_FILTER_SHARP,
+		},
+
 		.colors.colors[GFX_COL_BLACK] = 0x110B0DFF,
 		.colors.colors[GFX_COL_WHITE] = 0xA5A5A2FF,
 
@@ -92,6 +114,16 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 		[GFX_COL_WHITE] = color_rgba_to_hex_str(scratch, color_rgba_from_u32(res.colors.colors[GFX_COL_WHITE])),
 		[GFX_COL_CLEAR] = color_rgba_to_hex_str(scratch, color_rgba_from_u32(res.colors.colors[GFX_COL_CLEAR])),
 	};
+
+	str8 scaling_label = SYS_VIDEO_SCALING_LABELS[res.video.scaling];
+	str8 filter_label  = SYS_VIDEO_FILTER_LABELS[res.video.filter];
+	log_info(
+		"sys-opts",
+		"loaded video: scaling=%.*s filter=%.*s",
+		(int)scaling_label.size,
+		scaling_label.str,
+		(int)filter_label.size,
+		filter_label.str);
 
 	log_info(
 		"sys-opts",
@@ -257,6 +289,32 @@ screenshot_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, 
 }
 
 static void
+video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
+{
+	struct opts_parse_ctx *ctx = user;
+	str8 json                  = ctx->json;
+	struct sys_opts *data      = ctx->data;
+
+	if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_SCALING_KEY)) == 0) {
+		if(json_eq(json, value, str8_lit("integer")) == 0) {
+			data->video.scaling = SYS_VIDEO_SCALING_INTEGER;
+		} else if(json_eq(json, value, str8_lit("overscale")) == 0) {
+			data->video.scaling = SYS_VIDEO_SCALING_OVERSCALE;
+		} else if(json_eq(json, value, str8_lit("fit")) == 0) {
+			data->video.scaling = SYS_VIDEO_SCALING_FIT;
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_FILTER_KEY)) == 0) {
+		if(json_eq(json, value, str8_lit("nearest")) == 0) {
+			data->video.filter = SYS_VIDEO_FILTER_NEAREST;
+		} else if(json_eq(json, value, str8_lit("bilinear")) == 0) {
+			data->video.filter = SYS_VIDEO_FILTER_BILINEAR;
+		} else if(json_eq(json, value, str8_lit("sharp")) == 0) {
+			data->video.filter = SYS_VIDEO_FILTER_SHARP;
+		}
+	}
+}
+
+static void
 sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
 {
 	struct opts_parse_ctx *ctx = user;
@@ -264,7 +322,16 @@ sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, vo
 
 	str8 json = ctx->json;
 
-	if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_KEY)) == 0) {
+	if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_KEY)) == 0) {
+		if(value->type == JSMN_OBJECT) {
+			json_obj_foreach(
+				ctx->tokens,
+				ctx->token_count,
+				value_idx,
+				video_cb,
+				user);
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_KEY)) == 0) {
 		if(value->type == JSMN_OBJECT) {
 			json_obj_foreach(
 				ctx->tokens,

@@ -59,7 +59,6 @@
 #include "shaders/sokol_shader.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
-// #define SOKOL_PIXEL_PERFECT
 #if OS_WINDOWS
 // #define SOKOL_DISABLE_AUDIO
 #endif
@@ -151,6 +150,8 @@ struct sokol_state {
 	sg_pipeline pip;
 	sg_bindings bind;
 	sg_pass_action pass_action;
+	sg_sampler smp_nearest;
+	sg_sampler smp_linear;
 
 	f32 mouse_scroll_sensitivity;
 
@@ -386,16 +387,19 @@ sokol_init(void)
 		},
 	};
 
-	SOKOL_STATE.bind.samplers[0] = sg_make_sampler(&(sg_sampler_desc){
-		.label = "sampler",
-#if defined(SOKOL_PIXEL_PERFECT)
+	SOKOL_STATE.smp_nearest      = sg_make_sampler(&(sg_sampler_desc){
+		.label      = "sampler-nearest",
 		.min_filter = SG_FILTER_NEAREST,
 		.mag_filter = SG_FILTER_NEAREST,
-#else
+	});
+	SOKOL_STATE.smp_linear       = sg_make_sampler(&(sg_sampler_desc){
+		.label      = "sampler-linear",
 		.min_filter = SG_FILTER_LINEAR,
 		.mag_filter = SG_FILTER_LINEAR,
-#endif
 	});
+	SOKOL_STATE.bind.samplers[0] = SOKOL_STATE.opts.video.filter == SYS_VIDEO_FILTER_NEAREST
+		? SOKOL_STATE.smp_nearest
+		: SOKOL_STATE.smp_linear;
 
 	sg_image_desc img_desc = {
 		.width        = SYS_DISPLAY_W,
@@ -789,11 +793,10 @@ sokol_frame(void)
 	mcpy_struct(&colors.color_white, &COL_WHITE);
 	mcpy_struct(&colors.color_debug, &COL_RED);
 
-#if defined SOKOL_PIXEL_PERFECT
-	params.pixel_perfect = true;
-#else
-	params.pixel_perfect = false;
-#endif
+	params.filter_mode           = SOKOL_STATE.opts.video.filter;
+	SOKOL_STATE.bind.samplers[0] = SOKOL_STATE.opts.video.filter == SYS_VIDEO_FILTER_NEAREST
+		? SOKOL_STATE.smp_nearest
+		: SOKOL_STATE.smp_linear;
 
 	// mcpy_array(colors.color_black, COL_PURPLE);
 	// mcpy_array(colors.color_white, COL_PURPLE);
@@ -1551,9 +1554,11 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 		// window is taller/narrower -> fit width
 		scale = res.win_size.x / res.app_size.x;
 	}
-#if defined(SOKOL_PIXEL_PERFECT)
-	scale = floor_f32(scale);
-#endif
+	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER) {
+		scale = floor_f32(scale);
+	} else if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_OVERSCALE) {
+		scale = ceil_f32(scale);
+	}
 	scale        = max_f32(scale, 1.0f);
 	res.scale.x  = scale;
 	res.scale.y  = scale;
@@ -1561,10 +1566,11 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	res.size.y   = res.app_size.y * res.scale.y;
 	res.offset.x = (res.win_size.x - res.size.x) * 0.5f;
 	res.offset.y = (res.win_size.y - res.size.y) * 0.5f;
-#if defined(SOKOL_PIXEL_PERFECT)
-	res.offset.x = floor_f32(res.offset.x);
-	res.offset.y = floor_f32(res.offset.y);
-#endif
+	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER ||
+		SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_OVERSCALE) {
+		res.offset.x = floor_f32(res.offset.x);
+		res.offset.y = floor_f32(res.offset.y);
+	}
 
 	dbg_assert(res.scale.x != 0.0f);
 	dbg_assert(res.scale.y != 0.0f);

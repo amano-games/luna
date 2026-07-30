@@ -3,7 +3,8 @@
 // shared code for all shaders
 @block uniforms
 layout(binding=2) uniform s_params {
-  int pixel_perfect;
+  // Matches enum sys_video_filter ordinals in sys-opts.h
+  int filter_mode;
   float time;
 };
 layout(binding=3) uniform s_colors {
@@ -72,7 +73,8 @@ void main() {
 
   vec2 tex_uv = rel / size;
   tex_uv.y = 1.0 - tex_uv.y;
-  if(pixel_perfect != 1){
+  // SYS_VIDEO_FILTER_SHARP == 3
+  if(filter_mode == 3){
     tex_uv = uv_iq(tex_uv, ivec2(app_size));
   }
   vec4 app_sample = texture(sampler2D(tex, smp), tex_uv);
@@ -86,4 +88,3 @@ void main() {
 #pragma sokol @end
 
 @program simple vs fs
-
