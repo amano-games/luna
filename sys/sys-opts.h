@@ -25,7 +25,33 @@ struct sys_recording_opts {
 	struct gfx_col_pallete colors;
 };
 
+enum sys_video_scaling {
+	SYS_VIDEO_SCALING_NONE,
+
+	SYS_VIDEO_SCALING_INTEGER,
+	SYS_VIDEO_SCALING_OVERSCALE,
+	SYS_VIDEO_SCALING_FIT,
+
+	SYS_VIDEO_SCALING_NUM_COUNT,
+};
+
+enum sys_video_filter {
+	SYS_VIDEO_FILTER_NONE,
+
+	SYS_VIDEO_FILTER_NEAREST,
+	SYS_VIDEO_FILTER_BILINEAR,
+	SYS_VIDEO_FILTER_SHARP,
+
+	SYS_VIDEO_FILTER_NUM_COUNT,
+};
+
+struct sys_video_opts {
+	enum sys_video_scaling scaling;
+	enum sys_video_filter filter;
+};
+
 struct sys_opts {
+	struct sys_video_opts video;
 	struct gfx_col_pallete colors;
 	struct gfx_col_pallete colors_dbg;
 	struct sys_screenshot_opts screentshot;
