@@ -170,6 +170,7 @@ struct sokol_state {
 	f32 mouse_x;
 	f32 mouse_y;
 	u32 mouse_btns;
+	b32 mouse_capture_applied;
 
 #if MINI_GAMEPAD_ENABLE
 	mg_gamepads gamepads;
@@ -350,6 +351,7 @@ error:;
 		.logger.func        = slog_func,
 		.icon.sokol_default = true,
 		.window_title       = SOKOL_NAME,
+		.fullscreen         = SOKOL_STATE.opts.video.display == SYS_VIDEO_DISPLAY_FULLSCREEN,
 	};
 	log_info("SYS", "init");
 	return res;
@@ -453,6 +455,11 @@ sokol_init(void)
 	});
 
 	sapp_show_mouse(true);
+	{
+		b32 want_capture = SOKOL_STATE.opts.video.mouse_capture;
+		sapp_lock_mouse(want_capture);
+		SOKOL_STATE.mouse_capture_applied = want_capture;
+	}
 	sokol_set_icon();
 #if MINI_GAMEPAD_ENABLE
 	mg_gamepads_init(&SOKOL_STATE.gamepads);
@@ -532,13 +539,18 @@ sokol_event(const sapp_event *ev)
 		SOKOL_STATE.crank = fmodf(SOKOL_STATE.crank, 1.0f);
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_MOVE: {
-		f32 mx                          = ev->mouse_x;
-		f32 my                          = ev->mouse_y;
 		f32 win_w                       = ev->window_width;
 		f32 win_h                       = ev->window_height;
 		struct s_buffer_params_t params = sokol_get_buffer_params(win_w, win_h);
-		f32 rel_x                       = clamp_f32((mx - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
-		f32 rel_y                       = clamp_f32((my - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
+		f32 rel_x;
+		f32 rel_y;
+		if(sapp_mouse_locked()) {
+			rel_x = clamp_f32(SOKOL_STATE.mouse_x + ev->mouse_dx / params.scale.x, 0, SYS_DISPLAY_W);
+			rel_y = clamp_f32(SOKOL_STATE.mouse_y + ev->mouse_dy / params.scale.y, 0, SYS_DISPLAY_H);
+		} else {
+			rel_x = clamp_f32((ev->mouse_x - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
+			rel_y = clamp_f32((ev->mouse_y - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
+		}
 
 		SOKOL_STATE.mouse_x = rel_x;
 		SOKOL_STATE.mouse_y = rel_y;
@@ -788,6 +800,15 @@ sokol_frame(void)
 #if MINI_GAMEPAD_ENABLE
 	sokol_gamepads_ev();
 #endif
+
+	{
+		b32 want_capture = SOKOL_STATE.opts.video.mouse_capture;
+		if(want_capture != SOKOL_STATE.mouse_capture_applied ||
+		   (want_capture && !sapp_mouse_locked())) {
+			sapp_lock_mouse(want_capture);
+			SOKOL_STATE.mouse_capture_applied = want_capture;
+		}
+	}
 
 	mcpy_struct(&colors.color_black, &COL_BLACK);
 	mcpy_struct(&colors.color_white, &COL_WHITE);

@@ -45,9 +45,20 @@ enum sys_video_filter {
 	SYS_VIDEO_FILTER_NUM_COUNT,
 };
 
+enum sys_video_display {
+	SYS_VIDEO_DISPLAY_NONE,
+
+	SYS_VIDEO_DISPLAY_WINDOWED,
+	SYS_VIDEO_DISPLAY_FULLSCREEN,
+
+	SYS_VIDEO_DISPLAY_NUM_COUNT,
+};
+
 struct sys_video_opts {
 	enum sys_video_scaling scaling;
 	enum sys_video_filter filter;
+	enum sys_video_display display;
+	b32 mouse_capture;
 };
 
 struct sys_opts {

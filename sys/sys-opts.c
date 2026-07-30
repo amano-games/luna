@@ -9,9 +9,11 @@
 #define SYS_RECORDING_SCALE_DEFAULT   1
 
 #define SYS_OPTS_COLOR_PALLETE_KEY "game-colors"
-#define SYS_OPTS_VIDEO_KEY         "video"
-#define SYS_OPTS_VIDEO_SCALING_KEY "scaling"
-#define SYS_OPTS_VIDEO_FILTER_KEY  "filter"
+#define SYS_OPTS_VIDEO_KEY                "video"
+#define SYS_OPTS_VIDEO_SCALING_KEY        "scaling"
+#define SYS_OPTS_VIDEO_FILTER_KEY         "filter"
+#define SYS_OPTS_VIDEO_DISPLAY_KEY        "display"
+#define SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY  "mouse-capture"
 
 #define SYS_OPTS_RECORDING_KEY               "recording"
 #define SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "seconds"
@@ -41,6 +43,12 @@ static const str8 SYS_VIDEO_FILTER_LABELS[SYS_VIDEO_FILTER_NUM_COUNT] = {
 	[SYS_VIDEO_FILTER_SHARP]    = str8_lit_comp("sharp"),
 };
 
+static const str8 SYS_VIDEO_DISPLAY_LABELS[SYS_VIDEO_DISPLAY_NUM_COUNT] = {
+	[SYS_VIDEO_DISPLAY_NONE]       = str8_lit_comp("none"),
+	[SYS_VIDEO_DISPLAY_WINDOWED]   = str8_lit_comp("windowed"),
+	[SYS_VIDEO_DISPLAY_FULLSCREEN] = str8_lit_comp("fullscreen"),
+};
+
 static void sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user);
 
 static void sys_opts_parse_color_palette(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user);
@@ -54,8 +62,10 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {
 		.video = {
-			.scaling = SYS_VIDEO_SCALING_FIT,
-			.filter  = SYS_VIDEO_FILTER_SHARP,
+			.scaling       = SYS_VIDEO_SCALING_FIT,
+			.filter        = SYS_VIDEO_FILTER_SHARP,
+			.display       = SYS_VIDEO_DISPLAY_WINDOWED,
+			.mouse_capture = false,
 		},
 
 		.colors.colors[GFX_COL_BLACK] = 0x110B0DFF,
@@ -117,13 +127,17 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 
 	str8 scaling_label = SYS_VIDEO_SCALING_LABELS[res.video.scaling];
 	str8 filter_label  = SYS_VIDEO_FILTER_LABELS[res.video.filter];
+	str8 display_label = SYS_VIDEO_DISPLAY_LABELS[res.video.display];
 	log_info(
 		"sys-opts",
-		"loaded video: scaling=%.*s filter=%.*s",
+		"loaded video: scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
 		(int)scaling_label.size,
 		scaling_label.str,
 		(int)filter_label.size,
-		filter_label.str);
+		filter_label.str,
+		(int)display_label.size,
+		display_label.str,
+		res.video.mouse_capture ? "true" : "false");
 
 	log_info(
 		"sys-opts",
@@ -311,6 +325,14 @@ video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void 
 		} else if(json_eq(json, value, str8_lit("sharp")) == 0) {
 			data->video.filter = SYS_VIDEO_FILTER_SHARP;
 		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_DISPLAY_KEY)) == 0) {
+		if(json_eq(json, value, str8_lit("windowed")) == 0) {
+			data->video.display = SYS_VIDEO_DISPLAY_WINDOWED;
+		} else if(json_eq(json, value, str8_lit("fullscreen")) == 0) {
+			data->video.display = SYS_VIDEO_DISPLAY_FULLSCREEN;
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY)) == 0) {
+		data->video.mouse_capture = json_parse_bool32(json, value);
 	}
 }
 
