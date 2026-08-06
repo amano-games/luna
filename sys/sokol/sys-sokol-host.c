@@ -47,8 +47,19 @@
 #endif
 
 #if MINI_GAMEPAD_ENABLE
+/* Vendored minigamepad has known UB in mapping parse; keep sanitizers off for it. */
+#if defined(__clang__)
+#pragma clang attribute push(                                                        \
+	__attribute__((no_sanitize("address", "undefined", "unreachable"))),             \
+	apply_to = function)
+#elif defined(__GNUC__)
+#define MG_API __attribute__((no_sanitize("address", "undefined", "unreachable")))
+#endif
 #define MG_IMPLEMENTATION
 #include "minigamepad.h"
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
 #endif
 
 #include "sokol/sokol_gfx.h"
