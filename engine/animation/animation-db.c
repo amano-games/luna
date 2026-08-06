@@ -180,6 +180,7 @@ ani_db_asset_read(
 		} else if(str8_match(key.str, str8_lit("cell_height"), 0)) {
 			res.info.cell_size.y = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("clips_count"), 0)) {
+			// TODO: mem align
 			res.clips = arr_new(alloc, res.clips, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			struct ser_value item_val;
@@ -206,6 +207,7 @@ ani_db_read(struct ser_reader *r, struct alloc alloc)
 		} else if(str8_match(key.str, str8_lit("bank_count"), 0)) {
 			res.bank_count = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("assets_count"), 0)) {
+			// TODO: mem align
 			res.assets = arr_new(alloc, res.assets, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("assets"), 0)) {
 			struct ser_value item_val;

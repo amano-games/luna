@@ -23,33 +23,49 @@ asset_db_ini(
 	usize paths_data_size = paths_count * 50;
 	i32 exp               = 10;
 
+	// TODO: mem align
 	db->animations.ht   = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->animations.data = arr_new(alloc, db->animations.data, clip_count + 1);
+	// TODO: mem align
 	db->animations.arr  = arr_new(alloc, db->animations.arr, slice_count + 1);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
+	// TODO: mem align
 	db->paths.ht   = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->paths.arr  = arr_new(alloc, db->paths.arr, paths_count + 1);
+	// TODO: mem align
 	db->paths.data = arr_new(alloc, db->paths.data, paths_data_size);
 	arr_push(db->paths.arr, (str8){0});
 
+	// TODO: mem align
 	db->textures.ht  = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->textures.arr = arr_new(alloc, db->textures.arr, textures_count + 1);
 	arr_push(db->textures.arr, (struct asset_tex){0});
 
+	// TODO: mem align
 	db->textures_info.ht  = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->textures_info.arr = arr_new(alloc, db->textures_info.arr, textures_count + 1);
 	arr_push(db->textures_info.arr, (struct asset_tex_info){0});
 
+	// TODO: mem align
 	db->snds.ht  = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->snds.arr = arr_new(alloc, db->snds.arr, snds_count + 1);
 	arr_push(db->snds.arr, (struct asset_snd){0});
 
+	// TODO: mem align
 	db->fonts.ht  = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->fonts.arr = arr_new(alloc, db->fonts.arr, fonts_count + 1);
 	arr_push(db->fonts.arr, (struct asset_fnt){0});
 
+	// TODO: mem align
 	db->bets.ht  = ht_new_u32(exp, alloc);
+	// TODO: mem align
 	db->bets.arr = arr_new(alloc, db->bets.arr, bets_count + 1);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 

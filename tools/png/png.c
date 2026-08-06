@@ -24,6 +24,7 @@ png_to_tex_blob(
 	ssize out_size = tex_from_rgb(in_data, w, h, NULL, 0);
 	dbg_check(out_size > 0, "png", "Invalid tex size");
 
+	// TODO: mem align
 	void *out_data = alloc_size(alloc, out_size, 4, false);
 	dbg_check_mem(out_data, "png");
 

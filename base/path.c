@@ -262,6 +262,7 @@ path_resolve_dots_in_place(
 		if(stack_node != 0) {
 			SLLStackPop(free_meta_node);
 		} else {
+			// TODO: mem align
 			stack_node = alloc_struct(scratch, stack_node);
 		}
 		SLLStackPush(stack, stack_node);

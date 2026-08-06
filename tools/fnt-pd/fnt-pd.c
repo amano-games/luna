@@ -25,6 +25,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 	sys_file_seek_end(f, 0);
 	ssize f_size = sys_file_tell(f);
 	sys_file_seek_set(f, 0);
+	// TODO: mem align
 	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
@@ -46,6 +47,7 @@ handle_metrics(str8 json, struct alloc scratch)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
+	// TODO: mem align
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
@@ -109,6 +111,7 @@ get_fnt_size(str8 in_path, struct alloc scratch)
 	str8 fnt_file_name = str8_cpy_push(scratch, str8_skip_last_slash(str8_chop_last_dot(in_path)));
 	str8 dir_path      = str8_cpy_push(scratch, str8_chop_last_slash(in_path));
 	str8 table_id      = str8_lit("-table-");
+	// TODO: mem align
 	tinydir_dir *dir   = alloc_struct(scratch, dir);
 	tinydir_open(dir, (char *)dir_path.str);
 	v2 res = {0};
@@ -148,6 +151,7 @@ int
 handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	usize mem_size = MKILOBYTE(100);
+	// TODO: mem align
 	u8 *mem_buffer = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
@@ -164,7 +168,9 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	fnt.cell_w   = cell_size.x;
 	fnt.cell_h   = cell_size.y;
 
+	// TODO: mem align
 	fnt.widths                      = arr_new(alloc, fnt.widths, FNT_CHAR_MAX);
+	// TODO: mem align
 	fnt.kern_pairs                  = arr_new(alloc, fnt.kern_pairs, FNT_KERN_PAIRS_MAX);
 	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
 	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);

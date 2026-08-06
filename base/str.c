@@ -193,6 +193,7 @@ str8_cpy_push(struct alloc alloc, str8 src)
 {
 	str8 dst;
 	dst.size = src.size;
+	// TODO: mem align
 	dst.str  = alloc.allocf(alloc.ctx, src.size + 1 * sizeof(u8), alignof(u8));
 	mcpy(dst.str, src.str, src.size);
 	dst.str[dst.size] = 0;
@@ -212,6 +213,7 @@ str8_cat_push(struct alloc alloc, str8 s1, str8 s2)
 {
 	str8 str;
 	str.size = s1.size + s2.size;
+	// TODO: mem align
 	str.str  = alloc.allocf(alloc.ctx, str.size + 1 * sizeof(u8), alignof(u8));
 	mcpy(str.str, s1.str, s1.size);
 	mcpy(str.str + s1.size, s2.str, s2.size);
@@ -226,6 +228,7 @@ str8_fmtv_push(struct alloc alloc, char *fmt, va_list args)
 	va_copy(args2, args);
 	u32 needed_bytes        = sys_vsnprintf(0, 0, fmt, args) + 1;
 	str8 result             = {0};
+	// TODO: mem align
 	result.str              = alloc.allocf(alloc.ctx, needed_bytes * sizeof(u8), alignof(u8));
 	result.size             = sys_vsnprintf((char *)result.str, needed_bytes, fmt, args2);
 	result.str[result.size] = 0;
@@ -577,6 +580,7 @@ str8_list_push_node_set_string(struct str8_list *list, struct str8_node *node, s
 struct str8_node *
 str8_list_push(struct alloc alloc, struct str8_list *list, str8 str)
 {
+	// TODO: mem align
 	struct str8_node *node = alloc_struct(alloc, node);
 	str8_list_push_node_set_string(list, node, str);
 	return (node);
@@ -677,6 +681,7 @@ str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *opti
 
 	str8 result;
 	result.size = join.pre.size + join.post.size + sep_count * join.sep.size + list->total_size;
+	// TODO: mem align
 	u8 *ptr = result.str = alloc.allocf(alloc.ctx, result.size + 1 * sizeof(u8), alignof(u8));
 
 	mcpy(ptr, join.pre.str, join.pre.size);

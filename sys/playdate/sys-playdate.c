@@ -345,6 +345,7 @@ sys_allocator(void)
 	return alloc;
 }
 
+// TODO: mem align
 void *
 sys_alloc(void *ptr, ssize size, ssize align)
 {

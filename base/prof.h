@@ -288,6 +288,7 @@ prof_report_sort_inclusive_desc(const void *a, const void *b)
 static inline struct prof_report *
 prof_report_create(struct alloc alloc)
 {
+	// TODO: mem align
 	struct prof_report *res = alloc_struct(alloc, res);
 	struct prof *prof       = &PROFILER;
 	prof->smooth_slot       = 2; // TODO: convert to enum

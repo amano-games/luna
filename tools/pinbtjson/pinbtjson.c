@@ -191,6 +191,7 @@ pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index, struct alloc 
 		} else if(json_eq(json, key, str8_lit("transitions")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.animator.transitions.len   = value->size;
+			// TODO: mem align
 			res.animator.transitions.items = arr_new(alloc, res.animator.transitions.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
@@ -619,6 +620,7 @@ pinbtjson_handle_sfx_sequence(str8 json, jsmntok_t *tokens, i32 index, struct al
 			res.sfx_sequence.reset_time = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("clips")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
+			// TODO: mem align
 			res.sfx_sequence.clips = arr_new(alloc, res.sfx_sequence.clips, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + j + 2;
@@ -772,6 +774,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 			dbg_assert(value->type == JSMN_ARRAY);
 			i++;
 			ssize vert_count = value->size / 2;
+			// TODO: mem align
 			struct v2 *verts = arr_new(scratch, verts, vert_count);
 			for(ssize j = 0; j < vert_count; ++j) {
 				verts[j].x = json_parse_f32(json, tokens + ++i);
@@ -790,6 +793,7 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				}
 				dbg_assert(vert_count <= POLY_MAX_VERTS);
 				mesh.count          = 1;
+				// TODO: mem align
 				mesh.items          = alloc_struct(alloc, mesh.items);
 				mesh.items[0].count = vert_count;
 				for(ssize j = 0; j < vert_count; ++j) {
@@ -973,6 +977,7 @@ pinbtjson_handle_spawner(str8 json, jsmntok_t *tokens, i32 index, struct alloc a
 			res.spawner.type = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("zones")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
+			// TODO: mem align
 			res.spawner.zones = arr_new(alloc, res.spawner.zones, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + j + 2;
@@ -1245,6 +1250,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("sfx_sequences")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.sfx_sequences.len   = value->size;
+			// TODO: mem align
 			res.entity.sfx_sequences.items = arr_new(alloc, res.entity.sfx_sequences.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
@@ -1257,6 +1263,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("messages")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.messages.len   = value->size;
+			// TODO: mem align
 			res.entity.messages.items = arr_new(alloc, res.entity.messages.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
@@ -1269,6 +1276,7 @@ pinbtjson_handle_entity(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 		} else if(json_eq(json, key, str8_lit("actions")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.entity.actions.len   = value->size;
+			// TODO: mem align
 			res.entity.actions.items = arr_new(alloc, res.entity.actions.items, value->size);
 			for(usize j = 0; j < (usize)value->size; ++j) {
 				i32 item_index  = i + 2;
@@ -1410,6 +1418,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
+	// TODO: mem align
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
@@ -1433,6 +1442,7 @@ pinbtjson_handle_pinbtjson(str8 json, struct alloc alloc, struct alloc scratch)
 			++i;
 		} else if(json_eq(json, key, str8_lit("entities_count")) == 0) {
 			res.entities_count = json_parse_i32(json, value);
+			// TODO: mem align
 			res.entities       = arr_new(alloc, res.entities, res.entities_count);
 			++i;
 		} else if(json_eq(json, key, str8_lit("entities")) == 0) {
@@ -1455,6 +1465,7 @@ i32
 pinbtjson_handle(str8 in_path, str8 out_path)
 {
 	usize mem_size = MMEGABYTE(4);
+	// TODO: mem align
 	u8 *mem_buffer = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
@@ -1462,6 +1473,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	struct alloc alloc = marena_allocator(&marena);
 
 	usize scratch_mem_size = MMEGABYTE(10);
+	// TODO: mem align
 	u8 *scratch_mem_buffer = sys_alloc(NULL, scratch_mem_size, alignof(u8));
 	dbg_assert(scratch_mem_buffer != NULL);
 	struct marena scratch_marena = {0};

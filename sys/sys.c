@@ -38,6 +38,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 		(uint)((mem_total - mem_max)));
 
 	sys_mem->app_mem.size   = mem_total;
+	// TODO: mem align
 	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size, 4);
 
 	dbg_check(
@@ -54,6 +55,7 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 	res.permanent.size   = permanent;
 	res.transient.size   = transient;
 	res.debug.size       = debug;
+	// TODO: mem align — subregion bases need AlignPow2 before marena_init
 	res.permanent.buffer = sys_mem->app_mem.buffer;
 	res.transient.buffer = (u8 *)sys_mem->app_mem.buffer + res.permanent.size;
 	res.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + res.permanent.size + res.transient.size;
