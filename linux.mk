@@ -30,6 +30,8 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DSOKOL_GLCORE -DTARGET_LINUX
 
+SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
+
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DNDEBUG
@@ -41,9 +43,11 @@ DEBUG_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DDEBUG=1
+DEBUG_CFLAGS += $(SANITIZE_FLAGS)
 
 ifeq ($(DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
+	LDFLAGS += $(SANITIZE_FLAGS)
 else
 	CFLAGS := $(RELEASE_CFLAGS)
 endif
