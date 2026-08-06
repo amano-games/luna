@@ -92,6 +92,7 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 		struct alloc alloc = sys_allocator();
 		// The ADPCM encoder writes half a byte per sample 4bits per sample
 		usize data_size = ((wav.sample_count * wav.channel_count) + 1) / 2;
+		// TODO: mem align
 		out_data        = (u8 *)alloc_arr(alloc, out_data, data_size);
 
 		adpcm_i16_encode((i16 *)wav.sample_data, out_data, wav.sample_count);

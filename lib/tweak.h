@@ -56,6 +56,7 @@ tweak_look_up_value_f32(
 	f32 constant)
 {
 	usize mem_size = MKILOBYTE(10);
+	// TODO: mem align
 	void *mem      = sys_alloc(NULL, mem_size);
 	void *f        = NULL;
 	dbg_check_warn(mem, "tweak", "failed to get memory");

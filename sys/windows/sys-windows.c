@@ -45,6 +45,7 @@ sys_windows_str8_from_wide(struct alloc alloc, const WCHAR *wide)
 	if(bytes <= 1) {
 		return res;
 	}
+	// TODO: mem align
 	u8 *buf = alloc_arr(alloc, buf, bytes);
 	WideCharToMultiByte(CP_UTF8, 0, wide, -1, (char *)buf, bytes, NULL, NULL);
 	res = (str8){.str = buf, .size = (usize)(bytes - 1)};
@@ -59,6 +60,7 @@ sys_get_current_path(struct alloc alloc)
 		return (str8){0};
 	}
 	marena_reset(&OS_STATE.scratch_arena);
+	// TODO: mem align
 	WCHAR *wide = alloc_arr(OS_STATE.scratch, wide, needed);
 	if(GetCurrentDirectoryW(needed, wide) == 0) {
 		marena_reset(&OS_STATE.scratch_arena);
@@ -73,11 +75,13 @@ void
 sys_os_init(void)
 {
 	{
+		// TODO: mem align
 		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, 8);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
+		// TODO: mem align
 		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, 8);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
@@ -92,6 +96,7 @@ sys_os_init(void)
 	{
 		DWORD size = 32 * 1024;
 		marena_reset(&OS_STATE.scratch_arena);
+		// TODO: mem align
 		WCHAR *buffer = alloc_arr(scratch, buffer, size);
 		DWORD length  = GetModuleFileNameW(0, buffer, size);
 		if(length > 0 && length < size) {
@@ -106,6 +111,7 @@ sys_os_init(void)
 
 	{
 		marena_reset(&OS_STATE.scratch_arena);
+		// TODO: mem align
 		WCHAR *buffer = alloc_arr(scratch, buffer, MAX_PATH);
 		if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, buffer))) {
 			str8 appdata                      = sys_windows_str8_from_wide(alloc, buffer);
@@ -214,6 +220,7 @@ sys_allocator(void)
 	return alloc;
 }
 
+// TODO: mem align
 void *
 sys_alloc(void *ptr, ssize size, ssize align)
 {

@@ -21,8 +21,9 @@ tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
 	// So each `word` is a row of pixels aligned
 	// To get the size we multiply by the height
 	// getting the full size of the image aligned.
-	u32 size  = sizeof(u32) * wword * h;
-	void *mem = alloc_size(alloc, size, 8, false);
+	u32 size = sizeof(u32) * wword * h;
+	// TODO: mem align
+	void *mem = alloc_size_aligned(alloc, size, 8, false);
 	if(mem) {
 		res.px    = (u32 *)mem;
 		res.fmt   = m;

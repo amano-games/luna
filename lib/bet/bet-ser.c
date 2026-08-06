@@ -214,6 +214,7 @@ bet_read(
 		if(str8_match(key.str, str8_lit("node_count"), 0)) {
 			dbg_assert(value.type == SER_TYPE_I32);
 			bet->node_count = ser_get_i32(value);
+			// TODO: mem align
 			bet->nodes      = arr_new(alloc, bet->nodes, bet->node_count);
 		} else if(str8_match(key.str, str8_lit("nodes"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);

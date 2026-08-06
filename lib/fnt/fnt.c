@@ -182,7 +182,9 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	str8 fnt_ext          = str8_lit(".fnt");
 	ssize widths_size     = FNT_CHAR_MAX;
 	ssize kern_pairs_size = FNT_KERN_PAIRS_MAX;
+	// TODO: mem align
 	res.widths            = arr_new(alloc, res.widths, widths_size);
+	// TODO: mem align
 	res.kern_pairs        = arr_new(alloc, res.kern_pairs, kern_pairs_size);
 
 	if(res.widths == NULL) {

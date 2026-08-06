@@ -11,7 +11,9 @@ struct arr_header {
 	ssize cap;
 };
 
+// TODO: mem align
 #define arr_new(alloc, ptr, count)     (__typeof__(ptr))_arr_ini((alloc), sizeof(*(ptr)), alignof(max_align_t), (count), false)
+// TODO: mem align
 #define arr_new_clr(alloc, ptr, count) (__typeof__(ptr))_arr_ini((alloc), sizeof(*(ptr)), alignof(max_align_t), (count), true)
 #define arr_header(a)                  ((a) ? (struct arr_header *)((char *)(a) - sizeof(struct arr_header)) : NULL)
 #define arr_pop(a)                     ((a) ? (--arr_header(a)->len, (a)[arr_len(a)]) : (a)[0])
@@ -29,14 +31,17 @@ struct arr_header {
 		} \
 	} while(0)
 
+// TODO: mem align
 #define arr_push_packed(ptr, item, alloc) \
 	arr_full(ptr) ? (ptr) = arr_grow_packed(ptr, arr_len(ptr) + 1, sizeof(*(ptr)), alignof(max_align_t), alloc) : 0, (ptr)[arr_header(ptr)->len++] = item
 
+// TODO: mem align
 static inline void *
 _arr_ini(struct alloc alloc, ssize elem_size, ssize align, ssize count, b32 clear)
 {
 	// TODO: use align instead of max align_t
 	usize new_size            = sizeof(struct arr_header) + count * elem_size;
+	// TODO: mem align
 	struct arr_header *header = alloc.allocf(alloc.ctx, new_size, alignof(max_align_t));
 	dbg_check_mem(header, "arr");
 	header->len = 0;
@@ -60,15 +65,18 @@ error:
 	return NULL;
 }
 
+// TODO: mem align
 static inline void *
 arr_grow_packed(void *a, ssize new_len, ssize elem_size, ssize elem_align, struct alloc alloc)
 {
+	// TODO: mem align
 	struct arr_header *header = a ? arr_header(a) : arr_header(_arr_ini(alloc, elem_size, elem_align, new_len, false));
 	usize new_cap             = new_len;
 
 	ssize len   = arr_len(a);
 	ssize count = new_len - len;
 
+	// TODO: mem align
 	void *res = alloc.allocf(alloc.ctx, count * elem_size, 4);
 	// TODO: Check if packed
 

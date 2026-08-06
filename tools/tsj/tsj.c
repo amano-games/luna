@@ -211,6 +211,7 @@ tsj_handle_tile(
 			res.asset.info.tex_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
+			// TODO: mem align
 			res.asset.clips = arr_new(alloc, res.asset.clips, value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
@@ -256,6 +257,7 @@ tsj_handle_json(
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
+	// TODO: mem align
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);
@@ -271,6 +273,7 @@ tsj_handle_json(
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("tilecount")) == 0) {
 			usize count = json_parse_i32(json, value);
+			// TODO: mem align
 			res.assets  = arr_new(alloc, res.assets, count);
 		} else if(json_eq(json, key, str8_lit("tiles")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
@@ -310,6 +313,7 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 	i32 res = 0;
 
 	usize mem_size = MKILOBYTE(100);
+	// TODO: mem align
 	u8 *mem_buffer = sys_alloc(NULL, mem_size, alignof(u8));
 	dbg_assert(mem_buffer != NULL);
 	struct marena marean = {0};

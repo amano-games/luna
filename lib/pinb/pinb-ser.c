@@ -34,6 +34,7 @@ pinb_read(
 			table->props = pinb_table_props_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("entities_count"), 0)) {
 			table->entities_count = ser_get_i32(value);
+			// TODO: mem align
 			table->entities       = arr_new(alloc, table->entities, table->entities_count);
 		} else if(str8_match(key.str, str8_lit("entities_max_id"), 0)) {
 			table->entities_max_id = ser_get_i32(value);
@@ -777,6 +778,7 @@ pinb_spawner_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj
 			res.type = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("zones_len"), 0)) {
 			res.zones_len = ser_get_i32(value);
+			// TODO: mem align
 			res.zones     = arr_new(alloc, res.zones, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("zones"), 0)) {
 			struct ser_value item_value;
@@ -989,6 +991,7 @@ pinb_sfx_sequences_read(struct alloc alloc, struct ser_reader *r, struct ser_val
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
 			res.len   = ser_get_i32(value);
+			// TODO: mem align
 			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value item_value;
@@ -1577,6 +1580,7 @@ pinb_messages_read(struct alloc alloc, struct ser_reader *r, struct ser_value ob
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
 			res.len   = ser_get_i32(value);
+			// TODO: mem align
 			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value sequence_value;
@@ -1599,6 +1603,7 @@ pinb_actions_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
 			res.len   = ser_get_i32(value);
+			// TODO: mem align
 			res.items = arr_new(alloc, res.items, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			struct ser_value item_value;
@@ -1699,6 +1704,7 @@ pinb_animator_transitions_read(struct ser_reader *r, struct ser_value obj, struc
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
 			len       = ser_get_i32(value);
+			// TODO: mem align
 			res.items = arr_new(alloc, res.items, len);
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
@@ -1815,6 +1821,7 @@ pinb_sfx_sequence_read(struct alloc alloc, struct ser_reader *r, struct ser_valu
 			res.pitch_max = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("clips_len"), 0)) {
 			res.clips_len = ser_get_i32(value);
+			// TODO: mem align
 			res.clips     = arr_new(alloc, res.clips, res.clips_len);
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
@@ -1966,6 +1973,7 @@ pinb_custom_data_read(struct alloc alloc, struct ser_reader *r, struct ser_value
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("len"), 0)) {
 			res.len  = ser_get_i32(value);
+			// TODO: mem align
 			res.data = arr_new(alloc, res.data, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("data"), 0)) {
 			struct ser_value item_value;

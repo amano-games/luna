@@ -21,16 +21,15 @@ error:
 	return;
 }
 
+// TODO: mem align
 void *
 marena_alloc(struct marena *m, ssize size, ssize align)
 {
-#if 0
-	ssize mem_size    = align_up_size_t(size);
-#else
-	ssize mem_size = size;
-#endif
+	dbg_assert(align > 0);
+	dbg_assert(IS_POW2(align));
+	ssize mem_size    = size;
 	ptrdiff_t p       = (ptrdiff_t)m->p;
-	ptrdiff_t aligned = (p + (align - 1)) & ~(align - 1);
+	ptrdiff_t aligned = ALIGN_POW2(p, align);
 	ssize padding     = aligned - p;
 
 	if(padding > m->rem - mem_size) {

@@ -18,6 +18,7 @@ void
 assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
+	// TODO: mem align
 	void *mem = alloc.allocf(alloc.ctx, size, 1);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
@@ -29,6 +30,7 @@ void *
 asset_allocf(void *ctx, ssize size, ssize align)
 {
 	struct assets *assets = (struct assets *)ctx;
+	// TODO: mem align
 	void *mem             = marena_alloc(&assets->marena, size, align);
 	dbg_check_mem(mem != NULL, "Assets");
 	return mem;

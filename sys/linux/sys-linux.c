@@ -77,11 +77,13 @@ void
 sys_os_init(void)
 {
 	{
+		// TODO: mem align
 		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, 8);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
+		// TODO: mem align
 		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, 8);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
@@ -99,6 +101,7 @@ sys_os_init(void)
 		i32 size   = 0;
 		for(ssize cap = PATH_MAX, r = 0; r < 4; cap *= 2, r += 1) {
 			marena_reset(&OS_STATE.scratch_arena);
+			// TODO: mem align
 			buffer = alloc_arr(scratch, buffer, cap);
 			size   = (i32)readlink("/proc/self/exe", (char *)buffer, (size_t)cap);
 			if(size > 0 && size < cap) {
@@ -231,6 +234,7 @@ sys_allocator(void)
 	return alloc;
 }
 
+// TODO: mem align
 void *
 sys_alloc(void *ptr, ssize size, ssize align)
 {

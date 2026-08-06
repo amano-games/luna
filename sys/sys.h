@@ -40,6 +40,7 @@ void sys_prof_pause(void);
 void sys_prof_resume(void);
 
 // @per_os_impl Memory
+// TODO: mem align
 void *sys_alloc(void *ptr, ssize size, ssize align);
 struct alloc sys_allocator(void);
 void sys_free(void *ptr);
