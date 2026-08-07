@@ -50,7 +50,6 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	b32 res                     = false;
 	i32 sheet_w                 = ase->w * ase->frame_count;
 	i32 sheet_h                 = ase->h;
-	// TODO: mem align
 	struct pixel_u8 *sheet_data = alloc_arr(alloc, sheet_data, sheet_w * sheet_h);
 	{
 		// Build horizontal sprite sheet
@@ -79,8 +78,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	ssize out_size = tex_from_rgb(in_data, sheet_w, sheet_h, NULL, 0);
 	dbg_check(out_size > 0, "ase", "Invalid tex size");
 
-	// TODO: mem align
-	void *out_data = alloc_size(alloc, out_size, 4, false);
+	void *out_data = alloc_size(alloc, out_size);
 	dbg_check_mem(out_data, "ase");
 
 	dbg_check(tex_from_rgb(in_data, sheet_w, sheet_h, out_data, out_size) == out_size, "ase", "convertion failed");
@@ -109,7 +107,6 @@ aseprite_to_ani(
 	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
 
 	struct ani_db db = {.bank_count = 1, .clip_count = ase->tag_count};
-	// TODO: mem align
 	db.assets        = arr_new(scratch, db.assets, 1);
 	// in_path  = ./src/assets/img/frog.aseprite
 	// out_path = ./tmp
@@ -123,7 +120,6 @@ aseprite_to_ani(
 			.path_hash = hash_fnv1a_str8(asset_path),
 		},
 	};
-	// TODO: mem align
 	asset.clips = arr_new(scratch, asset.clips, ase->tag_count);
 	for(ssize i = 0; i < ase->tag_count; ++i) {
 		const ase_tag_t *tag       = ase->tags + i;

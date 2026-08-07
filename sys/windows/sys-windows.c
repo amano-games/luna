@@ -7,6 +7,7 @@
 #include "base/str.h"
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
+#include "sys/sys-mem.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -45,7 +46,6 @@ sys_windows_str8_from_wide(struct alloc alloc, const WCHAR *wide)
 	if(bytes <= 1) {
 		return res;
 	}
-	// TODO: mem align
 	u8 *buf = alloc_arr(alloc, buf, bytes);
 	WideCharToMultiByte(CP_UTF8, 0, wide, -1, (char *)buf, bytes, NULL, NULL);
 	res = (str8){.str = buf, .size = (usize)(bytes - 1)};
@@ -60,7 +60,6 @@ sys_get_current_path(struct alloc alloc)
 		return (str8){0};
 	}
 	marena_reset(&OS_STATE.scratch_arena);
-	// TODO: mem align
 	WCHAR *wide = alloc_arr(OS_STATE.scratch, wide, needed);
 	if(GetCurrentDirectoryW(needed, wide) == 0) {
 		marena_reset(&OS_STATE.scratch_arena);
@@ -75,14 +74,12 @@ void
 sys_os_init(void)
 {
 	{
-		// TODO: mem align
-		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, 8);
+		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, MEM_ALIGN_DEFAULT);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
-		// TODO: mem align
-		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, 8);
+		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, MEM_ALIGN_DEFAULT);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
 	}
@@ -96,7 +93,6 @@ sys_os_init(void)
 	{
 		DWORD size = 32 * 1024;
 		marena_reset(&OS_STATE.scratch_arena);
-		// TODO: mem align
 		WCHAR *buffer = alloc_arr(scratch, buffer, size);
 		DWORD length  = GetModuleFileNameW(0, buffer, size);
 		if(length > 0 && length < size) {
@@ -111,10 +107,9 @@ sys_os_init(void)
 
 	{
 		marena_reset(&OS_STATE.scratch_arena);
-		// TODO: mem align
 		WCHAR *buffer = alloc_arr(scratch, buffer, MAX_PATH);
 		if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, buffer))) {
-			str8 appdata                      = sys_windows_str8_from_wide(alloc, buffer);
+			str8 appdata                        = sys_windows_str8_from_wide(alloc, buffer);
 			info->user_program_config_data_path = appdata;
 			info->user_program_cache_data_path  = appdata;
 			info->user_program_logs_data_path   = appdata;
@@ -169,7 +164,6 @@ sys_data_path(void)
 	return OS_STATE.process_info.user_program_config_data_path;
 }
 
-
 b32
 sys_make_dir(str8 path)
 {
@@ -210,6 +204,30 @@ sys_time_ms(void)
 	return (u32)(stm_ms(stm_since(OS_STATE.tick_start)));
 }
 
+void *
+sys_alloc_raw(ssize size)
+{
+	return malloc(size);
+}
+
+void
+sys_free_raw(void *ptr)
+{
+	free(ptr);
+}
+
+void *
+sys_alloc(void *ptr, ssize size, ssize align)
+{
+	return sys_alloc_aligned_raw(size, align, sys_alloc_raw);
+}
+
+void
+sys_free(void *ptr)
+{
+	sys_free_aligned_raw(ptr, sys_free_raw);
+}
+
 struct alloc
 sys_allocator(void)
 {
@@ -218,23 +236,6 @@ sys_allocator(void)
 		.ctx    = NULL,
 	};
 	return alloc;
-}
-
-// TODO: mem align
-void *
-sys_alloc(void *ptr, ssize size, ssize align)
-{
-	void *res = malloc(size);
-	dbg_check(res, "sys-windows", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
-
-error:
-	return res;
-}
-
-void
-sys_free(void *ptr)
-{
-	free(ptr);
 }
 
 static long

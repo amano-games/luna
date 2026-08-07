@@ -1,10 +1,12 @@
 // Helpers, Implemented Once (shared game host loop / timing / mem split)
 
 #include "sys/sys.h"
+#include "base/mem.h"
 #include "base/prof.h"
 #include "sys/sys-font.h"
 #include "base/log.h"
 #include "base/dbg.h"
+#include "sys/sys-mem.h"
 
 #if !defined(SYS_SHOW_FPS)
 #define SYS_SHOW_FPS 1 // enable fps/ups counter
@@ -17,29 +19,35 @@ struct sys_data SYS;
 struct prof PROFILER;
 
 struct app_mem
-sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
+sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 {
 	struct app_mem res      = {0};
-	usize mem_max           = SYS_MAX_MEM;
+	ssize mem_max           = SYS_MAX_MEM;
 	struct sys_mem *sys_mem = &SYS.mem;
-	usize mem_total         = permanent + transient + debug;
+	ssize permanent_aligned = ALIGN_POW2(permanent, align);
+	ssize transient_aligned = ALIGN_POW2(transient, align);
+	ssize app_mem           = permanent_aligned + transient_aligned;
+	struct alloc alloc      = sys_allocator();
 
-	log_info(SYS_LOG_LABEL, "Permanent: %$$u", (uint)permanent);
-	log_info(SYS_LOG_LABEL, "Transient: %$$u", (uint)transient);
-	log_info(SYS_LOG_LABEL, "Debug    : %$$u", (uint)debug);
-	log_info(SYS_LOG_LABEL, "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
-	log_info(SYS_LOG_LABEL, "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
 	dbg_check(
-		mem_total <= mem_max,
+		app_mem <= mem_max,
 		SYS_LOG_LABEL,
 		"Not enough sys memory | asked:%$$u available:%$$u missing:%$$u",
-		(uint)mem_total,
+		(uint)app_mem,
 		(uint)mem_max,
-		(uint)((mem_total - mem_max)));
+		(uint)(app_mem - mem_max));
+
+	ssize debug_size = MAX(0, mem_max - permanent_aligned - transient_aligned);
+	ssize mem_total  = permanent_aligned + transient_aligned + debug_size;
+
+	log_info(SYS_LOG_LABEL, "Permanent: %$$u aligned:%$$u", (uint)permanent, (uint)permanent_aligned);
+	log_info(SYS_LOG_LABEL, "Transient: %$$u aligned:%$$u", (uint)transient, (uint)transient_aligned);
+	log_info(SYS_LOG_LABEL, "Debug    : %$$u", (uint)debug_size);
+	log_info(SYS_LOG_LABEL, "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
+	log_info(SYS_LOG_LABEL, "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
 
 	sys_mem->app_mem.size   = mem_total;
-	// TODO: mem align
-	sys_mem->app_mem.buffer = sys_alloc(sys_mem->app_mem.buffer, sys_mem->app_mem.size, 4);
+	sys_mem->app_mem.buffer = alloc_size_aligned(alloc, sys_mem->app_mem.size, align, false);
 
 	dbg_check(
 		sys_mem->app_mem.buffer != NULL,
@@ -52,10 +60,9 @@ sys_init_mem(usize permanent, usize transient, usize debug, b32 clear)
 	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, sys_mem->app_mem.size);
 #endif
 
-	res.permanent.size   = permanent;
-	res.transient.size   = transient;
-	res.debug.size       = debug;
-	// TODO: mem align — subregion bases need AlignPow2 before marena_init
+	res.permanent.size   = permanent_aligned;
+	res.transient.size   = transient_aligned;
+	res.debug.size       = debug_size;
 	res.permanent.buffer = sys_mem->app_mem.buffer;
 	res.transient.buffer = (u8 *)sys_mem->app_mem.buffer + res.permanent.size;
 	res.debug.buffer     = (u8 *)sys_mem->app_mem.buffer + res.permanent.size + res.transient.size;

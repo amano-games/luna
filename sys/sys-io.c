@@ -41,8 +41,7 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	sys_file_seek_set(f, 0);
 
 	// Alloc memory
-	// TODO: mem align
-	void *data = alloc_size_aligned(alloc, f_size, 4, false);
+	void *data = alloc_size(alloc, f_size);
 	dbg_check(data != NULL, "io", "Failed alloc mem for: %.*s", str8_spread(path));
 
 	// Read contents

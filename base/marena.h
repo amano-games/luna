@@ -16,14 +16,12 @@ struct marena_tmp {
 	void *p;
 };
 
-// TODO: mem align
 #define marena_stack(name, size) \
-	u8 name##_mem[(size)] = {0}; \
-	struct marena name    = {0}; \
+	alignas(MEM_ALIGN_DEFAULT) u8 name##_mem[(size)] = {0}; \
+	struct marena name                               = {0}; \
 	marena_init(&name, name##_mem, (size))
 
 void marena_init(struct marena *m, void *buf, ssize bufsize);
-// TODO: mem align
 void *marena_alloc(struct marena *m, ssize size, ssize align);
 void *marena_state(struct marena *m);
 void marena_reset_to(struct marena *m, void *p);
@@ -49,13 +47,11 @@ marena_log_usage(const struct marena *marena, const char *tag, const char *name)
 #define MARENA_LOG_USAGE(marena, tag) \
 	marena_log_usage((marena), (tag), #marena)
 
-// NOTE: Should this live outside?
 static void *
-marena_alloc_func(void *ctx, ssize s, ssize align)
+marena_alloc_func(void *ctx, ssize size, ssize align)
 {
 	struct marena *arena = (struct marena *)ctx;
-	// TODO: mem align
-	void *mem            = marena_alloc(arena, s, align);
+	void *mem            = marena_alloc(arena, size, align);
 	dbg_check(mem, "marena", "Ran out of arena mem!");
 	return mem;
 

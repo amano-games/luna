@@ -7,6 +7,7 @@
 #include "base/str.h"
 #include "sys/sys-io.h"
 #include "base/log.h"
+#include "sys/sys-mem.h"
 #include "sys/sys.h"
 #include <sys/stat.h>
 
@@ -41,6 +42,30 @@ sys_log(
 	}
 }
 
+void *
+sys_alloc_raw(ssize size)
+{
+	return malloc(size);
+}
+
+void
+sys_free_raw(void *ptr)
+{
+	free(ptr);
+}
+
+void *
+sys_alloc(void *ptr, ssize size, ssize align)
+{
+	return sys_alloc_aligned_raw(size, align, sys_alloc_raw);
+}
+
+void
+sys_free(void *ptr)
+{
+	sys_free_aligned_raw(ptr, sys_free_raw);
+}
+
 struct alloc
 sys_allocator(void)
 {
@@ -49,19 +74,6 @@ sys_allocator(void)
 		.ctx    = NULL,
 	};
 	return alloc;
-}
-
-// TODO: mem align
-void *
-sys_alloc(void *ptr, ssize size, ssize align)
-{
-	return malloc(size);
-}
-
-void
-sys_free(void *ptr)
-{
-	free(ptr);
 }
 
 void *

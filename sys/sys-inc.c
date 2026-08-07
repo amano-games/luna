@@ -3,6 +3,7 @@
 
 #include "sys/sys-io.c"
 #include "sys/sys-sprintf.c"
+#include "sys/sys-mem.c"
 
 #if !SYS_BACKEND_CLI
 #include "sys/sys.c"

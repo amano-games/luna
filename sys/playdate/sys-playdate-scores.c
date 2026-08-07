@@ -320,7 +320,6 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 		if(scores->count > 0) {
 			struct sys_score_arr *entries = &res.get.entries;
 			if(req->get.alloc.allocf != NULL) {
-				// TODO: mem align
 				entries->items = alloc_arr(req->get.alloc, entries->items, scores->count);
 			}
 			if(entries->items == NULL) {

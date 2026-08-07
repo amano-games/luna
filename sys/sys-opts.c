@@ -8,12 +8,12 @@
 #define SYS_RECORDING_SECONDS_DEFAULT 120
 #define SYS_RECORDING_SCALE_DEFAULT   1
 
-#define SYS_OPTS_COLOR_PALLETE_KEY "game-colors"
-#define SYS_OPTS_VIDEO_KEY                "video"
-#define SYS_OPTS_VIDEO_SCALING_KEY        "scaling"
-#define SYS_OPTS_VIDEO_FILTER_KEY         "filter"
-#define SYS_OPTS_VIDEO_DISPLAY_KEY        "display"
-#define SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY  "mouse-capture"
+#define SYS_OPTS_COLOR_PALLETE_KEY       "game-colors"
+#define SYS_OPTS_VIDEO_KEY               "video"
+#define SYS_OPTS_VIDEO_SCALING_KEY       "scaling"
+#define SYS_OPTS_VIDEO_FILTER_KEY        "filter"
+#define SYS_OPTS_VIDEO_DISPLAY_KEY       "display"
+#define SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY "mouse-capture"
 
 #define SYS_OPTS_RECORDING_KEY               "recording"
 #define SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "seconds"
@@ -101,7 +101,6 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmn_init(&parser);
-	// TODO: mem align
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
 	dbg_assert(json_res == token_count);

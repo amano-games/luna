@@ -16,7 +16,7 @@ void app_resume(void);
 void app_stream_start(void);
 void app_stream_end(void);
 
-struct app_mem sys_init_mem(usize permanent, usize transient, usize debug, b32 clear);
+struct app_mem sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear);
 
 void sys_ups_target_set(u32 value);
 u32 sys_ups_target_get(void);
@@ -40,10 +40,9 @@ void sys_prof_pause(void);
 void sys_prof_resume(void);
 
 // @per_os_impl Memory
-// TODO: mem align
 void *sys_alloc(void *ptr, ssize size, ssize align);
-struct alloc sys_allocator(void);
 void sys_free(void *ptr);
+struct alloc sys_allocator(void);
 
 // @per_os_impl Time
 f32 sys_time_elapsed(void);

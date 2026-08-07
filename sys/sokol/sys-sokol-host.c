@@ -247,15 +247,13 @@ sokol_main(i32 argc, char **argv)
 	SOKOL_STATE.menu.next_id = 1;
 	{
 		usize mem_size = MMEGABYTE(1);
-		// TODO: mem align
-		void *mem      = sys_alloc(NULL, mem_size, 4);
+		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 	{
 		usize mem_size = MMEGABYTE(200);
-		// TODO: mem align
-		void *mem      = sys_alloc(NULL, mem_size, 4);
+		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
@@ -307,7 +305,6 @@ sokol_main(i32 argc, char **argv)
 		rec->cap                 = ups * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                 = 0;
 		rec->idx                 = 0;
-		// TODO: mem align
 		rec->frames              = alloc_arr(alloc, rec->frames, rec->cap);
 		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, alloc);
@@ -320,7 +317,6 @@ sokol_main(i32 argc, char **argv)
 		rec->cap                  = ups * SOKOL_STATE.opts.recording.seconds_count;
 		rec->len                  = 0;
 		rec->idx                  = 0;
-		// TODO: mem align
 		rec->frames               = alloc_arr(alloc, rec->frames, rec->cap);
 		for(ssize i = 0; i < rec->cap; ++i) {
 			rec->frames[i] = 0;
@@ -508,7 +504,6 @@ sokol_event(const sapp_event *ev)
 			str8 dbgcmd          = str8_lit("ffmpeg -f rawvideo -pix_fmt rgba -s 400x240 -i frame.raw frame.png");
 			FILE *test           = fopen("/tmp/frame.raw", "wb");
 			ssize dst_size       = w * h * sizeof(u32);
-			// TODO: mem align
 			u32 *dst             = alloc_arr(scratch, dst, w * h);
 			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
 			fwrite(dst, sizeof(u32), w * h, test);
@@ -1392,7 +1387,6 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 		};
 		struct sys_score_arr *entries = &score_res.get.entries;
 		if(alloc.allocf != NULL) {
-			// TODO: mem align
 			entries->items = alloc_arr(alloc, entries->items, scores_count);
 		}
 		if(entries->items != NULL) {
@@ -1501,7 +1495,6 @@ sokol_set_icon(void)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc scratch     = SOKOL_STATE.scratch;
 	str8 icons_dir           = sokol_path_to_res_path(str8_lit("icons"));
-	// TODO: mem align
 	tinydir_dir *dir         = alloc_struct(scratch, dir);
 	str8 png                 = str8_lit(".png");
 	sapp_icon_desc icon_desc = {.sokol_default = true};
@@ -1716,7 +1709,6 @@ sokol_recording_write(struct recording_1b *recording)
 	struct str_join params = {.sep = str8_lit(" ")};
 	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
 	ssize dst_size         = w * h * sizeof(u32);
-	// TODO: mem align
 	u32 *dst               = alloc_arr(scratch, dst, w * h);
 	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
 

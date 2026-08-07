@@ -14,13 +14,12 @@ snd_load(const str8 path, struct alloc alloc)
 	sys_file_r(f, &snd_header, sizeof(u32));
 	u32 bytes = (snd_header.sample_count + 1) >> 1;
 
-	// TODO: mem align
-	void *buf = alloc.allocf(alloc.ctx, bytes, 4);
+	u8 *buf = alloc_size_aligned(alloc, bytes, alignof(u8), false);
 	dbg_check_warn(buf, "snd", "failed to allocate memory for snd %s", path.str);
 
 	sys_file_r(f, buf, bytes);
 
-	res.buf = (u8 *)buf;
+	res.buf = buf;
 	res.len = snd_header.sample_count;
 
 error:;
