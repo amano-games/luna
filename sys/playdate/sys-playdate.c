@@ -10,11 +10,12 @@
 #include "lib/tex/tex.h"
 #include "sys/sys-debug-draw.h"
 #include "sys/sys.h"
-#include "sys/playdate/sys-playdate.h"
 #include "base/types.h"
 #include "base/log.h"
+#include "sys/sys-mem.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
+#include "sys/playdate/sys-playdate.h"
 #include "sys/playdate/sys-playdate-scores.h"
 #include "sys/playdate/sys-playdate-scores.c"
 
@@ -110,10 +111,10 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_STATE.menu.next_id = 1;
 
 		PD_STATE.process_info = (struct sys_process_info){
-			.initial_path                 = str8_lit(""),
-			.binary_file_path             = str8_lit(""),
-			.binary_path                  = str8_lit(""),
-			.base_path                    = str8_lit(""),
+			.initial_path                  = str8_lit(""),
+			.binary_file_path              = str8_lit(""),
+			.binary_path                   = str8_lit(""),
+			.base_path                     = str8_lit(""),
 			.user_program_config_data_path = str8_lit(""),
 			.user_program_cache_data_path  = str8_lit(""),
 			.user_program_logs_data_path   = str8_lit(""),
@@ -335,6 +336,30 @@ sys_color_u32_set(enum gfx_col color, u32 value)
 {
 }
 
+void *
+sys_alloc_raw(ssize size)
+{
+	return PD_SYS_REALLOC(NULL, size);
+}
+
+void
+sys_free_raw(void *ptr)
+{
+	PD_SYS_REALLOC(ptr, 0);
+}
+
+void *
+sys_alloc(void *ptr, ssize size, ssize align)
+{
+	return sys_alloc_aligned_raw(size, align, sys_alloc_raw);
+}
+
+void
+sys_free(void *ptr)
+{
+	sys_free_aligned_raw(ptr, sys_free_raw);
+}
+
 struct alloc
 sys_allocator(void)
 {
@@ -343,23 +368,6 @@ sys_allocator(void)
 		.ctx    = NULL,
 	};
 	return alloc;
-}
-
-// TODO: mem align
-void *
-sys_alloc(void *ptr, ssize size, ssize align)
-{
-	void *res = PD_SYS_REALLOC(ptr, size);
-	dbg_check(res, "sys-pd", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
-
-error:
-	return res;
-}
-
-void
-sys_free(void *ptr)
-{
-	PD_SYS_REALLOC(ptr, 0);
 }
 
 void
@@ -760,7 +768,6 @@ sys_get_current_path(struct alloc alloc)
 {
 	return str8_cpy_push(alloc, str8_lit(""));
 }
-
 
 b32
 sys_make_dir(str8 path)

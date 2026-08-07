@@ -2,6 +2,7 @@
 
 #include <tinydir.h>
 #include <jsmn.h>
+#include "sys/sys.h"
 #include "whereami.c"
 
 #include "sys/sys-inc.h"
@@ -71,8 +72,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	json_load(in_path, scratch, &json);
 
 	jsmn_init(&parser);
-	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
-	// TODO: mem align
+	i32 token_count   = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	jsmn_init(&parser);
 
@@ -95,7 +95,6 @@ gen_table(const str8 in_path, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("columns")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 
-			// TODO: mem align
 			table.columns = arr_new(scratch, table.columns, value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				jsmntok_t *child_key   = &tokens[i + j + 1];
@@ -121,13 +120,11 @@ gen_table(const str8 in_path, struct alloc scratch)
 		} else if(json_eq(json, key, str8_lit("elements")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			ssize rows_count = value->size;
-			// TODO: mem align
-			table.rows = arr_new(scratch, table.rows, rows_count);
+			table.rows       = arr_new(scratch, table.rows, rows_count);
 
 			for(ssize j = 0; j < rows_count; j++) {
-				struct row row = {0};
-				usize count    = arr_len(table.columns);
-				// TODO: mem align
+				struct row row            = {0};
+				usize count               = arr_len(table.columns);
 				row.items                 = arr_new(scratch, row.items, count);
 				struct arr_header *header = arr_header(row.items);
 				header->len               = count;
@@ -165,11 +162,11 @@ gen_table(const str8 in_path, struct alloc scratch)
 		}
 	}
 
-	usize size = MMEGABYTE(1);
-	// TODO: mem align
-	u8 *mem              = sys_alloc(NULL, size, 1);
-	struct marena marena = {0};
-	struct alloc alloc   = marena_allocator(&marena);
+	struct alloc sys_alloc = sys_allocator();
+	usize size             = MMEGABYTE(1);
+	void *mem              = alloc_size(sys_alloc, size);
+	struct marena marena   = {0};
+	struct alloc alloc     = marena_allocator(&marena);
 	marena_init(&marena, mem, size);
 	struct str8_list content = {0};
 	str8_list_pushf(alloc, &content, "#pragma once\n\n");
@@ -284,8 +281,7 @@ void
 gen_tables_recursive(const str8 in_dir, struct marena *arena)
 {
 	struct alloc alloc = marena_allocator(arena);
-	// TODO: mem align
-	tinydir_dir *dir = alloc_struct(alloc, dir);
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
 
 	if(tinydir_open(dir, (char *)in_dir.str) == -1) {
 		log_error(LOG_ID, "Cannot open directory: %s", in_dir.str);
@@ -324,10 +320,10 @@ main(i32 argc, char *argv[])
 		return res;
 	}
 
-	str8 in_path   = str8_cstr(argv[1]);
-	usize mem_size = MMEGABYTE(2);
-	// TODO: mem align
-	u8 *mem             = sys_alloc(NULL, mem_size, 1);
+	struct alloc alloc  = sys_allocator();
+	str8 in_path        = str8_cstr(argv[1]);
+	usize mem_size      = MMEGABYTE(2);
+	u8 *mem             = alloc_size(alloc, mem_size);
 	struct marena arena = {0};
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 

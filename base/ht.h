@@ -109,7 +109,6 @@ cleanup:
 	return res;
 }
 
-// TODO: mem align
 static inline struct ht_u32
 ht_new_u32(int exp, struct alloc alloc)
 {
@@ -120,9 +119,7 @@ ht_new_u32(int exp, struct alloc alloc)
 		return ht; // request too large
 	}
 
-	usize size = ((size_t)1 << exp) * sizeof(*ht.ht);
-	// TODO: mem align
-	ht.ht      = alloc.allocf(alloc.ctx, size, alignof(struct ht_entry));
-	mclr(ht.ht, size);
+	ssize size = ((size_t)1 << exp) * sizeof(*ht.ht);
+	ht.ht      = alloc_size_aligned(alloc, size, alignof(struct ht_entry), true);
 	return ht;
 }

@@ -179,13 +179,10 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 {
 	poly_make_ccw(verts, count);
 	// Linked list
-	// TODO: mem align
 	i32 *prev       = arr_new(scratch, prev, count);
-	// TODO: mem align
 	i32 *next       = arr_new(scratch, next, count);
 	struct mesh res = {
 		.count = 0,
-		// TODO: mem align
 		.items = alloc_struct(alloc, res.items),
 	};
 	for(ssize i = 0; i < count; ++i) {
@@ -226,7 +223,6 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 		// If current vertex v[i] is an ear, delete it and visit the prev vertex
 		if(is_ear) {
 			// Triangle (v[i], v[prev[i]], v[next[i]]) is an ear
-			// TODO: mem align
 			alloc_struct(alloc, res.items);
 			res.items[res.count++] = (struct poly){
 				.count = 3,
@@ -250,7 +246,6 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 		}
 	}
 
-	// TODO: mem align
 	alloc_struct(alloc, res.items);
 	res.items[res.count++] = (struct poly){
 		.count = 3,
@@ -270,11 +265,9 @@ poly_triangulate(v2 *verts, ssize count, struct alloc alloc, struct alloc scratc
 static inline struct mesh
 poly_decomp_hm(struct mesh mesh, struct alloc alloc, struct alloc scratch)
 {
-	// TODO: mem align
 	b32 *merged = alloc_arr_clr(scratch, merged, mesh.count);
 
 	struct mesh res = {
-		// TODO: mem align
 		.items = alloc_arr(alloc, res.items, mesh.count),
 	};
 

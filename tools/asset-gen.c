@@ -2,6 +2,7 @@
 
 #include <tinydir.h>
 #include "engine/assets/qop.h"
+#include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
 #include "tools/asset/asset.h"
 #include "whereami.c"
@@ -111,8 +112,7 @@ qop_gen_recursive(
 {
 	dbg_assert(qop);
 	struct alloc alloc = marena_allocator(arena);
-	// TODO: mem align
-	tinydir_dir *dir = alloc_struct(alloc, dir);
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
 	tinydir_open(dir, (char *)in_dir.str);
 	while(dir->has_next) {
 		tinydir_file file;
@@ -139,8 +139,7 @@ asset_gen_recursive(
 {
 
 	struct alloc alloc = marena_allocator(arena);
-	// TODO: mem align
-	tinydir_dir *dir = alloc_struct(alloc, dir);
+	tinydir_dir *dir   = alloc_struct(alloc, dir);
 	tinydir_open(dir, (char *)in_dir.str);
 
 	while(dir->has_next) {
@@ -222,9 +221,9 @@ main(int argc, char *argv[])
 	// TODO: check if folder exists
 	sys_make_dir(path);
 
-	usize mem_size = MMEGABYTE(1);
-	// TODO: mem align
-	u8 *mem = sys_alloc(NULL, mem_size, alignof(u8));
+	usize mem_size         = MMEGABYTE(1);
+	struct alloc alloc_sys = sys_allocator();
+	void *mem              = alloc_size(alloc_sys, mem_size);
 	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
 	struct marena arena = {0};
 	marena_init(&arena, mem, mem_size);

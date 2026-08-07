@@ -21,7 +21,6 @@ error:
 	return;
 }
 
-// TODO: mem align
 void *
 marena_alloc(struct marena *m, ssize size, ssize align)
 {

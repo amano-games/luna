@@ -7,6 +7,7 @@
 #include "base/str.h"
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
+#include "sys/sys-mem.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -54,14 +55,12 @@ void
 sys_os_init(void)
 {
 	{
-		// TODO: mem align
-		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, 8);
+		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, MEM_ALIGN_DEFAULT);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
-		// TODO: mem align
-		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, 8);
+		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, MEM_ALIGN_DEFAULT);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
 	}
@@ -77,7 +76,6 @@ sys_os_init(void)
 		_NSGetExecutablePath(NULL, &size);
 		if(size > 0) {
 			marena_reset(&OS_STATE.scratch_arena);
-			// TODO: mem align
 			char *buf = alloc_arr(scratch, buf, size);
 			if(_NSGetExecutablePath(buf, &size) == 0) {
 				info->binary_file_path = str8_cpy_push(alloc, str8_cstr(buf));
@@ -150,7 +148,6 @@ sys_data_path(void)
 	return OS_STATE.process_info.user_program_config_data_path;
 }
 
-
 b32
 sys_make_dir(str8 path)
 {
@@ -197,6 +194,30 @@ sys_time_ms(void)
 	return (u32)(stm_ms(stm_since(OS_STATE.tick_start)));
 }
 
+void *
+sys_alloc_raw(ssize size)
+{
+	return malloc(size);
+}
+
+void
+sys_free_raw(void *ptr)
+{
+	free(ptr);
+}
+
+void *
+sys_alloc(void *ptr, ssize size, ssize align)
+{
+	return sys_alloc_aligned_raw(size, align, sys_alloc_raw);
+}
+
+void
+sys_free(void *ptr)
+{
+	sys_free_aligned_raw(ptr, sys_free_raw);
+}
+
 struct alloc
 sys_allocator(void)
 {
@@ -205,23 +226,6 @@ sys_allocator(void)
 		.ctx    = NULL,
 	};
 	return alloc;
-}
-
-// TODO: mem align
-void *
-sys_alloc(void *ptr, ssize size, ssize align)
-{
-	void *res = malloc(size);
-	dbg_check(res, "sys-macos", "Alloc failed to get %" PRIu32 ", %$$u", size, (uint)size);
-
-error:
-	return res;
-}
-
-void
-sys_free(void *ptr)
-{
-	free(ptr);
 }
 
 static long

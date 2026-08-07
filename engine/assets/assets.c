@@ -1,4 +1,5 @@
 #include "assets.h"
+#include "base/mem.h"
 #include "engine/assets/asset-db.h"
 #include "base/dbg.h"
 #include "lib/bet/bet-ser.h"
@@ -18,8 +19,7 @@ void
 assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
-	// TODO: mem align
-	void *mem = alloc.allocf(alloc.ctx, size, 1);
+	void *mem = alloc_size(alloc, size);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();
@@ -30,7 +30,6 @@ void *
 asset_allocf(void *ctx, ssize size, ssize align)
 {
 	struct assets *assets = (struct assets *)ctx;
-	// TODO: mem align
 	void *mem             = marena_alloc(&assets->marena, size, align);
 	dbg_check_mem(mem != NULL, "Assets");
 	return mem;

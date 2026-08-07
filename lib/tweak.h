@@ -56,8 +56,7 @@ tweak_look_up_value_f32(
 	f32 constant)
 {
 	usize mem_size = MKILOBYTE(10);
-	// TODO: mem align
-	void *mem      = sys_alloc(NULL, mem_size);
+	u8 *mem        = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 	void *f        = NULL;
 	dbg_check_warn(mem, "tweak", "failed to get memory");
 	struct marena marena = {0};
@@ -69,9 +68,9 @@ tweak_look_up_value_f32(
 	f                  = sys_file_open_r(full_path);
 	dbg_check_warn(f, "tweak", "failed to open the file %s", full_path.str);
 
-	struct sys_full_file_res res = sys_load_full_file(full_path, alloc);
+	struct sys_full_file_res res = sys_load_full_file(alloc, full_path);
 	u8 *buffer                   = res.data;
-	size buffer_size             = res.size;
+	ssize buffer_size            = res.size;
 	str8 str_line                = {.str = buffer, .size = buffer_size};
 	usize new_line_pos           = 0;
 	i32 current_line_index       = 0;
