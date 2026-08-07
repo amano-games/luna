@@ -73,13 +73,14 @@ sys_get_current_path(struct alloc alloc)
 void
 sys_os_init(void)
 {
+	struct alloc alloc_sys = sys_allocator();
 	{
-		void *mem = sys_alloc(NULL, OS_ARENA_SIZE, MEM_ALIGN_DEFAULT);
+		void *mem = alloc_size(alloc_sys, OS_ARENA_SIZE);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
-		void *mem = sys_alloc(NULL, OS_SCRATCH_SIZE, MEM_ALIGN_DEFAULT);
+		void *mem = alloc_size(alloc_sys, OS_SCRATCH_SIZE);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
 	}
