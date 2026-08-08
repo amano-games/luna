@@ -466,6 +466,19 @@ str8_to_u64(str8 str, u32 radix)
 	return x;
 }
 
+i64
+str8_to_i64(str8 str, u32 radix)
+{
+	b32 neg = false;
+	if(str.size > 0 && (str.str[0] == '-' || str.str[0] == '+')) {
+		neg = (str.str[0] == '-');
+		str = str8_skip(str, 1);
+	}
+	u64 mag = str8_to_u64(str, radix);
+	// Negate in unsigned space so the most negative value does not overflow.
+	return neg ? (i64)(0 - mag) : (i64)mag;
+}
+
 str8
 str8_to_upper(struct alloc alloc, str8 str)
 {
@@ -824,4 +837,40 @@ str_date_time_push(struct alloc alloc, struct date_time *date_time)
 		date_time->sec,
 		ampm);
 	return result;
+}
+
+struct
+{
+	str8 str;
+	enum os_kind os;
+} G_OS_ENUM_MAP[OS_KIND_NUM_COUNT] =
+	{
+		[OS_KIND_NONE]     = {str8_lit_comp(""), OS_KIND_NONE},
+		[OS_KIND_PLAYDATE] = {str8_lit_comp("playdate"), OS_KIND_MACOS},
+		[OS_KIND_LINUX]    = {str8_lit_comp("linux"), OS_KIND_LINUX},
+		[OS_KIND_WINDOWS]  = {str8_lit_comp("windows"), OS_KIND_WINDOWS},
+		[OS_KIND_MACOS]    = {str8_lit_comp("mac"), OS_KIND_MACOS},
+		[OS_KIND_WASM]     = {str8_lit_comp("wasm"), OS_KIND_MACOS},
+};
+
+static enum os_kind
+str8_to_os(str8 str)
+{
+	enum os_kind res = OS_KIND_NONE;
+	for(ssize i = 0; i < (ssize)ARRLEN(G_OS_ENUM_MAP); ++i) {
+		if(str8_match(G_OS_ENUM_MAP[i].str, str, str_match_flag_case_insensitive)) {
+			return G_OS_ENUM_MAP[i].os;
+		}
+	}
+	return res;
+}
+
+static str8
+str8_from_os(enum os_kind value)
+{
+	str8 res = G_OS_ENUM_MAP[OS_KIND_NONE].str;
+	if(value < ARRLEN(G_OS_ENUM_MAP)) {
+		res = G_OS_ENUM_MAP[value].str;
+	}
+	return res;
 }
