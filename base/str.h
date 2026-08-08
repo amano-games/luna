@@ -104,6 +104,7 @@ i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
 b32 str8_to_bool32(str8 str);
 u64 str8_to_u64(str8 str, u32 radix);
+i64 str8_to_i64(str8 str, u32 radix);
 
 // String Stylization
 
@@ -130,3 +131,6 @@ struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize firs
 str8 str_from_week_day(enum week_day week_day);
 str8 str_from_month(enum month month);
 str8 str_date_time_push(struct alloc alloc, struct date_time *date_time);
+
+static enum os_kind str8_to_os(str8 str);
+static str8 str8_from_os(enum os_kind value);

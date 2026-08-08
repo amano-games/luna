@@ -232,3 +232,35 @@
 #if (SYS_BACKEND_SOKOL + SYS_BACKEND_PLAYDATE + SYS_BACKEND_CLI) != 1
 #error Exactly one SYS_BACKEND_* flag must be set.
 #endif
+
+// Platform identity as a value
+//
+// These mirror the OS_* macros above, but as an enum constant, so platform
+// checks can be written as ordinary C. The comparison folds at compile time;
+// the untaken branch is eliminated. Prefer this over #if when the branch body
+// compiles on every platform — it stays type-checked everywhere.
+enum os_kind {
+	OS_KIND_NONE,
+
+	OS_KIND_PLAYDATE,
+	OS_KIND_WINDOWS,
+	OS_KIND_LINUX,
+	OS_KIND_MACOS,
+	OS_KIND_WASM,
+
+	OS_KIND_NUM_COUNT,
+
+#if OS_PLAYDATE
+	OS_KIND_CURRENT = OS_KIND_PLAYDATE,
+#elif OS_WINDOWS
+	OS_KIND_CURRENT = OS_KIND_WINDOWS,
+#elif OS_LINUX
+	OS_KIND_CURRENT = OS_KIND_LINUX,
+#elif OS_MACOS
+	OS_KIND_CURRENT = OS_KIND_MACOS,
+#elif OS_WASM
+	OS_KIND_CURRENT = OS_KIND_WASM,
+#else
+	OS_KIND_CURRENT = OS_KIND_NONE,
+#endif
+};

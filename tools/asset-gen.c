@@ -12,6 +12,7 @@
 
 #include "base/marena.c"
 #include "base/str.c"
+#include "base/cmd-line.c"
 #include "base/path.c"
 
 #include "lib/bet/bet-ser.c"
