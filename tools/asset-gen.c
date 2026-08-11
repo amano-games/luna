@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 
 	usize mem_size         = MMEGABYTE(1);
 	struct alloc alloc_sys = sys_allocator();
-	void *mem              = alloc_size(alloc_sys, mem_size);
+	void *mem              = mem_alloc_size(alloc_sys, mem_size);
 	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
 	struct marena arena = {0};
 	marena_init(&arena, mem, mem_size);

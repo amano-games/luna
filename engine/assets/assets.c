@@ -19,7 +19,7 @@ void
 assets_ini(struct alloc alloc, usize size)
 {
 	log_info("Assets", "init");
-	void *mem = alloc_size(alloc, size);
+	void *mem = mem_alloc_size(alloc, size);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
 	ASSETS.display = tex_frame_buffer();

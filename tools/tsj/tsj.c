@@ -310,7 +310,7 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 	i32 res                = 0;
 	struct alloc alloc_sys = sys_allocator();
 	usize mem_size         = MKILOBYTE(100);
-	u8 *mem_buffer         = alloc_size(alloc_sys, mem_size);
+	u8 *mem_buffer         = mem_alloc_size(alloc_sys, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marean = {0};
 	marena_init(&marean, mem_buffer, mem_size);

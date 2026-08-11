@@ -259,7 +259,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	usize mem_size         = MKILOBYTE(100);
 	struct alloc sys_alloc = sys_allocator();
-	void *mem_buffer       = alloc_size(sys_alloc, mem_size);
+	void *mem_buffer       = mem_alloc_size(sys_alloc, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
 	marena_init(&marena, mem_buffer, mem_size);

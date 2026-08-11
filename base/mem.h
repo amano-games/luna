@@ -26,8 +26,8 @@ struct alloc {
 // Alloc / align contract:
 // - If you cast the result to T*, allocate with alignof(T), alignas on T, or *_aligned.
 
-#define alloc_size(a, size)     alloc_size_aligned((a), (size), MEM_ALIGN_DEFAULT, false)
-#define alloc_size_clr(a, size) alloc_size_aligned((a), (size), MEM_ALIGN_DEFAULT, true)
+#define mem_alloc_size(a, size)     alloc_size_aligned((a), (size), MEM_ALIGN_DEFAULT, false)
+#define mem_alloc_size_clr(a, size) alloc_size_aligned((a), (size), MEM_ALIGN_DEFAULT, true)
 
 #define alloc_struct(alloc, ptr)                (__typeof__(ptr))alloc_size_aligned(alloc, sizeof(*(ptr)), alignof(__typeof__(*(ptr))), false)
 #define alloc_struct_aligned(alloc, ptr, align) (__typeof__(ptr))alloc_size_aligned(alloc, sizeof(*(ptr)), align, false)
