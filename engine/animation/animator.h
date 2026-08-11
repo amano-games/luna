@@ -3,14 +3,14 @@
 #include "engine/assets/asset-db.h"
 #include "engine/animation/animation.h"
 
-#define MAX_ANIMATIONS 10
+#define ANIMATOR_TRANSITIONS_MAX 11
 
 struct animator {
 	b8 play_on_start;
 	u8 index;
 	struct animation animation;
 	struct asset_handle clips_handle;
-	u8 transitions[MAX_ANIMATIONS];
+	u8 transitions[ANIMATOR_TRANSITIONS_MAX];
 };
 
 void animator_init(struct animator *animator, f32 timestamp);
