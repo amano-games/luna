@@ -52,12 +52,12 @@ sys_os_init(void)
 {
 	struct alloc alloc_sys = sys_allocator();
 	{
-		void *mem = alloc_size(alloc_sys, OS_ARENA_SIZE);
+		void *mem = mem_alloc_size(alloc_sys, OS_ARENA_SIZE);
 		marena_init(&OS_STATE.arena, mem, OS_ARENA_SIZE);
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
-		void *mem = alloc_size(alloc_sys, OS_SCRATCH_SIZE);
+		void *mem = mem_alloc_size(alloc_sys, OS_SCRATCH_SIZE);
 		marena_init(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE);
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
 	}

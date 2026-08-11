@@ -24,7 +24,7 @@ png_to_tex_blob(
 	ssize out_size = tex_from_rgb(in_data, w, h, NULL, 0);
 	dbg_check(out_size > 0, "png", "Invalid tex size");
 
-	void *out_data = alloc_size(alloc, out_size);
+	void *out_data = mem_alloc_size(alloc, out_size);
 	dbg_check_mem(out_data, "png");
 
 	dbg_check(tex_from_rgb(in_data, w, h, out_data, out_size) == out_size, "png", "convertion failed");

@@ -78,7 +78,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	ssize out_size = tex_from_rgb(in_data, sheet_w, sheet_h, NULL, 0);
 	dbg_check(out_size > 0, "ase", "Invalid tex size");
 
-	void *out_data = alloc_size(alloc, out_size);
+	void *out_data = mem_alloc_size(alloc, out_size);
 	dbg_check_mem(out_data, "ase");
 
 	dbg_check(tex_from_rgb(in_data, sheet_w, sheet_h, out_data, out_size) == out_size, "ase", "convertion failed");
