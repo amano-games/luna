@@ -1,5 +1,6 @@
 #include "asset-db.h"
 
+#include "base/hash.h"
 #include "engine/animation/animation.h"
 #include "base/arr.h"
 #include "lib/fnt/fnt.h"
