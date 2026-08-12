@@ -93,3 +93,33 @@
 - [~] API like iProf `prof_upd(true)` advances frame index in the circular buffer and records uses this time to tell the fps
 - [~] Profiler title? FPS
 - [ ] Graph
+
+# Frame pacing
+
+- [ ] Reorder `sokol_frame` to update before present
+      Desktop uploads and presents `SOKOL_PIXELS` before `sys_internal_update`, so the image is one
+      frame stale. Device is unaffected.
+- [ ] Glaiel delta snapping
+      Round `time_delta` to the nearest multiple of `dt_us` when within ~2 ms.
+      Only worth it for leftover `M01`–`M03` on cheap screens (occasional double-step from the panel
+      not being exactly 20.000 ms). It will not fix slow games going over the 20ms budget
+- [ ] Drop `SYS_DEFAULT_UPS_DT_CAP_US` from 60 ms to 40 ms
+      60 ms allows three catch-up ticks in one callback; one tick already spends the whole 20 ms
+      budget, so a 3-tick hitch can lock you into a ~16 FPS spiral. 40 ms caps catch-up at two ticks.
+      Does not change steady-state 50 Hz. Separate from Rev A cost.
+- [ ] Gaffer render interpolation (`alpha = acc_us / dt_us`)
+      Draws bodies between previous and current transforms so a leftover miss does not double-step
+      on screen. Needs previous-and-current poses per body.
+      Desktop judder (60/120/144 vs 50) would also improve.
+- [ ] Pause / resume through the system menu
+      Ball rolling, menu ~30 s then ~5 min, then sleep past ~4295 s (old float-to-u32 UB).
+      Ball must not jump; challenge-timer and ball-saver must not drift.
+
+# Physics
+
+- [ ] Gravity inside the substep loop, real `dt` on `body_integrate`
+      `vel` is pixels-per-substep, not pixels-per-second, and gravity only hits substep 1.
+      Correct, and retunes every table: ball speed scales with `UPS x steps`, effective g with
+      `dt / steps`.
+- [ ] Real per-substep displacement cap `max_translation` / `max_rotation` are inert (`max_linear_speed` is ~1600 vs
+      velocities under 10). The 4 substeps are the only tunneling guard.
