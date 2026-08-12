@@ -7,6 +7,10 @@
 #define SYS_DISPLAY_WBYTES 52
 #define SYS_DISPLAY_WWORDS 13
 
+#define SYS_SHOW_FPS_NONE 0 // compile overlay out
+#define SYS_SHOW_FPS_FPS  1 // two-digit FPS
+#define SYS_SHOW_FPS_FULL 2 // FPS + UPS + miss + cpu ms
+
 // The Playdate panel cannot scan out faster than 50 fps
 // 50 is both the update rate and the render rate ceiling.
 #define SYS_DEFAULT_UPS 50
@@ -64,13 +68,15 @@ struct sys_timing {
 	u32 stats_time_acc_us; // Accumulates time to measure 1 second window
 
 	u32 cpu_time_acc_us; // acc us spent in upd + audio over the current stats window
-	u32 fps_dt_acc_us;   // acc us spent in rendering (draw calls)
+	u32 drw_dt_acc_us;   // acc us spent in rendering (draw calls)
 
-	u16 ups_counter; // update ticks executed in the current stats window(per second)
-	u16 fps_counter; // frames drawn in the current stats window (per second)
+	u16 ups_counter;  // update ticks executed in the current stats window(per second)
+	u16 drw_counter;  // frames drawn in the current stats window (per second)
+	u16 miss;         // callbacks in the last window that ran != 1 tick
+	u16 miss_counter; // current window
 
 	u32 ups_avg_cpu_us; // avg us per update tick (includes update + audio)
-	u32 fps_avg_cpu_us; // avg us per frame (render/draw)
+	u32 drw_avg_cpu_us; // avg us per frame (render/draw)
 };
 
 struct sys_data {
