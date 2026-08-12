@@ -146,6 +146,7 @@ sys_internal_init(void)
 // if an update tick should run (@50 FPS cap on hardware)
 //
 // https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
+// https://www.gafferongames.com/post/fix_your_timestep/
 i32
 sys_internal_update(void)
 {
