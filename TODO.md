@@ -2,6 +2,8 @@
 
 - [ ] Make it easier to start a new project
 - [~] Allow to set up FPS at runtime
+  - [ ] Review FPS specially on desktop macos is showing wierd things
+  - [ ] Improve sys-font
 - [ ] Allow to set up resolution at runtime
 
 # Base
@@ -54,7 +56,6 @@
 
 # Audio
 
-- [ ] Fix desktop audio stuttering
 - [ ] Support [QOA audio format](https://qoaformat.org/)
 
 # WWW
