@@ -96,7 +96,7 @@
 
 # Frame pacing
 
-- [ ] Reorder `sokol_frame` to update before present
+- [x] Reorder `sokol_frame` to update before present
       Desktop uploads and presents `SOKOL_PIXELS` before `sys_internal_update`, so the image is one
       frame stale. Device is unaffected.
 - [ ] Glaiel delta snapping

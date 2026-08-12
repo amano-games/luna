@@ -835,40 +835,6 @@ sokol_frame(void)
 	// mcpy_array(colors.color_white, COL_PURPLE);
 	// mcpy_array(colors.color_debug, COL_RED);
 
-	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
-	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
-
-	sg_update_image(
-		SOKOL_STATE.bind.images[IMG_tex],
-		&(sg_image_data){
-			.subimage[0][0] = {
-				.ptr  = SOKOL_PIXELS,
-				.size = size,
-			},
-		});
-
-	sg_update_image(
-		SOKOL_STATE.bind.images[IMG_tex_debug],
-		&(sg_image_data){
-			.subimage[0][0] = {
-				.ptr  = SOKOL_PIXELS_DEBUG,
-				.size = size,
-			},
-		});
-
-	sg_begin_pass(&(sg_pass){
-		.action    = SOKOL_STATE.pass_action,
-		.swapchain = sglue_swapchain(),
-	});
-	sg_apply_pipeline(SOKOL_STATE.pip);
-	sg_apply_bindings(&SOKOL_STATE.bind);
-	sg_apply_uniforms(UB_s_params, &SG_RANGE(params));
-	sg_apply_uniforms(UB_s_colors, &SG_RANGE(colors));
-	sg_apply_uniforms(UB_s_buffer_params, &SG_RANGE(buffer_params));
-	sg_draw(0, 6, 1);
-	sg_end_pass();
-	sg_commit();
-
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		b32 updated = sys_internal_update();
 		if(updated) {
@@ -963,6 +929,40 @@ sokol_frame(void)
 			gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 		}
 	}
+
+	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
+	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
+
+	sg_update_image(
+		SOKOL_STATE.bind.images[IMG_tex],
+		&(sg_image_data){
+			.subimage[0][0] = {
+				.ptr  = SOKOL_PIXELS,
+				.size = size,
+			},
+		});
+
+	sg_update_image(
+		SOKOL_STATE.bind.images[IMG_tex_debug],
+		&(sg_image_data){
+			.subimage[0][0] = {
+				.ptr  = SOKOL_PIXELS_DEBUG,
+				.size = size,
+			},
+		});
+
+	sg_begin_pass(&(sg_pass){
+		.action    = SOKOL_STATE.pass_action,
+		.swapchain = sglue_swapchain(),
+	});
+	sg_apply_pipeline(SOKOL_STATE.pip);
+	sg_apply_bindings(&SOKOL_STATE.bind);
+	sg_apply_uniforms(UB_s_params, &SG_RANGE(params));
+	sg_apply_uniforms(UB_s_colors, &SG_RANGE(colors));
+	sg_apply_uniforms(UB_s_buffer_params, &SG_RANGE(buffer_params));
+	sg_draw(0, 6, 1);
+	sg_end_pass();
+	sg_commit();
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
 		sys_internal_init();
