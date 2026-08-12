@@ -182,11 +182,13 @@ sys_pd_update(void *pd)
 
 	PD_SYS_RESET_ELAPSED_TIME();
 
-	b32 rendered = sys_internal_update();
-	if(rendered) {
-		sys_pd_update_rows(0, 239);
-	}
-	return rendered;
+	// Playdate: `setRefreshRate(0)` and the OS waits `rows_dirtied/240 * 20ms` (panel ceiling 50 fps).
+	// `sys_pd_update` must always `sys_pd_update_rows(0, 239)` and return 1, even when the render gate
+	// skips `app_draw`. If a callback dirties nothing / returns 0, the wait is 0, the callback rate
+	// rises, and `M` explodes. Do not make draws partial without replacing that wait.
+	sys_internal_update();
+	sys_pd_update_rows(0, 239);
+	return 1;
 }
 
 int

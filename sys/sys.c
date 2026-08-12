@@ -9,7 +9,11 @@
 #include "sys/sys-mem.h"
 
 #if !defined(SYS_SHOW_FPS)
-#define SYS_SHOW_FPS 1 // enable fps/ups counter
+#if DEBUG
+#define SYS_SHOW_FPS 1
+#else
+#define SYS_SHOW_FPS 0
+#endif
 #endif
 
 #define SYS_MEM_POISON_PATTERN 0xCD
@@ -182,8 +186,9 @@ sys_internal_update(void)
 		sys->timing.acc_us = sys->timing.dt_cap_us;
 	}
 
-#if SYS_SHOW_FPS
-	u32 tu1 = sys_time_us();
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+	u32 tu1   = sys_time_us();
+	u32 ticks = 0;
 #endif
 
 	while(sys->timing.acc_us >= sys->timing.dt_us) {
@@ -197,7 +202,14 @@ sys_internal_update(void)
 #if defined(PROF)
 		prof_block_end_internal();
 #endif
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+		ticks++;
+#endif
 	}
+
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+	if(ticks != 1) { sys->timing.miss_counter++; }
+#endif
 
 	b32 should_render = false;
 	if(sys->timing.render_dt_us <= sys->timing.render_acc_us) {
@@ -210,13 +222,13 @@ sys_internal_update(void)
 		should_render = true;
 	}
 
-#if SYS_SHOW_FPS
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu2 = sys_time_us();
 	sys->timing.cpu_time_acc_us += tu2 - tu1;
 #endif
 
 	if(should_render) {
-#if SYS_SHOW_FPS
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		u32 tf1 = sys_time_us();
 #endif
 #if defined(PROF)
@@ -227,21 +239,48 @@ sys_internal_update(void)
 		prof_block_end_internal();
 #endif
 #if SYS_SHOW_FPS
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		u32 tf2 = sys_time_us();
-		sys->timing.fps_dt_acc_us += tf2 - tf1;
-		sys->timing.fps_counter++;
+		sys->timing.drw_dt_acc_us += tf2 - tf1;
+#endif
+		sys->timing.drw_counter++;
 
-		// avg cpu times are microseconds; show milliseconds, since a frame budget is
-		// 20 ms and the old two-digit microsecond field was permanently pinned at 99
-		// u32 upd_ms = MIN(sys->timing.ups_avg_cpu_us / 1000u, 99u);
-		// u32 drw_ms = MIN(sys->timing.fps_avg_cpu_us / 1000u, 99u);
-
-		char fps[] = {
-			(char)('0' + (sys->timing.fps / 10)),
-			(char)('0' + (sys->timing.fps % 10)),
+		u32 fps = MIN((u32)sys->timing.fps, 99u);
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+		u32 ups        = MIN((u32)sys->timing.ups, 99u);
+		u32 miss       = MIN((u32)sys->timing.miss, 99u);
+		u32 upd_ms     = MIN(sys->timing.ups_avg_cpu_us / 1000u, 99u);
+		u32 drw_ms     = MIN(sys->timing.drw_avg_cpu_us / 1000u, 99u);
+		char overlay[] = {
+			(char)('0' + (fps / 10)),
+			(char)('0' + (fps % 10)),
+			' ',
+			'U',
+			(char)('0' + (ups / 10)),
+			(char)('0' + (ups % 10)),
+			' ',
+			'M',
+			(char)('0' + (miss / 10)),
+			(char)('0' + (miss % 10)),
+			' ',
+			'u',
+			(char)('0' + (upd_ms / 10)),
+			(char)('0' + (upd_ms % 10)),
+			' ',
+			'd',
+			(char)('0' + (drw_ms / 10)),
+			(char)('0' + (drw_ms % 10)),
 			'\0',
 		};
-		sys_blit_text(&SYS, fps, 0, 29);
+		sys_blit_text(&SYS, overlay, 0, 29);
+#else
+		char fps_str[] = {
+			(char)('0' + (fps / 10)),
+			(char)('0' + (fps % 10)),
+			'\0',
+		};
+		sys_blit_text(&SYS, fps_str, 0, 29);
+#endif
 #endif
 	}
 
@@ -249,10 +288,14 @@ sys_internal_update(void)
 	sys->timing.stats_time_acc_us += time_delta;
 	if(1000000u <= sys->timing.stats_time_acc_us) {
 		sys->timing.stats_time_acc_us -= 1000000u;
-		sys->timing.fps         = sys->timing.fps_counter;
-		sys->timing.ups         = sys->timing.ups_counter;
-		sys->timing.ups_counter = 0;
-		sys->timing.fps_counter = 0;
+		sys->timing.fps         = sys->timing.drw_counter;
+		sys->timing.drw_counter = 0;
+
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+		sys->timing.ups          = sys->timing.ups_counter;
+		sys->timing.miss         = sys->timing.miss_counter;
+		sys->timing.ups_counter  = 0;
+		sys->timing.miss_counter = 0;
 		// no u16 cast: these fields are u32 microseconds and a slow tick can exceed 65 ms
 		if(0 < sys->timing.ups) {
 			sys->timing.ups_avg_cpu_us = sys->timing.cpu_time_acc_us / sys->timing.ups;
@@ -260,12 +303,13 @@ sys_internal_update(void)
 			sys->timing.ups_avg_cpu_us = U16_MAX;
 		}
 		if(0 < sys->timing.fps) {
-			sys->timing.fps_avg_cpu_us = sys->timing.fps_dt_acc_us / sys->timing.fps;
+			sys->timing.drw_avg_cpu_us = sys->timing.drw_dt_acc_us / sys->timing.fps;
 		} else {
-			sys->timing.fps_avg_cpu_us = U16_MAX;
+			sys->timing.drw_avg_cpu_us = U16_MAX;
 		}
-		sys->timing.fps_dt_acc_us   = 0;
+		sys->timing.drw_dt_acc_us   = 0;
 		sys->timing.cpu_time_acc_us = 0;
+#endif
 	}
 #endif
 	return should_render;
@@ -274,11 +318,11 @@ sys_internal_update(void)
 void
 sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 {
-#if SYS_SHOW_FPS
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu1 = sys_time_us();
 #endif
 	app_audio(lbuf, rbuf, len);
-#if SYS_SHOW_FPS
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu2 = sys_time_us();
 	SYS.timing.cpu_time_acc_us += tu2 - tu1;
 #endif
