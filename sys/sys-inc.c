@@ -3,15 +3,16 @@
 
 #include "sys/sys-io.c"
 #include "sys/sys-sprintf.c"
-#include "sys/sys-log.c"
 #include "sys/sys-mem.c"
 
-#if SYS_GFX_SOKOL
+#if SYS_GFX_SOKOL || OS_PLAYDATE
 #include "sys/sys.c"
 #include "sys/sys-opts.c"
 #endif
 
-#if OS_LINUX
+#if OS_PLAYDATE
+#include "sys/playdate/sys-playdate.c"
+#elif OS_LINUX
 #include "sys/linux/sys-linux.c"
 #elif OS_MACOS
 #include "sys/macos/sys-macos.c"

@@ -384,6 +384,8 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+#include "sys/sys-log.c"
+
 #if SYS_GFX_SOKOL
 #include "sys/sokol/sys-sokol-host.c"
 #endif
