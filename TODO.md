@@ -96,17 +96,10 @@
 
 # Frame pacing
 
-- [x] Reorder `sokol_frame` to update before present
-      Desktop uploads and presents `SOKOL_PIXELS` before `sys_internal_update`, so the image is one
-      frame stale. Device is unaffected.
 - [ ] Glaiel delta snapping
       Round `time_delta` to the nearest multiple of `dt_us` when within ~2 ms.
       Only worth it for leftover `M01`–`M03` on cheap screens (occasional double-step from the panel
       not being exactly 20.000 ms). It will not fix slow games going over the 20ms budget
-- [ ] Drop `SYS_DEFAULT_UPS_DT_CAP_US` from 60 ms to 40 ms
-      60 ms allows three catch-up ticks in one callback; one tick already spends the whole 20 ms
-      budget, so a 3-tick hitch can lock you into a ~16 FPS spiral. 40 ms caps catch-up at two ticks.
-      Does not change steady-state 50 Hz. Separate from Rev A cost.
 - [ ] Gaffer render interpolation (`alpha = acc_us / dt_us`)
       Draws bodies between previous and current transforms so a leftover miss does not double-step
       on screen. Needs previous-and-current poses per body.
