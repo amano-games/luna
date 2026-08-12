@@ -1,6 +1,7 @@
 #include "base/base-inc.h"
 
-#if SYS_BACKEND_SOKOL
+// TODO: entrypoint
+#if !OS_PLAYDATE
 #if !OS_WASM
 #include "whereami.c"
 #endif

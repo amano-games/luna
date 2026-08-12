@@ -30,7 +30,7 @@ EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS  := src $(LUNA_DIR)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
-override CDEFS := $(CDEFS) -DSOKOL_DEBUG=1 -DSOKOL_METAL -DTARGET_MACOS
+override CDEFS := $(CDEFS) -DSOKOL_DEBUG=1 -DSOKOL_METAL -DSYS_GFX_SOKOL
 
 ARCH_FLAGS := -arch x86_64 -arch arm64
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined

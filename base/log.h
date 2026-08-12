@@ -20,7 +20,7 @@ enum sys_log_level {
 #if defined(SYS_LOG_DISABLE)
 #define sys_printf(...)
 #else
-#if SYS_BACKEND_PLAYDATE
+#if OS_PLAYDATE
 extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
 #define sys_printf(...) PD_SYS_LOG_TO_CONSOLE(__VA_ARGS__)
 #else

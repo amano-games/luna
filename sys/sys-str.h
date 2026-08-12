@@ -2,10 +2,7 @@
 
 #include "base/base-inc.h"
 
-#if SYS_BACKEND_SOKOL
-#include <stdio.h>
-#define sys_parse_string(str, fmt, ...) sscanf(str, fmt, __VA_ARGS__);
-#elif SYS_BACKEND_PLAYDATE
+#if OS_PLAYDATE
 extern int (*PD_SYS_PARSE_STR)(const char *str, const char *format, ...);
 #define sys_parse_string(str, fmt, ...) PD_SYS_PARSE_STR(str, fmt, __VA_ARGS__);
 #else

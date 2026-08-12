@@ -28,7 +28,7 @@ EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS  := src $(LUNA_DIR)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
-override CDEFS := $(CDEFS) -DSOKOL_GLCORE -DTARGET_LINUX
+override CDEFS := $(CDEFS) -DSOKOL_GLCORE -DSYS_GFX_SOKOL
 
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
 

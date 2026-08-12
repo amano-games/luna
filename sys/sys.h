@@ -64,7 +64,7 @@ void sys_color_u32_set(enum gfx_col color, u32 value);
 // float playdate->system->getVolume(void)
 // float playdate->system->getSystemVolume(void)
 
-#if SYS_BACKEND_PLAYDATE
+#if OS_PLAYDATE
 #define sys_audio_set_volume(V) ((void)0)
 #define sys_audio_get_volume()  (1.f)
 #define sys_audio_lock()        ((void)0)
@@ -91,7 +91,7 @@ str8 sys_get_current_path(struct alloc alloc);
 struct sys_process_info *sys_process_info(void);
 
 // Playdate-only (not part of portable contract; Phase 4 may fold present into sys_*)
-#if SYS_BACKEND_PLAYDATE
+#if OS_PLAYDATE
 b32 sys_pd_reduce_flicker(void);
 f32 sys_pd_crank_deg(void);
 void sys_pd_update_rows(i32 from_incl, i32 to_incl);

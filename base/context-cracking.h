@@ -69,18 +69,14 @@
 #define LANG_C 1
 #endif
 
-// OS cracking — makefile TARGET_* / Playdate flags first (cross-compiles)
+// OS cracking — Playdate SDK flags first (sim builds on a host OS), else compiler builtins.
 
-#if defined(TARGET_LINUX)
-#define OS_LINUX 1
-#elif defined(TARGET_MACOS)
-#define OS_MACOS 1
-#elif defined(TARGET_WIN)
-#define OS_WINDOWS 1
-#elif defined(TARGET_WASM)
-#define OS_WASM 1
-#elif defined(BACKEND_PD) || defined(TARGET_PD_DEVICE) || defined(TARGET_PD_SIM) || (defined(TARGET_PLAYDATE) && TARGET_PLAYDATE)
+#if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE
 #define OS_PLAYDATE 1
+#define PD_DEVICE 1
+#elif defined(TARGET_SIMULATOR)
+#define OS_PLAYDATE 1
+#define PD_SIM 1
 #elif defined(_WIN32)
 #define OS_WINDOWS 1
 #elif defined(__EMSCRIPTEN__)
@@ -91,31 +87,6 @@
 #define OS_MACOS 1
 #else
 #error Operating system not supported.
-#endif
-
-#if defined(TARGET_PD_DEVICE)
-#define PD_DEVICE 1
-#endif
-#if defined(TARGET_PD_SIM) || defined(TARGET_SIMULATOR)
-#define PD_SIM 1
-#endif
-
-// Host helper / tools flags — platforms are selected by OS_*.
-// SYS_BACKEND_SOKOL means "this platform currently uses the optional Sokol helper"
-// (not a peer of Playdate). It can be omitted from makefiles for desktop/wasm.
-
-#if defined(BACKEND_CLI)
-#define SYS_BACKEND_CLI 1
-#elif defined(BACKEND_PD)
-#define SYS_BACKEND_PLAYDATE 1
-#elif defined(BACKEND_SOKOL)
-#define SYS_BACKEND_SOKOL 1
-#elif defined(OS_LINUX) || defined(OS_MACOS) || defined(OS_WINDOWS) || defined(OS_WASM)
-#define SYS_BACKEND_SOKOL 1
-#elif defined(OS_PLAYDATE)
-#define SYS_BACKEND_PLAYDATE 1
-#else
-#error System host not specified (expected desktop/wasm OS, Playdate, or BACKEND_CLI).
 #endif
 
 // Build option cracking
@@ -190,14 +161,8 @@
 #if !defined(PD_SIM)
 #define PD_SIM 0
 #endif
-#if !defined(SYS_BACKEND_SOKOL)
-#define SYS_BACKEND_SOKOL 0
-#endif
-#if !defined(SYS_BACKEND_PLAYDATE)
-#define SYS_BACKEND_PLAYDATE 0
-#endif
-#if !defined(SYS_BACKEND_CLI)
-#define SYS_BACKEND_CLI 0
+#if !defined(SYS_GFX_SOKOL)
+#define SYS_GFX_SOKOL 0
 #endif
 #if !defined(LANG_CPP)
 #define LANG_CPP 0
@@ -208,17 +173,8 @@
 
 // Pairing / sanity checks
 
-#if OS_PLAYDATE && SYS_BACKEND_SOKOL
+#if OS_PLAYDATE && SYS_GFX_SOKOL
 #error Playdate platform cannot use Sokol backend.
-#endif
-#if OS_PLAYDATE && SYS_BACKEND_CLI
-#error Playdate platform cannot use CLI backend.
-#endif
-#if OS_PLAYDATE && !SYS_BACKEND_PLAYDATE
-#error Playdate platform requires the Playdate backend.
-#endif
-#if SYS_BACKEND_PLAYDATE && !OS_PLAYDATE
-#error Playdate backend requires the Playdate platform.
 #endif
 #if OS_PLAYDATE && (PD_DEVICE + PD_SIM) != 1
 #error Playdate builds require exactly one of PD_DEVICE or PD_SIM.
@@ -228,9 +184,6 @@
 #endif
 #if (OS_LINUX + OS_MACOS + OS_WINDOWS + OS_WASM + OS_PLAYDATE) != 1
 #error Exactly one OS_* platform flag must be set.
-#endif
-#if (SYS_BACKEND_SOKOL + SYS_BACKEND_PLAYDATE + SYS_BACKEND_CLI) != 1
-#error Exactly one SYS_BACKEND_* flag must be set.
 #endif
 
 // Platform identity as a value
