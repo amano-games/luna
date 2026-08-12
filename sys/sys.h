@@ -25,6 +25,7 @@ u32 sys_fps_target_get(void);
 u32 sys_dt_us_target_get(void);
 void sys_dt_cap_us_set(u32 value);
 u32 sys_dt_cap_us_get(void);
+void sys_timing_reset(void);
 
 void sys_internal_init(void);
 i32 sys_internal_update(void);

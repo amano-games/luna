@@ -71,6 +71,9 @@ int (*PD_PERSONAL_BEST_GET)(const char *board_id, PersonalBestCallback callback)
 
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
+static inline u32 sys_pd_sec_to_us(f32 sec);
+
+#define PD_SEC_TO_US_MAX 4000u // 4000 * MILLION_U32 stays inside u32 (max ~4295)
 
 int
 eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
@@ -172,14 +175,18 @@ int
 sys_pd_update(void *pd)
 {
 	f32 sec      = PD_SYS_GET_ELAPSED_TIME();
-	u32 delta_us = (u32)(sec * 1000000.0f + 0.5f);
+	u32 delta_us = sys_pd_sec_to_us(sec);
 
 	PD_STATE.us_monotonic += delta_us;
 	PD_STATE.us_elapsed += delta_us;
 
 	PD_SYS_RESET_ELAPSED_TIME();
 
-	return sys_internal_update();
+	b32 rendered = sys_internal_update();
+	if(rendered) {
+		sys_pd_update_rows(0, 239);
+	}
+	return rendered;
 }
 
 int
@@ -237,7 +244,7 @@ f32
 sys_time_elapsed(void)
 {
 	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
-	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
+	u32 partial = sys_pd_sec_to_us(sec);
 	u32 total   = PD_STATE.us_elapsed + partial;
 	return (f32)total * 1e-6f;
 }
@@ -263,7 +270,7 @@ sys_time_us(void)
 "microsecond accuracy" there is roughly speaking. Since it returns a floating point value the accuracy depends on how large that value gets, but there's nothing in the code limiting accuracy to 1 uS. Calling resetElapsedTime() before the code you're measuring then getElapsedTime() right after should give you a very accurate measure of execution time, and with some testing you can figure out how much of that is overhead of the reset/getElapsedTime() calls themselves and adjust for that.
 */
 	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
-	u32 partial = (u32)(sec * 1000000.0f + 0.5f);
+	u32 partial = sys_pd_sec_to_us(sec);
 	return PD_STATE.us_monotonic + partial;
 }
 
@@ -776,6 +783,16 @@ sys_make_dir(str8 path)
 	return res;
 }
 
+static inline u32
+sys_pd_sec_to_us(f32 sec)
+{
+	// (u32)(sec * MILLION_F32) is UB once sec exceeds ~4295
+	// Clamp instead of relying on ARM's saturating VCVT.
+	if(sec <= 0.0f) { return 0; }
+	if(sec >= (f32)PD_SEC_TO_US_MAX) { return PD_SEC_TO_US_MAX * MILLION_U32; }
+	return (u32)(sec * MILLION_F32 + 0.5f);
+}
+
 // NOLINTBEGIN(readability-identifier-naming)
 // make ARM linker shut up about things we aren't using (nosys lib issues):
 void
@@ -819,3 +836,4 @@ _kill(void)
 }
 // NOLINTEND(readability-identifier-naming)
 // end ARM linker warning hack
+//
