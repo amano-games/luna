@@ -14,6 +14,12 @@
 #define MILLION_F64 1e6
 #define BILLION_F64 1e9
 
+#define LUNA_CONCAT_(a, b) a##b
+#define LUNA_CONCAT(a, b)  LUNA_CONCAT_(a, b)
+
+#define LUNA_STRINGIFY_(x) #x
+#define LUNA_STRINGIFY(x)  LUNA_STRINGIFY_(x)
+
 #undef MAX
 #undef MIN
 #define POW2(X)          ((X) * (X))

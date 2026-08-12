@@ -36,33 +36,27 @@ enum prof_anchor_sys {
 #define PROF_FRAMES_SIZE         64    // Number of call depth allowed
 #define PROF_INT_ZERO_THRESHHOLD 0.25f // threshhold for a moving average of an integer to be at zero
 
-#define PROF_CONCAT2(a, b) a##b
-#define PROF_CONCAT(a, b)  PROF_CONCAT2(a, b)
-
 #if defined(PROF_UNIQUE_NAMES)
-#define prof_stringize_2(x) #x
-#define prof_stringize(x)   prof_stringize_2(x)
-#define prof_unique_name(name) \
-	name "_" prof_stringize(__LINE__)
+#define prof_unique_name(name) name "_" LUNA_STRINGIFY(__LINE__)
 
 #define prof_block(name) \
 	do { \
-		static ssize PROF_CONCAT(prof_idx_, __LINE__) = -1; \
-		if(PROF_CONCAT(prof_idx_, __LINE__) < 0) { \
-			PROF_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
+		static ssize LUNA_CONCAT(prof_idx_, __LINE__) = -1; \
+		if(LUNA_CONCAT(prof_idx_, __LINE__) < 0) { \
+			LUNA_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
 		} \
-		prof_block_start(prof_unique_name(name), PROF_CONCAT(prof_idx_, __LINE__)); \
+		prof_block_start(prof_unique_name(name), LUNA_CONCAT(prof_idx_, __LINE__)); \
 	} while(0)
 #else
 // Per-call-site static index (C99). __LINE__ only disambiguates the static's
 // name; the stable anchor id is assigned once via prof_next_block_idx().
 #define prof_block(name) \
 	do { \
-		static ssize PROF_CONCAT(prof_idx_, __LINE__) = -1; \
-		if(PROF_CONCAT(prof_idx_, __LINE__) < 0) { \
-			PROF_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
+		static ssize LUNA_CONCAT(prof_idx_, __LINE__) = -1; \
+		if(LUNA_CONCAT(prof_idx_, __LINE__) < 0) { \
+			LUNA_CONCAT(prof_idx_, __LINE__) = prof_next_block_idx(); \
 		} \
-		prof_block_start((name), PROF_CONCAT(prof_idx_, __LINE__)); \
+		prof_block_start((name), LUNA_CONCAT(prof_idx_, __LINE__)); \
 	} while(0)
 #endif
 

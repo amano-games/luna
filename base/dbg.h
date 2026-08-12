@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/log.h"
+#include "base/utils.h"
 
 #if PD_DEVICE // assertions don't work on hardware - disable
 #define dbg_assert(X)
@@ -17,14 +18,12 @@
 #endif
 #endif
 
-#define FILE_AND_LINE__(A, B) A "|" #B
-#define FILE_AND_LINE_(A, B)  FILE_AND_LINE__(A, B)
-#define FILE_AND_LINE         FILE_AND_LINE_(__FILE__, __LINE__)
+#define dbg_static_assert(C, ID) static u8 LUNA_CONCAT(ID, __LINE__)[(C) ? 1 : -1]
 
 // TODO: move to log_panic
 #define dbg_not_implemeneted(T) \
 	do { \
-		log_error(T, "+++ NOT IMPLEMENTED +++" FILE_AND_LINE); \
+		log_error(T, "+++ NOT IMPLEMENTED +++"); \
 		dbg_assert(0); \
 		goto error; \
 	} while(0);
