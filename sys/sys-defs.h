@@ -16,11 +16,8 @@
 #define SYS_DEFAULT_UPS 50
 #define SYS_DEFAULT_FPS 50
 
-// 60.0 ms clamp on the accumulated delta, i.e. 3 catch-up ticks in one callback.
-// One tick already targets the whole 20 ms budget, so a 3-tick callback guarantees
-// the next one is late too;
-// TODO: review if 40000u (2 ticks) is the safer value.
-#define SYS_DEFAULT_UPS_DT_CAP_US 60000u
+#define SYS_DEFAULT_UPS_DT_CAP_TICKS 2
+#define SYS_DEFAULT_UPS_DT_CAP_US    (SYS_DEFAULT_UPS_DT_CAP_TICKS * (1000000u / SYS_DEFAULT_UPS))
 
 dbg_static_assert(SYS_DEFAULT_UPS <= 50, sys_ups_within_panel_ceiling);
 dbg_static_assert(SYS_DEFAULT_FPS <= SYS_DEFAULT_UPS, sys_fps_not_above_ups);
