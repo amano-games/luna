@@ -17,7 +17,8 @@ INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 LDLIBS  := -lm
 LDFLAGS :=
 
-override CDEFS := $(CDEFS) -DBACKEND_CLI
+# Headless: drop graphics flags inherited from game platform makefiles.
+override CDEFS := $(filter-out -DSYS_GFX_SOKOL -DSOKOL_GLCORE -DSOKOL_METAL -DSOKOL_D3D11 -DSOKOL_GLES3 -DSOKOL_DEBUG=1,$(CDEFS))
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -g

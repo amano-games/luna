@@ -37,6 +37,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include "sys/sys-log.h"
+
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 
@@ -49,8 +51,8 @@
 #if MINI_GAMEPAD_ENABLE
 /* Vendored minigamepad has known UB in mapping parse; keep sanitizers off for it. */
 #if defined(__clang__)
-#pragma clang attribute push(                                                        \
-	__attribute__((no_sanitize("address", "undefined", "unreachable"))),             \
+#pragma clang attribute push( \
+	__attribute__((no_sanitize("address", "undefined", "unreachable"))), \
 	apply_to = function)
 #elif defined(__GNUC__)
 #define MG_API __attribute__((no_sanitize("address", "undefined", "unreachable")))
@@ -65,7 +67,6 @@
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_app.h"
 #include "sokol/sokol_glue.h"
-#include "sokol/sokol_log.h"
 #include "sokol/sokol_audio.h"
 #include "shaders/sokol_shader.h"
 
@@ -815,7 +816,7 @@ sokol_frame(void)
 	{
 		b32 want_capture = SOKOL_STATE.opts.video.mouse_capture;
 		if(want_capture != SOKOL_STATE.mouse_capture_applied ||
-		   (want_capture && !sapp_mouse_locked())) {
+			(want_capture && !sapp_mouse_locked())) {
 			sapp_lock_mouse(want_capture);
 			SOKOL_STATE.mouse_capture_applied = want_capture;
 		}
@@ -1099,20 +1100,6 @@ void *
 sys_1bit_buffer(void)
 {
 	return SOKOL_STATE.frame_ctx.dst.px;
-}
-
-void
-sys_log(
-	const char *tag,
-	enum sys_log_level log_level,
-	u32 log_item,
-	const char *msg,
-	u32 line_nr,
-	const char *filename)
-{
-	if(log_level <= SYS_LOG_LEVEL) {
-		slog_func(tag, log_level, log_item, msg, line_nr, filename, NULL);
-	}
 }
 
 i32
