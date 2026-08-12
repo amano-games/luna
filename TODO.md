@@ -33,6 +33,7 @@
 
 # Build
 
+- [ ] Cross build from Linux to mac
 - [ ] Create lib that can be statically linked
 - [ ] Hot relading
   - Everything is ready for doing it just need to spend a few days actually doing it
