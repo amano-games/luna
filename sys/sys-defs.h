@@ -7,8 +7,19 @@
 #define SYS_DISPLAY_WBYTES 52
 #define SYS_DISPLAY_WWORDS 13
 
-#define SYS_DEFAULT_UPS           50
-#define SYS_DEFAULT_UPS_DT_CAP_US 60000u // 60.0 ms clamp max elapsed seconds
+// The Playdate panel cannot scan out faster than 50 fps
+// 50 is both the update rate and the render rate ceiling.
+#define SYS_DEFAULT_UPS 50
+#define SYS_DEFAULT_FPS 50
+
+// 60.0 ms clamp on the accumulated delta, i.e. 3 catch-up ticks in one callback.
+// One tick already targets the whole 20 ms budget, so a 3-tick callback guarantees
+// the next one is late too;
+// TODO: review if 40000u (2 ticks) is the safer value.
+#define SYS_DEFAULT_UPS_DT_CAP_US 60000u
+
+dbg_static_assert(SYS_DEFAULT_UPS <= 50, sys_ups_within_panel_ceiling);
+dbg_static_assert(SYS_DEFAULT_FPS <= SYS_DEFAULT_UPS, sys_fps_not_above_ups);
 
 #if BUILD_DEBUG
 #define SYS_MAX_MEM MGIGABYTE(1)

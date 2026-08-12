@@ -128,18 +128,35 @@ sys_dt_cap_us_get(void)
 	return SYS.timing.dt_cap_us;
 }
 
+// Drop the wall-clock gap that accumulated while the update callback was not running
+// (system menu, sleep, or a long app_init) instead of letting it become catch-up ticks.
+//
+// Deliberately no resetElapsedTime() here: sys_time_us() reads elapsed without
+// resetting, so the gap stays pending and the next sys_pd_update folds the same value
+// into us_monotonic before resetting. last_time_us already accounts for it, so the
+// next time_delta comes out small. Adding a reset would double-subtract.
+void
+sys_timing_reset(void)
+{
+	struct sys_data *sys      = &SYS;
+	sys->last_time_us         = sys_time_us();
+	sys->timing.acc_us        = 0;
+	sys->timing.render_acc_us = sys->timing.render_dt_us; // draw on the first callback back
+}
+
 void
 sys_internal_init(void)
 {
 	sys_ups_target_set(SYS_DEFAULT_UPS);
+	sys_fps_target_set(SYS_DEFAULT_FPS);
 	sys_dt_cap_us_set(SYS_DEFAULT_UPS_DT_CAP_US);
 
-	SYS.last_time_us = sys_time_us();
 	SYS.frame_buffer = sys_1bit_buffer();
 #if defined(PROF)
 	prof_ini();
 #endif
 	app_init(SYS_MAX_MEM);
+	sys_timing_reset();
 }
 
 // there are some frame skips when using the exact delta time and evaluating
@@ -183,8 +200,13 @@ sys_internal_update(void)
 	}
 
 	b32 should_render = false;
-	if(sys->timing.render_acc_us >= sys->timing.render_dt_us) {
+	if(sys->timing.render_dt_us <= sys->timing.render_acc_us) {
 		sys->timing.render_acc_us -= sys->timing.render_dt_us;
+		// only the newest frame is ever presented
+		// A render backlog is meaningless drop it rather than letting render_acc_us run to u32 wrap (~71.6 min)
+		if(sys->timing.render_dt_us < sys->timing.render_acc_us) {
+			sys->timing.render_acc_us = 0;
+		}
 		should_render = true;
 	}
 
@@ -209,25 +231,17 @@ sys_internal_update(void)
 		sys->timing.fps_dt_acc_us += tf2 - tf1;
 		sys->timing.fps_counter++;
 
-		i32 fps_ft = 100 <= sys->timing.fps_avg_cpu_us ? 99 : sys->timing.fps_avg_cpu_us;
-		i32 ups_ft = 100 <= sys->timing.ups_avg_cpu_us ? 99 : sys->timing.ups_avg_cpu_us;
+		// avg cpu times are microseconds; show milliseconds, since a frame budget is
+		// 20 ms and the old two-digit microsecond field was permanently pinned at 99
+		// u32 upd_ms = MIN(sys->timing.ups_avg_cpu_us / 1000u, 99u);
+		// u32 drw_ms = MIN(sys->timing.fps_avg_cpu_us / 1000u, 99u);
+
 		char fps[] = {
-			'0' + (sys->timing.fps / 10),
-			'0' + (sys->timing.fps % 10),
-			'\0',
-		};
-		char ups[] = {
-			'U',
-			' ',
-			'0' + (sys->timing.ups / 10),
-			'0' + (sys->timing.ups % 10),
-			' ',
-			10 <= ups_ft ? '0' + (ups_ft / 10) % 10 : ' ',
-			'0' + (ups_ft % 10),
+			(char)('0' + (sys->timing.fps / 10)),
+			(char)('0' + (sys->timing.fps % 10)),
 			'\0',
 		};
 		sys_blit_text(&SYS, fps, 0, 29);
-		// sys_blit_text(ups, 0, 1);
 #endif
 	}
 
@@ -239,13 +253,14 @@ sys_internal_update(void)
 		sys->timing.ups         = sys->timing.ups_counter;
 		sys->timing.ups_counter = 0;
 		sys->timing.fps_counter = 0;
+		// no u16 cast: these fields are u32 microseconds and a slow tick can exceed 65 ms
 		if(0 < sys->timing.ups) {
-			sys->timing.ups_avg_cpu_us = (u16)((sys->timing.cpu_time_acc_us) / sys->timing.ups);
+			sys->timing.ups_avg_cpu_us = sys->timing.cpu_time_acc_us / sys->timing.ups;
 		} else {
 			sys->timing.ups_avg_cpu_us = U16_MAX;
 		}
 		if(0 < sys->timing.fps) {
-			sys->timing.fps_avg_cpu_us = (u16)((sys->timing.fps_dt_acc_us) / sys->timing.fps);
+			sys->timing.fps_avg_cpu_us = sys->timing.fps_dt_acc_us / sys->timing.fps;
 		} else {
 			sys->timing.fps_avg_cpu_us = U16_MAX;
 		}
@@ -285,6 +300,7 @@ sys_internal_pause(void)
 void
 sys_internal_resume(void)
 {
+	sys_timing_reset();
 	app_resume();
 }
 
