@@ -23,6 +23,23 @@ enum prof_anchor_sys {
 	PROF_ANCHOR_SYS_NUM_COUNT,
 };
 
+// Maps to prof_report_entry.values[] so the comparator can index the column.
+enum prof_sort {
+	PROF_SORT_EXCLUSIVE,
+	PROF_SORT_INCLUSIVE,
+
+	PROF_SORT_NUM_COUNT,
+};
+
+// Maps to prof.smooth_slot / PROF_TRACKER_HISTORY_SLOTS.
+enum prof_smooth {
+	PROF_SMOOTH_INSTANT,
+	PROF_SMOOTH_FAST,
+	PROF_SMOOTH_SLOW,
+
+	PROF_SMOOTH_NUM_COUNT,
+};
+
 #if defined(PROF)
 
 #define PROF_HISTORY_SIZE        1     // number of frames of history to keep
@@ -69,6 +86,7 @@ enum prof_anchor_sys {
 
 #define PROF_TRACKER_HISTORY_SLOTS   3
 #define PROF_THROWAWAY_UPDATES_COUNT 3
+#define PROF_FRAME_TIME_INITIAL_US   1000u // 1ms, iprof FRAME_TIME_INITIAL 0.001s
 
 struct prof_hist_scalar {
 	f32 values[PROF_TRACKER_HISTORY_SLOTS];
@@ -103,8 +121,10 @@ struct prof_frame {
 
 struct prof {
 	u16 parent_idx;
-	u16 smooth_slot;
 	u16 next_anchor;
+
+	u8 sort;        // For report
+	u8 smooth_slot; // For report
 
 	u32 update_idx; // 2^31 at 100fps = 280 days
 	u32 last_upd_us;
@@ -117,6 +137,15 @@ struct prof {
 	struct prof_frame frames[PROF_FRAMES_SIZE];
 
 	struct prof_hist_scalar frame_time;
+
+	// 1s present-rate. Each prof_upd is one present: dt_us is added to the window
+	// and present_counter is incremented. On crossing 1s, present_per_s latches the
+	// count and present_window_us keeps the leftover (subtract 1s, do not reset).
+	// Throwaway startup frames zero all three. present_per_s is the report title's
+	// N/s; 0 means the first window has not closed yet (title shows 0).
+	u16 present_counter;   // presents in the current 1s window
+	u16 present_per_s;     // presents in the last completed 1s window
+	u32 present_window_us; // accumulated dt_us toward 1s
 
 	u16 anchor_count;
 	u16 frame_count;
@@ -140,8 +169,8 @@ struct prof_report_entry {
 	};
 };
 
-// Title is: 32.180 ms/frame (fps: 31.14) sort self - current time
-// Header is zone self hier count
+// Title 0: frame <ms>  <n>/s  gap <ms>
+// Header is zone excl incl count
 struct prof_report {
 	str8 titles[PROF_REPORT_NUM_TITLES];
 	str8 headers[PROF_REPORT_NUM_HEADER];
@@ -214,13 +243,43 @@ prof_ini(void)
 		PROF_TIMES_TO_REACH_90_PERCENT[1] = 0.8f;
 		PROF_TIMES_TO_REACH_90_PERCENT[2] = 2.5f;
 	}
-	for(ssize i = 0; i < (ssize)ARRLEN(prof->frame_time.values); ++i) {
-		prof->frame_time.values[i] = sys_dt_us_target_get();
+	{
+		for(ssize i = 0; i < (ssize)ARRLEN(prof->frame_time.values); ++i) {
+			prof->frame_time.values[i] = (f32)PROF_FRAME_TIME_INITIAL_US;
+		}
 	}
-	prof->next_anchor = PROF_ANCHOR_SYS_NUM_COUNT;
-	// TODO: Why is this a var inside prof? couldn't it be a param in the report create?
-	// Maybe so that it's changed from an external API like prof_set_smooth_slot?
-	prof->smooth_slot = 2;
+	prof->present_counter   = 0;
+	prof->present_per_s     = 0;
+	prof->present_window_us = 0;
+	prof->next_anchor       = PROF_ANCHOR_SYS_NUM_COUNT;
+	prof->smooth_slot       = PROF_SMOOTH_SLOW;
+	prof->sort              = PROF_SORT_EXCLUSIVE;
+}
+
+static inline void
+prof_sort_set(enum prof_sort sort)
+{
+	dbg_assert(sort < PROF_SORT_NUM_COUNT);
+	PROFILER.sort = (u16)sort;
+}
+
+static inline enum prof_sort
+prof_sort_get(void)
+{
+	return (enum prof_sort)PROFILER.sort;
+}
+
+static inline void
+prof_smooth_set(enum prof_smooth smooth)
+{
+	dbg_assert(smooth < PROF_SMOOTH_NUM_COUNT);
+	PROFILER.smooth_slot = (u16)smooth;
+}
+
+static inline enum prof_smooth
+prof_smooth_get(void)
+{
+	return (enum prof_smooth)PROFILER.smooth_slot;
 }
 
 static inline void
@@ -267,12 +326,13 @@ prof_block_end_internal(void)
 }
 
 static inline int
-prof_report_sort_exclusive_desc(const void *a, const void *b)
+prof_report_sort_desc(const void *a, const void *b)
 {
 	const struct prof_report_entry *aa = a;
 	const struct prof_report_entry *bb = b;
-	f32 a_value                        = aa->ms_exclusive;
-	f32 b_value                        = bb->ms_exclusive;
+	u16 col                            = PROFILER.sort;
+	f32 a_value                        = aa->values[col];
+	f32 b_value                        = bb->values[col];
 
 	if(b_value > a_value) return 1;
 	if(b_value < a_value) return -1;
@@ -288,18 +348,12 @@ prof_report_create(struct alloc alloc)
 	if(!INT_TO_STRING[0][0])
 		int_to_string_ini();
 
-	f32 fps = 0;
-	f32 ms  = 0;
-
-	{
-		f32 avg_frame_time_us = prof->frame_time.values[prof->smooth_slot];
-
-		if(avg_frame_time_us == 0) {
-			avg_frame_time_us = sys_dt_us_target_get();
-		}
-		fps = 1000000.0f / avg_frame_time_us;
-		ms  = avg_frame_time_us * 1e-3f;
+	u32 presents = prof->present_per_s;
+	f32 frame_ms = 0;
+	if(presents != 0) {
+		frame_ms = 1000.0f / (f32)presents;
 	}
+	f32 gap_ms = prof->frame_time.values[prof->smooth_slot] * 1e-3f;
 
 	res->entry_count = 0;
 	for(ssize i = 1; i < prof->anchor_count; ++i) {
@@ -326,19 +380,17 @@ prof_report_create(struct alloc alloc)
 	qsort(res->entries,
 		res->entry_count,
 		sizeof(struct prof_report_entry),
-		prof_report_sort_exclusive_desc);
+		prof_report_sort_desc);
 
 	{
-		u8 fps_buf[32];
-		u8 ms_buf[32];
-		str8 fps_str   = prof_f32_to_str8(fps_buf, fps, 3);
-		str8 ms_str    = prof_f32_to_str8(ms_buf, ms, 2);
-		res->titles[0] = str8_fmt_push(alloc, "%s ms/frame fps: %s", ms_str.str, fps_str.str);
+		u8 frame_buf[32];
+		u8 gap_buf[32];
+		str8 frame_str = prof_f32_to_str8(frame_buf, frame_ms, 0);
+		str8 gap_str   = prof_f32_to_str8(gap_buf, gap_ms, 1);
+
+		res->titles[0] = str8_fmt_push(alloc, "frame %sms  %u/s  gap %sms", frame_str.str, presents, gap_str.str);
 		res->titles[1] = str8_lit("");
 		res->titles[2] = str8_lit("");
-		// TODO: Split ms/frame, fps?
-		// TODO: Sort should be configurable
-		// res->titles[1] = str8_lit("sort exclusive - current frame");
 
 		res->headers[0] = str8_lit("zone");
 		res->headers[1] = str8_lit("excl");
@@ -362,11 +414,11 @@ prof_upd(b32 record_data)
 	u32 dt_us  = 0;
 
 	if(prof->update_idx == 0) {
-		dt_us = sys_dt_us_target_get();
+		dt_us = PROF_FRAME_TIME_INITIAL_US;
 	} else {
 		dt_us = now_us - prof->last_upd_us;
 		if(dt_us == 0) {
-			dt_us = 1;
+			dt_us = PROF_FRAME_TIME_INITIAL_US;
 		}
 	}
 
@@ -425,12 +477,21 @@ prof_upd(b32 record_data)
 		}
 
 		{
-			// Update frame time
 			if(prof->update_idx < PROF_THROWAWAY_UPDATES_COUNT) {
 				// Avoid smoothing when the profiler is starting up
-				prof_history_scalar_eternity(&prof->frame_time, dt_us);
+				prof_history_scalar_eternity(&prof->frame_time, (f32)dt_us);
+				prof->present_counter   = 0;
+				prof->present_per_s     = 0;
+				prof->present_window_us = 0;
 			} else {
-				prof_history_scalar_upd(&prof->frame_time, dt_us, PROF_PRECOMPUTED_FACTORS);
+				prof_history_scalar_upd(&prof->frame_time, (f32)dt_us, PROF_PRECOMPUTED_FACTORS);
+				prof->present_window_us += dt_us;
+				prof->present_counter++;
+				if(1000000u <= prof->present_window_us) {
+					prof->present_window_us -= 1000000u;
+					prof->present_per_s   = prof->present_counter;
+					prof->present_counter = 0;
+				}
 			}
 		}
 
@@ -728,6 +789,30 @@ prof_csv(struct alloc alloc, u32 max_records)
 static inline void
 prof_ini(void)
 {
+}
+
+static inline void
+prof_sort_set(enum prof_sort sort)
+{
+	(void)sort;
+}
+
+static inline enum prof_sort
+prof_sort_get(void)
+{
+	return PROF_SORT_EXCLUSIVE;
+}
+
+static inline void
+prof_smooth_set(enum prof_smooth smooth)
+{
+	(void)smooth;
+}
+
+static inline enum prof_smooth
+prof_smooth_get(void)
+{
+	return PROF_SMOOTH_INSTANT;
 }
 
 static inline void
