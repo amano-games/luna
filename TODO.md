@@ -88,11 +88,8 @@
 
 # Tracing
 
-- [ ] Overall review profiler
-- [~] Record a number of frames (50/1s) in a circular buffer and use that for the average
-- [~] API like iProf `prof_upd(true)` advances frame index in the circular buffer and records uses this time to tell the fps
-- [~] Profiler title? FPS
-- [ ] Graph
+- [ ] Add support for prof history like iProf
+- [ ] Graphs
 
 # Frame pacing
 
