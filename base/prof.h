@@ -10,6 +10,7 @@
 #include "base/utils.h"
 #include "base/str.h"
 #include "sys/sys.h"
+#include "sys/sys-intrin.h"
 #include "base/dbg.h"
 
 // #define PROF_UNIQUE_NAMES
@@ -252,7 +253,7 @@ prof_ini(void)
 	prof->present_per_s     = 0;
 	prof->present_window_us = 0;
 	prof->next_anchor       = PROF_ANCHOR_SYS_NUM_COUNT;
-	prof->smooth_slot       = PROF_SMOOTH_SLOW;
+	prof->smooth_slot       = PROF_SMOOTH_FAST;
 	prof->sort              = PROF_SORT_EXCLUSIVE;
 }
 
@@ -525,39 +526,46 @@ prof_drw(
 	i32 name_width             = full_width - (field_width * max_columns);
 	precision                  = clamp_i32(precision, 1, 4);
 
+	i32 title_count = 0;
 	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
 		if(report->titles[i].size > 0) {
-			i32 title_x0 = sx;
-			i32 title_x1 = title_x0 + full_width;
-			prof_rec_fill(ctx, title_x0, sy, full_width, line_spacing + pad, PRIM_MODE_BLACK);
-
-			txt_drw(sx + pad, sy + pad, report->titles[i], SPR_MODE_WHITE);
-
-			sy += line_spacing;
-			height -= abs_i32(line_spacing);
+			++title_count;
 		}
 	}
 
-	i32 max_records  = height / abs_i32(line_spacing);
+	i32 max_records  = (height - title_count * abs_i32(line_spacing)) / abs_i32(line_spacing);
 	i32 record_count = min_i32(report->entry_count, max_records);
+	i32 bg_h         = (title_count + 1) * line_spacing;
+	if(record_count > 0) {
+		bg_h += (line_spacing * record_count) + (pad * (record_count - 1));
+	}
+	prof_rec_fill(ctx, sx, sy, full_width, bg_h, PRIM_MODE_BLACK);
 
-	prof_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
-	if(report->headers[0].size > 0) {
-		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_BLACK);
+	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
+		if(report->titles[i].size > 0) {
+			txt_drw(sx + pad, sy + pad, report->titles[i], SPR_MODE_WHITE);
+			sy += line_spacing;
+		}
 	}
 
+	if(report->headers[0].size > 0) {
+		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_WHITE);
+	}
+
+	i32 column_w = name_width + pad;
 	for(ssize j = 1; j < max_columns + 1; ++j) {
 		if(report->headers[j].size > 0) {
-			i32 col_x = sx + name_width + pad + field_width * (j - 1);
-			txt_drw(col_x, sy + pad, report->headers[j], SPR_MODE_BLACK);
+			i32 col_x    = sx + column_w + field_width * (j - 1);
+			b32 selected = (j == (ssize)prof_sort_get() + 1);
+			if(selected) {
+				prof_rec_fill(ctx, sx + name_width + field_width * (j - 1), sy, field_width, line_spacing, PRIM_MODE_WHITE);
+			}
+			txt_drw(col_x, sy + pad, report->headers[j], selected ? SPR_MODE_BLACK : SPR_MODE_WHITE);
 		}
 	}
 
 	if(record_count > 0) {
 		sy += line_spacing;
-
-		// Draw bg
-		prof_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
 		for(ssize i = 0; i < record_count; ++i) {
 			u8 buf[64];
 			str8 str;
@@ -702,10 +710,10 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 	i32 end_bit   = x2 & 31;
 
 	// left mask
-	u32 left_mask = 0xFFFFFFFFu >> start_bit;
+	u32 left_mask = bswap_u32(0xFFFFFFFFu >> start_bit);
 
 	// right mask
-	u32 right_mask = 0xFFFFFFFFu << (31 - end_bit);
+	u32 right_mask = bswap_u32(0xFFFFFFFFu << (31 - end_bit));
 
 	for(i32 row = y1; row <= y2; row++) {
 		u32 *dp = base + row * stride + start_w;
