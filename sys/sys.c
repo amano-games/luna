@@ -9,8 +9,8 @@
 #include "sys/sys-mem.h"
 
 #if !defined(SYS_SHOW_FPS)
-#if DEBUG
-#define SYS_SHOW_FPS 1
+#if BUILD_DEBUG
+#define SYS_SHOW_FPS 2
 #else
 #define SYS_SHOW_FPS 0
 #endif
