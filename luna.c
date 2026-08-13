@@ -14,7 +14,6 @@
 #include "base/path.c"
 #include "base/str.c"
 #include "base/cmd-line.c"
-#include "base/trace.c"
 #include "engine/animation/animation-db.c"
 #include "engine/animation/animation.c"
 #include "engine/animation/animator.c"
