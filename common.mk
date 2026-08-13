@@ -20,8 +20,8 @@ WARN_FLAGS += -Wno-unused-parameter
 # WARN_FLAGS += -Wstack-usage=8192
 # WARN_FLAGS += -Walloca-larger-than=8192
 
-# Daily builds default to debug; pass DEBUG=0 for release.
-DEBUG ?= 1
+# Daily builds default to debug; pass BUILD_DEBUG=0 for release.
+BUILD_DEBUG ?= 1
 
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen

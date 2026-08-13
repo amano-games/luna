@@ -10,7 +10,7 @@ PLATFORM_DIR := platforms/www
 TARGET       := index.html
 
 RELEASE_BINDIR := ${PREFIX}www-release
-ifeq ($(DEBUG),0)
+ifeq ($(BUILD_DEBUG),0)
 BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}www
@@ -34,17 +34,18 @@ RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -g
 RELEASE_CFLAGS += -fomit-frame-pointer
 RELEASE_CFLAGS += -DNDEBUG
+RELEASE_CFLAGS += -DBUILD_DEBUG=0
 RELEASE_CFLAGS += -DSOKOL_DEBUG=0
 RELEASE_CFLAGS += $(WARN_FLAGS)
 
 DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
-DEBUG_CFLAGS += -DDEBUG=1
+DEBUG_CFLAGS += -DBUILD_DEBUG=1
 DEBUG_CFLAGS += -Wno-limited-postlink-optimizations
 DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
 
-ifeq ($(DEBUG), 1)
+ifeq ($(BUILD_DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
 else
 	CFLAGS := $(RELEASE_CFLAGS)
@@ -71,7 +72,7 @@ include $(ROOT_DIR)/assets.mk
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
 
 # Directory existence is not enough: obj/assets may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
@@ -98,9 +99,9 @@ $(PUBLISH_OBJS): $(BINARY)
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/www.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:
 	$(MAKE) -f $(ROOT_DIR)/www.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/www.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):html5

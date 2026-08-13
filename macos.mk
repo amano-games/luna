@@ -12,7 +12,7 @@ PLATFORM_DIR := platforms/macos
 TARGET       := $(GAME_NAME).app
 
 RELEASE_BINDIR := ${PREFIX}macos-release
-ifeq ($(DEBUG),0)
+ifeq ($(BUILD_DEBUG),0)
 BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}macos
@@ -38,16 +38,17 @@ SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DNDEBUG
+RELEASE_CFLAGS += -DBUILD_DEBUG=0
 RELEASE_CFLAGS += $(WARN_FLAGS)
 RELEASE_CFLAGS += -fno-omit-frame-pointer
 
 DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
-DEBUG_CFLAGS += -DDEBUG=1
+DEBUG_CFLAGS += -DBUILD_DEBUG=1
 DEBUG_CFLAGS += $(SANITIZE_FLAGS)
 
-ifeq ($(DEBUG), 1)
+ifeq ($(BUILD_DEBUG), 1)
 CFLAGS := $(DEBUG_CFLAGS)
 LDFLAGS := $(SANITIZE_FLAGS)
 else
@@ -81,7 +82,7 @@ include $(ROOT_DIR)/assets.mk
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/macos.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
 
 $(EXE_OUT): $(UNITY_OBJS) assets
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents
@@ -98,7 +99,7 @@ $(PUBLISH_OBJS): $(EXE_OUT) sign
 clean:
 	rm -rf $(BUILD_DIR)
 
-ifeq ($(DEBUG), 1)
+ifeq ($(BUILD_DEBUG), 1)
 run:
 	./$(EXE_OUT)
 else
@@ -111,9 +112,9 @@ build:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):macos

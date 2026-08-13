@@ -3,7 +3,7 @@
 // https://web.archive.org/web/20130624102139/https://mollyrocket.com/forums/viewtopic.php?p=3355
 // https://blog.voxagon.se/2018/03/13/hot-reloading-hardcoded-parameters.html
 
-// #if defined(DEV) && DEBUG
+// #if defined(DEV) && BUILD_DEBUG
 // #define TWEAK_VALUES true
 // #else
 // #define TWEAK_VALUES false

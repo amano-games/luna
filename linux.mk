@@ -9,7 +9,7 @@ PLATFORM_DIR := platforms/linux
 TARGET       := $(GAME_NAME).bin
 
 RELEASE_BINDIR := ${PREFIX}linux-release
-ifeq ($(DEBUG),0)
+ifeq ($(BUILD_DEBUG),0)
 BINDIR ?= $(RELEASE_BINDIR)
 else
 BINDIR ?= ${PREFIX}linux
@@ -35,6 +35,7 @@ SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DNDEBUG
+RELEASE_CFLAGS += -DBUILD_DEBUG=0
 RELEASE_CFLAGS += $(WARN_FLAGS)
 RELEASE_CFLAGS += -fno-omit-frame-pointer
 
@@ -42,10 +43,10 @@ DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += -fno-omit-frame-pointer
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
-DEBUG_CFLAGS += -DDEBUG=1
+DEBUG_CFLAGS += -DBUILD_DEBUG=1
 DEBUG_CFLAGS += $(SANITIZE_FLAGS)
 
-ifeq ($(DEBUG), 1)
+ifeq ($(BUILD_DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
 	LDFLAGS += $(SANITIZE_FLAGS)
 else
@@ -66,7 +67,7 @@ include $(ROOT_DIR)/assets.mk
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/linux.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) DEBUG=$(DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -95,9 +96,9 @@ run:
 	cd $(BUILD_DIR) && ./$(TARGET)
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk build DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 publish_release:
 	$(MAKE) -f $(ROOT_DIR)/linux.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(PUBLISH_OBJS) DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):linux
