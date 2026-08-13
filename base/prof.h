@@ -856,7 +856,7 @@ prof_drw(
 static inline str8
 prof_csv(struct alloc alloc, u32 max_records)
 {
-	return (str8){0};
+	return str8_lit("");
 }
 
 #endif
