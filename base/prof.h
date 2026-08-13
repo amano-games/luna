@@ -12,14 +12,8 @@
 #include "sys/sys.h"
 #include "base/dbg.h"
 
-// #if !defined(PROF)
-// #define PROF
-// #endif
 // #define PROF_UNIQUE_NAMES
 
-// Reserved indices for luna sys TU blocks. App call sites allocate from
-// PROF_ANCHOR_SYS_NUM_COUNT upward so the shared PROFILER is not corrupted
-// across the two compilation units.
 enum prof_anchor_sys {
 	PROF_ANCHOR_SYS_NONE,
 
@@ -73,12 +67,12 @@ enum prof_anchor_sys {
 #define prof_block_end(...)
 #endif
 
-#define PROF_TRACKER_HISTORTY_SLOTS  3
+#define PROF_TRACKER_HISTORY_SLOTS   3
 #define PROF_THROWAWAY_UPDATES_COUNT 3
 
 struct prof_hist_scalar {
-	f32 values[PROF_TRACKER_HISTORTY_SLOTS];
-	f32 variances[PROF_TRACKER_HISTORTY_SLOTS];
+	f32 values[PROF_TRACKER_HISTORY_SLOTS];
+	f32 variances[PROF_TRACKER_HISTORY_SLOTS];
 };
 
 struct prof_anchor {
@@ -104,13 +98,13 @@ struct prof_frame {
 	u32 us_start;
 	u32 prev_us_inclusive;
 
-	u32 child_time;
 	const char *label;
 };
 
 struct prof {
 	u16 parent_idx;
 	u16 smooth_slot;
+	u16 next_anchor;
 
 	u32 update_idx; // 2^31 at 100fps = 280 days
 	u32 last_upd_us;
@@ -155,11 +149,13 @@ struct prof_report {
 	struct prof_report_entry entries[PROF_ANCHORS_SIZE];
 };
 
-static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORTY_SLOTS];
-static f32 PROF_PRECOMPUTED_FACTORS[PROF_TRACKER_HISTORTY_SLOTS];
-
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
+
+#if defined(PROF)
+
+static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORY_SLOTS];
+static f32 PROF_PRECOMPUTED_FACTORS[PROF_TRACKER_HISTORY_SLOTS];
 
 static char INT_TO_STRING[100][4];
 static char INT_TO_STRING_DECIMAL[100][4];
@@ -196,20 +192,20 @@ static inline void prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sampl
 static inline void prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value);
 static inline void prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
 
-#if defined(PROF)
 static inline ssize
 prof_next_block_idx(void)
 {
-	static ssize next = PROF_ANCHOR_SYS_NUM_COUNT;
-	dbg_assert(next < (ssize)PROF_ANCHORS_SIZE);
-	return next++;
+	struct prof *prof = &PROFILER;
+	dbg_assert(prof->next_anchor >= (u16)PROF_ANCHOR_SYS_NUM_COUNT);
+	dbg_assert(prof->next_anchor < (ssize)ARRLEN(prof->anchors));
+	return prof->next_anchor++;
 }
-#endif
 
 static inline void
 prof_ini(void)
 {
 	struct prof *prof = &PROFILER;
+	dbg_assert(prof->next_anchor == 0 || prof->next_anchor == (u16)PROF_ANCHOR_SYS_NUM_COUNT);
 	dbg_assert(ARRLEN(prof->anchors) < U16_MAX);
 	dbg_assert(ARRLEN(prof->frames) < U16_MAX);
 
@@ -221,17 +217,18 @@ prof_ini(void)
 	for(ssize i = 0; i < (ssize)ARRLEN(prof->frame_time.values); ++i) {
 		prof->frame_time.values[i] = sys_dt_us_target_get();
 	}
+	prof->next_anchor = PROF_ANCHOR_SYS_NUM_COUNT;
 }
 
 static inline void
 prof_block_start(const char *label, ssize idx)
 {
 	struct prof *prof = &PROFILER;
-	dbg_assert(idx < (ssize)ARRLEN(prof->anchors));
-	prof->anchor_count = MAX(idx + 1, prof->anchor_count);
-
-	struct prof_anchor *item = prof->anchors + idx;
+	dbg_assert(idx >= 0 && idx < (ssize)ARRLEN(prof->anchors));
 	dbg_assert(prof->frame_count < (ssize)ARRLEN(prof->frames));
+
+	prof->anchor_count                = MAX(idx + 1, prof->anchor_count);
+	struct prof_anchor *item          = prof->anchors + idx;
 	prof->frames[prof->frame_count++] = (struct prof_frame){
 		.prev_us_inclusive = item->us_inclusive,
 		.us_start          = sys_time_us(),
@@ -267,7 +264,7 @@ prof_block_end_internal(void)
 }
 
 static inline int
-prof_report_sort_inclusive_desc(const void *a, const void *b)
+prof_report_sort_exclusive_desc(const void *a, const void *b)
 {
 	const struct prof_report_entry *aa = a;
 	const struct prof_report_entry *bb = b;
@@ -289,7 +286,6 @@ prof_report_create(struct alloc alloc)
 	if(!INT_TO_STRING[0][0])
 		int_to_string_ini();
 
-	u32 now = sys_time_us();
 	f32 fps = 0;
 	f32 ms  = 0;
 
@@ -305,9 +301,14 @@ prof_report_create(struct alloc alloc)
 
 	res->entry_count = 0;
 	for(ssize i = 1; i < prof->anchor_count; ++i) {
-		struct prof_anchor *a       = prof->anchors + i;
-		struct prof_anchor_hist *h  = prof->anchors_hist + i;
-		const char *label           = prof->anchor_labels[i];
+		struct prof_anchor *a      = prof->anchors + i;
+		struct prof_anchor_hist *h = prof->anchors_hist + i;
+		const char *label          = prof->anchor_labels[i];
+		f32 count                  = h->hit_count.values[prof->smooth_slot];
+
+		if(!label) { continue; }
+		if(count < PROF_INT_ZERO_THRESHHOLD) { continue; }
+
 		struct prof_report_entry *e = &res->entries[res->entry_count++];
 		e->label                    = label;
 		e->hit_count                = h->hit_count.values[prof->smooth_slot];
@@ -323,7 +324,7 @@ prof_report_create(struct alloc alloc)
 	qsort(res->entries,
 		res->entry_count,
 		sizeof(struct prof_report_entry),
-		prof_report_sort_inclusive_desc);
+		prof_report_sort_exclusive_desc);
 
 	{
 		u8 fps_buf[32];
@@ -350,8 +351,13 @@ static inline void
 prof_upd(b32 record_data)
 {
 	struct prof *prof = &PROFILER;
-	u32 now_us        = sys_time_us();
-	u32 dt_us         = 0;
+
+	// Check if all zones are closed
+	dbg_assert(prof->frame_count == 0);
+	dbg_assert(prof->parent_idx == 0);
+
+	u32 now_us = sys_time_us();
+	u32 dt_us  = 0;
 
 	if(prof->update_idx == 0) {
 		dt_us = sys_dt_us_target_get();
@@ -456,7 +462,6 @@ prof_drw(
 	i32 name_width             = full_width - (field_width * max_columns);
 	precision                  = clamp_i32(precision, 1, 4);
 
-#if 1
 	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
 		if(report->titles[i].size > 0) {
 			i32 title_x0 = sx;
@@ -469,12 +474,10 @@ prof_drw(
 			height -= abs_i32(line_spacing);
 		}
 	}
-#endif
 
 	i32 max_records  = height / abs_i32(line_spacing);
 	i32 record_count = min_i32(report->entry_count, max_records);
 
-#if 1
 	prof_rec_fill(ctx, sx, sy, full_width, line_spacing, PRIM_MODE_WHITE);
 	if(report->headers[0].size > 0) {
 		txt_drw(sx + pad, sy + pad, report->headers[0], SPR_MODE_BLACK);
@@ -486,25 +489,28 @@ prof_drw(
 			txt_drw(col_x, sy + pad, report->headers[j], SPR_MODE_BLACK);
 		}
 	}
-	sy += line_spacing;
-#endif
 
-	// Draw bg
-	prof_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
-	for(ssize i = 0; i < record_count; ++i) {
-		u8 buf[64];
-		str8 str;
-		struct prof_report_entry *r = &report->entries[i];
-		i32 x                       = sx;
-		if(!r->label) { continue; }
+	if(record_count > 0) {
+		sy += line_spacing;
 
-		txt_drw(x + 1, sy, str8_cstr((char *)r->label), SPR_MODE_WHITE);
-		for(ssize j = 0; j < max_columns; ++j) {
-			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
-			txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
+		// Draw bg
+		prof_rec_fill(ctx, sx, sy, full_width, (line_spacing * record_count) + (pad * (record_count - 1)), PRIM_MODE_BLACK);
+		for(ssize i = 0; i < record_count; ++i) {
+			u8 buf[64];
+			str8 str;
+			struct prof_report_entry *r = &report->entries[i];
+			i32 x                       = sx;
+
+			if(!r->label) { continue; }
+
+			txt_drw(x + 1, sy, str8_cstr((char *)r->label), SPR_MODE_WHITE);
+			for(ssize j = 0; j < max_columns; ++j) {
+				str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
+				txt_drw(sx + pad + name_width + field_width * j, sy + pad, str, SPR_MODE_WHITE);
+			}
+
+			sy += line_spacing + pad;
 		}
-
-		sy += line_spacing + pad;
 	}
 	prof_block_end();
 }
@@ -549,6 +555,7 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 
 		x = value;
 		y = (value - x) * 100;
+		dbg_assert(x >= 0 && x < 100 && y >= 0 && y < 100);
 
 		str8_cpy(&INT_TO_STR8[x], &res);
 		str8_cat_in_place(&res, &INT_TO_STR8_DECIMAL[y]);
@@ -560,11 +567,12 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 
 		x = value;
 		y = (value - x) * 100;
+		dbg_assert(x >= 0 && x < 100 && y >= 0 && y < 100);
 
 		str8 b = INT_TO_STR8_DECIMAL[y];
 		b.str += 1;
 		b.size -= 1;
-		str8_cpy(&INT_TO_STR8[x], &res);
+		str8_cpy(&INT_TO_STR8_MID_DECIMAL[x], &res);
 		str8_cat_in_place(&res, &b);
 		return res;
 	}
@@ -574,6 +582,7 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 		value *= 100;
 		x = value;
 		y = (value - x) * 100;
+		dbg_assert(x >= 0 && x < 100 && y >= 0 && y < 100);
 
 		res.str[0] = '0';
 		res.size   = 1;
@@ -590,18 +599,6 @@ prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
 	res.size = cstr8_len(buf);
 	return res;
 }
-
-struct prof_span_blit {
-	u32 *dp;  //pixel
-	u16 dmax; // count of dst words -1
-	u16 dadd;
-	u32 ml;   // boundary mask left
-	u32 mr;   // boundary mask right
-	i16 mode; // drawing mode
-	i16 doff; // bitoffset of first dst bit
-	u16 dst_wword;
-	i16 y;
-};
 
 static inline void
 prof_apply_prim_mode_x(u32 *restrict dp, u32 sm, enum prim_mode mode)
@@ -681,7 +678,7 @@ prof_csv(struct alloc alloc, u32 max_records)
 	struct str8_list list      = {0};
 	str8 headers[]             = {
 		str8_lit("zone"),
-		str8_lit("exlusive"),
+		str8_lit("exclusive"),
 		str8_lit("inclusive"),
 		str8_lit("count"),
 		str8_lit("inclusive_min"),
@@ -723,3 +720,48 @@ prof_csv(struct alloc alloc, u32 max_records)
 
 	return res;
 }
+
+#else
+
+static inline void
+prof_ini(void)
+{
+}
+
+static inline void
+prof_block_start(const char *label, ssize idx)
+{
+}
+
+static inline void
+prof_block_end_internal(void)
+{
+}
+
+static inline void
+prof_upd(b32 record_data)
+{
+}
+
+static inline void
+prof_drw(
+	struct alloc alloc,
+	struct gfx_ctx ctx,
+	i32 sx,
+	i32 sy,
+	i32 full_width,
+	i32 height,
+	i32 line_spacing,
+	i32 precision,
+	void (*txt_drw)(i32 x, i32 y, str8 txt, i32 spr_mode),
+	i32 (*txt_width)(str8 str))
+{
+}
+
+static inline str8
+prof_csv(struct alloc alloc, u32 max_records)
+{
+	return (str8){0};
+}
+
+#endif

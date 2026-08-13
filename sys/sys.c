@@ -156,9 +156,7 @@ sys_internal_init(void)
 	sys_dt_cap_us_set(SYS_DEFAULT_UPS_DT_CAP_US);
 
 	SYS.frame_buffer = sys_1bit_buffer();
-#if defined(PROF)
 	prof_ini();
-#endif
 	app_init(SYS_MAX_MEM);
 	sys_timing_reset();
 }
@@ -178,10 +176,6 @@ sys_internal_update(void)
 	sys->timing.acc_us += time_delta;
 	sys->timing.render_acc_us += time_delta;
 
-#if defined(PROF)
-	prof_upd(sys->prof_record_data);
-#endif
-
 	if(sys->timing.dt_cap_us < sys->timing.acc_us) {
 		sys->timing.acc_us = sys->timing.dt_cap_us;
 	}
@@ -195,13 +189,11 @@ sys_internal_update(void)
 		sys->timing.acc_us -= sys->timing.dt_us;
 		sys->tick++;
 		sys->timing.ups_counter++;
-#if defined(PROF)
+
 		prof_block_start("upd", PROF_ANCHOR_SYS_UPD);
-#endif
 		app_tick((f32)sys->timing.dt_us * 1e-6f);
-#if defined(PROF)
-		prof_block_end_internal();
-#endif
+		prof_block_end();
+
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		ticks++;
 #endif
@@ -231,13 +223,11 @@ sys_internal_update(void)
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		u32 tf1 = sys_time_us();
 #endif
-#if defined(PROF)
+
 		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
-#endif
 		app_draw();
-#if defined(PROF)
-		prof_block_end_internal();
-#endif
+		prof_block_end();
+
 #if SYS_SHOW_FPS
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		u32 tf2 = sys_time_us();
@@ -312,6 +302,13 @@ sys_internal_update(void)
 #endif
 	}
 #endif
+
+	if(should_render) {
+		// logical frame: all ticks since last present + this draw
+		// If there where two ticks simulated in this draw call then the timings would be double
+		prof_upd(sys->prof_record_data);
+	}
+
 	return should_render;
 }
 
