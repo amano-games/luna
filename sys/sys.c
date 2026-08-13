@@ -304,8 +304,12 @@ sys_internal_update(void)
 #endif
 
 	if(should_render) {
-		// logical frame: all ticks since last present + this draw
-		// If there where two ticks simulated in this draw call then the timings would be double
+		// NOTE:
+		// - A draw only frame still records update as 0 and blends into the 2.5s EMA.
+		// - A catch up frame (2 ticks 1 draw) still sums both ticks into one sample
+		//  so the upd function and its zones are cost of this present not cost of tick
+		//  Should show as count 2 and the average should show as well so maybe not a big issue
+
 		prof_upd(sys->prof_record_data);
 	}
 

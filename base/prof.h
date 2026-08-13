@@ -218,6 +218,9 @@ prof_ini(void)
 		prof->frame_time.values[i] = sys_dt_us_target_get();
 	}
 	prof->next_anchor = PROF_ANCHOR_SYS_NUM_COUNT;
+	// TODO: Why is this a var inside prof? couldn't it be a param in the report create?
+	// Maybe so that it's changed from an external API like prof_set_smooth_slot?
+	prof->smooth_slot = 2;
 }
 
 static inline void
@@ -281,7 +284,6 @@ prof_report_create(struct alloc alloc)
 {
 	struct prof_report *res = alloc_struct(alloc, res);
 	struct prof *prof       = &PROFILER;
-	prof->smooth_slot       = 2; // TODO: convert to enum
 
 	if(!INT_TO_STRING[0][0])
 		int_to_string_ini();
