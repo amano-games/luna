@@ -150,8 +150,7 @@ struct prof {
 	u16 frame_count;
 
 #if PROF_ZONE_HISTORY
-	u16 history_idx;
-	u16 history_filled;
+	u16 history_idx; // next write; also oldest slot (iProf history_index)
 #endif
 };
 
@@ -161,6 +160,7 @@ struct prof {
 
 struct prof_report_entry {
 	const char *label;
+	u16 zone;
 	union {
 		struct {
 			f32 ms_exclusive;
@@ -185,7 +185,7 @@ struct prof_report {
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
 #if PROF_ZONE_HISTORY
-static u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
+extern u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
 #endif
 
 #if PROF
@@ -267,8 +267,7 @@ prof_ini(void)
 	prof->sort              = PROF_SORT_EXCLUSIVE;
 
 #if PROF_ZONE_HISTORY
-	prof->history_idx    = 0;
-	prof->history_filled = 0;
+	prof->history_idx = 0;
 #endif
 }
 
@@ -383,6 +382,7 @@ prof_report_create(struct alloc alloc)
 
 		struct prof_report_entry *e = &res->entries[res->entry_count++];
 		e->label                    = label;
+		e->zone                     = (u16)i;
 		e->hit_count                = h->hit_count.values[prof->smooth_slot];
 		e->ms_inclusive             = h->us_inclusive.values[prof->smooth_slot] * 1e-3f;
 		e->ms_exclusive             = h->us_exclusive.values[prof->smooth_slot] * 1e-3f;
@@ -525,9 +525,62 @@ prof_upd(b32 record_data)
 	}
 }
 
+#if PROF_ZONE_HISTORY
+static inline void
+prof_zone_history_push(struct prof *prof)
+{
+	u16 history_idx = prof->history_idx;
+	u32 *col        = PROF_ZONE_EXCL[history_idx];
+	for(ssize i = 1; i < prof->anchor_count; ++i) {
+		col[i] = prof->anchors[i].us_exclusive;
+	}
+	prof->history_idx = (u16)((history_idx + 1) % ARRLEN(PROF_ZONE_EXCL));
+}
+
+static inline u16
+prof_history_capacity(void)
+{
+	return PROF_HISTORY_SIZE;
+}
+
+static inline u16
+prof_history_slot(u16 logical_i)
+{
+	dbg_assert(logical_i < PROF_HISTORY_SIZE);
+	return (u16)((PROFILER.history_idx + logical_i) % ARRLEN(PROF_ZONE_EXCL));
+}
+
+static inline u32
+prof_zone_excl_at(u16 zone, u16 logical_i)
+{
+	dbg_assert(zone < PROF_ANCHORS_SIZE);
+	return PROF_ZONE_EXCL[prof_history_slot(logical_i)][zone];
+}
+#endif
+
+static inline i32
+prof_report_title_count(struct prof_report *report)
+{
+	i32 n = 0;
+	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
+		if(report->titles[i].size > 0) {
+			++n;
+		}
+	}
+	return n;
+}
+
+static inline i32
+prof_report_visible_count(struct prof_report *report, i32 height, i32 line_spacing)
+{
+	i32 ls          = abs_i32(line_spacing);
+	i32 max_records = (height - prof_report_title_count(report) * ls) / ls;
+	return min_i32((i32)report->entry_count, max_records);
+}
+
 static inline void
 prof_drw(
-	struct alloc alloc,
+	struct prof_report *report,
 	struct gfx_ctx ctx,
 	i32 sx,
 	i32 sy,
@@ -539,23 +592,15 @@ prof_drw(
 	i32 (*txt_width)(str8 str))
 {
 	prof_block("prof_drw");
-	i32 pad                    = 1;
-	struct prof_report *report = prof_report_create(alloc);
-	i32 field_width            = txt_width(str8_lit("5555.55"));
-	i32 max_columns            = 3;
-	i32 name_width             = full_width - (field_width * max_columns);
-	precision                  = clamp_i32(precision, 1, 4);
-
-	i32 title_count = 0;
-	for(ssize i = 0; i < (ssize)ARRLEN(report->titles); ++i) {
-		if(report->titles[i].size > 0) {
-			++title_count;
-		}
-	}
-
-	i32 max_records  = (height - title_count * abs_i32(line_spacing)) / abs_i32(line_spacing);
-	i32 record_count = min_i32(report->entry_count, max_records);
+	i32 pad          = 1;
+	i32 field_width  = txt_width(str8_lit("5555.55"));
+	i32 max_columns  = 3;
+	i32 name_width   = full_width - (field_width * max_columns);
+	i32 title_count  = prof_report_title_count(report);
+	i32 record_count = prof_report_visible_count(report, height, line_spacing);
 	i32 bg_h         = (title_count + 1) * line_spacing;
+	precision        = clamp_i32(precision, 1, 4);
+
 	if(record_count > 0) {
 		bg_h += (line_spacing * record_count) + (pad * (record_count - 1));
 	}
@@ -606,6 +651,98 @@ prof_drw(
 	prof_block_end();
 }
 
+#if PROF_ZONE_HISTORY
+static inline void
+prof_graph_row(
+	struct gfx_ctx ctx,
+	i32 sx,
+	i32 sy,
+	i32 x_scale,
+	i32 y_scale,
+	i32 row_h,
+	u32 *samples,
+	u16 n)
+{
+	y_scale = max_i32(1, y_scale);
+
+	for(u16 i = 0; i < n; ++i) {
+		i32 x  = sx + (i32)i * x_scale;
+		i32 x2 = x + x_scale - 1;
+
+		if(x2 > ctx.clip_x2) { break; }
+
+		i32 h = min_i32(row_h, (i32)((u64)samples[i] * (u64)y_scale / 1000u));
+
+		if(h < 1) { continue; }
+
+		prof_rec_fill(ctx, x, sy + row_h - h, x_scale, h, PRIM_MODE_WHITE);
+	}
+}
+
+/*
+ *  prof_graph_drw -- exclusive-time history next to the report
+ *
+ *    <sx, sy>      --  origin of the graph--location of (0,0)
+ *    x_scale       --  screenspace size of each history sample; e.g.
+ *                         2 pixels
+ *    y_scale       --  screenspace size of one millisecond of time;
+ *                         for an app with max of 20ms in any one zone,
+ *                         8 would produce a 160-pixel tall display,
+ *                         assuming screenspace is in pixels
+ *    height        --  same budget as prof_drw (visible row count)
+ *    line_spacing  --  how much to move sy by after each zone row
+ */
+static inline void
+prof_graph_drw(
+	struct prof_report *report,
+	struct gfx_ctx ctx,
+	i32 sx,
+	i32 sy,
+	i32 x_scale,
+	i32 y_scale,
+	i32 height,
+	i32 line_spacing)
+{
+	prof_block("prof_graph");
+
+	if(report == 0) { goto cleanup; }
+
+	i32 pad          = 1;
+	u16 n            = prof_history_capacity();
+	i32 row_h        = abs_i32(line_spacing);
+	i32 title_count  = prof_report_title_count(report);
+	i32 record_count = prof_report_visible_count(report, height, line_spacing);
+	i32 x_step       = max_i32(x_scale, 1);
+	i32 max_w        = ctx.clip_x2 - sx + 1;
+	i32 bg_h         = (title_count + 1) * line_spacing;
+
+	if(record_count > 0) {
+		bg_h += (line_spacing * record_count) + (pad * (record_count - 1));
+	}
+
+	if(n == 0 || row_h < 1 || bg_h < 1 || max_w < 1) { goto cleanup; }
+
+	i32 width = min_i32(max_w, (i32)n * x_step);
+
+	prof_rec_fill(ctx, sx, sy, width, bg_h, PRIM_MODE_BLACK);
+
+	sy += (title_count + 1) * line_spacing;
+
+	for(ssize row = 0; row < record_count; ++row) {
+		u16 zone = report->entries[row].zone;
+		u32 samples[PROF_HISTORY_SIZE];
+		for(u16 i = 0; i < n; ++i) {
+			samples[i] = prof_zone_excl_at(zone, i);
+		}
+		prof_graph_row(ctx, sx, sy, x_step, y_scale, row_h, samples, n);
+		sy += line_spacing + pad;
+	}
+
+cleanup:;
+	prof_block_end();
+}
+#endif
+
 static inline void
 prof_history_scalar_eternity(struct prof_hist_scalar *h, f32 new_value)
 {
@@ -633,51 +770,6 @@ prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sample, f32 *factors)
 		h->variances[i] = new_var;
 	}
 }
-
-#if PROF_ZONE_HISTORY
-static inline void
-prof_zone_history_push(struct prof *prof)
-{
-	u16 history_idx = prof->history_idx;
-	u32 *col        = PROF_ZONE_EXCL[history_idx];
-	for(ssize i = 1; i < prof->anchor_count; ++i) {
-		col[i] = prof->anchors[i].us_exclusive;
-	}
-	prof->history_idx = (u16)((history_idx + 1) % PROF_HISTORY_SIZE);
-	if(prof->history_filled < PROF_HISTORY_SIZE) {
-		++prof->history_filled;
-	}
-}
-
-static inline u16
-prof_history_filled(void)
-{
-	return PROFILER.history_filled;
-}
-
-static inline u16
-prof_history_capacity(void)
-{
-	return PROF_HISTORY_SIZE;
-}
-
-static inline u32
-prof_zone_excl_at(u16 zone, u16 logical_i)
-{
-	u32 res = 0;
-
-	dbg_assert(logical_i < PROFILER.history_filled);
-	dbg_assert(zone < PROF_ANCHORS_SIZE);
-	u16 oldest = 0;
-	if(PROFILER.history_filled == PROF_HISTORY_SIZE) {
-		oldest = PROFILER.history_idx;
-	}
-	u16 history_idx = (u16)((oldest + logical_i) % PROF_HISTORY_SIZE);
-	res             = PROF_ZONE_EXCL[history_idx][zone];
-
-	return res;
-}
-#endif
 
 static inline str8
 prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
@@ -867,7 +959,6 @@ prof_ini(void)
 static inline void
 prof_sort_set(enum prof_sort sort)
 {
-	(void)sort;
 }
 
 static inline enum prof_sort
@@ -879,7 +970,6 @@ prof_sort_get(void)
 static inline void
 prof_smooth_set(enum prof_smooth smooth)
 {
-	(void)smooth;
 }
 
 static inline enum prof_smooth
@@ -905,7 +995,7 @@ prof_upd(b32 record_data)
 
 static inline void
 prof_drw(
-	struct alloc alloc,
+	struct prof_report *report,
 	struct gfx_ctx ctx,
 	i32 sx,
 	i32 sy,
@@ -928,12 +1018,6 @@ prof_csv(struct alloc alloc, u32 max_records)
 
 #if !PROF_ZONE_HISTORY
 static inline u16
-prof_history_filled(void)
-{
-	return 0;
-}
-
-static inline u16
 prof_history_capacity(void)
 {
 	return 0;
@@ -942,8 +1026,19 @@ prof_history_capacity(void)
 static inline u32
 prof_zone_excl_at(u16 zone, u16 logical_i)
 {
-	(void)zone;
-	(void)logical_i;
 	return 0;
+}
+
+static inline void
+prof_graph_drw(
+	struct prof_report *report,
+	struct gfx_ctx ctx,
+	i32 sx,
+	i32 sy,
+	i32 x_scale,
+	i32 y_scale,
+	i32 height,
+	i32 line_spacing)
+{
 }
 #endif

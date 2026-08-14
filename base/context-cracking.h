@@ -112,7 +112,7 @@
 #define PROF_FRAME_HISTORY PROF
 #endif
 #if !defined(PROF_HISTORY_SIZE)
-#define PROF_HISTORY_SIZE 8
+#define PROF_HISTORY_SIZE 128
 #endif
 
 #if !PROF
