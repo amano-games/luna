@@ -263,19 +263,28 @@ tex_cpy(struct tex *dst, struct tex *src)
 	dbg_assert(src->wword == dst->wword);
 	dbg_assert(src->px != NULL);
 	dbg_assert(dst->px != NULL);
-	usize mem_size = sizeof(u32) * dst->wword * dst->h * 2;
+	usize mem_size = sizeof(u32) * dst->wword * dst->h;
 	mcpy(dst->px, src->px, mem_size);
 }
 
 ssize
 tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize out_size)
 {
-	u8 *dst = (u8 *)out_data;
+	b32 opaque = true;
+	for(i32 y = 0; y < h && opaque; ++y) {
+		const struct pixel_u8 *row = in_data + y * w;
+		for(i32 x = 0; x < w; ++x) {
+			if(row[x].a <= 127) {
+				opaque = false;
+				break;
+			}
+		}
+	}
 
-	ssize size_needed  = sizeof(struct tex_header);
+	u8 *dst            = (u8 *)out_data;
 	i32 w_aligned      = (w + 31) & ~31;
-	ssize u32s_per_row = (w_aligned / 32) * 2; /* color + mask */
-	size_needed += (ssize)h * u32s_per_row * sizeof(u32);
+	ssize u32s_per_row = (w_aligned / 32) * (opaque ? 1 : 2);
+	ssize size_needed  = sizeof(struct tex_header) + (ssize)h * u32s_per_row * sizeof(u32);
 
 	if(!out_data) {
 		return size_needed;
@@ -285,11 +294,10 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 		return -1;
 	}
 
-	// TODO: Support tex fmt opaque
 	struct tex_header header = {
 		.w   = w,
 		.h   = h,
-		.fmt = TEX_FMT_MASK,
+		.fmt = opaque ? TEX_FMT_OPAQUE : TEX_FMT_MASK,
 	};
 
 	mcpy(dst, &header, sizeof(header));
@@ -317,12 +325,13 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 
 			if(++bit_idx == 32) {
 				color_row = bswap_u32(color_row);
-				mask_row  = bswap_u32(mask_row);
-
 				mcpy(dst, &color_row, sizeof(u32));
 				dst += sizeof(u32);
-				mcpy(dst, &mask_row, sizeof(u32));
-				dst += sizeof(u32);
+				if(!opaque) {
+					mask_row = bswap_u32(mask_row);
+					mcpy(dst, &mask_row, sizeof(u32));
+					dst += sizeof(u32);
+				}
 
 				color_row = 0;
 				mask_row  = 0;
@@ -333,12 +342,13 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 		/* flush remainder bits */
 		if(bit_idx > 0) {
 			color_row = bswap_u32(color_row);
-			mask_row  = bswap_u32(mask_row);
-
 			mcpy(dst, &color_row, sizeof(u32));
 			dst += sizeof(u32);
-			mcpy(dst, &mask_row, sizeof(u32));
-			dst += sizeof(u32);
+			if(!opaque) {
+				mask_row = bswap_u32(mask_row);
+				mcpy(dst, &mask_row, sizeof(u32));
+				dst += sizeof(u32);
+			}
 
 			color_row = 0;
 			mask_row  = 0;
