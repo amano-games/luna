@@ -101,6 +101,27 @@
 #endif
 #endif
 
+// Prof option cracking
+#if !defined(PROF)
+#define PROF BUILD_DEBUG
+#endif
+#if !defined(PROF_ZONE_HISTORY)
+#define PROF_ZONE_HISTORY PROF
+#endif
+#if !defined(PROF_FRAME_HISTORY)
+#define PROF_FRAME_HISTORY PROF
+#endif
+#if !defined(PROF_HISTORY_SIZE)
+#define PROF_HISTORY_SIZE 8
+#endif
+
+#if !PROF
+#undef PROF_ZONE_HISTORY
+#define PROF_ZONE_HISTORY 0
+#undef PROF_FRAME_HISTORY
+#define PROF_FRAME_HISTORY 0
+#endif
+
 // Zero all undefined options
 
 #if !defined(ARCH_32BIT)
@@ -166,6 +187,15 @@
 #if !defined(LANG_C)
 #define LANG_C 0
 #endif
+#if !defined(PROF)
+#define PROF 0
+#endif
+#if !defined(PROF_ZONE_HISTORY)
+#define PROF_ZONE_HISTORY 0
+#endif
+#if !defined(PROF_FRAME_HISTORY)
+#define PROF_FRAME_HISTORY 0
+#endif
 
 // Pairing / sanity checks
 
@@ -180,6 +210,9 @@
 #endif
 #if (OS_LINUX + OS_MACOS + OS_WINDOWS + OS_WASM + OS_PLAYDATE) != 1
 #error Exactly one OS_* platform flag must be set.
+#endif
+#if PROF_HISTORY_SIZE < 1
+#error PROF_HISTORY_SIZE must be >= 1
 #endif
 
 // Platform identity as a value

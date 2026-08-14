@@ -13,26 +13,6 @@
 #include "sys/sys-intrin.h"
 #include "base/dbg.h"
 
-// TODO: Are the checks PROF && PROF_ZONE_HISTORY necesary ? shouldn't it be only PROF_ZONE_HISTORY?
-// If PROF is OFF PROF_ZONE_HISTORY shuld be always off as well validate as with context_cracking
-// Same with PROF_FRAME_HISTORY
-
-#if !defined(PROF)
-#define PROF BUILD_DEBUG
-#endif
-
-#if !defined(PROF_ZONE_HISTORY)
-#define PROF_ZONE_HISTORY PROF
-#endif
-
-#if !defined(PROF_FRAME_HISTORY)
-#define PROF_FRAME_HISTORY PROF
-#endif
-
-#if !defined(PROF_HISTORY_SIZE)
-#define PROF_HISTORY_SIZE 8
-#endif
-
 // #define PROF_UNIQUE_NAMES
 
 enum prof_anchor_sys {
@@ -61,7 +41,7 @@ enum prof_smooth {
 	PROF_SMOOTH_NUM_COUNT,
 };
 
-#if defined(PROF)
+#if PROF
 
 #define PROF_ANCHORS_SIZE        96    // number of unique zones allowed in the entire application
 #define PROF_FRAMES_SIZE         64    // Number of call depth allowed
@@ -169,7 +149,7 @@ struct prof {
 	u16 anchor_count;
 	u16 frame_count;
 
-#if PROF && PROF_ZONE_HISTORY
+#if PROF_ZONE_HISTORY
 	u16 history_idx;
 	u16 history_filled;
 #endif
@@ -204,7 +184,7 @@ struct prof_report {
 
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
-#if PROF && PROF_ZONE_HISTORY
+#if PROF_ZONE_HISTORY
 static u32 PROF_ZONE_EXCL[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE];
 #endif
 
@@ -287,7 +267,8 @@ prof_ini(void)
 	prof->sort              = PROF_SORT_EXCLUSIVE;
 
 #if PROF_ZONE_HISTORY
-	prof->history_idx = 0;
+	prof->history_idx    = 0;
+	prof->history_filled = 0;
 #endif
 }
 
@@ -530,7 +511,7 @@ prof_upd(b32 record_data)
 			}
 		}
 
-#if PROF && PROF_ZONE_HISTORY
+#if PROF_ZONE_HISTORY
 		if(prof->update_idx >= PROF_THROWAWAY_UPDATES_COUNT) {
 			prof_zone_history_push(prof);
 		}
@@ -667,8 +648,20 @@ prof_zone_history_push(struct prof *prof)
 	}
 }
 
+static inline u16
+prof_history_filled(void)
+{
+	return PROFILER.history_filled;
+}
+
+static inline u16
+prof_history_capacity(void)
+{
+	return PROF_HISTORY_SIZE;
+}
+
 static inline u32
-prof_zone_exl_at(u16 zone, u16 logical_i)
+prof_zone_excl_at(u16 zone, u16 logical_i)
 {
 	u32 res = 0;
 
@@ -930,4 +923,26 @@ prof_csv(struct alloc alloc, u32 max_records)
 	return str8_lit("");
 }
 
+#endif
+
+#if !PROF_ZONE_HISTORY
+static inline u16
+prof_history_filled(void)
+{
+	return 0;
+}
+
+static inline u16
+prof_history_capacity(void)
+{
+	return 0;
+}
+
+static inline u32
+prof_zone_excl_at(u16 zone, u16 logical_i)
+{
+	(void)zone;
+	(void)logical_i;
+	return 0;
+}
 #endif
