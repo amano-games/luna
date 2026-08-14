@@ -21,6 +21,9 @@
 
 struct sys_data SYS;
 struct prof PROFILER;
+#if PROF_ZONE_HISTORY
+u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
+#endif
 
 struct app_mem
 sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
