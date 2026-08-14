@@ -90,6 +90,9 @@
 
 - [ ] Add support for prof history like iProf
 - [ ] Graphs
+- [ ] Add support to know overheard
+- [ ] Export as binary
+- [ ] deploy->autoplay->trace export script
 
 # Frame pacing
 
