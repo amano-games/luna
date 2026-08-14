@@ -185,7 +185,7 @@ struct prof_report {
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
 #if PROF_ZONE_HISTORY
-static u32 PROF_ZONE_EXCL[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE];
+static u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
 #endif
 
 #if PROF
@@ -639,8 +639,9 @@ static inline void
 prof_zone_history_push(struct prof *prof)
 {
 	u16 history_idx = prof->history_idx;
+	u32 *col        = PROF_ZONE_EXCL[history_idx];
 	for(ssize i = 1; i < prof->anchor_count; ++i) {
-		PROF_ZONE_EXCL[i][history_idx] = prof->anchors[i].us_exclusive;
+		col[i] = prof->anchors[i].us_exclusive;
 	}
 	prof->history_idx = (u16)((history_idx + 1) % PROF_HISTORY_SIZE);
 	if(prof->history_filled < PROF_HISTORY_SIZE) {
@@ -672,7 +673,7 @@ prof_zone_excl_at(u16 zone, u16 logical_i)
 		oldest = PROFILER.history_idx;
 	}
 	u16 history_idx = (u16)((oldest + logical_i) % PROF_HISTORY_SIZE);
-	res             = PROF_ZONE_EXCL[zone][history_idx];
+	res             = PROF_ZONE_EXCL[history_idx][zone];
 
 	return res;
 }
