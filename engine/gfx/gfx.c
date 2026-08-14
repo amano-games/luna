@@ -2,6 +2,7 @@
 #include "sys/sys.h"
 #include "sys/sys-intrin.h"
 #include "base/mathfunc.h"
+#include "base/dbg.h"
 
 struct span_blit {
 	u32 *dp;  // pixel
