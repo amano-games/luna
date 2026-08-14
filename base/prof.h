@@ -245,9 +245,18 @@ static inline void
 prof_ini(void)
 {
 	struct prof *prof = &PROFILER;
-	dbg_assert(prof->next_anchor == 0 || prof->next_anchor == (u16)PROF_ANCHOR_SYS_NUM_COUNT);
 	dbg_assert(ARRLEN(prof->anchors) < U16_MAX);
 	dbg_assert(ARRLEN(prof->frames) < U16_MAX);
+
+	u16 next_anchor = prof->next_anchor;
+	if(next_anchor < (u16)PROF_ANCHOR_SYS_NUM_COUNT) {
+		next_anchor = (u16)PROF_ANCHOR_SYS_NUM_COUNT;
+	}
+
+	mclr_struct(prof);
+#if PROF_ZONE_HISTORY
+	mclr_array(PROF_ZONE_EXCL);
+#endif
 
 	{
 		PROF_TIMES_TO_REACH_90_PERCENT[0] = 0.1f;
@@ -259,16 +268,9 @@ prof_ini(void)
 			prof->frame_time.values[i] = (f32)PROF_FRAME_TIME_INITIAL_US;
 		}
 	}
-	prof->present_counter   = 0;
-	prof->present_per_s     = 0;
-	prof->present_window_us = 0;
-	prof->next_anchor       = PROF_ANCHOR_SYS_NUM_COUNT;
-	prof->smooth_slot       = PROF_SMOOTH_FAST;
-	prof->sort              = PROF_SORT_EXCLUSIVE;
-
-#if PROF_ZONE_HISTORY
-	prof->history_idx = 0;
-#endif
+	prof->next_anchor = next_anchor;
+	prof->smooth_slot = PROF_SMOOTH_FAST;
+	prof->sort        = PROF_SORT_EXCLUSIVE;
 }
 
 static inline void
