@@ -73,10 +73,10 @@
 
 #if defined(TARGET_PLAYDATE) && TARGET_PLAYDATE
 #define OS_PLAYDATE 1
-#define PD_DEVICE 1
+#define PD_DEVICE   1
 #elif defined(TARGET_SIMULATOR)
 #define OS_PLAYDATE 1
-#define PD_SIM 1
+#define PD_SIM      1
 #elif defined(_WIN32)
 #define OS_WINDOWS 1
 #elif defined(__EMSCRIPTEN__)
@@ -99,10 +99,6 @@
 #else
 #define BUILD_DEBUG 0
 #endif
-#endif
-
-#if BUILD_DEBUG && !defined(PROF)
-#define PROF
 #endif
 
 // Zero all undefined options

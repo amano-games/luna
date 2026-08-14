@@ -13,6 +13,26 @@
 #include "sys/sys-intrin.h"
 #include "base/dbg.h"
 
+// TODO: Are the checks PROF && PROF_ZONE_HISTORY necesary ? shouldn't it be only PROF_ZONE_HISTORY?
+// If PROF is OFF PROF_ZONE_HISTORY shuld be always off as well validate as with context_cracking
+// Same with PROF_FRAME_HISTORY
+
+#if !defined(PROF)
+#define PROF BUILD_DEBUG
+#endif
+
+#if !defined(PROF_ZONE_HISTORY)
+#define PROF_ZONE_HISTORY PROF
+#endif
+
+#if !defined(PROF_FRAME_HISTORY)
+#define PROF_FRAME_HISTORY PROF
+#endif
+
+#if !defined(PROF_HISTORY_SIZE)
+#define PROF_HISTORY_SIZE 8
+#endif
+
 // #define PROF_UNIQUE_NAMES
 
 enum prof_anchor_sys {
@@ -43,7 +63,6 @@ enum prof_smooth {
 
 #if defined(PROF)
 
-#define PROF_HISTORY_SIZE        1     // number of frames of history to keep
 #define PROF_ANCHORS_SIZE        96    // number of unique zones allowed in the entire application
 #define PROF_FRAMES_SIZE         64    // Number of call depth allowed
 #define PROF_INT_ZERO_THRESHHOLD 0.25f // threshhold for a moving average of an integer to be at zero
@@ -77,9 +96,8 @@ enum prof_smooth {
 
 #else
 
-#define PROF_ANCHORS_SIZE 2
-#define PROF_HISTORY_SIZE 2
-#define PROF_FRAMES_SIZE  2
+#define PROF_ANCHORS_SIZE 1
+#define PROF_FRAMES_SIZE  1
 #define prof_block(...)
 #define prof_block_func(...)
 #define prof_block_end(...)
@@ -150,6 +168,11 @@ struct prof {
 
 	u16 anchor_count;
 	u16 frame_count;
+
+#if PROF && PROF_ZONE_HISTORY
+	u16 history_idx;
+	u16 history_filled;
+#endif
 };
 
 #define PROF_REPORT_NUM_VALUES 5
@@ -181,8 +204,11 @@ struct prof_report {
 
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
+#if PROF && PROF_ZONE_HISTORY
+static u32 PROF_ZONE_EXCL[PROF_ANCHORS_SIZE][PROF_HISTORY_SIZE];
+#endif
 
-#if defined(PROF)
+#if PROF
 
 static f32 PROF_TIMES_TO_REACH_90_PERCENT[PROF_TRACKER_HISTORY_SLOTS];
 static f32 PROF_PRECOMPUTED_FACTORS[PROF_TRACKER_HISTORY_SLOTS];
@@ -193,6 +219,10 @@ static char INT_TO_STRING_MID_DECIMAL[100][4];
 static str8 INT_TO_STR8[100];
 static str8 INT_TO_STR8_DECIMAL[100];
 static str8 INT_TO_STR8_MID_DECIMAL[100];
+
+#if PROF_ZONE_HISTORY
+static inline void prof_zone_history_push(struct prof *prof);
+#endif
 
 static inline void
 int_to_string_ini(void)
@@ -255,6 +285,10 @@ prof_ini(void)
 	prof->next_anchor       = PROF_ANCHOR_SYS_NUM_COUNT;
 	prof->smooth_slot       = PROF_SMOOTH_FAST;
 	prof->sort              = PROF_SORT_EXCLUSIVE;
+
+#if PROF_ZONE_HISTORY
+	prof->history_idx = 0;
+#endif
 }
 
 static inline void
@@ -496,8 +530,13 @@ prof_upd(b32 record_data)
 			}
 		}
 
+#if PROF && PROF_ZONE_HISTORY
+		if(prof->update_idx >= PROF_THROWAWAY_UPDATES_COUNT) {
+			prof_zone_history_push(prof);
+		}
+#endif
+
 		++prof->update_idx;
-		// history_index = (history_index + 1) % NUM_FRAME_SLOTS;
 	}
 
 	if(prof->anchor_count > 0) {
@@ -613,6 +652,38 @@ prof_history_scalar_upd(struct prof_hist_scalar *h, f32 sample, f32 *factors)
 		h->variances[i] = new_var;
 	}
 }
+
+#if PROF_ZONE_HISTORY
+static inline void
+prof_zone_history_push(struct prof *prof)
+{
+	u16 history_idx = prof->history_idx;
+	for(ssize i = 1; i < prof->anchor_count; ++i) {
+		PROF_ZONE_EXCL[i][history_idx] = prof->anchors[i].us_exclusive;
+	}
+	prof->history_idx = (u16)((history_idx + 1) % PROF_HISTORY_SIZE);
+	if(prof->history_filled < PROF_HISTORY_SIZE) {
+		++prof->history_filled;
+	}
+}
+
+static inline u32
+prof_zone_exl_at(u16 zone, u16 logical_i)
+{
+	u32 res = 0;
+
+	dbg_assert(logical_i < PROFILER.history_filled);
+	dbg_assert(zone < PROF_ANCHORS_SIZE);
+	u16 oldest = 0;
+	if(PROFILER.history_filled == PROF_HISTORY_SIZE) {
+		oldest = PROFILER.history_idx;
+	}
+	u16 history_idx = (u16)((oldest + logical_i) % PROF_HISTORY_SIZE);
+	res             = PROF_ZONE_EXCL[zone][history_idx];
+
+	return res;
+}
+#endif
 
 static inline str8
 prof_f32_to_str8(u8 *buf, f32 value, i32 precision)
