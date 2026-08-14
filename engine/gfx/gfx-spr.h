@@ -4,6 +4,9 @@
 
 void gfx_spr_cpy(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip);
 void gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode);
+// Opaque dest+src copy of a whole tex. No flip, pattern, mask, or bit-clip merge.
+// 32-bit-aligned rows memcpy; unaligned rows overwrite whole dest words.
+void gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py);
 
 // branchless?
 static void
