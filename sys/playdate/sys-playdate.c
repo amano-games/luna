@@ -18,6 +18,9 @@
 #include "sys/playdate/sys-playdate.h"
 #include "sys/playdate/sys-playdate-scores.h"
 #include "sys/playdate/sys-playdate-scores.c"
+#include "base/prof.h"
+#include "base/marena.h"
+#include "base/utils.h"
 
 PlaydateAPI *PD;
 
@@ -125,9 +128,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		};
 
 		sys_internal_init();
-#if PROF
 		PD->system->setSerialMessageCallback(sys_pd_serial_msg);
-#endif
 		break;
 	case kEventTerminate:
 		PD->graphics->freeBitmap(PD_STATE.menu_bitmap);
@@ -799,11 +800,41 @@ sys_pd_sec_to_us(f32 sec)
 	return (u32)(sec * MILLION_F32 + 0.5f);
 }
 
+static b32
+sys_pd_serial_cmd_is(const char *data, const char *cmd)
+{
+	usize n = strlen(cmd);
+	if(strncmp(data, cmd, n) != 0) { return false; }
+	char c = data[n];
+	return c == 0 || c == '\r' || c == '\n' || c == ' ';
+}
+
+#define PD_PROF_CSV_MEM_SIZE MKILOBYTE(512)
 static void
 sys_pd_serial_msg(const char *data)
 {
-	if(data != NULL && strcmp(data, "quit") == 0) {
+	if(data == NULL) { return; }
+	log_info("pd", "serial message: %s", data);
+
+	if(sys_pd_serial_cmd_is(data, "quit")) {
 		PD->system->exitToLauncher();
+		return;
+	}
+
+	if(sys_pd_serial_cmd_is(data, "prof_save")) {
+		void *mem;
+		struct marena arena;
+		struct alloc alloc;
+
+		mem = sys_alloc_raw(PD_PROF_CSV_MEM_SIZE);
+		if(mem == NULL) {
+			log_error("prof", "csv save alloc failed");
+			return;
+		}
+		marena_init(&arena, mem, PD_PROF_CSV_MEM_SIZE);
+		alloc = marena_allocator(&arena);
+		prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
+		sys_free_raw(mem);
 	}
 }
 
