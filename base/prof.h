@@ -20,6 +20,7 @@ enum prof_anchor_sys {
 
 	PROF_ANCHOR_SYS_UPD,
 	PROF_ANCHOR_SYS_DRW,
+	PROF_ANCHOR_SYS_PROF,
 
 	PROF_ANCHOR_SYS_NUM_COUNT,
 };
@@ -99,6 +100,17 @@ struct prof_anchor {
 	u32 hit_count;
 };
 
+struct prof_hist_slot {
+	u32 dt_us;
+	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
+};
+
+struct prof_anchor_totals {
+	u64 sum_exc;
+	u64 sum_inc;
+	u64 sum_hits;
+};
+
 struct prof_anchor_hist {
 	u32 us_inclusive_min;
 	u32 us_inclusive_max;
@@ -149,8 +161,14 @@ struct prof {
 	u16 anchor_count;
 	u16 frame_count;
 
-#if PROF_ZONE_HISTORY
+	u32 timer_call_us;
+
+#if PROF_HISTORY
 	u16 history_idx; // next write; also oldest slot (iProf history_index)
+#endif
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	u32 capture_n;
+	struct prof_anchor_totals totals[PROF_ANCHORS_SIZE];
 #endif
 };
 
@@ -184,7 +202,9 @@ struct prof_report {
 
 // Defined once in sys.c — must be shared across luna/game TUs.
 extern struct prof PROFILER;
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+extern struct prof_hist_slot PROF_FRAME_HIST[PROF_HISTORY_SIZE];
+#elif PROF_HISTORY == PROF_HISTORY_ZONE
 extern u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
 #endif
 
@@ -200,7 +220,7 @@ static str8 INT_TO_STR8[100];
 static str8 INT_TO_STR8_DECIMAL[100];
 static str8 INT_TO_STR8_MID_DECIMAL[100];
 
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY == PROF_HISTORY_ZONE
 static inline void prof_zone_history_push(struct prof *prof);
 #endif
 
@@ -241,6 +261,18 @@ prof_next_block_idx(void)
 	return prof->next_anchor++;
 }
 
+#define PROF_CALIBRATE_LOOP_COUNT 1000
+static inline u32
+prof_calibrate_timer_us(void)
+{
+	u32 t0 = sys_time_us();
+	for(i32 i = 0; i < PROF_CALIBRATE_LOOP_COUNT; ++i) {
+		(void)sys_time_us();
+	}
+	u32 t1 = sys_time_us();
+	return (t1 - t0) / (u32)PROF_CALIBRATE_LOOP_COUNT;
+}
+
 static inline void
 prof_ini(void)
 {
@@ -254,9 +286,13 @@ prof_ini(void)
 	}
 
 	mclr_struct(prof);
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	mclr_array(PROF_FRAME_HIST);
+#elif PROF_HISTORY == PROF_HISTORY_ZONE
 	mclr_array(PROF_ZONE_EXCL);
 #endif
+
+	prof->timer_call_us = prof_calibrate_timer_us();
 
 	{
 		PROF_TIMES_TO_REACH_90_PERCENT[0] = 0.1f;
@@ -291,12 +327,6 @@ prof_smooth_set(enum prof_smooth smooth)
 {
 	dbg_assert(smooth < PROF_SMOOTH_NUM_COUNT);
 	PROFILER.smooth_slot = (u16)smooth;
-}
-
-static inline enum prof_smooth
-prof_smooth_get(void)
-{
-	return (enum prof_smooth)PROFILER.smooth_slot;
 }
 
 static inline void
@@ -392,9 +422,6 @@ prof_report_create(struct alloc alloc)
 		e->ms_inclusive_max         = h->us_inclusive_max * 1e-3f;
 	}
 
-	/* ------------------------------------------------------------
-	   Sort
-	------------------------------------------------------------ */
 	qsort(res->entries,
 		res->entry_count,
 		sizeof(struct prof_report_entry),
@@ -428,16 +455,15 @@ prof_upd(b32 record_data)
 	dbg_assert(prof->frame_count == 0);
 	dbg_assert(prof->parent_idx == 0);
 
-	u32 now_us = sys_time_us();
+	prof_block_start("_prof", PROF_ANCHOR_SYS_PROF);
+	u32 now_us = prof->frames[prof->frame_count - 1].us_start;
 	u32 dt_us  = 0;
 
-	if(prof->update_idx == 0) {
-		dt_us = PROF_FRAME_TIME_INITIAL_US;
-	} else {
+	if(prof->update_idx > 0) {
 		dt_us = now_us - prof->last_upd_us;
-		if(dt_us == 0) {
-			dt_us = PROF_FRAME_TIME_INITIAL_US;
-		}
+	}
+	if(dt_us == 0) {
+		dt_us = PROF_FRAME_TIME_INITIAL_US;
 	}
 
 	prof->last_upd_us = now_us;
@@ -471,6 +497,12 @@ prof_upd(b32 record_data)
 #endif
 
 	if(record_data) {
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+		struct prof_hist_slot *hist_slot = 0;
+		if(prof->update_idx >= PROF_THROWAWAY_UPDATES_COUNT) {
+			hist_slot = &PROF_FRAME_HIST[prof->history_idx];
+		}
+#endif
 		{
 			// Prof_traverse(update_history);
 			for(ssize i = 1; i < prof->anchor_count; ++i) {
@@ -491,6 +523,16 @@ prof_upd(b32 record_data)
 					h->us_inclusive_min = MIN(h->us_inclusive_min, a->us_inclusive);
 					h->us_inclusive_max = MAX(h->us_inclusive_max, a->us_inclusive);
 				}
+
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+				if(hist_slot) {
+					hist_slot->anchors[i]        = *a;
+					struct prof_anchor_totals *t = &prof->totals[i];
+					t->sum_exc += a->us_exclusive;
+					t->sum_inc += a->us_inclusive;
+					t->sum_hits += a->hit_count;
+				}
+#endif
 			}
 		}
 
@@ -513,7 +555,13 @@ prof_upd(b32 record_data)
 			}
 		}
 
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+		if(hist_slot) {
+			hist_slot->dt_us  = dt_us;
+			prof->history_idx = (u16)((prof->history_idx + 1) % PROF_HISTORY_SIZE);
+			++prof->capture_n;
+		}
+#elif PROF_HISTORY == PROF_HISTORY_ZONE
 		if(prof->update_idx >= PROF_THROWAWAY_UPDATES_COUNT) {
 			prof_zone_history_push(prof);
 		}
@@ -525,9 +573,14 @@ prof_upd(b32 record_data)
 	if(prof->anchor_count > 0) {
 		mclr(prof->anchors + 1, (prof->anchor_count - 1) * sizeof(prof->anchors[0]));
 	}
+
+	// mclr wiped last gather's inclusive; this end is the only hit this present.
+	dbg_assert(prof->frame_count == 1);
+	prof->frames[prof->frame_count - 1].prev_us_inclusive = 0;
+	prof_block_end();
 }
 
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY == PROF_HISTORY_ZONE
 static inline void
 prof_zone_history_push(struct prof *prof)
 {
@@ -538,7 +591,9 @@ prof_zone_history_push(struct prof *prof)
 	}
 	prof->history_idx = (u16)((history_idx + 1) % ARRLEN(PROF_ZONE_EXCL));
 }
+#endif
 
+#if PROF_HISTORY
 static inline u16
 prof_history_capacity(void)
 {
@@ -549,14 +604,18 @@ static inline u16
 prof_history_slot(u16 logical_i)
 {
 	dbg_assert(logical_i < PROF_HISTORY_SIZE);
-	return (u16)((PROFILER.history_idx + logical_i) % ARRLEN(PROF_ZONE_EXCL));
+	return (u16)((PROFILER.history_idx + logical_i) % PROF_HISTORY_SIZE);
 }
 
 static inline u32
 prof_zone_excl_at(u16 zone, u16 logical_i)
 {
 	dbg_assert(zone < PROF_ANCHORS_SIZE);
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	return PROF_FRAME_HIST[prof_history_slot(logical_i)].anchors[zone].us_exclusive;
+#else
 	return PROF_ZONE_EXCL[prof_history_slot(logical_i)][zone];
+#endif
 }
 #endif
 
@@ -653,7 +712,7 @@ prof_drw(
 	prof_block_end();
 }
 
-#if PROF_ZONE_HISTORY
+#if PROF_HISTORY
 static inline void
 prof_graph_row(
 	struct gfx_ctx ctx,
@@ -974,12 +1033,6 @@ prof_smooth_set(enum prof_smooth smooth)
 {
 }
 
-static inline enum prof_smooth
-prof_smooth_get(void)
-{
-	return PROF_SMOOTH_INSTANT;
-}
-
 static inline void
 prof_block_start(const char *label, ssize idx)
 {
@@ -1018,15 +1071,9 @@ prof_csv(struct alloc alloc, u32 max_records)
 
 #endif
 
-#if !PROF_ZONE_HISTORY
+#if !PROF_HISTORY
 static inline u16
 prof_history_capacity(void)
-{
-	return 0;
-}
-
-static inline u32
-prof_zone_excl_at(u16 zone, u16 logical_i)
 {
 	return 0;
 }

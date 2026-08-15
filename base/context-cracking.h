@@ -102,24 +102,28 @@
 #endif
 
 // Prof option cracking
+// PROF_HISTORY: 0 = off, 1 = exclusive-µs ring, 2 = full present ring
+#define PROF_HISTORY_NONE  0
+#define PROF_HISTORY_ZONE  1
+#define PROF_HISTORY_FRAME 2
+
 #if !defined(PROF)
 #define PROF BUILD_DEBUG
 #endif
-#if !defined(PROF_ZONE_HISTORY)
-#define PROF_ZONE_HISTORY PROF
+#if !defined(PROF_HISTORY)
+#if PROF
+#define PROF_HISTORY PROF_HISTORY_FRAME
+#else
+#define PROF_HISTORY PROF_HISTORY_NONE
 #endif
-#if !defined(PROF_FRAME_HISTORY)
-#define PROF_FRAME_HISTORY PROF
 #endif
 #if !defined(PROF_HISTORY_SIZE)
 #define PROF_HISTORY_SIZE 128
 #endif
 
 #if !PROF
-#undef PROF_ZONE_HISTORY
-#define PROF_ZONE_HISTORY 0
-#undef PROF_FRAME_HISTORY
-#define PROF_FRAME_HISTORY 0
+#undef PROF_HISTORY
+#define PROF_HISTORY PROF_HISTORY_NONE
 #endif
 
 // Zero all undefined options
@@ -190,11 +194,8 @@
 #if !defined(PROF)
 #define PROF 0
 #endif
-#if !defined(PROF_ZONE_HISTORY)
-#define PROF_ZONE_HISTORY 0
-#endif
-#if !defined(PROF_FRAME_HISTORY)
-#define PROF_FRAME_HISTORY 0
+#if !defined(PROF_HISTORY)
+#define PROF_HISTORY PROF_HISTORY_NONE
 #endif
 
 // Pairing / sanity checks
@@ -213,6 +214,9 @@
 #endif
 #if PROF_HISTORY_SIZE < 1
 #error PROF_HISTORY_SIZE must be >= 1
+#endif
+#if PROF_HISTORY < PROF_HISTORY_NONE || PROF_HISTORY > PROF_HISTORY_FRAME
+#error PROF_HISTORY must be 0 (off), 1 (zone), or 2 (frame)
 #endif
 
 // Platform identity as a value
