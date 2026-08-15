@@ -29,6 +29,7 @@
 #include "sys/sys-io.h"
 #include "base/log.h"
 #include "sys/sys.h"
+#include "base/prof.h"
 #include "base/dbg.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -232,6 +233,7 @@ static void sokol_set_icon(void);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
 static void sokol_screenshot_save(struct tex tex);
+static void sokol_prof_csv_save(void);
 static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
@@ -496,6 +498,9 @@ sokol_event(const sapp_event *ev)
 		} break;
 		case SAPP_KEYCODE_F6: {
 			sokol_screenshot_save(SOKOL_STATE.frame_ctx.dst);
+		} break;
+		case SAPP_KEYCODE_F7: {
+			sokol_prof_csv_save();
 		} break;
 		case SAPP_KEYCODE_F12: {
 			marena_reset(&SOKOL_STATE.scratch_marena);
@@ -1638,6 +1643,14 @@ sokol_screenshot_save(struct tex tex)
 	stbi_write_bmp((char *)path.str, w, h, comp, data);
 #endif
 	log_info("sokol", "screentshot saved: %s", path.str);
+}
+
+static void
+sokol_prof_csv_save(void)
+{
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	struct alloc alloc = SOKOL_STATE.scratch;
+	prof_csv_save(alloc, str8_lit(SOKOL_NAME), str8_lit(SOKOL_ORG));
 }
 
 // https://github.com/tsoding/rendering-video-in-c-with-ffmpeg/blob/master/ffmpeg_linux.c
