@@ -72,6 +72,7 @@ int (*PD_PERSONAL_BEST_GET)(const char *board_id, PersonalBestCallback callback)
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
 static inline u32 sys_pd_sec_to_us(f32 sec);
+static void sys_pd_serial_msg(const char *data);
 
 #define PD_SEC_TO_US_MAX 4000u // 4000 * MILLION_U32 stays inside u32 (max ~4295)
 
@@ -124,6 +125,9 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		};
 
 		sys_internal_init();
+#if PROF
+		PD->system->setSerialMessageCallback(sys_pd_serial_msg);
+#endif
 		break;
 	case kEventTerminate:
 		PD->graphics->freeBitmap(PD_STATE.menu_bitmap);
@@ -795,6 +799,14 @@ sys_pd_sec_to_us(f32 sec)
 	return (u32)(sec * MILLION_F32 + 0.5f);
 }
 
+static void
+sys_pd_serial_msg(const char *data)
+{
+	if(data != NULL && strcmp(data, "quit") == 0) {
+		PD->system->exitToLauncher();
+	}
+}
+
 // NOLINTBEGIN(readability-identifier-naming)
 // make ARM linker shut up about things we aren't using (nosys lib issues):
 void
@@ -838,4 +850,5 @@ _kill(void)
 }
 // NOLINTEND(readability-identifier-naming)
 // end ARM linker warning hack
+//
 //
