@@ -9,6 +9,7 @@
 
 #include "base/utils.h"
 #include "base/str.h"
+#include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "sys/sys-intrin.h"
 #include "base/dbg.h"
@@ -617,6 +618,20 @@ prof_zone_excl_at(u16 zone, u16 logical_i)
 	return PROF_ZONE_EXCL[prof_history_slot(logical_i)][zone];
 #endif
 }
+
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+static inline const struct prof_hist_slot *
+prof_history_logical_at(u16 logical_i)
+{
+	return &PROF_FRAME_HIST[prof_history_slot(logical_i)];
+}
+
+static inline u32
+prof_capture_n(void)
+{
+	return PROFILER.capture_n;
+}
+#endif
 #endif
 
 static inline i32
@@ -957,56 +972,225 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 	}
 }
 
+#if PROF_HISTORY
+#define PROF_CSV_ROW_CAP (512 + PROF_HISTORY_SIZE * 12)
+#else
+#define PROF_CSV_ROW_CAP 512
+#endif
+
+static inline i32
+prof_csv_append(char *row, i32 cap, i32 used, const char *fmt, ...)
+{
+	va_list args;
+	int w;
+	i32 left;
+
+	used = clamp_i32(used, 0, cap - 1);
+	left = cap - used;
+	va_start(args, fmt);
+	w = sys_vsnprintf(row + used, left, fmt, args);
+	va_end(args);
+
+	if(w < 0) {
+		return used;
+	}
+	if(w >= left) {
+		return cap - 1;
+	}
+
+	return used + w;
+}
+
+static inline void
+prof_csv_push_row(struct alloc alloc, struct str8_list *list, char *row, i32 n, i32 cap)
+{
+	n      = clamp_i32(n, 0, cap - 1);
+	row[n] = 0;
+	str8_list_pushf(alloc, list, "%s\n", row);
+}
+
 static inline str8
 prof_csv(struct alloc alloc, u32 max_records)
 {
-	str8 res                   = {0};
-	str8 delimiter             = str8_lit(",");
-	struct prof_report *report = prof_report_create(alloc);
-	u32 record_count           = min_i32(max_records, report->entry_count);
-	struct str8_list list      = {0};
-	str8 headers[]             = {
-		str8_lit("zone"),
-		str8_lit("exclusive"),
-		str8_lit("inclusive"),
-		str8_lit("count"),
-		str8_lit("inclusive_min"),
-		str8_lit("inclusive_max"),
-	};
+	char row[PROF_CSV_ROW_CAP];
+	u32 record_count;
+	i32 n;
 
-	for(ssize i = 0; i < (ssize)ARRLEN(headers); ++i) {
-		if(i > 0) {
-			str8_list_push(alloc, &list, delimiter);
-		}
-		str8_list_push(alloc, &list, headers[i]);
+	struct prof *prof                 = &PROFILER;
+	struct str8_list list             = {0};
+	struct prof_report_entry *entries = alloc_arr(alloc, entries, PROF_ANCHORS_SIZE);
+	i32 precision                     = 4;
+	u32 entry_count                   = 0;
+	i32 cap                           = (i32)sizeof(row);
+
+#if PROF_HISTORY
+	u64 hist_sum[PROF_HISTORY_SIZE];
+	i32 empty_n;
+#endif
+
+	if(!INT_TO_STRING[0][0]) {
+		int_to_string_ini();
 	}
 
-	str8_list_push(alloc, &list, str8_lit("\n"));
+	for(ssize i = 1; i < prof->anchor_count; ++i) {
+		struct prof_anchor_hist *h = prof->anchors_hist + i;
+		const char *label          = prof->anchor_labels[i];
+		struct prof_report_entry *e;
 
-	i32 precision = 4;
+		if(!label) { continue; }
+
+		e                   = &entries[entry_count++];
+		e->label            = label;
+		e->zone             = (u16)i;
+		e->hit_count        = h->hit_count.values[prof->smooth_slot];
+		e->ms_inclusive     = h->us_inclusive.values[prof->smooth_slot] * 1e-3f;
+		e->ms_exclusive     = h->us_exclusive.values[prof->smooth_slot] * 1e-3f;
+		e->ms_inclusive_min = h->us_inclusive_min * 1e-3f;
+		e->ms_inclusive_max = h->us_inclusive_max * 1e-3f;
+	}
+
+	qsort(entries, entry_count, sizeof(entries[0]), prof_report_sort_desc);
+
+	record_count = entry_count;
+	if(max_records != 0 && max_records < record_count) {
+		record_count = max_records;
+	}
+
+	// TODO: make it a single path just zero out the unused fields.
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	str8_list_pushf(
+		alloc,
+		&list,
+		"# history=%u size=%u history_idx=%u capture_n=%u update_idx=%u smooth=%u anchors=%u rows=%u\n",
+		(u32)PROF_HISTORY,
+		(u32)PROF_HISTORY_SIZE,
+		(u32)prof->history_idx,
+		prof->capture_n,
+		prof->update_idx,
+		(u32)prof->smooth_slot,
+		(u32)prof->anchor_count,
+		record_count);
+
+#elif PROF_HISTORY && 0
+	str8_list_pushf(
+		alloc,
+		&list,
+		"# history=%u size=%u history_idx=%u update_idx=%u smooth=%u anchors=%u rows=%u\n",
+		(u32)PROF_HISTORY,
+		(u32)PROF_HISTORY_SIZE,
+		(u32)prof->history_idx,
+		prof->update_idx,
+		(u32)prof->smooth_slot,
+		(u32)prof->anchor_count,
+		record_count);
+#else
+	str8_list_pushf(
+		alloc,
+		&list,
+		"# history=0 size=0 update_idx=%u smooth=%u anchors=%u rows=%u\n",
+		prof->update_idx,
+		(u32)prof->smooth_slot,
+		(u32)prof->anchor_count,
+		record_count);
+#endif
+
+	n = sys_snprintf(row, cap, "zone,id,exclusive,inclusive,count,inclusive_min,inclusive_max");
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	n = prof_csv_append(row, cap, n, ",tot_exc,tot_inc,tot_hits");
+#endif
+#if PROF_HISTORY
+	for(u16 i = 0; i < PROF_HISTORY_SIZE; ++i) {
+		n = prof_csv_append(row, cap, n, ",%u", (u32)i);
+	}
+	mclr_array(hist_sum);
+#endif
+	prof_csv_push_row(alloc, &list, row, n, cap);
+
 	for(u32 i = 0; i < record_count; ++i) {
 		u8 buf[64];
 		str8 str;
-		struct prof_report_entry *r = &report->entries[i];
+		struct prof_report_entry *r = &entries[i];
+
 		if(!r->label) { continue; }
 
-		if(i > 0) {
-			str8_list_push(alloc, &list, str8_lit("\n"));
-		}
-
-		str8_list_push(alloc, &list, str8_cstr((char *)r->label));
-		str8_list_push(alloc, &list, delimiter);
-
+		n = sys_snprintf(row, cap, "%s,%u", r->label, (u32)r->zone);
 		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
-			if(j > 0) {
-				str8_list_push(alloc, &list, delimiter);
-			}
 			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
-			str8_list_push(alloc, &list, str8_cpy_push(alloc, str));
+			n   = prof_csv_append(row, cap, n, ",%.*s", str8_spread(str));
 		}
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+		{
+			struct prof_anchor_totals *t = &prof->totals[r->zone];
+			n                            = prof_csv_append(row, cap, n, ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, t->sum_exc, t->sum_inc, t->sum_hits);
+		}
+#endif
+#if PROF_HISTORY
+		for(u16 h = 0; h < PROF_HISTORY_SIZE; ++h) {
+			u32 excl = prof_zone_excl_at(r->zone, h);
+			hist_sum[h] += excl;
+			n = prof_csv_append(row, cap, n, ",%u", excl);
+		}
+#endif
+		prof_csv_push_row(alloc, &list, row, n, cap);
 	}
-	res = str8_list_join(alloc, &list, NULL);
 
+#if PROF_HISTORY
+	empty_n = 6; // id + 5 ema columns
+#if PROF_HISTORY == PROF_HISTORY_FRAME
+	empty_n += 3; // tot_*
+	n = sys_snprintf(row, cap, "__dt");
+	for(i32 e = 0; e < empty_n; ++e) {
+		n = prof_csv_append(row, cap, n, ",");
+	}
+	for(u16 h = 0; h < PROF_HISTORY_SIZE; ++h) {
+		const struct prof_hist_slot *slot = prof_history_logical_at(h);
+		u32 dt                            = slot ? slot->dt_us : 0;
+		n                                 = prof_csv_append(row, cap, n, ",%u", dt);
+	}
+	prof_csv_push_row(alloc, &list, row, n, cap);
+#endif
+	n = sys_snprintf(row, cap, "__sum");
+	for(i32 e = 0; e < empty_n; ++e) {
+		n = prof_csv_append(row, cap, n, ",");
+	}
+	for(u16 h = 0; h < PROF_HISTORY_SIZE; ++h) {
+		n = prof_csv_append(row, cap, n, ",%" PRIu64, hist_sum[h]);
+	}
+	prof_csv_push_row(alloc, &list, row, n, cap);
+#endif
+
+	return str8_list_join(alloc, &list, NULL);
+}
+
+static b32
+prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
+{
+	b32 res                    = false;
+	struct date_time date_time = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+	str8 csv                   = prof_csv(alloc, 0);
+	str8 path                  = str8_fmt_push(
+		alloc,
+		"%.*s-%04d-%02d-%02d_%02d:%02d:%02d-prof.csv",
+		str8_spread(app_name),
+		date_time.year,
+		date_time.month,
+		date_time.day,
+		date_time.hour,
+		date_time.min,
+		date_time.sec);
+	str8 full_path = sys_path_to_data_path(alloc, path, app_org, app_name);
+	void *f        = sys_file_open_w(full_path);
+
+	if(f == NULL) {
+		log_error("prof", "csv save failed: %s", full_path.str);
+		return res;
+	}
+	if(csv.size > 0) {
+		sys_file_w(f, csv.str, (u32)csv.size);
+	}
+	sys_file_close(f);
+	res = true;
+	log_info("prof", "prof csv saved: %s", full_path.str);
 	return res;
 }
 
@@ -1069,6 +1253,10 @@ prof_csv(struct alloc alloc, u32 max_records)
 	return str8_lit("");
 }
 
+static b32
+prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
+{ return false; }
+
 #endif
 
 #if !PROF_HISTORY
@@ -1089,5 +1277,20 @@ prof_graph_drw(
 	i32 height,
 	i32 line_spacing)
 {
+}
+#endif
+
+#if PROF_HISTORY != PROF_HISTORY_FRAME
+static inline const struct prof_hist_slot *
+prof_history_logical_at(u16 logical_i)
+{
+	(void)logical_i;
+	return 0;
+}
+
+static inline u32
+prof_capture_n(void)
+{
+	return 0;
 }
 #endif
