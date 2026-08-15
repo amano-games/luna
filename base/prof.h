@@ -1113,7 +1113,7 @@ prof_csv(struct alloc alloc, u32 max_records)
 
 		if(!r->label) { continue; }
 
-		n = sys_snprintf(row, cap, "%s,%u", r->label, (u32)r->zone);
+		n = sys_snprintf(row, cap, "%s,%" PRIu32, r->label, (u32)r->zone);
 		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
 			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
 			n   = prof_csv_append(row, cap, n, ",%.*s", str8_spread(str));
