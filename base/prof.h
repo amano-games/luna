@@ -1170,7 +1170,7 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 	str8 csv                   = prof_csv(alloc, 0);
 	str8 path                  = str8_fmt_push(
 		alloc,
-		"%.*s-%04d-%02d-%02d_%02d:%02d:%02d-prof.csv",
+		"%.*s-%04d-%02d-%02d_%02d-%02d-%02d-prof.csv",
 		str8_spread(app_name),
 		date_time.year,
 		date_time.month,
