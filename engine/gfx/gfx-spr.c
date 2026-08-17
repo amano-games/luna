@@ -204,10 +204,12 @@ gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py)
 void
 gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
-	if(!src.t.px)
-		return;
+	if(!src.t.px) return;
+
 	if(ctx.dst.fmt == TEX_FMT_OPAQUE) {
-		if(src.t.fmt == TEX_FMT_OPAQUE) {
+		if(mode == SPR_MODE_COPY) {
+			gfx_spr_cpy(ctx, src, px, py, flip);
+		} else if(src.t.fmt == TEX_FMT_OPAQUE) {
 			gfx_spr_d_s(ctx, src, px, py, flip, mode);
 		} else {
 			if(flip & SPR_FLIP_X) {
