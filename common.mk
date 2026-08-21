@@ -26,6 +26,9 @@ BUILD_DEBUG ?= 1
 ASSETS_DIR := $(SRC_DIR)/assets
 ASSETS_BIN := bin/luna-asset-gen
 
+# Let Make rebuild tools when any luna source/header changes.
+LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print)
+
 ifeq ($(DETECTED_OS), Linux)
 SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
 endif
