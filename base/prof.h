@@ -1232,6 +1232,13 @@ prof_upd(b32 record_data)
 {
 }
 
+static inline struct prof_report *
+prof_report_create(struct alloc alloc)
+{
+	(void)alloc;
+	return 0;
+}
+
 static inline void
 prof_drw(
 	struct prof_report *report,
@@ -1259,7 +1266,7 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 
 #endif
 
-#if !PROF_HISTORY
+#if !PROF || !PROF_HISTORY
 static inline u16
 prof_history_capacity(void)
 {
