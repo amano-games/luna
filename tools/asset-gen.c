@@ -120,8 +120,8 @@ qop_gen_recursive(
 		tinydir_readfile(dir, &file);
 
 		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
-		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", out_dir.size, out_dir.str, file_name.size, file_name.str);
+		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_dir), str8_spread(file_name));
+		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(out_dir), str8_spread(file_name));
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
@@ -148,8 +148,8 @@ asset_gen_recursive(
 		tinydir_readfile(dir, &file);
 
 		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", in_dir.size, in_dir.str, file_name.size, file_name.str);
-		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", out_dir.size, out_dir.str, file_name.size, file_name.str);
+		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_dir), str8_spread(file_name));
+		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(out_dir), str8_spread(file_name));
 
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
