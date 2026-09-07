@@ -249,13 +249,13 @@ sokol_main(i32 argc, char **argv)
 	sys_os_init();
 	SOKOL_STATE.menu.next_id = 1;
 	{
-		usize mem_size = MMEGABYTE(1);
+		usize mem_size = MMEGABYTE(1 * SYS_DISPLAY_SCALE);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 	{
-		usize mem_size = MMEGABYTE(200);
+		usize mem_size = MMEGABYTE(300 * SYS_DISPLAY_SCALE);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
@@ -263,8 +263,8 @@ sokol_main(i32 argc, char **argv)
 
 	struct str8 exe_path = sys_exe_path();
 	str8 base_name       = str8_chop_last_slash(exe_path);
-	log_info("SYS", "dirname:  %.*s", (i32)exe_path.size, exe_path.str);
-	log_info("SYS", "basename:  %.*s", (i32)base_name.size, base_name.str);
+	log_info("SYS", "dirname:  %.*s", str8_spread(exe_path));
+	log_info("SYS", "basename:  %.*s", str8_spread(base_name));
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
