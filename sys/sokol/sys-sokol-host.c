@@ -496,13 +496,13 @@ sokol_event(const sapp_event *ev)
 #if defined(SOKOL_RECORDING_ENABLED)
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc scratch = SOKOL_STATE.scratch;
-			str8 path = str8_fmt_push(
+			str8 path            = str8_fmt_push(
 				scratch,
 				"%.*s/%s-%s.mp4",
 				(int)SOKOL_STATE.opts.recording.save_path.size,
 				SOKOL_STATE.opts.recording.save_path.str,
 				SOKOL_NAME,
-				sys_file_timestamp(scratch).str);
+				sys_path_timestamp(scratch).str);
 			sys_recording_write(
 				scratch,
 				&SYS_RECORDING_STATE.gfx,
