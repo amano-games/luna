@@ -28,12 +28,11 @@
 #include "base/utils.h"
 #include "sys/sys-input.h"
 #include "sys/sys-io.h"
+#include "sys/sys-img.h"
 #include "base/log.h"
 #include "sys/sys.h"
 #include "base/prof.h"
 #include "base/dbg.h"
-
-#include "stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -1584,36 +1583,24 @@ sys_set_app_name(str8 value)
 	sapp_set_window_title((const char *)value.str);
 }
 
-#define SOKOL_SCREENSHOT_FORMAT 1
-
 static void
 sokol_screenshot_save(struct tex tex)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	static u32 data[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
-	usize size                                     = ARRLEN(data);
-	struct alloc alloc                             = SOKOL_STATE.scratch;
-	i32 w                                          = SYS_DISPLAY_W;
-	i32 h                                          = SYS_DISPLAY_H;
-	i32 comp                                       = 4;
-	i32 stride_in_bytes                            = w * comp;
+	struct alloc alloc = SOKOL_STATE.scratch;
 
-	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.opts.screentshot.colors);
-	str8 path = str8_fmt_push(alloc,
-		"%.*s/%s-%s",
+	// save_path/name-2026-09-07_19-14-03.png
+	str8 path = str8_fmt_push(
+		alloc,
+		"%.*s/%s-%s.png",
 		(int)SOKOL_STATE.opts.screentshot.save_path.size,
 		SOKOL_STATE.opts.screentshot.save_path.str,
 		SOKOL_NAME,
-		sys_file_timestamp(alloc).str);
+		sys_path_timestamp(alloc).str);
 
-#if SOKOL_SCREENSHOT_FORMAT == 1
-	path = str8_fmt_push(alloc, "%s.png", path.str);
-	stbi_write_png((char *)path.str, w, h, comp, data, stride_in_bytes);
-#else
-	path = str8_fmt_push(alloc, "%s.bmp", path.str);
-	stbi_write_bmp((char *)path.str, w, h, comp, data);
-#endif
-	log_info("sokol", "screentshot saved: %s", path.str);
+	if(sys_img_write(tex, path, SOKOL_STATE.opts.screentshot.colors, alloc)) {
+		log_info("sokol", "screentshot saved: %s", path.str);
+	}
 }
 
 static void
