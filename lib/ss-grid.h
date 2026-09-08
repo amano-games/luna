@@ -26,7 +26,7 @@ struct ss_grid {
 struct ss_item {
 	u16 index;
 	u16 id; // Use as generic ID for handles
-	struct col_shape shape;
+	struct col_aabb aabb;
 };
 
 void ss_grid_gen(struct ss_grid *grid, struct ss_item *items, ssize items_count, struct alloc alloc);
