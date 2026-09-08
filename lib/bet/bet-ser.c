@@ -106,10 +106,10 @@ bet_write(struct ser_writer *w, struct bet *bet)
 {
 	ser_write_object(w);
 	ser_write_string(w, str8_lit("node_count"));
-	ser_write_i32(w, arr_len(bet->nodes));
+	ser_write_i32(w, bet->node_count);
 	ser_write_string(w, str8_lit("nodes"));
 	ser_write_array(w);
-	for(ssize i = 0; i < arr_len(bet->nodes); i++) {
+	for(ssize i = 0; i < bet->node_count; i++) {
 		bet_node_write(w, bet->nodes[i]);
 	}
 	ser_write_end(w);
