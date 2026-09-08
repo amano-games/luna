@@ -1,7 +1,9 @@
 #pragma once
 
 #include "base/mem.h"
+#include "base/str.h"
 #include "base/types.h"
+#include "sys/sys.h"
 
 enum {
 	SYS_FILE_MODE_R,
@@ -63,3 +65,19 @@ str8 sys_current_path(struct alloc alloc);
 
 // Shared helper over sys_data_path()
 str8 sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name);
+
+static inline str8
+sys_path_timestamp(struct alloc alloc)
+{
+	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+	// 2026-09-07_19-14-03
+	return str8_fmt_push(
+		alloc,
+		"%04d-%02d-%02d_%02d-%02d-%02d",
+		dt.year,
+		dt.month + 1,
+		dt.day,
+		dt.hour,
+		dt.min,
+		dt.sec);
+}

@@ -1165,19 +1165,13 @@ prof_csv(struct alloc alloc, u32 max_records)
 static b32
 prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 {
-	b32 res                    = false;
-	struct date_time date_time = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-	str8 csv                   = prof_csv(alloc, 0);
-	str8 path                  = str8_fmt_push(
+	b32 res   = false;
+	str8 csv  = prof_csv(alloc, 0);
+	str8 path = str8_fmt_push(
 		alloc,
-		"%.*s-%04d-%02d-%02d_%02d-%02d-%02d-prof.csv",
+		"%.*s-%s-prof.csv",
 		str8_spread(app_name),
-		date_time.year,
-		date_time.month,
-		date_time.day,
-		date_time.hour,
-		date_time.min,
-		date_time.sec);
+		sys_file_timestamp(alloc).str);
 	str8 full_path = sys_path_to_data_path(alloc, path, app_org, app_name);
 	void *f        = sys_file_open_w(full_path);
 
