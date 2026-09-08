@@ -5,7 +5,7 @@
 #include "base/mathfunc.h"
 #include "base/log.h"
 
-static inline int ss_grid_cell_col_with_shape(struct ss_grid *grid, i32 x, i32 y, struct col_shape shape);
+static inline int ss_grid_cell_col_with_aabb(struct ss_grid *grid, i32 x, i32 y, struct col_aabb aabb);
 
 void
 ss_grid_gen(
@@ -26,8 +26,7 @@ ss_grid_gen(
 
 	// Find min/max cell cords of grid.
 	for(ssize i = 0; i < count; i++) {
-		struct ss_item item  = items[i];
-		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
+		struct col_aabb aabb = items[i].aabb;
 		qx1                  = min_i32(qx1, (i32)floor_f32(aabb.min.x * cell_size_inv));
 		qy1                  = min_i32(qy1, (i32)floor_f32(aabb.min.y * cell_size_inv));
 		qx2                  = max_i32(qx2, (i32)ceil_f32(aabb.max.x * cell_size_inv));
@@ -54,7 +53,7 @@ ss_grid_gen(
 	// Calculate how many bodies will be in each cell
 	for(ssize i = 0; i < count; ++i) {
 		struct ss_item item  = items[i];
-		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
+		struct col_aabb aabb = item.aabb;
 		i32 gx1              = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 gy1              = (i32)floor_f32(aabb.min.y * cell_size_inv);
 		i32 gx2              = (i32)ceil_f32(aabb.max.x * cell_size_inv);
@@ -64,7 +63,7 @@ ss_grid_gen(
 			for(int cy = gy1; cy <= gy2; ++cy) {
 				// NOTE: we could avoid the collision check and make this step faster
 				// But this would help get less items to check when queriing the grid
-				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
+				if(ss_grid_cell_col_with_aabb(grid, cx, cy, aabb)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
 					dbg_assert(cell != NULL);
 					handles_count++;
@@ -99,7 +98,7 @@ ss_grid_gen(
 	// Store objects handles in array
 	for(ssize i = 0; i < count; ++i) {
 		struct ss_item item  = items[i];
-		struct col_aabb aabb = col_shape_get_bounding_box(item.shape);
+		struct col_aabb aabb = item.aabb;
 		i32 x1               = (i32)floor_f32(aabb.min.x * cell_size_inv);
 		i32 y1               = (i32)floor_f32(aabb.min.y * cell_size_inv);
 		i32 x2               = (i32)ceil_f32(aabb.max.x * cell_size_inv);
@@ -107,7 +106,7 @@ ss_grid_gen(
 
 		for(int cx = x1; cx <= x2; ++cx) {
 			for(int cy = y1; cy <= y2; ++cy) {
-				if(ss_grid_cell_col_with_shape(grid, cx, cy, item.shape)) {
+				if(ss_grid_cell_col_with_aabb(grid, cx, cy, aabb)) {
 					struct ss_cell *cell = ss_grid_get(grid, cx, cy);
 					dbg_assert(cell != NULL);
 					ssize item_index = cell->index + cell->count;
@@ -121,64 +120,21 @@ ss_grid_gen(
 }
 
 static inline int
-ss_grid_cell_col_with_shape(
+ss_grid_cell_col_with_aabb(
 	struct ss_grid *grid,
 	i32 x,
 	i32 y,
-	struct col_shape shape)
+	struct col_aabb aabb)
 {
-	int res                   = 0;
 	struct col_aabb cell_aabb = {
 		.min.x = x * grid->cell_size,
 		.min.y = y * grid->cell_size,
 		.max.x = (x + 1) * grid->cell_size,
 		.max.y = (y + 1) * grid->cell_size,
 	};
-	switch(shape.type) {
-	case COL_TYPE_CIR: {
-		res = col_circle_to_aabb(
-			shape.cir.p.x,
-			shape.cir.p.y,
-			shape.cir.r,
-			cell_aabb.min.x,
-			cell_aabb.min.y,
-			cell_aabb.max.x,
-			cell_aabb.max.y);
-	} break;
-	case COL_TYPE_AABB: {
-		res = col_aabb_to_aabb(
-			shape.aabb.min.x,
-			shape.aabb.min.y,
-			shape.aabb.max.x,
-			shape.aabb.max.y,
-			cell_aabb.min.x,
-			cell_aabb.min.y,
-			cell_aabb.max.x,
-			cell_aabb.max.y);
-	} break;
-	case COL_TYPE_POLY: {
-		struct col_manifold m = {0};
-		res                   = col_aabb_to_poly(
-			cell_aabb.min.x,
-			cell_aabb.min.y,
-			cell_aabb.max.x,
-			cell_aabb.max.y,
-			shape.poly);
-	} break;
-	default: {
-		struct col_aabb aabb = col_shape_get_bounding_box(shape);
-		res                  = col_aabb_to_aabb(
-			aabb.min.x,
-			aabb.min.y,
-			aabb.max.x,
-			aabb.max.y,
-			cell_aabb.min.x,
-			cell_aabb.min.y,
-			cell_aabb.max.x,
-			cell_aabb.max.y);
-	} break;
-	}
-	return res;
+	return col_aabb_to_aabb(
+		COL_AABB_UNPACK(aabb),
+		COL_AABB_UNPACK(cell_aabb));
 }
 
 struct ss_cell *
