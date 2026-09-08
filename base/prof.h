@@ -1171,7 +1171,7 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 		alloc,
 		"%.*s-%s-prof.csv",
 		str8_spread(app_name),
-		sys_file_timestamp(alloc).str);
+		sys_path_timestamp(alloc).str);
 	str8 full_path = sys_path_to_data_path(alloc, path, app_org, app_name);
 	void *f        = sys_file_open_w(full_path);
 
