@@ -23,3 +23,5 @@
 #else
 #error No platform selected for sys-inc.c
 #endif
+
+#include "sys/sys-img.c"
