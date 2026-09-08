@@ -30,10 +30,6 @@ struct arr_header {
 		} \
 	} while(0)
 
-// TODO: Remove this
-#define arr_push_packed(ptr, item, alloc) \
-	arr_full(ptr) ? (ptr) = arr_grow_packed(ptr, arr_len(ptr) + 1, sizeof(*(ptr)), alignof(__typeof__(*ptr)), alloc) : 0, (ptr)[arr_header(ptr)->len++] = item
-
 static inline void *
 arr_ini_internal(struct alloc alloc, ssize elem_size, ssize align, ssize count, b32 clear)
 {
@@ -67,20 +63,4 @@ arr_grow(void *a, usize size)
 	dbg_sentinel("arr");
 error:
 	return NULL;
-}
-
-// TODO: Remove this
-static inline void *
-arr_grow_packed(void *a, ssize new_len, ssize elem_size, ssize elem_align, struct alloc alloc)
-{
-	struct arr_header *header = a ? arr_header(a) : arr_header(arr_ini_internal(alloc, elem_size, elem_align, new_len, false));
-	usize new_cap             = new_len;
-	ssize len                 = arr_len(a);
-	ssize count               = new_len - len;
-	void *res                 = alloc.allocf(alloc.ctx, count * elem_size, elem_align);
-
-	// TODO: Check if packed
-	header->cap = new_cap;
-	void *arr   = (char *)header + sizeof(struct arr_header);
-	return arr;
 }
