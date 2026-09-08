@@ -41,15 +41,15 @@ aabb_to_c2aabb(struct col_aabb v)
 }
 
 static inline c2Poly
-poly_to_c2poly(struct col_poly v)
+poly_to_c2poly(const struct col_poly *v)
 {
 	c2Poly r = {
-		.count = v.count,
+		.count = v->count,
 	};
 
-	for(ssize i = 0; i < v.count; ++i) {
-		r.verts[i] = v2_to_c2v(v.verts[i]);
-		r.norms[i] = v2_to_c2v(v.norms[i]);
+	for(ssize i = 0; i < v->count; ++i) {
+		r.verts[i] = v2_to_c2v(v->verts[i]);
+		r.norms[i] = v2_to_c2v(v->norms[i]);
 	}
 	return r;
 }
@@ -78,14 +78,34 @@ c2toi_to_toi(c2TOIResult *c2toi, struct col_toi *toi)
 	toi->iterations = c2toi->iterations;
 }
 
-static inline c2x
-col_transform_to_c2x(const struct col_transform *bx)
+// cute_c2 treats a NULL c2x as identity and skips the mul.
+static inline b32
+col_transform_is_id(const struct col_transform *x)
 {
-	struct col_transform x = bx ? *bx : col_transform_identity();
-	return (c2x){
-		.p = {x.p.x, x.p.y},
-		.r = {x.r.c, x.r.s},
-	};
+	b32 res                 = (x == NULL);
+	struct col_transform id = col_transform_identity();
+
+	if(!res) {
+		res = v2_eq(x->p, id.p) && x->r.c == id.r.c && x->r.s == id.r.s;
+	}
+
+	return res;
+}
+
+static inline const c2x *
+col_transform_to_c2x(const struct col_transform *bx, c2x *out)
+{
+	const c2x *res = NULL;
+
+	if(!col_transform_is_id(bx)) {
+		*out = (c2x){
+			.p = {bx->p.x, bx->p.y},
+			.r = {bx->r.c, bx->r.s},
+		};
+		res = out;
+	}
+
+	return res;
 }
 
 static inline void
@@ -101,7 +121,7 @@ c2manifold_to_manifold(c2Manifold *c2m, struct col_manifold *m)
 void
 col_poly_init(struct col_poly *p)
 {
-	c2Poly c2p = poly_to_c2poly(*p);
+	c2Poly c2p = poly_to_c2poly(p);
 	c2MakePoly(&c2p);
 	*p = c2poly_to_poly(c2p);
 }
@@ -213,11 +233,12 @@ col_circle_to_capsule(f32 x, f32 y, f32 r, struct col_capsule b)
 int
 col_circle_to_poly(struct col_cir a, struct col_poly b, struct col_transform *bx)
 {
-	c2Circle c2a = cir_to_c2cir(a);
-	int res      = 0;
-	c2Poly c2b   = poly_to_c2poly(b);
-	c2x cbx      = col_transform_to_c2x(bx);
-	res          = c2CircletoPoly(c2a, &c2b, &cbx);
+	c2Circle c2a   = cir_to_c2cir(a);
+	int res        = 0;
+	c2Poly c2b     = poly_to_c2poly(&b);
+	c2x cbx_s      = {0};
+	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
+	res            = c2CircletoPoly(c2a, &c2b, cbx);
 	return res;
 }
 
@@ -247,7 +268,7 @@ col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
 	c2AABB c2a   = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	int res      = 0;
 	c2Manifold m = {0};
-	c2Poly c2b   = poly_to_c2poly(b);
+	c2Poly c2b   = poly_to_c2poly(&b);
 	c2AABBtoPolyManifold(c2a, &c2b, NULL, &m);
 	res = m.count > 0;
 	return res;
@@ -358,9 +379,10 @@ col_aabb_to_poly_manifold(
 {
 	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	c2Manifold res = {0};
-	c2Poly c2b     = poly_to_c2poly(b);
-	c2x cbx        = col_transform_to_c2x(bx);
-	c2AABBtoPolyManifold(c2a, &c2b, &cbx, &res);
+	c2Poly c2b     = poly_to_c2poly(&b);
+	c2x cbx_s      = {0};
+	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
+	c2AABBtoPolyManifold(c2a, &c2b, cbx, &res);
 	c2manifold_to_manifold(&res, m);
 }
 
@@ -373,11 +395,13 @@ col_poly_to_poly_manifold(
 	struct col_manifold *m)
 {
 	c2Manifold res = {0};
-	c2Poly c2a     = poly_to_c2poly(a);
-	c2Poly c2b     = poly_to_c2poly(b);
-	c2x cax        = col_transform_to_c2x(ax);
-	c2x cbx        = col_transform_to_c2x(bx);
-	c2PolytoPolyManifold(&c2a, &cax, &c2b, &cbx, &res);
+	c2Poly c2a     = poly_to_c2poly(&a);
+	c2Poly c2b     = poly_to_c2poly(&b);
+	c2x cax_s      = {0};
+	c2x cbx_s      = {0};
+	const c2x *cax = col_transform_to_c2x(ax, &cax_s);
+	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
+	c2PolytoPolyManifold(&c2a, cax, &c2b, cbx, &res);
 	c2manifold_to_manifold(&res, m);
 }
 
@@ -438,13 +462,14 @@ col_circle_to_capsule_manifold(
 }
 
 void
-col_circle_to_poly_manifold(f32 x, f32 y, f32 r, struct col_poly b, struct col_transform *bx, struct col_manifold *m)
+col_circle_to_poly_manifold(f32 x, f32 y, f32 r, const struct col_poly *b, struct col_transform *bx, struct col_manifold *m)
 {
 	c2Circle c2a   = {.p.x = x, .p.y = y, .r = r};
 	c2Manifold c2m = {0};
 	c2Poly c2b     = poly_to_c2poly(b);
-	c2x cbx        = col_transform_to_c2x(bx);
-	c2CircletoPolyManifold(c2a, &c2b, &cbx, &c2m);
+	c2x cbx_s      = {0};
+	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
+	c2CircletoPolyManifold(c2a, &c2b, cbx, &c2m);
 	c2manifold_to_manifold(&c2m, m);
 }
 
@@ -595,67 +620,77 @@ error:
 void
 col_to_col_manifold(
 	struct col_shape *a,
-	struct col_transform a_transform,
+	struct col_transform *a_transform,
 	struct col_shape *b,
-	struct col_transform b_transform,
+	struct col_transform *b_transform,
 	struct col_manifold *m)
 {
+	v2 ap = {0};
+	v2 bp = {0};
+
+	if(a_transform) {
+		ap = a_transform->p;
+	}
+	if(b_transform) {
+		bp = b_transform->p;
+	}
+
 	switch(a->type) {
 	case COL_TYPE_CIR: {
 		switch(b->type) {
 		case COL_TYPE_CIR: {
 			col_circle_to_circle_manifold(
-				a->cir.p.x + a_transform.p.x,
-				a->cir.p.y + a_transform.p.y,
+				a->cir.p.x + ap.x,
+				a->cir.p.y + ap.y,
 				a->cir.r,
-				b->cir.p.x + b_transform.p.x,
-				b->cir.p.y + b_transform.p.y,
+				b->cir.p.x + bp.x,
+				b->cir.p.y + bp.y,
 				b->cir.r,
 				m);
 		} break;
 		case COL_TYPE_AABB: {
 			col_circle_to_aabb_manifold(
-				a->cir.p.x + a_transform.p.x,
-				a->cir.p.y + a_transform.p.y,
+				a->cir.p.x + ap.x,
+				a->cir.p.y + ap.y,
 				a->cir.r,
-				b->aabb.min.x + b_transform.p.x,
-				b->aabb.min.y + b_transform.p.y,
-				b->aabb.max.x + b_transform.p.x,
-				b->aabb.max.y + b_transform.p.y,
+				b->aabb.min.x + bp.x,
+				b->aabb.min.y + bp.y,
+				b->aabb.max.x + bp.x,
+				b->aabb.max.y + bp.y,
 				m);
 		} break;
 		case COL_TYPE_POLY: {
 			col_circle_to_poly_manifold(
-				a->cir.p.x + a_transform.p.x,
-				a->cir.p.y + a_transform.p.y,
+				a->cir.p.x + ap.x,
+				a->cir.p.y + ap.y,
 				a->cir.r,
-				b->poly,
-				&b_transform,
+				&b->poly,
+				b_transform,
 				m);
 		} break;
 		case COL_TYPE_CAPSULE: {
 			col_circle_to_capsule_manifold(
-				a->cir.p.x + a_transform.p.x,
-				a->cir.p.y + a_transform.p.y,
+				a->cir.p.x + ap.x,
+				a->cir.p.y + ap.y,
 				a->cir.r,
 
-				b->capsule.a.p.x + b_transform.p.x,
-				b->capsule.a.p.y + b_transform.p.y,
+				b->capsule.a.p.x + bp.x,
+				b->capsule.a.p.y + bp.y,
 				b->capsule.a.r,
 
-				b->capsule.b.p.x + b_transform.p.x,
-				b->capsule.b.p.y + b_transform.p.y,
+				b->capsule.b.p.x + bp.x,
+				b->capsule.b.p.y + bp.y,
 				b->capsule.b.r,
 
-				b->capsule.tangents.a.a.x + b_transform.p.x,
-				b->capsule.tangents.a.a.y + b_transform.p.y,
-				b->capsule.tangents.a.b.x + b_transform.p.x,
-				b->capsule.tangents.a.b.y + b_transform.p.y,
+				b->capsule.tangents.a.a.x + bp.x,
+				b->capsule.tangents.a.a.y + bp.y,
+				b->capsule.tangents.a.b.x + bp.x,
+				b->capsule.tangents.a.b.y + bp.y,
 
-				b->capsule.tangents.b.a.x + b_transform.p.x,
-				b->capsule.tangents.b.a.y + b_transform.p.y,
-				b->capsule.tangents.b.b.x + b_transform.p.x,
-				b->capsule.tangents.b.b.y + b_transform.p.y,
+				b->capsule.tangents.b.a.x + bp.x,
+				b->capsule.tangents.b.a.y + bp.y,
+				b->capsule.tangents.b.b.x + bp.x,
+				b->capsule.tangents.b.b.y + bp.y,
 
 				m);
 		} break;
@@ -668,35 +703,35 @@ col_to_col_manifold(
 		switch(b->type) {
 		case COL_TYPE_CIR: {
 			col_aabb_to_circle_manifold(
-				a->aabb.min.x + a_transform.p.x,
-				a->aabb.min.y + a_transform.p.y,
-				a->aabb.max.x + a_transform.p.x,
-				a->aabb.max.y + a_transform.p.y,
-				b->cir.p.x + b_transform.p.x,
-				b->cir.p.y + b_transform.p.y,
+				a->aabb.min.x + ap.x,
+				a->aabb.min.y + ap.y,
+				a->aabb.max.x + ap.x,
+				a->aabb.max.y + ap.y,
+				b->cir.p.x + bp.x,
+				b->cir.p.y + bp.y,
 				b->cir.r,
 				m);
 		} break;
 		case COL_TYPE_AABB: {
 			col_aabb_to_aabb_manifold(
-				a->aabb.min.x + a_transform.p.x,
-				a->aabb.min.y + a_transform.p.y,
-				a->aabb.max.x + a_transform.p.x,
-				a->aabb.max.y + a_transform.p.y,
-				b->aabb.min.x + b_transform.p.x,
-				b->aabb.min.y + b_transform.p.y,
-				b->aabb.max.x + b_transform.p.x,
-				b->aabb.max.y + b_transform.p.y,
+				a->aabb.min.x + ap.x,
+				a->aabb.min.y + ap.y,
+				a->aabb.max.x + ap.x,
+				a->aabb.max.y + ap.y,
+				b->aabb.min.x + bp.x,
+				b->aabb.min.y + bp.y,
+				b->aabb.max.x + bp.x,
+				b->aabb.max.y + bp.y,
 				m);
 		} break;
 		case COL_TYPE_POLY: {
 			col_aabb_to_poly_manifold(
-				a->aabb.min.x + a_transform.p.x,
-				a->aabb.min.y + a_transform.p.y,
-				a->aabb.max.x + a_transform.p.x,
-				a->aabb.max.y + a_transform.p.y,
+				a->aabb.min.x + ap.x,
+				a->aabb.min.y + ap.y,
+				a->aabb.max.x + ap.x,
+				a->aabb.max.y + ap.y,
 				b->poly,
-				&b_transform,
+				b_transform,
 				m);
 		} break;
 		case COL_TYPE_CAPSULE: {
@@ -710,23 +745,23 @@ col_to_col_manifold(
 		switch(b->type) {
 		case COL_TYPE_CIR: {
 			col_circle_to_poly_manifold(
-				b->cir.p.x + b_transform.p.x,
-				b->cir.p.y + b_transform.p.y,
+				b->cir.p.x + bp.x,
+				b->cir.p.y + bp.y,
 				b->cir.r,
-				a->poly,
-				&a_transform,
+				&a->poly,
+				a_transform,
 				m);
 			m->normal.x = -m->normal.x;
 			m->normal.y = -m->normal.y;
 		} break;
 		case COL_TYPE_AABB: {
 			col_aabb_to_poly_manifold(
-				b->aabb.min.x + b_transform.p.x,
-				b->aabb.min.y + b_transform.p.y,
-				b->aabb.max.x + b_transform.p.x,
-				b->aabb.max.y + b_transform.p.y,
+				b->aabb.min.x + bp.x,
+				b->aabb.min.y + bp.y,
+				b->aabb.max.x + bp.x,
+				b->aabb.max.y + bp.y,
 				a->poly,
-				&a_transform,
+				a_transform,
 				m);
 			m->normal.x = -m->normal.x;
 			m->normal.y = -m->normal.y;
@@ -734,9 +769,9 @@ col_to_col_manifold(
 		case COL_TYPE_POLY: {
 			col_poly_to_poly_manifold(
 				a->poly,
-				&a_transform,
+				a_transform,
 				b->poly,
-				&b_transform,
+				b_transform,
 				m);
 		} break;
 		default: {
@@ -748,27 +783,27 @@ col_to_col_manifold(
 		switch(b->type) {
 		case COL_TYPE_CIR: {
 			col_circle_to_capsule_manifold(
-				b->cir.p.x + b_transform.p.x,
-				b->cir.p.y + b_transform.p.y,
+				b->cir.p.x + bp.x,
+				b->cir.p.y + bp.y,
 				b->cir.r,
 
-				a->capsule.a.p.x + a_transform.p.x,
-				a->capsule.a.p.y + a_transform.p.y,
+				a->capsule.a.p.x + ap.x,
+				a->capsule.a.p.y + ap.y,
 				a->capsule.a.r,
 
-				a->capsule.b.p.x + a_transform.p.x,
-				a->capsule.b.p.y + a_transform.p.y,
+				a->capsule.b.p.x + ap.x,
+				a->capsule.b.p.y + ap.y,
 				a->capsule.b.r,
 
-				a->capsule.tangents.a.a.x + a_transform.p.x,
-				a->capsule.tangents.a.a.y + a_transform.p.y,
-				a->capsule.tangents.a.b.x + a_transform.p.x,
-				a->capsule.tangents.a.b.y + a_transform.p.y,
+				a->capsule.tangents.a.a.x + ap.x,
+				a->capsule.tangents.a.a.y + ap.y,
+				a->capsule.tangents.a.b.x + ap.x,
+				a->capsule.tangents.a.b.y + ap.y,
 
-				a->capsule.tangents.b.a.x + a_transform.p.x,
-				a->capsule.tangents.a.a.y + a_transform.p.y,
-				a->capsule.tangents.b.b.x + a_transform.p.x,
-				a->capsule.tangents.b.b.y + a_transform.p.y,
+				a->capsule.tangents.b.a.x + ap.x,
+				a->capsule.tangents.a.a.y + ap.y,
+				a->capsule.tangents.b.b.x + ap.x,
+				a->capsule.tangents.b.b.y + ap.y,
 				m);
 			m->normal.x = -m->normal.x;
 			m->normal.y = -m->normal.y;
