@@ -497,19 +497,13 @@ sokol_event(const sapp_event *ev)
 #if defined(SOKOL_RECORDING_ENABLED)
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc scratch = SOKOL_STATE.scratch;
-			struct date_time dt  = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-			str8 path            = str8_fmt_push(
+			str8 path = str8_fmt_push(
 				scratch,
-				"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
+				"%.*s/%s-%s.mp4",
 				(int)SOKOL_STATE.opts.recording.save_path.size,
 				SOKOL_STATE.opts.recording.save_path.str,
 				SOKOL_NAME,
-				dt.year,
-				dt.month,
-				dt.day,
-				dt.hour,
-				dt.min,
-				dt.sec);
+				sys_file_timestamp(scratch).str);
 			sys_recording_write(
 				scratch,
 				&SYS_RECORDING_STATE.gfx,
@@ -1599,7 +1593,6 @@ sokol_screenshot_save(struct tex tex)
 	static u32 data[SYS_DISPLAY_W * SYS_DISPLAY_H] = {0};
 	usize size                                     = ARRLEN(data);
 	struct alloc alloc                             = SOKOL_STATE.scratch;
-	struct date_time date_time                     = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
 	i32 w                                          = SYS_DISPLAY_W;
 	i32 h                                          = SYS_DISPLAY_H;
 	i32 comp                                       = 4;
@@ -1607,16 +1600,11 @@ sokol_screenshot_save(struct tex tex)
 
 	tex_opaque_to_rgba(tex, data, size, SOKOL_STATE.opts.screentshot.colors);
 	str8 path = str8_fmt_push(alloc,
-		"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d",
+		"%.*s/%s-%s",
 		(int)SOKOL_STATE.opts.screentshot.save_path.size,
 		SOKOL_STATE.opts.screentshot.save_path.str,
 		SOKOL_NAME,
-		date_time.year,
-		date_time.month,
-		date_time.day,
-		date_time.hour,
-		date_time.min,
-		date_time.sec);
+		sys_file_timestamp(alloc).str);
 
 #if SOKOL_SCREENSHOT_FORMAT == 1
 	path = str8_fmt_push(alloc, "%s.png", path.str);
