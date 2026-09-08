@@ -14,6 +14,7 @@
 #include "base/types.h"
 #include "sys/sys-font-mono.h"
 #include "sys/sys-opts.h"
+#include "sys/sys-record.h"
 #include "sys/sys-scoreboards.h"
 
 #include <jsmn.h>
@@ -32,7 +33,6 @@
 #include "base/prof.h"
 #include "base/dbg.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -82,9 +82,11 @@
 #define SOKOL_AUDIO_VOLUME        0.1f
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
-#define SOKOL_RECORDING_ENABLED
 #define SOKOL_MOCK_PLAYER_NAME "afk"
 
+#if BUILD_DEBUG
+#define SOKOL_RECORDING_ENABLED
+#endif
 #if OS_WINDOWS
 #undef SOKOL_RECORDING_ENABLED
 #endif
@@ -92,20 +94,6 @@
 struct touch_point_mouse_emu {
 	uintptr_t id;
 	sapp_mousebutton btn;
-};
-
-struct recording_1b {
-	ssize idx;
-	ssize len;
-	ssize cap;
-	struct tex *frames;
-};
-
-struct recording_aud {
-	ssize idx;
-	ssize len;
-	ssize cap;
-	f32 *frames;
 };
 
 enum sokol_status {
@@ -192,10 +180,10 @@ struct sokol_state {
 	struct fnt fnt;
 	struct sys_opts opts;
 
-	struct recording_1b recording;
-	struct recording_aud recording_aud;
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
+
+static struct sys_recording SYS_RECORDING_STATE;
 
 static struct sokol_state SOKOL_STATE;
 static u32 *SOKOL_PIXELS[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
@@ -232,11 +220,12 @@ void sokol_resume(void);
 static void sokol_set_icon(void);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
 static inline b32 sokol_touch_remove(sapp_touchpoint point);
-static void sokol_screenshot_save(struct tex tex);
 static void sokol_prof_csv_save(void);
-static void sokol_recording_write(struct recording_1b *recording);
 str8 sokol_path_to_res_path(struct str8 path);
 static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
+
+// TODO: move to sys?
+static void sokol_screenshot_save(struct tex tex);
 
 #if MINI_GAMEPAD_ENABLE
 static inline i32 sokol_gamepads_upd(void);
@@ -300,31 +289,13 @@ sokol_main(i32 argc, char **argv)
 	}
 
 #if defined(SOKOL_RECORDING_ENABLED)
-	// TODO: use sys_ups_target_get and when fps is changed change recording
-	u32 ups = SYS_DEFAULT_UPS;
 	{
-		struct recording_1b *rec = &SOKOL_STATE.recording;
-		struct alloc alloc       = SOKOL_STATE.alloc;
-		rec->cap                 = ups * SOKOL_STATE.opts.recording.seconds_count;
-		rec->len                 = 0;
-		rec->idx                 = 0;
-		rec->frames              = alloc_arr(alloc, rec->frames, rec->cap);
-		for(ssize i = 0; i < rec->cap; ++i) {
-			rec->frames[i] = tex_create_opaque(SYS_DISPLAY_W, SYS_DISPLAY_H, alloc);
-		}
-		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording video memory");
-	}
-	{
-		struct recording_aud *rec = &SOKOL_STATE.recording_aud;
-		struct alloc alloc        = SOKOL_STATE.alloc;
-		rec->cap                  = ups * SOKOL_STATE.opts.recording.seconds_count;
-		rec->len                  = 0;
-		rec->idx                  = 0;
-		rec->frames               = alloc_arr(alloc, rec->frames, rec->cap);
-		for(ssize i = 0; i < rec->cap; ++i) {
-			rec->frames[i] = 0;
-		}
-		dbg_check_warn(rec->frames != NULL, "sokol", "Failed to reserve recording audio memory");
+		// TODO: use sys_ups_target_get and when fps is changed change recording
+		u32 ups            = SYS_DEFAULT_UPS;
+		ssize frames       = ups * SOKOL_STATE.opts.recording.seconds_count;
+		struct alloc alloc = SOKOL_STATE.alloc;
+		recording_1b_ini(alloc, &SYS_RECORDING_STATE.gfx, ups * SOKOL_STATE.opts.recording.seconds_count);
+		recording_aud_ini(alloc, &SYS_RECORDING_STATE.aud, ups * SOKOL_STATE.opts.recording.seconds_count);
 	}
 #endif
 
@@ -517,14 +488,34 @@ sokol_event(const sapp_event *ev)
 		} break;
 		case SAPP_KEYCODE_F8: {
 #if defined(SOKOL_RECORDING_ENABLED)
-			struct recording_1b *rec = &SOKOL_STATE.recording;
+			struct recording_1b *rec = &SYS_RECORDING_STATE.gfx;
 			rec->idx                 = 0;
 			rec->len                 = 0;
 #endif
 		} break;
 		case SAPP_KEYCODE_F9: {
 #if defined(SOKOL_RECORDING_ENABLED)
-			sokol_recording_write(&SOKOL_STATE.recording);
+			marena_reset(&SOKOL_STATE.scratch_marena);
+			struct alloc scratch = SOKOL_STATE.scratch;
+			struct date_time dt  = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+			str8 path            = str8_fmt_push(
+				scratch,
+				"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
+				(int)SOKOL_STATE.opts.recording.save_path.size,
+				SOKOL_STATE.opts.recording.save_path.str,
+				SOKOL_NAME,
+				dt.year,
+				dt.month,
+				dt.day,
+				dt.hour,
+				dt.min,
+				dt.sec);
+			sys_recording_write(
+				scratch,
+				&SYS_RECORDING_STATE.gfx,
+				SOKOL_STATE.opts.recording.scale,
+				SOKOL_STATE.opts.recording.colors,
+				path);
 #endif
 		} break;
 		case SAPP_KEYCODE_R: {
@@ -844,15 +835,7 @@ sokol_frame(void)
 		b32 updated = sys_internal_update();
 		if(updated) {
 #if defined(SOKOL_RECORDING_ENABLED)
-			{
-				struct alloc scratch     = SOKOL_STATE.scratch;
-				struct recording_1b *rec = &SOKOL_STATE.recording;
-				struct tex *src          = &SOKOL_STATE.frame_ctx.dst;
-				struct tex *dst          = rec->frames + rec->idx;
-				tex_cpy(dst, src);
-				rec->idx = (rec->idx + 1) % rec->cap;
-				rec->len = MIN(rec->len + 1, rec->cap);
-			}
+			recording_1b_record(&SYS_RECORDING_STATE.gfx, &SOKOL_STATE.frame_ctx.dst);
 #endif
 		}
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
@@ -1245,7 +1228,7 @@ sys_debug_draw(struct debug_shape *shapes, int count)
 	}
 
 #if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
-	struct recording_aud *rec = &SOKOL_STATE.recording_aud;
+	struct recording_aud *rec = &SYS_RECORDING_STATE.recording_aud;
 	for(ssize i = 0; i < rec->len; ++i) {
 		i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
 		i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
@@ -1651,83 +1634,6 @@ sokol_prof_csv_save(void)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc alloc = SOKOL_STATE.scratch;
 	prof_csv_save(alloc, str8_lit(SOKOL_NAME), str8_lit(SOKOL_ORG));
-}
-
-// https://github.com/tsoding/rendering-video-in-c-with-ffmpeg/blob/master/ffmpeg_linux.c
-static void
-sokol_recording_write(struct recording_1b *recording)
-{
-	if(!recording || recording->len == 0) return;
-	marena_reset(&SOKOL_STATE.scratch_marena);
-
-	struct alloc scratch = SOKOL_STATE.scratch;
-	int w                = recording->frames[0].w;
-	int h                = recording->frames[0].h;
-
-	FILE *pipe = NULL;
-
-	// Generate timestamped output path
-	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-	str8 path           = str8_fmt_push(
-		scratch,
-		"%.*s/%s-%04d-%02d-%02d_%02d:%02d:%02d.mp4",
-		(int)SOKOL_STATE.opts.recording.save_path.size,
-		SOKOL_STATE.opts.recording.save_path.str,
-		SOKOL_NAME,
-		dt.year,
-		dt.month,
-		dt.day,
-		dt.hour,
-		dt.min,
-		dt.sec);
-
-	// Construct ffmpeg command
-	i32 fps                   = sys_ups_target_get();
-	i32 scale                 = SOKOL_STATE.opts.recording.scale;
-	struct str8_list cmd_list = {0};
-	str8_list_pushf(scratch, &cmd_list, "ffmpeg");
-#if BUILD_DEBUG
-	str8_list_pushf(scratch, &cmd_list, "-loglevel verbose");
-	// str8_list_pushf(scratch, &cmd_list, "-report");
-#endif
-	str8_list_pushf(scratch, &cmd_list, "-y");
-
-	str8_list_pushf(scratch, &cmd_list, "-f rawvideo");
-	str8_list_pushf(scratch, &cmd_list, "-pix_fmt rgba");
-	str8_list_pushf(scratch, &cmd_list, "-s %dx%d", w, h);
-	str8_list_pushf(scratch, &cmd_list, "-r %d", fps);
-	str8_list_pushf(scratch, &cmd_list, "-i -");
-
-	str8_list_pushf(scratch, &cmd_list, "-s %dx%d", w * scale, h * scale);
-	str8_list_pushf(scratch, &cmd_list, "-sws_flags neighbor");
-	str8_list_pushf(scratch, &cmd_list, "-c:v libx264");
-	str8_list_pushf(scratch, &cmd_list, "-pix_fmt yuv420p");
-	str8_list_pushf(scratch, &cmd_list, "-vb 2500k");
-
-	str8_list_pushf(scratch, &cmd_list, "\"%s\"", path.str);
-
-	struct str_join params = {.sep = str8_lit(" ")};
-	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
-	ssize dst_size         = w * h * sizeof(u32);
-	u32 *dst               = alloc_arr(scratch, dst, w * h);
-	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
-
-	pipe = popen((char *)cmd.str, "w");
-	dbg_check_warn(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);
-
-	// Write frames in chronological order (handles circular buffer)
-	ssize oldest = (recording->idx + recording->cap - (recording->len - 1)) % recording->cap;
-	for(ssize i = 0; i < (ssize)recording->len; i++) {
-		ssize f        = (oldest + i) % recording->cap;
-		struct tex src = recording->frames[f];
-		tex_opaque_to_rgba(src, dst, dst_size, SOKOL_STATE.opts.recording.colors);
-		fwrite(dst, sizeof(u32), w * h, pipe);
-	}
-
-error:;
-	if(pipe) {
-		pclose(pipe);
-	}
 }
 
 #if MINI_GAMEPAD_ENABLE

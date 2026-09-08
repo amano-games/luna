@@ -5,6 +5,7 @@
 
 #include "sys/sys.h"
 #include "sys/sys-io.h"
+#include "sys/sys-img.h"
 #include "sys/sys-input.h"
 #include "sys/sys-scoreboards.h"
 #include "sys/sys-debug-draw.h"

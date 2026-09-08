@@ -8,6 +8,8 @@
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"
 
+#include "lib/tex/tex.c"
+
 #include "base/marena.c"
 #include "base/str.c"
 #include "base/cmd-line.c"
