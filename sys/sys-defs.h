@@ -2,7 +2,7 @@
 
 #include "base/base-inc.h"
 
-#define SYS_DISPLAY_SCALE  3
+#define SYS_DISPLAY_SCALE  1
 #define SYS_DISPLAY_W      400
 #define SYS_DISPLAY_H      240 * SYS_DISPLAY_SCALE
 #define SYS_DISPLAY_WBYTES 52
