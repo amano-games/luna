@@ -18,7 +18,7 @@ LDLIBS  := -lm
 LDFLAGS :=
 
 # Headless: drop graphics flags inherited from game platform makefiles.
-override CDEFS := $(filter-out -DSYS_GFX_SOKOL -DSOKOL_GLCORE -DSOKOL_METAL -DSOKOL_D3D11 -DSOKOL_GLES3 -DSOKOL_DEBUG=1,$(CDEFS))
+override CDEFS := $(filter-out -DSYS_GFX_SOKOL -DSOKOL_GLCORE -DSOKOL_METAL -DSOKOL_D3D11 -DSOKOL_GLES3 -DSOKOL_DEBUG=1 -DSYS_LOG_LEVEL%,$(CDEFS))
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -g
