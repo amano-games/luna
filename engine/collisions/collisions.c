@@ -518,7 +518,7 @@ col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc)
 }
 
 struct col_aabb
-col_shapes_get_bounding_box(struct col_shapes shapes)
+col_shapes_get_bounding_box(const struct col_shapes *shapes)
 {
 	struct col_aabb res = {
 		.min.x = F32_MAX,
@@ -527,8 +527,8 @@ col_shapes_get_bounding_box(struct col_shapes shapes)
 		.max.y = F32_MIN,
 	};
 
-	for(ssize i = 0; i < shapes.count; ++i) {
-		struct col_aabb aabb = col_shape_get_bounding_box(shapes.items[i]);
+	for(ssize i = 0; i < shapes->count; ++i) {
+		struct col_aabb aabb = col_shape_get_bounding_box(shapes->items + i);
 		res.min.x            = min_f32(res.min.x, aabb.min.x);
 		res.min.y            = min_f32(res.min.y, aabb.min.y);
 		res.max.x            = max_f32(res.max.x, aabb.max.x);
@@ -587,25 +587,25 @@ col_capsule_get_bounding_box(struct col_capsule col)
 }
 
 struct col_aabb
-col_shape_get_bounding_box(struct col_shape shape)
+col_shape_get_bounding_box(const struct col_shape *shape)
 {
 	struct col_aabb res = {0};
-	dbg_assert(shape.type != COL_TYPE_NONE);
-	switch(shape.type) {
+	dbg_assert(shape->type != COL_TYPE_NONE);
+	switch(shape->type) {
 	case COL_TYPE_CIR: {
 		res = (struct col_aabb){
-			.min = {shape.cir.p.x - shape.cir.r, shape.cir.p.y - shape.cir.r},
-			.max = {shape.cir.p.x + shape.cir.r, shape.cir.p.y + shape.cir.r},
+			.min = {shape->cir.p.x - shape->cir.r, shape->cir.p.y - shape->cir.r},
+			.max = {shape->cir.p.x + shape->cir.r, shape->cir.p.y + shape->cir.r},
 		};
 	} break;
 	case COL_TYPE_AABB: {
-		res = shape.aabb;
+		res = shape->aabb;
 	} break;
 	case COL_TYPE_POLY: {
-		res = col_poly_get_bounding_box(shape.poly);
+		res = col_poly_get_bounding_box(shape->poly);
 	} break;
 	case COL_TYPE_CAPSULE: {
-		res = col_capsule_get_bounding_box(shape.capsule);
+		res = col_capsule_get_bounding_box(shape->capsule);
 	} break;
 	default: {
 		dbg_sentinel("col");

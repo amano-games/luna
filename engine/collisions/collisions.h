@@ -161,8 +161,8 @@ col_aabb_from_rec_i32(rec_i32 rec)
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(struct col_poly *p);
 struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, f32 x, f32 y);
-struct col_aabb col_shapes_get_bounding_box(struct col_shapes shapes);
-struct col_aabb col_shape_get_bounding_box(struct col_shape shape);
+struct col_aabb col_shapes_get_bounding_box(const struct col_shapes *shapes);
+struct col_aabb col_shape_get_bounding_box(const struct col_shape *shape);
 
 void col_point_to_line(v2 c, v2 a, v2 b, f32 *t, v2 *d);
 f32 col_point_to_line_t(v2 c, v2 a, v2 b);
