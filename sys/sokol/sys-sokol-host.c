@@ -751,6 +751,9 @@ void
 sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
 #if !defined(SOKOL_DISABLE_AUDIO)
+#if PROF
+	u32 t0 = sys_time_us();
+#endif
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		dbg_assert(num_channels == SOKOL_AUDIO_CHANNEL_COUNT);
@@ -786,6 +789,9 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 	} else {
 		mclr(buffer, num_frames * num_channels * sizeof(f32));
 	}
+#if PROF
+	sys_prof_aud_cb_add(sys_time_us() - t0);
+#endif
 #endif
 }
 
