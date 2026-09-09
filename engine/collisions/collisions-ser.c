@@ -82,7 +82,7 @@ col_aabb_write(struct ser_writer *w, struct col_aabb col)
 }
 
 void
-col_poly_write(struct ser_writer *w, struct col_poly col)
+col_poly_write(struct ser_writer *w, col_poly col)
 {
 	ser_write_object(w);
 
@@ -93,14 +93,14 @@ col_poly_write(struct ser_writer *w, struct col_poly col)
 		ser_write_string(w, str8_lit("verts"));
 		ser_write_array(w);
 		for(ssize i = 0; i < col.count; ++i) {
-			ser_write_v2(w, col.verts[i]);
+			ser_write_v2(w, col_v2_from_c2v(col.verts[i]));
 		}
 		ser_write_end(w);
 
 		ser_write_string(w, str8_lit("norms"));
 		ser_write_array(w);
 		for(ssize i = 0; i < col.count; ++i) {
-			ser_write_v2(w, col.norms[i]);
+			ser_write_v2(w, col_v2_from_c2v(col.norms[i]));
 		}
 		ser_write_end(w);
 	}
@@ -209,10 +209,10 @@ col_aabb_read(struct ser_reader *r, struct ser_value arr)
 	return res;
 }
 
-struct col_poly
+col_poly
 col_poly_read(struct ser_reader *r, struct ser_value obj)
 {
-	struct col_poly res = {0};
+	col_poly res = {0};
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct ser_value key, value;
 
@@ -226,7 +226,7 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 			ssize i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
 				dbg_assert(i < (ssize)ARRLEN(res.verts));
-				res.verts[i++] = ser_read_v2(r, item_value);
+				res.verts[i++] = col_c2v_from_v2(ser_read_v2(r, item_value));
 			}
 			dbg_assert(res.count == i);
 		} else if(str8_match(key.str, str8_lit("norms"), 0)) {
@@ -235,7 +235,7 @@ col_poly_read(struct ser_reader *r, struct ser_value obj)
 			ssize i = 0;
 			while(ser_iter_array(r, value, &item_value)) {
 				dbg_assert(i < (ssize)ARRLEN(res.norms));
-				res.norms[i++] = ser_read_v2(r, item_value);
+				res.norms[i++] = col_c2v_from_v2(ser_read_v2(r, item_value));
 			}
 			dbg_assert(res.count == i);
 		}

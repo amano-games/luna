@@ -40,34 +40,6 @@ aabb_to_c2aabb(struct col_aabb v)
 		.max = v2_to_c2v(v.max)};
 }
 
-static inline c2Poly
-poly_to_c2poly(const struct col_poly *v)
-{
-	c2Poly r = {
-		.count = v->count,
-	};
-
-	for(ssize i = 0; i < v->count; ++i) {
-		r.verts[i] = v2_to_c2v(v->verts[i]);
-		r.norms[i] = v2_to_c2v(v->norms[i]);
-	}
-	return r;
-}
-
-static inline struct col_poly
-c2poly_to_poly(struct c2Poly v)
-{
-	struct col_poly r = {
-		.count = v.count,
-	};
-
-	for(int i = 0; i < v.count; ++i) {
-		r.verts[i] = c2v_to_v2(v.verts[i]);
-		r.norms[i] = c2v_to_v2(v.norms[i]);
-	}
-	return r;
-}
-
 static inline void
 c2toi_to_toi(c2TOIResult *c2toi, struct col_toi *toi)
 {
@@ -119,11 +91,9 @@ c2manifold_to_manifold(c2Manifold *c2m, struct col_manifold *m)
 }
 
 void
-col_poly_init(struct col_poly *p)
+col_poly_init(col_poly *p)
 {
-	c2Poly c2p = poly_to_c2poly(p);
-	c2MakePoly(&c2p);
-	*p = c2poly_to_poly(c2p);
+	c2MakePoly(p);
 }
 
 struct col_cir
@@ -231,14 +201,13 @@ col_circle_to_capsule(f32 x, f32 y, f32 r, struct col_capsule b)
 }
 
 int
-col_circle_to_poly(struct col_cir a, struct col_poly b, struct col_transform *bx)
+col_circle_to_poly(struct col_cir a, col_poly b, struct col_transform *bx)
 {
 	c2Circle c2a   = cir_to_c2cir(a);
 	int res        = 0;
-	c2Poly c2b     = poly_to_c2poly(&b);
 	c2x cbx_s      = {0};
 	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
-	res            = c2CircletoPoly(c2a, &c2b, cbx);
+	res            = c2CircletoPoly(c2a, &b, cbx);
 	return res;
 }
 
@@ -261,15 +230,14 @@ col_aabb_to_aabb(
 }
 
 int
-col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, struct col_poly b)
+col_aabb_to_poly(f32 x1a, f32 y1a, f32 x2a, f32 y2a, col_poly b)
 {
 	// WARN: slow because we do the manifold
 	// https://github.com/RandyGaul/cute_headers/issues/404
 	c2AABB c2a   = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	int res      = 0;
 	c2Manifold m = {0};
-	c2Poly c2b   = poly_to_c2poly(&b);
-	c2AABBtoPolyManifold(c2a, &c2b, NULL, &m);
+	c2AABBtoPolyManifold(c2a, &b, NULL, &m);
 	res = m.count > 0;
 	return res;
 }
@@ -373,35 +341,32 @@ col_aabb_to_poly_manifold(
 	f32 y1a,
 	f32 x2a,
 	f32 y2a,
-	struct col_poly b,
+	col_poly b,
 	struct col_transform *bx,
 	struct col_manifold *m)
 {
 	c2AABB c2a     = {.min = {x1a, y1a}, .max = {x2a, y2a}};
 	c2Manifold res = {0};
-	c2Poly c2b     = poly_to_c2poly(&b);
 	c2x cbx_s      = {0};
 	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
-	c2AABBtoPolyManifold(c2a, &c2b, cbx, &res);
+	c2AABBtoPolyManifold(c2a, &b, cbx, &res);
 	c2manifold_to_manifold(&res, m);
 }
 
 void
 col_poly_to_poly_manifold(
-	struct col_poly a,
+	col_poly a,
 	struct col_transform *ax,
-	struct col_poly b,
+	col_poly b,
 	struct col_transform *bx,
 	struct col_manifold *m)
 {
 	c2Manifold res = {0};
-	c2Poly c2a     = poly_to_c2poly(&a);
-	c2Poly c2b     = poly_to_c2poly(&b);
 	c2x cax_s      = {0};
 	c2x cbx_s      = {0};
 	const c2x *cax = col_transform_to_c2x(ax, &cax_s);
 	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
-	c2PolytoPolyManifold(&c2a, cax, &c2b, cbx, &res);
+	c2PolytoPolyManifold(&a, cax, &b, cbx, &res);
 	c2manifold_to_manifold(&res, m);
 }
 
@@ -462,14 +427,13 @@ col_circle_to_capsule_manifold(
 }
 
 void
-col_circle_to_poly_manifold(f32 x, f32 y, f32 r, const struct col_poly *b, struct col_transform *bx, struct col_manifold *m)
+col_circle_to_poly_manifold(f32 x, f32 y, f32 r, const col_poly *b, struct col_transform *bx, struct col_manifold *m)
 {
 	c2Circle c2a   = {.p.x = x, .p.y = y, .r = r};
 	c2Manifold c2m = {0};
-	c2Poly c2b     = poly_to_c2poly(b);
 	c2x cbx_s      = {0};
 	const c2x *cbx = col_transform_to_c2x(bx, &cbx_s);
-	c2CircletoPolyManifold(c2a, &c2b, cbx, &c2m);
+	c2CircletoPolyManifold(c2a, b, cbx, &c2m);
 	c2manifold_to_manifold(&c2m, m);
 }
 
@@ -549,7 +513,7 @@ col_cir_get_bounding_box(struct col_cir col)
 }
 
 static inline struct col_aabb
-col_poly_get_bounding_box(struct col_poly poly)
+col_poly_get_bounding_box(const col_poly *poly)
 {
 	struct col_aabb res = {
 		.min.x = F32_MAX,
@@ -557,21 +521,19 @@ col_poly_get_bounding_box(struct col_poly poly)
 		.max.x = F32_MIN,
 		.max.y = F32_MIN,
 	};
-
-	for(ssize j = 0; j < poly.count; ++j) {
-		v2 p      = poly.verts[j];
+	for(ssize j = 0; j < poly->count; ++j) {
+		c2v p     = poly->verts[j];
 		res.min.x = min_f32(res.min.x, p.x);
 		res.min.y = min_f32(res.min.y, p.y);
 		res.max.x = max_f32(res.max.x, p.x);
 		res.max.y = max_f32(res.max.y, p.y);
 	}
-
 	return res;
 }
 
 // TODO: accept a min/max angle of rotation so the boundig box is smaller
 static inline struct col_aabb
-col_capsule_get_bounding_box(struct col_capsule col)
+col_capsule_get_bounding_box(const struct col_capsule *col)
 {
 	struct col_aabb res = {
 		.min.x = F32_MAX,
@@ -580,7 +542,7 @@ col_capsule_get_bounding_box(struct col_capsule col)
 		.max.y = F32_MIN,
 	};
 
-	struct col_cir cir = col_merge_circles(col.a, col.b);
+	struct col_cir cir = col_merge_circles(col->a, col->b);
 	res                = col_cir_get_bounding_box(cir);
 
 	return res;
@@ -602,10 +564,10 @@ col_shape_get_bounding_box(const struct col_shape *shape)
 		res = shape->aabb;
 	} break;
 	case COL_TYPE_POLY: {
-		res = col_poly_get_bounding_box(shape->poly);
+		res = col_poly_get_bounding_box(&shape->poly);
 	} break;
 	case COL_TYPE_CAPSULE: {
-		res = col_capsule_get_bounding_box(shape->capsule);
+		res = col_capsule_get_bounding_box(&shape->capsule);
 	} break;
 	default: {
 		dbg_sentinel("col");
