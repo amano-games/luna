@@ -193,8 +193,12 @@ dbg_drw_collider(struct col_shape shape)
 
 	} break;
 	case COL_TYPE_POLY: {
-		struct col_poly col = shape.poly;
-		dbg_drw_poly(col.verts, col.count);
+		col_poly col = shape.poly;
+		v2 verts[COL_MAX_POLYGON_VERTS];
+		for(ssize i = 0; i < col.count; ++i) {
+			verts[i] = col_v2_from_c2v(col.verts[i]);
+		}
+		dbg_drw_poly(verts, col.count);
 	} break;
 	default: {
 	} break;

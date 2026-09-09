@@ -15,8 +15,8 @@ struct col_cir col_cir_read(struct ser_reader *r, struct ser_value arr);
 void col_aabb_write(struct ser_writer *w, struct col_aabb col);
 struct col_aabb col_aabb_read(struct ser_reader *r, struct ser_value arr);
 
-void col_poly_write(struct ser_writer *w, struct col_poly col);
-struct col_poly col_poly_read(struct ser_reader *r, struct ser_value obj);
+void col_poly_write(struct ser_writer *w, col_poly col);
+col_poly col_poly_read(struct ser_reader *r, struct ser_value obj);
 
 void col_capsule_write(struct ser_writer *w, struct col_capsule col);
 struct col_capsule col_capsule_read(struct ser_reader *r, struct ser_value arr);
@@ -51,12 +51,12 @@ col_capsule_to_str8(struct alloc alloc, struct col_capsule col)
 }
 
 static inline str8
-col_poly_to_str8(struct alloc alloc, struct col_poly col)
+col_poly_to_str8(struct alloc alloc, col_poly col)
 {
 	str8 res              = {0};
 	struct str8_list list = {0};
 	for(ssize i = 0; i < col.count; ++i) {
-		struct v2 vert = col.verts[i];
+		v2 vert = col_v2_from_c2v(col.verts[i]);
 		str8_list_pushf(alloc, &list, "%g", (double)vert.x);
 		str8_list_pushf(alloc, &list, "%g", (double)vert.y);
 	}

@@ -24,7 +24,11 @@ body_init(struct body *body)
 		struct col_shape *shape = body->shapes.items + i;
 		switch(shape->type) {
 		case COL_TYPE_POLY: {
-			body->p = poly_centroid(shape->poly.verts, shape->poly.count);
+			v2 verts[COL_MAX_POLYGON_VERTS];
+			for(ssize j = 0; j < shape->poly.count; ++j) {
+				verts[j] = col_v2_from_c2v(shape->poly.verts[j]);
+			}
+			body->p = poly_centroid(verts, shape->poly.count);
 		} break;
 		case COL_TYPE_CIR: {
 			f32 r         = shape->cir.r;
