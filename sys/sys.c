@@ -321,16 +321,37 @@ sys_internal_update(void)
 	return should_render;
 }
 
+#if PROF
+static void
+sys_prof_anchor_add(enum prof_anchor_sys idx, const char *label, u32 dt)
+{
+	struct prof_anchor *a = &PROFILER.anchors[idx];
+	a->us_exclusive += dt;
+	a->us_inclusive += dt;
+	++a->hit_count;
+	PROFILER.anchor_labels[idx] = label;
+	PROFILER.anchor_count       = MAX(PROFILER.anchor_count, (u16)(idx + 1));
+}
+#endif
+
 void
 sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 {
-#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+#if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu1 = sys_time_us();
 #endif
 	app_audio(lbuf, rbuf, len);
-#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+#if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu2 = sys_time_us();
-	SYS.timing.cpu_time_acc_us += tu2 - tu1;
+	u32 dt  = tu2 - tu1;
+#endif
+
+#if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
+	SYS.timing.cpu_time_acc_us += dt;
+#endif
+
+#if PROF
+	sys_prof_anchor_add(PROF_ANCHOR_SYS_AUD, "aud mix", dt);
 #endif
 }
 
@@ -392,4 +413,14 @@ void
 sys_prof_resume(void)
 {
 	SYS.prof_record_data = true;
+}
+
+void
+sys_prof_aud_cb_add(u32 dt)
+{
+#if PROF
+	sys_prof_anchor_add(PROF_ANCHOR_SYS_AUD_CB, "aud cb", dt);
+#else
+	(void)dt;
+#endif
 }

@@ -199,7 +199,13 @@ sys_pd_update(void *pd)
 int
 sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len)
 {
+#if PROF
+	u32 t0 = sys_time_us();
+#endif
 	sys_internal_audio(lbuf, rbuf, len);
+#if PROF
+	sys_prof_aud_cb_add(sys_time_us() - t0);
+#endif
 	return 1;
 }
 
