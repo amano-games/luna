@@ -5,7 +5,7 @@
 
 #include "base/types.h"
 
-static u32 *
+static inline u32 *
 bit_arr_u32_new(usize count, struct alloc alloc)
 {
 	usize bit_arr_count = (count + 31) / 32;
@@ -13,8 +13,24 @@ bit_arr_u32_new(usize count, struct alloc alloc)
 	return res;
 }
 
+static inline b32
+bit_arr_u32_exists(const u32 *arr, usize count, usize index)
+{
+	usize integer_index = index >> 5;
+	u32 mask = UINT32_C(1) << (index & 31);
+	return (arr[integer_index] & mask) != 0;
+}
+
+static inline void
+bit_arr_u32_set(u32 *arr, usize count, usize index)
+{
+	usize integer_index = index >> 5;
+	u32 mask = UINT32_C(1) << (index & 31);
+	arr[integer_index] |= mask;
+}
+
 // 7.7 Avoiding Retesting 341 Real time collision detection
-static b32
+static inline b32
 bit_arr_u32_exists_and_set(u32 *arr, usize count, usize index)
 {
 	// Calculate the index of the integer in the array
@@ -32,14 +48,14 @@ bit_arr_u32_exists_and_set(u32 *arr, usize count, usize index)
 	return true;
 }
 
-static u32 *
+static inline u32 *
 bit_pairs_arr_u32_new(usize count, struct alloc alloc)
 {
 	usize max_pairs_count = count * (count - 1) / 2;
 	return bit_arr_u32_new(max_pairs_count, alloc);
 }
 
-static b32
+static inline b32
 bit_pair_arr_exists_and_set(u32 *arr, usize count, usize index_a, usize index_b)
 {
 	dbg_assert(index_a != index_b);
