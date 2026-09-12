@@ -177,19 +177,10 @@ ser_write_end(struct ser_writer *w)
 static inline bool
 ser_safe_read(struct ser_reader *r, void *dst, int size)
 {
-	str8 blob = string8((u8 *)r->data, (u64)r->len);
-	u64 off   = (u64)r->cur;
-	u64 n     = (u64)size;
-
-	if(n != 0 && str8_deserial_get_raw_ptr(blob, off, n) == 0) {
-		return false;
-	}
-
-	if(dst && n != 0) {
-		str8_deserial_read(blob, off, dst, n, n);
-	}
-
-	r->cur = (int)(off + n);
+	int idx = r->cur + size;
+	if(idx > r->len) { return false; }
+	if(dst) { mcpy(dst, &r->data[r->cur], size); }
+	r->cur = idx;
 	return true;
 }
 

@@ -126,31 +126,6 @@ struct str8_list str8_split(struct alloc alloc, str8 str, u8 *split_chars, usize
 struct str8_list str8_split_by_string_chars(struct alloc alloc, str8 str, str8 split_chars, str_split_flags flags);
 str8 str8_list_join(struct alloc alloc, struct str8_list *list, struct str_join *optional_params);
 
-// Blob builder: append into a str8_list, flatten with str8_serial_end.
-void str8_serial_begin(struct alloc alloc, struct str8_list *srl);
-str8 str8_serial_end(struct alloc alloc, struct str8_list *srl);
-void str8_serial_write_to_dst(struct str8_list *srl, void *out);
-u64 str8_serial_push_align(struct alloc alloc, struct str8_list *srl, u64 align);
-void *str8_serial_push_size(struct alloc alloc, struct str8_list *srl, u64 size);
-void *str8_serial_push_data(struct alloc alloc, struct str8_list *srl, void *data, u64 size);
-void str8_serial_push_data_list(struct alloc alloc, struct str8_list *srl, struct str8_node *first);
-void *str8_serial_push_u64(struct alloc alloc, struct str8_list *srl, u64 x);
-void *str8_serial_push_u32(struct alloc alloc, struct str8_list *srl, u32 x);
-void *str8_serial_push_u16(struct alloc alloc, struct str8_list *srl, u16 x);
-void *str8_serial_push_u8(struct alloc alloc, struct str8_list *srl, u8 x);
-void *str8_serial_push_cstr(struct alloc alloc, struct str8_list *srl, str8 str);
-void *str8_serial_push_string(struct alloc alloc, struct str8_list *srl, str8 str);
-#define str8_serial_push_array(alloc, srl, ptr, count) str8_serial_push_data((alloc), (srl), (ptr), sizeof(*(ptr)) * (count))
-#define str8_serial_push_struct(alloc, srl, ptr)       str8_serial_push_array((alloc), (srl), (ptr), 1)
-
-// Read packed fields from a str8 at an offset.
-u64 str8_deserial_read(str8 string, u64 off, void *read_dst, u64 read_size, u64 granularity);
-void *str8_deserial_get_raw_ptr(str8 string, u64 off, u64 size);
-u64 str8_deserial_read_cstr(str8 string, u64 off, str8 *cstr_out);
-u64 str8_deserial_read_block(str8 string, u64 off, u64 size, str8 *block_out);
-#define str8_deserial_read_array(string, off, ptr, count) str8_deserial_read((string), (off), (ptr), sizeof(*(ptr)) * (count), sizeof(*(ptr)))
-#define str8_deserial_read_struct(string, off, ptr)       str8_deserial_read_array(string, off, ptr, 1)
-
 struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize first_line_max_width, usize max_width, usize wrap_indent);
 
 str8 str_from_week_day(enum week_day week_day);
