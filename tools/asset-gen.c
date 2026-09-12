@@ -2,6 +2,7 @@
 
 #include <tinydir.h>
 #include "base/cmd-line.h"
+#include "base/log.h"
 #include "base/marena.h"
 #include "base/path.h"
 #include "base/str.h"
@@ -198,6 +199,7 @@ asset_gen_recursive(
 void
 qop_pack(str8 in_path, str8 out_path, struct marena *arena)
 {
+	log_info("asset-gen", "packing assets to %.*s", str8_spread(out_path));
 	// TODO: Figure out real out path out_path/assets.qop?
 	void *file_out = sys_file_open_w(out_path);
 	dbg_check(file_out, "qop", "failed to open file: %s", out_path);
@@ -221,7 +223,7 @@ main(int argc, char *argv[])
 	struct alloc scratch = marena_allocator(&scratch_arena);
 
 	struct cmd_line cmd = cmd_line_from_argcv(scratch, argc, argv);
-	b32 pack            = cmd_line_has_flag(&cmd, str8_lit("pack"));
+	b32 packed          = cmd_line_has_flag(&cmd, str8_lit("pack"));
 
 	if(cmd.inputs.node_count < 2) {
 		sys_printf("Usage: %.*s <in_path> <destination_path> --pack=assets.qop", str8_spread(cmd.exe_name));
@@ -231,11 +233,11 @@ main(int argc, char *argv[])
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;
-	log_info("asset-gen", "Processing assets from %s -> %s", in_path.str, out_path.str);
 
+	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	if(pack) {
+	if(packed) {
 		str8 pack_name = cmd_line_str8(&cmd, str8_lit("pack"));
 		if(pack_name.size == 0) {
 			pack_name = str8_lit("assets.qop");
