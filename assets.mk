@@ -2,7 +2,7 @@
 # ASSETS_EXTRA for dirs that must exist first) before including this file.
 
 $(ASSETS_BIN): $(LUNA_C_H)
-	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools
+	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0
 
 .PHONY: assets
 assets: $(ASSETS_BIN) $(ASSETS_EXTRA)

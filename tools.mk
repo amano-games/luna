@@ -17,7 +17,11 @@ INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 LDLIBS  := -lm
 LDFLAGS :=
 
-# Headless: drop graphics flags inherited from game platform makefiles.
+# Tools debug is opt-in. Game BUILD_DEBUG / CDEFS must not leak here.
+BUILD_DEBUG_TOOLS ?= 0
+CDEFS_DEBUG_TOOLS ?= -DSYS_LOG_LEVEL=SYS_LOG_LEVEL_INFO
+
+# Headless: drop graphics flags and log level inherited from game platform makefiles.
 override CDEFS := $(filter-out -DSYS_GFX_SOKOL -DSOKOL_GLCORE -DSOKOL_METAL -DSOKOL_D3D11 -DSOKOL_GLES3 -DSOKOL_DEBUG=1 -DSYS_LOG_LEVEL%,$(CDEFS))
 
 RELEASE_CFLAGS := ${CFLAGS}
@@ -28,8 +32,9 @@ DEBUG_CFLAGS := -std=gnu11 -g -O0
 DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DBUILD_DEBUG=1
 
-ifeq ($(BUILD_DEBUG), 1)
+ifeq ($(BUILD_DEBUG_TOOLS), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
+	override CDEFS += $(CDEFS_DEBUG_TOOLS)
 else
 	CFLAGS := $(RELEASE_CFLAGS)
 endif
