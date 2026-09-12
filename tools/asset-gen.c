@@ -1,6 +1,10 @@
 #include "base/base-inc.h"
 
 #include <tinydir.h>
+#include "base/cmd-line.h"
+#include "base/marena.h"
+#include "base/path.h"
+#include "base/str.h"
 #include "engine/assets/qop.h"
 #include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
@@ -206,34 +210,41 @@ error:;
 int
 main(int argc, char *argv[])
 {
-	int res = EXIT_FAILURE;
+	int res                = EXIT_FAILURE;
+	struct alloc alloc_sys = sys_allocator();
 
-	if(argc != 3) {
-		log_info("asset-gen", "Usage: %s <in_path> <destination_path>", argv[0]);
-		res = EXIT_SUCCESS;
-		return res;
+	usize mem_size = MMEGABYTE(1);
+	void *mem      = mem_alloc_size(alloc_sys, mem_size);
+	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
+	struct marena scratch_arena = {0};
+	marena_init(&scratch_arena, mem, mem_size);
+	struct alloc scratch = marena_allocator(&scratch_arena);
+
+	struct cmd_line cmd = cmd_line_from_argcv(scratch, argc, argv);
+	b32 pack            = cmd_line_has_flag(&cmd, str8_lit("pack"));
+
+	if(cmd.inputs.node_count < 2) {
+		sys_printf("Usage: %.*s <in_path> <destination_path> --pack=assets.qop", str8_spread(cmd.exe_name));
+		res = EXIT_FAILURE;
+		goto error;
 	}
 
-	str8 in_path  = str8_cstr(argv[1]);
-	str8 out_path = str8_cstr(argv[2]);
+	str8 in_path  = cmd.inputs.first->str;
+	str8 out_path = cmd.inputs.first->next->str;
 	log_info("asset-gen", "Processing assets from %s -> %s", in_path.str, out_path.str);
 
-	str8 path = str8_cstr(argv[2]);
-	// TODO: check if folder exists
-	sys_make_dir(path);
+	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	usize mem_size         = MMEGABYTE(1);
-	struct alloc alloc_sys = sys_allocator();
-	void *mem              = mem_alloc_size(alloc_sys, mem_size);
-	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
-	struct marena arena = {0};
-	marena_init(&arena, mem, mem_size);
-
-#if defined(QOP)
-	asset_gen_recursive(in_path, out_path, &arena);
-#else
-	qop_pack(in_path, out_path, &arena);
-#endif
+	if(pack) {
+		str8 pack_name = cmd_line_str8(&cmd, str8_lit("pack"));
+		if(pack_name.size == 0) {
+			pack_name = str8_lit("assets.qop");
+		}
+		str8 pack_path = path_absolute_dst_from_relative_dst_src(scratch, pack_name, out_path, scratch);
+		qop_pack(in_path, pack_path, &scratch_arena);
+	} else {
+		asset_gen_recursive(in_path, out_path, &scratch_arena);
+	}
 
 	res = EXIT_SUCCESS;
 
