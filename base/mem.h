@@ -44,3 +44,54 @@ alloc_size_aligned(struct alloc alloc, ssize mem_size, ssize align, b32 clr)
 	if(clr) { mclr(mem, mem_size); };
 	return mem;
 }
+
+// Unaligned host-endian integer I/O (memcpy).
+static inline void NO_ASAN_UB
+mem_w16(void *ptr, u16 v)
+{
+	mcpy(ptr, &v, sizeof(v));
+}
+
+static inline void NO_ASAN_UB
+mem_w32(void *ptr, u32 v)
+{
+	mcpy(ptr, &v, sizeof(v));
+}
+
+static inline void NO_ASAN_UB
+mem_w64(void *ptr, u64 v)
+{
+	mcpy(ptr, &v, sizeof(v));
+}
+
+static inline u8 NO_ASAN_UB
+mem_r8(void *ptr)
+{
+	u8 result;
+	mcpy(&result, ptr, sizeof(result));
+	return result;
+}
+
+static inline u16 NO_ASAN_UB
+mem_r16(void *ptr)
+{
+	u16 result;
+	mcpy(&result, ptr, sizeof(result));
+	return result;
+}
+
+static inline u32 NO_ASAN_UB
+mem_r32(void *ptr)
+{
+	u32 result;
+	mcpy(&result, ptr, sizeof(result));
+	return result;
+}
+
+static inline u64 NO_ASAN_UB
+mem_r64(void *ptr)
+{
+	u64 result;
+	mcpy(&result, ptr, sizeof(result));
+	return result;
+}

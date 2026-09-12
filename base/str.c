@@ -874,3 +874,181 @@ str8_from_os(enum os_kind value)
 	}
 	return res;
 }
+
+void
+str8_serial_begin(struct alloc alloc, struct str8_list *srl)
+{
+	// Dummy last node at the arena cursor so the first push can extend it
+	// when the next u8 alloc is adjacent (str + size == new buf).
+	struct str8_node *node = alloc_struct_clr(alloc, node);
+	u8 *cursor             = alloc_arr(alloc, cursor, 0);
+	node->str.str          = cursor;
+	srl->first             = node;
+	srl->last              = node;
+	srl->node_count        = 1;
+	srl->total_size        = 0;
+}
+
+str8
+str8_serial_end(struct alloc alloc, struct str8_list *srl)
+{
+	u64 size = srl->total_size;
+	u8 *out  = alloc_arr(alloc, out, size);
+	str8_serial_write_to_dst(srl, out);
+	str8 result = string8(out, size);
+	return result;
+}
+
+void
+str8_serial_write_to_dst(struct str8_list *srl, void *out)
+{
+	u8 *ptr = (u8 *)out;
+	for(struct str8_node *n = srl->first; n != 0; n = n->next) {
+		u64 size = n->str.size;
+		mcpy(ptr, n->str.str, size);
+		ptr += size;
+	}
+}
+
+u64
+str8_serial_push_align(struct alloc alloc, struct str8_list *srl, u64 align)
+{
+	dbg_assert(IS_POW2(align));
+
+	u64 pos     = srl->total_size;
+	u64 new_pos = ALIGN_POW2(pos, align);
+	u64 size    = (new_pos - pos);
+
+	if(size != 0) {
+		u8 *buf = alloc_arr_clr(alloc, buf, size);
+		str8 *str = &srl->last->str;
+		if(str->str + str->size == buf) {
+			srl->last->str.size += size;
+			srl->total_size += size;
+		} else {
+			str8_list_push(alloc, srl, string8(buf, size));
+		}
+	}
+
+	return size;
+}
+
+void *
+str8_serial_push_size(struct alloc alloc, struct str8_list *srl, u64 size)
+{
+	void *result = 0;
+	if(size != 0) {
+		u8 *buf   = alloc_arr_clr(alloc, buf, size);
+		str8 *str = &srl->last->str;
+		if(str->str + str->size == buf) {
+			srl->last->str.size += size;
+			srl->total_size += size;
+		} else {
+			str8_list_push(alloc, srl, string8(buf, size));
+		}
+		result = buf;
+	}
+	return result;
+}
+
+void *
+str8_serial_push_data(struct alloc alloc, struct str8_list *srl, void *data, u64 size)
+{
+	void *result = str8_serial_push_size(alloc, srl, size);
+	if(result != 0) {
+		mcpy(result, data, size);
+	}
+	return result;
+}
+
+void
+str8_serial_push_data_list(struct alloc alloc, struct str8_list *srl, struct str8_node *first)
+{
+	for(struct str8_node *n = first; n != 0; n = n->next) {
+		str8_serial_push_data(alloc, srl, n->str.str, n->str.size);
+	}
+}
+
+void *
+str8_serial_push_u64(struct alloc alloc, struct str8_list *srl, u64 x)
+{
+	return str8_serial_push_data(alloc, srl, &x, sizeof(x));
+}
+
+void *
+str8_serial_push_u32(struct alloc alloc, struct str8_list *srl, u32 x)
+{
+	return str8_serial_push_data(alloc, srl, &x, sizeof(x));
+}
+
+void *
+str8_serial_push_u16(struct alloc alloc, struct str8_list *srl, u16 x)
+{
+	return str8_serial_push_data(alloc, srl, &x, sizeof(x));
+}
+
+void *
+str8_serial_push_u8(struct alloc alloc, struct str8_list *srl, u8 x)
+{
+	return str8_serial_push_data(alloc, srl, &x, sizeof(x));
+}
+
+void *
+str8_serial_push_cstr(struct alloc alloc, struct str8_list *srl, str8 str)
+{
+	void *ptr = str8_serial_push_data(alloc, srl, str.str, str.size);
+	str8_serial_push_u8(alloc, srl, 0);
+	return ptr;
+}
+
+void *
+str8_serial_push_string(struct alloc alloc, struct str8_list *srl, str8 str)
+{
+	return str8_serial_push_data(alloc, srl, str.str, str.size);
+}
+
+u64
+str8_deserial_read(str8 string, u64 off, void *read_dst, u64 read_size, u64 granularity)
+{
+	u64 bytes_left             = string.size - MIN(off, string.size);
+	u64 actually_readable_size = MIN(bytes_left, read_size);
+	u64 legally_readable_size  = actually_readable_size - actually_readable_size % granularity;
+	if(legally_readable_size > 0) {
+		mcpy(read_dst, string.str + off, legally_readable_size);
+	}
+	return legally_readable_size;
+}
+
+void *
+str8_deserial_get_raw_ptr(str8 string, u64 off, u64 size)
+{
+	void *raw_ptr = 0;
+	if(off + size <= string.size) {
+		raw_ptr = string.str + off;
+	}
+	return raw_ptr;
+}
+
+u64
+str8_deserial_read_cstr(str8 string, u64 off, str8 *cstr_out)
+{
+	u64 cstr_size = 0;
+	if(off < string.size) {
+		u8 *ptr = string.str + off;
+		u8 *cap = string.str + string.size;
+		u8 *p   = ptr;
+		for(; p < cap && *p != 0; p += 1) {
+		}
+		*cstr_out = string8(ptr, (u64)(p - ptr));
+		cstr_size = (cstr_out->size + 1);
+	}
+	return cstr_size;
+}
+
+u64
+str8_deserial_read_block(str8 string, u64 off, u64 size, str8 *block_out)
+{
+	union rng_u64 range = rng_u64(off, off + size);
+	*block_out          = str8_substr(string, range);
+	return block_out->size;
+}
