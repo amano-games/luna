@@ -11,7 +11,6 @@
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
-#include <direct.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -168,7 +167,22 @@ sys_data_path(void)
 b32
 sys_make_dir(str8 path)
 {
-	return _mkdir((char *)path.str) == 0;
+	b32 result = false;
+	WCHAR name16[MAX_PATH];
+	i32 n = MultiByteToWideChar(CP_UTF8, 0, (char *)path.str, (int)path.size, name16, MAX_PATH - 1);
+	if(n <= 0) {
+		return result;
+	}
+	name16[n] = 0;
+
+	WIN32_FILE_ATTRIBUTE_DATA attributes = {0};
+	GetFileAttributesExW(name16, GetFileExInfoStandard, &attributes);
+	if(attributes.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		result = true;
+	} else if(CreateDirectoryW(name16, 0)) {
+		result = true;
+	}
+	return result;
 }
 
 u32

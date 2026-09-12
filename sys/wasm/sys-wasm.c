@@ -100,7 +100,14 @@ sys_data_path(void)
 b32
 sys_make_dir(str8 path)
 {
-	return mkdir((char *)path.str, 0755) != -1;
+	b32 result = 0;
+	if(mkdir((char *)path.str, 0755) != -1) {
+		result = 1;
+	} else {
+		// match windows behavior
+		result = access((char *)path.str, F_OK) == 0;
+	}
+	return result;
 }
 
 u32

@@ -792,8 +792,15 @@ sys_get_current_path(struct alloc alloc)
 b32
 sys_make_dir(str8 path)
 {
-	b32 res = PD->file->mkdir((const char *)path.str) == 0;
-	return res;
+	b32 result = false;
+	if(PD->file->mkdir((const char *)path.str) == 0) {
+		result = true;
+	} else {
+		// match windows behavior
+		FileStat pd_stat = {0};
+		result           = PD->file->stat((const char *)path.str, &pd_stat) == 0;
+	}
+	return result;
 }
 
 static inline u32
