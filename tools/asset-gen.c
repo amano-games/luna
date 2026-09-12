@@ -7,6 +7,7 @@
 #include "base/path.h"
 #include "base/str.h"
 #include "engine/assets/qop.h"
+#include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
 #include "tools/asset/asset.h"
@@ -59,7 +60,6 @@
 #define FNT_EXT           "fnt"
 #define ASSETS_DB_EXT     "tsj"
 #define PINBALL_TABLE_EXT "pinbjson"
-#define QOP               true
 
 struct qop_w {
 	void *f;
@@ -196,17 +196,24 @@ asset_gen_recursive(
 	tinydir_close(dir);
 }
 
-void
+b32
 qop_pack(str8 in_path, str8 out_path, struct marena *arena)
 {
+	b32 res = false;
 	log_info("asset-gen", "packing assets to %.*s", str8_spread(out_path));
-	// TODO: Figure out real out path out_path/assets.qop?
+
 	void *file_out = sys_file_open_w(out_path);
 	dbg_check(file_out, "qop", "failed to open file: %s", out_path);
 
 	struct qop_w qop = {0};
 
+	res = true;
+
 error:;
+	if(file_out) {
+		sys_file_close(file_out);
+	}
+	return res;
 }
 
 int
