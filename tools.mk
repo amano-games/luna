@@ -41,8 +41,9 @@ endif
 
 CFLAGS += $(CDEFS)
 
-ASSET_GEN := $(BUILD_DIR)/luna-asset-gen
-META_GEN  := $(BUILD_DIR)/luna-meta-gen
+ASSET_GEN  := $(BUILD_DIR)/luna-asset-gen
+ASSET_PACK := $(BUILD_DIR)/luna-asset-pack
+META_GEN   := $(BUILD_DIR)/luna-meta-gen
 
 .PHONY: all clean tools tools-meta tools-asset
 
@@ -55,7 +56,10 @@ $(META_GEN): $(SRC_DIR)/meta-gen.c $(LUNA_C_H) $(ROOT_DIR)/tools.mk | $(BUILD_DI
 $(ASSET_GEN): $(SRC_DIR)/asset-gen.c $(LUNA_C_H) $(ROOT_DIR)/tools.mk | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
 
-tools: $(ASSET_GEN) $(META_GEN)
+$(ASSET_PACK): $(SRC_DIR)/asset-pack.c $(LUNA_C_H) $(ROOT_DIR)/tools.mk | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INC_FLAGS) "$<" $(LDLIBS) -o "$@"
+
+tools: $(ASSET_GEN) $(ASSET_PACK) $(META_GEN)
 tools-meta: tools
 tools-asset: tools
 
