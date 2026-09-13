@@ -6,7 +6,6 @@
 #include "base/marena.h"
 #include "base/path.h"
 #include "base/str.h"
-#include "engine/assets/qop.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
@@ -61,14 +60,6 @@
 #define ASSETS_DB_EXT     "tsj"
 #define PINBALL_TABLE_EXT "pinbjson"
 
-struct qop_w {
-	void *f;
-	ssize len;
-	ssize cap;
-	ssize size;
-	struct qop_file *files;
-};
-
 b32
 file_cpy_raw(const str8 in_path, const str8 out_path)
 {
@@ -107,34 +98,6 @@ error:;
 	if(in) { sys_file_close(in); }
 	if(out) { sys_file_close(out); }
 	return res;
-}
-
-void
-qop_gen_recursive(
-	struct qop_w *qop,
-	const str8 in_dir,
-	const str8 out_dir,
-	struct marena *arena)
-{
-	dbg_assert(qop);
-	struct alloc alloc = marena_allocator(arena);
-	tinydir_dir *dir   = alloc_struct(alloc, dir);
-	tinydir_open(dir, (char *)in_dir.str);
-	while(dir->has_next) {
-		tinydir_file file;
-		tinydir_readfile(dir, &file);
-
-		str8 file_name = str8_cstr(file.name);
-		str8 in_path   = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(in_dir), str8_spread(file_name));
-		str8 out_path  = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(out_dir), str8_spread(file_name));
-		if(file.is_dir) {
-			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
-				sys_make_dir(out_path);
-				qop_gen_recursive(qop, str8_cstr(file.path), out_path, arena);
-			}
-		} else {
-		}
-	}
 }
 
 void
@@ -196,26 +159,6 @@ asset_gen_recursive(
 	tinydir_close(dir);
 }
 
-b32
-qop_pack(str8 in_path, str8 out_path, struct marena *arena)
-{
-	b32 res = false;
-	log_info("asset-gen", "packing assets to %.*s", str8_spread(out_path));
-
-	void *file_out = sys_file_open_w(out_path);
-	dbg_check(file_out, "qop", "failed to open file: %s", out_path);
-
-	struct qop_w qop = {0};
-
-	res = true;
-
-error:;
-	if(file_out) {
-		sys_file_close(file_out);
-	}
-	return res;
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -233,7 +176,7 @@ main(int argc, char *argv[])
 	b32 packed          = cmd_line_has_flag(&cmd, str8_lit("pack"));
 
 	if(cmd.inputs.node_count < 2) {
-		sys_printf("Usage: %.*s <in_path> <destination_path> --pack=assets.qop", str8_spread(cmd.exe_name));
+		sys_printf("Usage: %.*s <in_path> <destination_path>", str8_spread(cmd.exe_name));
 		res = EXIT_FAILURE;
 		goto error;
 	}
@@ -244,16 +187,7 @@ main(int argc, char *argv[])
 	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	if(packed) {
-		str8 pack_name = cmd_line_str8(&cmd, str8_lit("pack"));
-		if(pack_name.size == 0) {
-			pack_name = str8_lit("assets.qop");
-		}
-		str8 pack_path = path_absolute_dst_from_relative_dst_src(scratch, pack_name, out_path, scratch);
-		qop_pack(in_path, pack_path, &scratch_arena);
-	} else {
-		asset_gen_recursive(in_path, out_path, &scratch_arena);
-	}
+	asset_gen_recursive(in_path, out_path, &scratch_arena);
 
 	res = EXIT_SUCCESS;
 
