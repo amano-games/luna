@@ -15,7 +15,7 @@ path_id_intern(struct asset_db *db, str8 path)
 {
 	u32 id;
 
-	asset_db_path_push(db, path);
+	asset_db_path_push(db, path, 0);
 	id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
 	dbg_assert(id != 0);
 	return id;
@@ -33,50 +33,52 @@ path_from_id(struct asset_db *db, u32 path_id)
 }
 
 void
-asset_db_ini(struct asset_db *db, struct asset_db_cap cap, struct alloc alloc)
+asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc alloc)
 {
 	log_info(
 		"Assets DB",
 		"init paths=%u bytes=%u tex=%u clips=%u slices=%u fnt=%u snd=%u bet=%u",
-		(uint)cap.paths,
-		(uint)cap.path_bytes,
-		(uint)cap.textures,
-		(uint)cap.clips,
-		(uint)cap.slices,
-		(uint)cap.fonts,
-		(uint)cap.snds,
-		(uint)cap.bets);
+		(uint)counts.paths,
+		(uint)counts.path_bytes,
+		(uint)counts.textures,
+		(uint)counts.clips,
+		(uint)counts.slices,
+		(uint)counts.fonts,
+		(uint)counts.snds,
+		(uint)counts.bets);
 
 	// Index 0 is the empty sentinel so ht miss (0) is never a real row.
-	db->animations.ht   = ht_new_u32(ht_exp_from_count(cap.slices), alloc);
-	db->animations.data = arr_new(alloc, db->animations.data, cap.clips + 1);
-	db->animations.arr  = arr_new(alloc, db->animations.arr, cap.slices + 1);
+	db->animations.ht   = ht_new_u32(ht_exp_from_count(counts.slices), alloc);
+	db->animations.data = arr_new(alloc, db->animations.data, counts.clips + 1);
+	db->animations.arr  = arr_new(alloc, db->animations.arr, counts.slices + 1);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
-	db->paths.ht   = ht_new_u32(ht_exp_from_count(cap.paths), alloc);
-	db->paths.arr  = arr_new(alloc, db->paths.arr, cap.paths + 1);
-	db->paths.data = arr_new(alloc, db->paths.data, cap.path_bytes ? cap.path_bytes : 1);
+	db->paths.ht   = ht_new_u32(ht_exp_from_count(counts.paths), alloc);
+	db->paths.arr  = arr_new(alloc, db->paths.arr, counts.paths + 1);
+	db->paths.tags = arr_new(alloc, db->paths.tags, counts.paths + 1);
+	db->paths.data = arr_new(alloc, db->paths.data, counts.path_bytes ? counts.path_bytes : 1);
 	arr_push(db->paths.arr, (str8){0});
+	arr_push(db->paths.tags, 0);
 
-	db->textures.ht  = ht_new_u32(ht_exp_from_count(cap.textures), alloc);
-	db->textures.arr = arr_new(alloc, db->textures.arr, cap.textures + 1);
+	db->textures.ht  = ht_new_u32(ht_exp_from_count(counts.textures), alloc);
+	db->textures.arr = arr_new(alloc, db->textures.arr, counts.textures + 1);
 	arr_push(db->textures.arr, (struct asset_tex){0});
 
 	// tex_info rows come from ani_db assets, one per slice.
-	db->textures_info.ht  = ht_new_u32(ht_exp_from_count(cap.slices), alloc);
-	db->textures_info.arr = arr_new(alloc, db->textures_info.arr, cap.slices + 1);
+	db->textures_info.ht  = ht_new_u32(ht_exp_from_count(counts.slices), alloc);
+	db->textures_info.arr = arr_new(alloc, db->textures_info.arr, counts.slices + 1);
 	arr_push(db->textures_info.arr, (struct asset_tex_info){0});
 
-	db->snds.ht  = ht_new_u32(ht_exp_from_count(cap.snds), alloc);
-	db->snds.arr = arr_new(alloc, db->snds.arr, cap.snds + 1);
+	db->snds.ht  = ht_new_u32(ht_exp_from_count(counts.snds), alloc);
+	db->snds.arr = arr_new(alloc, db->snds.arr, counts.snds + 1);
 	arr_push(db->snds.arr, (struct asset_snd){0});
 
-	db->fonts.ht  = ht_new_u32(ht_exp_from_count(cap.fonts), alloc);
-	db->fonts.arr = arr_new(alloc, db->fonts.arr, cap.fonts + 1);
+	db->fonts.ht  = ht_new_u32(ht_exp_from_count(counts.fonts), alloc);
+	db->fonts.arr = arr_new(alloc, db->fonts.arr, counts.fonts + 1);
 	arr_push(db->fonts.arr, (struct asset_fnt){0});
 
-	db->bets.ht  = ht_new_u32(ht_exp_from_count(cap.bets), alloc);
-	db->bets.arr = arr_new(alloc, db->bets.arr, cap.bets + 1);
+	db->bets.ht  = ht_new_u32(ht_exp_from_count(counts.bets), alloc);
+	db->bets.arr = arr_new(alloc, db->bets.arr, counts.bets + 1);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 
 	db->initialized = true;
@@ -92,23 +94,25 @@ asset_db_handle_from_path(str8 path, enum asset_type type)
 }
 
 str8
-asset_db_path_push(struct asset_db *db, str8 path)
+asset_db_path_push(struct asset_db *db, str8 path, u64 tags)
 {
 	dbg_assert(path.size > 0);
 	struct path_table *table = &db->paths;
 	usize table_len          = arr_len(table->data);
 	usize table_cap          = arr_cap(table->data);
 
-	// Path bytes plus the trailing NUL pushed below.
-	dbg_check(table_len + path.size + 1 <= table_cap, "AssetsDB", "Out of memory");
-
 	u64 key     = hash_fnv1a_str8(path);
 	u32 value   = ht_get_u32(&table->ht, key);
 	b32 has_key = value != 0;
 
 	if(has_key) {
+		table->tags[value] |= tags;
 		return table->arr[value];
 	}
+
+	// Path bytes plus the trailing NUL pushed below.
+	dbg_check(table_len + path.size + 1 <= table_cap, "AssetsDB", "Out of memory");
+	dbg_check(arr_len(table->tags) < arr_cap(table->tags), "AssetsDB", "Out of memory");
 
 	str8 res = (str8){.str = (u8 *)table->data + table_len, .size = path.size};
 	value    = arr_len(table->arr);
@@ -118,6 +122,7 @@ asset_db_path_push(struct asset_db *db, str8 path)
 	header->len += path.size;
 	arr_push(table->data, '\0');
 	arr_push(table->arr, res);
+	arr_push(table->tags, tags);
 
 	return res;
 
@@ -137,6 +142,41 @@ asset_db_path_get(struct asset_db *db, struct asset_handle handle)
 
 error:
 	return res;
+}
+
+b32
+asset_db_is_path_tagged(struct asset_db *db, str8 path, u64 tag)
+{
+	b32 res = false;
+	u32 id  = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+
+	if(id != 0) {
+		res = (db->paths.tags[id] & tag) != 0;
+	}
+
+	return res;
+}
+
+void
+asset_db_path_tag_set(struct asset_db *db, str8 path, u64 tag)
+{
+	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+
+	dbg_check(id != 0, "AssetsDB", "missing path");
+	db->paths.tags[id] |= tag;
+
+error:;
+}
+
+void
+asset_db_path_tag_clear(struct asset_db *db, str8 path, u64 tag)
+{
+	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+
+	dbg_check(id != 0, "AssetsDB", "missing path");
+	db->paths.tags[id] &= ~tag;
+
+error:;
 }
 
 i32
