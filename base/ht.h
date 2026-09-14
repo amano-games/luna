@@ -95,3 +95,18 @@ ht_new_u32(int exp, struct alloc alloc)
 	ht.ht      = alloc_size_aligned(alloc, size, alignof(struct ht_entry), true);
 	return ht;
 }
+
+// Open addressing needs a spare slot. Size ~2x so probes stay short.
+static i32
+ht_exp_from_count(usize count)
+{
+	usize need = (count + 1) * 2;
+	i32 exp    = 1;
+
+	while(((usize)1 << exp) < need) {
+		exp++;
+		dbg_assert(exp < 31);
+	}
+
+	return exp;
+}

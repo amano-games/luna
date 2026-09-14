@@ -1,7 +1,8 @@
 #include "assets.h"
+#include "base/dbg.h"
+#include "base/hash.h"
 #include "base/mem.h"
 #include "engine/assets/asset-db.h"
-#include "base/dbg.h"
 #include "lib/bet/bet-ser.h"
 #include "lib/fnt/fnt.h"
 #include "engine/gfx/gfx.h"
@@ -53,15 +54,15 @@ assets_qop_close(void)
 }
 
 struct asset_blob
-asset_blob_read(struct alloc scratch, str8 path)
+asset_blob_from_handle(struct alloc scratch, struct asset_handle handle)
 {
 	struct asset_blob res = {0};
-	struct qop_file *f    = qop_find(&ASSETS.qop, path);
+	struct qop_file *f    = qop_find_hash(&ASSETS.qop, handle.path_hash);
 
-	dbg_check(f, "assets", "failed to find file: %.*s", str8_spread(path));
+	dbg_check(f, "assets", "failed to find file hash %016llx", handle.path_hash);
 
 	void *data = mem_alloc_size(scratch, (usize)f->size);
-	dbg_check(data, "assets", "failed to alloc memory for file: %.*s", str8_spread(path));
+	dbg_check(data, "assets", "failed to alloc file hash %016llx", handle.path_hash);
 
 	i32 size = qop_read(&ASSETS.qop, f, data);
 	dbg_check(size == f->size, "assets", "qop size doesn't match: %d %d", size, (i32)f->size);
@@ -73,11 +74,19 @@ error:;
 	return res;
 }
 
+struct asset_blob
+asset_blob_read(struct alloc scratch, str8 path)
+{
+	return asset_blob_from_handle(scratch, asset_db_handle_from_path(path, ASSET_TYPE_NONE));
+}
+
 i32
 asset_file_read_ex(str8 path, u8 *dest, ssize start, ssize len)
 {
-	i32 res            = 0;
-	struct qop_file *f = qop_find(&ASSETS.qop, path);
+	i32 res                    = 0;
+	struct asset_handle handle = asset_db_handle_from_path(path, ASSET_TYPE_NONE);
+	struct qop_file *f         = qop_find_hash(&ASSETS.qop, handle.path_hash);
+
 	dbg_check(f, "assets", "failed to find file: %.*s", str8_spread(path));
 	res = qop_read_ex(&ASSETS.qop, f, dest, start, len);
 error:;
@@ -85,12 +94,12 @@ error:;
 }
 
 b32
-asset_stream_open(struct asset_stream *s, str8 path)
+asset_stream_open(struct asset_stream *s, struct asset_handle handle)
 {
 	b32 res            = false;
-	struct qop_file *f = qop_find(&ASSETS.qop, path);
+	struct qop_file *f = qop_find_hash(&ASSETS.qop, handle.path_hash);
 
-	dbg_check(f, "assets", "stream find failed: %.*s", str8_spread(path));
+	dbg_check(f, "assets", "stream find failed hash %016llx", handle.path_hash);
 	dbg_check(ASSETS.pack_path.size, "assets", "pack path missing");
 
 	// Own seek cursor via a second open; share the read-only index.
@@ -183,47 +192,53 @@ asset_tex_get_id(str8 path)
 }
 
 struct tex
-asset_tex_read(struct alloc alloc, str8 path)
+asset_tex_from_handle(struct alloc alloc, struct asset_handle handle)
 {
 	struct tex res           = {0};
 	struct tex_header header = {0};
-	struct qop_file *f       = qop_find(&ASSETS.qop, path);
+	struct qop_file *f       = qop_find_hash(&ASSETS.qop, handle.path_hash);
 
-	dbg_check(f, "assets", "failed to find tex: %.*s", str8_spread(path));
-	dbg_check(f->size >= (ssize)sizeof(header), "assets", "tex too small: %.*s", str8_spread(path));
+	dbg_check(f, "assets", "failed to find tex hash %016llx", handle.path_hash);
+	dbg_check(f->size >= (ssize)sizeof(header), "assets", "tex too small hash %016llx", handle.path_hash);
 
 	i32 n = qop_read_ex(&ASSETS.qop, f, (u8 *)&header, 0, (ssize)sizeof(header));
-	dbg_check(n == (i32)sizeof(header), "assets", "tex header read failed: %.*s", str8_spread(path));
+	dbg_check(n == (i32)sizeof(header), "assets", "tex header read failed hash %016llx", handle.path_hash);
 	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
 		"assets",
-		"invalid tex fmt %u: %.*s",
+		"invalid tex fmt %u hash %016llx",
 		header.fmt,
-		str8_spread(path));
+		handle.path_hash);
 	dbg_check(header.w > 0 && header.h > 0,
 		"assets",
-		"invalid tex size %ux%u: %.*s",
+		"invalid tex size %ux%u hash %016llx",
 		header.w,
 		header.h,
-		str8_spread(path));
+		handle.path_hash);
 
 	if(header.fmt == TEX_FMT_MASK) {
 		res = tex_create(alloc, (i32)header.w, (i32)header.h);
 	} else {
 		res = tex_create_opaque(alloc, (i32)header.w, (i32)header.h);
 	}
-	dbg_check(res.px, "assets", "tex alloc failed: %.*s", str8_spread(path));
+	dbg_check(res.px, "assets", "tex alloc failed hash %016llx", handle.path_hash);
 
 	ssize tex_size = (ssize)sizeof(u32) * res.wword * res.h;
 	dbg_check(f->size >= (ssize)sizeof(header) + tex_size,
 		"assets",
-		"tex truncated: %.*s",
-		str8_spread(path));
+		"tex truncated hash %016llx",
+		handle.path_hash);
 
 	n = qop_read_ex(&ASSETS.qop, f, (u8 *)res.px, (ssize)sizeof(header), tex_size);
-	dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed: %.*s", str8_spread(path));
+	dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed hash %016llx", handle.path_hash);
 
 error:;
 	return res;
+}
+
+struct tex
+asset_tex_read(struct alloc alloc, str8 path)
+{
+	return asset_tex_from_handle(alloc, asset_db_handle_from_path(path, ASSET_TYPE_TEXTURE));
 }
 
 i32
@@ -236,8 +251,9 @@ asset_tex_load(str8 path, struct tex *tex)
 
 	log_info("assets", "Tex loaded: %s", path.str);
 	res = asset_db_tex_push(&ASSETS.db, path, t);
-	if(tex) *tex = t;
-	res = 0;
+	if(tex) {
+		*tex = t;
+	}
 
 error:;
 	return res;
@@ -294,35 +310,41 @@ asset_snd(i32 id)
 }
 
 struct snd
-asset_snd_read(struct alloc alloc, str8 path)
+asset_snd_from_handle(struct alloc alloc, struct asset_handle handle)
 {
 	struct snd res               = {0};
 	struct snd_header snd_header = {0};
-	struct qop_file *f           = qop_find(&ASSETS.qop, path);
+	struct qop_file *f           = qop_find_hash(&ASSETS.qop, handle.path_hash);
 
-	dbg_check(f, "assets", "failed to find snd: %.*s", str8_spread(path));
-	dbg_check(f->size >= (ssize)sizeof(u32), "assets", "snd too small: %.*s", str8_spread(path));
+	dbg_check(f, "assets", "failed to find snd hash %016llx", handle.path_hash);
+	dbg_check(f->size >= (ssize)sizeof(u32), "assets", "snd too small hash %016llx", handle.path_hash);
 
 	i32 n = qop_read_ex(&ASSETS.qop, f, (u8 *)&snd_header, 0, (ssize)sizeof(u32));
-	dbg_check(n == (i32)sizeof(u32), "assets", "snd header read failed: %.*s", str8_spread(path));
+	dbg_check(n == (i32)sizeof(u32), "assets", "snd header read failed hash %016llx", handle.path_hash);
 
 	u32 bytes = (snd_header.sample_count + 1) >> 1;
 	dbg_check(f->size >= (ssize)sizeof(u32) + (ssize)bytes,
 		"assets",
-		"snd truncated: %.*s",
-		str8_spread(path));
+		"snd truncated hash %016llx",
+		handle.path_hash);
 
 	u8 *buf = alloc_size_aligned(alloc, bytes, alignof(u8), false);
-	dbg_check(buf, "assets", "snd alloc failed: %.*s", str8_spread(path));
+	dbg_check(buf, "assets", "snd alloc failed hash %016llx", handle.path_hash);
 
 	n = qop_read_ex(&ASSETS.qop, f, buf, (ssize)sizeof(u32), (ssize)bytes);
-	dbg_check(n == (i32)bytes, "assets", "snd samples read failed: %.*s", str8_spread(path));
+	dbg_check(n == (i32)bytes, "assets", "snd samples read failed hash %016llx", handle.path_hash);
 
 	res.buf = buf;
 	res.len = snd_header.sample_count;
 
 error:;
 	return res;
+}
+
+struct snd
+asset_snd_read(struct alloc alloc, str8 path)
+{
+	return asset_snd_from_handle(alloc, asset_db_handle_from_path(path, ASSET_TYPE_SOUND));
 }
 
 i32

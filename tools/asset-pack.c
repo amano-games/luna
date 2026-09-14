@@ -176,7 +176,7 @@ qop_pack_file(struct qop_w *qop, str8 root, str8 path, struct alloc scratch)
 	ssize size;
 	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(path));
 
-	hash     = hash_murmuroaat_str8(path);
+	hash     = hash_fnv1a_str8(path);
 	path_len = (u16)(path.size + 1);
 
 	dbg_check(sys_file_w(qop->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));

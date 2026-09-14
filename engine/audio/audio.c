@@ -127,7 +127,7 @@ aud_cmds_flush(struct alloc scratch)
 				break;
 			}
 
-			if(!asset_stream_open(&mc->stream, path)) {
+			if(!asset_stream_open(&mc->stream, cmd->path_handle)) {
 				log_warn("Audio", "Can't open music file: %s", path.str);
 				break;
 			}
