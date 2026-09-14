@@ -35,6 +35,7 @@ struct {
 */
 
 #include "base/types.h"
+#include "sys/sys-io.h"
 
 #define QOP_HEADER_SIZE 12
 #define QOP_MAGIC \
@@ -57,7 +58,7 @@ struct qop_file {
 };
 
 struct qop_desc {
-	void *fh;
+	sys_file fh;
 	struct qop_file *ht;
 	ssize files_offset;
 	ssize index_offset;

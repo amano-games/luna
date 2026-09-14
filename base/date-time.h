@@ -50,7 +50,27 @@ struct date_time {
 	u32 year; // 1 = 1 CE, 0 = 1 BC
 };
 
-dense_time dense_time_from_date_time(struct date_time date_time);
+static inline dense_time
+dense_time_from_date_time(struct date_time date_time)
+{
+	dense_time res = 0;
+
+	res += date_time.year;
+	res *= 12;
+	res += date_time.mon;
+	res *= 31;
+	res += date_time.day;
+	res *= 24;
+	res += date_time.hour;
+	res *= 60;
+	res += date_time.min;
+	res *= 61;
+	res += date_time.sec;
+	res *= 1000;
+	res += date_time.msec;
+
+	return res;
+}
 
 struct date_time date_time_from_dense_time(dense_time time);
 struct date_time date_time_from_micro_seconds(u64 time);

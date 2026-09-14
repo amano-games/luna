@@ -64,8 +64,8 @@ pinb_inspect(struct alloc alloc, str8 path, struct ser_reader *r)
 	i32 res               = 0;
 	struct ser_value root = ser_read(r);
 	str8 data             = ser_value_to_str(alloc, r, root);
-	void *file            = NULL;
-	if(!(file = sys_file_open_w(path))) {
+	sys_file file = sys_file_open_w(path);
+	if(!sys_file_is_valid(file)) {
 		log_error("pinb-ser", "can't open file %s for writing!", path.str);
 		return -1;
 	}

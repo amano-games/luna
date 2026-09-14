@@ -1475,8 +1475,8 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 
 	str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(PINB_EXT));
 
-	void *out_file;
-	if(!(out_file = sys_file_open_w(out_file_path))) {
+	sys_file out_file = sys_file_open_w(out_file_path);
+	if(!sys_file_is_valid(out_file)) {
 		log_error("pinb-gen", "can't open file %s for writing!", out_file_path.str);
 		return -1;
 	}

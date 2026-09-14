@@ -101,8 +101,8 @@ aseprite_to_ani(
 	const str8 out_path,
 	struct alloc scratch)
 {
-	b32 res    = false;
-	void *file = NULL;
+	b32 res      = false;
+	sys_file file = sys_file_zero();
 
 	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
 
@@ -151,13 +151,13 @@ aseprite_to_ani(
 	arr_push(db.assets, asset);
 
 	file = sys_file_open_w(out_file_path);
-	dbg_check(file, "ani db", "failed to open file to write: %s", out_file_path.str);
+	dbg_check(sys_file_is_valid(file), "ani db", "failed to open file to write: %s", out_file_path.str);
 	struct ser_writer w = {.f = file};
 	ani_db_write(&w, db);
 	log_info("ase-ani", "%s -> %s", in_path.str, out_path.str);
 
 error:;
-	if(file != NULL) {
+	if(sys_file_is_valid(file)) {
 		sys_file_close(file);
 	}
 	return res;

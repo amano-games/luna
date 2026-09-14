@@ -337,8 +337,8 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 		}
 	}
 
-	void *out_file;
-	if(!(out_file = sys_file_open_w(out_file_path))) {
+	sys_file out_file = sys_file_open_w(out_file_path);
+	if(!sys_file_is_valid(out_file)) {
 		log_error("ani-db-gen", "can't open file %s for writing!", out_file_path.str);
 		return -1;
 	}

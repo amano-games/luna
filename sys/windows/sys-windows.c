@@ -253,109 +253,126 @@ sys_allocator(void)
 	return alloc;
 }
 
-static long
-sys_windows_file_size_get(const str8 path)
+static sys_file
+sys_file_from_fp(FILE *fp)
 {
-	FILE *fp = sys_file_open_r(path);
+	sys_file f = sys_file_zero();
+	f.u64[0]   = (u64)(uptr)fp;
+	return f;
+}
 
-	if(fp == NULL)
-		return -1;
-
-	if(fseek(fp, 0, SEEK_END) < 0) {
-		fclose(fp);
-		return -1;
-	}
-
-	long size = sys_file_tell(fp);
-	fclose(fp);
-	return size;
+static FILE *
+sys_file_fp(sys_file f)
+{
+	return (FILE *)(uptr)f.u64[0];
 }
 
 struct sys_file_stats
 sys_file_stats(str8 path)
 {
-	struct sys_file_stats res = {0};
-	int size                  = (int)sys_windows_file_size_get(path);
-	if(size < 0) {
+	struct sys_file_stats res           = {0};
+	WIN32_FILE_ATTRIBUTE_DATA attr_data = {0};
+
+	if(!GetFileAttributesExA((char *)path.str, GetFileExInfoStandard, &attr_data)) {
 		log_error("IO", "failed to get file stats %s", path.str);
+		return res;
 	}
-	res.size = size;
+
+	res.size  = attr_data.nFileSizeLow;
+	res.isdir = (attr_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : 0;
+
+	// Fill 1-based calendar fields for shared dense_time packing.
+	{
+		SYSTEMTIME st = {0};
+		FileTimeToSystemTime(&attr_data.ftLastWriteTime, &st);
+		res.m_year   = st.wYear;
+		res.m_month  = st.wMonth;
+		res.m_day    = st.wDay;
+		res.m_hour   = st.wHour;
+		res.m_minute = st.wMinute;
+		res.m_second = st.wSecond;
+	}
+
 	return res;
 }
 
-void *
-sys_file_open_r(const str8 path)
+sys_file
+sys_file_open_r(str8 path)
 {
-	return (void *)fopen((char *)path.str, "rb");
+	return sys_file_from_fp(fopen((char *)path.str, "rb"));
 }
 
-void *
-sys_file_open_w(const str8 path)
+sys_file
+sys_file_open_w(str8 path)
 {
-	return (void *)fopen((char *)path.str, "wb");
+	return sys_file_from_fp(fopen((char *)path.str, "wb"));
 }
 
-void *
-sys_file_open_a(const str8 path)
+sys_file
+sys_file_open_a(str8 path)
 {
-	return (void *)fopen((char *)path.str, "ab");
+	return sys_file_from_fp(fopen((char *)path.str, "ab"));
 }
 
-i32
-sys_file_close(void *f)
+b32
+sys_file_close(sys_file f)
 {
-	return fclose((FILE *)f);
+	if(!sys_file_is_valid(f)) { return false; }
+	return fclose(sys_file_fp(f)) == 0;
 }
 
-i32
-sys_file_flush(void *f)
+b32
+sys_file_flush(sys_file f)
 {
-	return fflush((FILE *)f);
-}
-
-i32
-sys_file_r(void *f, void *buf, u32 buf_size)
-{
-	i32 count = 1;
-	usize s   = fread(buf, buf_size, count, (FILE *)f);
-	if(s == 0) {
-		log_error("IO", "Error reading from file: %d", (int)s);
-	}
-
-	return (i32)s;
+	if(!sys_file_is_valid(f)) { return false; }
+	return fflush(sys_file_fp(f)) == 0;
 }
 
 ssize
-sys_file_w(void *f, const void *buf, u32 buf_size)
+sys_file_r(sys_file f, void *buf, u32 buf_size)
 {
-	i32 count = 1;
-	ssize res = fwrite(buf, buf_size, count, (FILE *)f);
-	return res;
+	FILE *fp = sys_file_fp(f);
+	usize s  = fread(buf, 1, buf_size, fp);
+	if(s == 0 && ferror(fp)) {
+		log_error("IO", "Error reading from file");
+		return -1;
+	}
+	return (ssize)s;
+}
+
+ssize
+sys_file_w(sys_file f, const void *buf, u32 buf_size)
+{
+	FILE *fp = sys_file_fp(f);
+	usize s  = fwrite(buf, 1, buf_size, fp);
+	if(s == 0 && buf_size > 0 && ferror(fp)) {
+		return -1;
+	}
+	return (ssize)s;
 }
 
 i32
-sys_file_tell(void *f)
+sys_file_tell(sys_file f)
 {
-	usize t = ftell((FILE *)f);
-	return (i32)t;
+	return (i32)ftell(sys_file_fp(f));
 }
 
 i32
-sys_file_seek_set(void *f, i32 pos)
+sys_file_seek_set(sys_file f, i32 pos)
 {
-	return (i32)fseek((FILE *)f, pos, SEEK_SET);
+	return (i32)fseek(sys_file_fp(f), pos, SEEK_SET);
 }
 
 i32
-sys_file_seek_cur(void *f, i32 pos)
+sys_file_seek_cur(sys_file f, i32 pos)
 {
-	return (i32)fseek((FILE *)f, pos, SEEK_CUR);
+	return (i32)fseek(sys_file_fp(f), pos, SEEK_CUR);
 }
 
 i32
-sys_file_seek_end(void *f, i32 pos)
+sys_file_seek_end(sys_file f, i32 pos)
 {
-	return (i32)fseek((FILE *)f, pos, SEEK_END);
+	return (i32)fseek(sys_file_fp(f), pos, SEEK_END);
 }
 
 b32
@@ -368,12 +385,6 @@ b32
 sys_file_rename(str8 from, str8 to)
 {
 	return (rename((char *)from.str, (char *)to.str) == 0);
-}
-
-usize
-sys_file_modified(str8 path)
-{
-	return 0;
 }
 
 void

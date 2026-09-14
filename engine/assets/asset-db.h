@@ -3,6 +3,7 @@
 #include "engine/audio/snd.h"
 #include "lib/bet/bet.h"
 #include "lib/fnt/fnt.h"
+#include "base/date-time.h"
 #include "base/ht.h"
 #include "base/types.h"
 
@@ -64,7 +65,7 @@ struct asset_fnt {
 
 struct asset_bet {
 	u64 path_hash;
-	usize timestamp;
+	dense_time timestamp;
 	struct bet bet;
 };
 
@@ -157,5 +158,5 @@ struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, u32 id);
 u32 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle);
 struct str8 asset_db_bet_path_get(struct asset_db *db, u32 id);
 
-usize asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
-usize asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);
+dense_time asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
+dense_time asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);

@@ -57,7 +57,7 @@ tweak_look_up_value_f32(
 {
 	usize mem_size = MKILOBYTE(10);
 	u8 *mem        = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
-	void *f        = NULL;
+	sys_file f     = sys_file_zero();
 	dbg_check_warn(mem, "tweak", "failed to get memory");
 	struct marena marena = {0};
 	marena_init(&marena, mem, mem_size);
@@ -66,7 +66,7 @@ tweak_look_up_value_f32(
 	str8 project_root  = str8_chop_last_slash(str8_chop_last_slash(str8_chop_last_slash(exe_path)));
 	str8 full_path     = str8_fmt_push(alloc, "%.*s/%s", project_root.size, project_root.str, src_file);
 	f                  = sys_file_open_r(full_path);
-	dbg_check_warn(f, "tweak", "failed to open the file %s", full_path.str);
+	dbg_check_warn(sys_file_is_valid(f), "tweak", "failed to open the file %s", full_path.str);
 
 	struct sys_full_file_res res = sys_load_full_file(alloc, full_path);
 	u8 *buffer                   = res.data;
@@ -103,7 +103,7 @@ tweak_look_up_value_f32(
 	sys_printf("tweak value: %.*s\n", (int)line.size, line.str);
 
 error:;
-	if(f != NULL) {
+	if(sys_file_is_valid(f)) {
 		sys_file_close(f);
 	}
 	if(mem != NULL) {

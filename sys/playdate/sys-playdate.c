@@ -436,41 +436,43 @@ sys_file_stats(str8 path)
 	};
 }
 
-usize
-sys_file_modified(str8 path)
+static sys_file
+sys_file_from_pd(SDFile *fp)
 {
-	struct sys_file_stats stats = sys_file_stats(path);
-	usize res                   = (usize)stats.m_year * 10000000000LL +
-		(usize)stats.m_month * 100000000 +
-		(usize)stats.m_day * 1000000 +
-		(usize)stats.m_hour * 10000 +
-		(usize)stats.m_minute * 100 +
-		(usize)stats.m_second;
-	return res;
+	sys_file f = sys_file_zero();
+	f.u64[0]   = (u64)(uptr)fp;
+	return f;
 }
 
-void *
+static SDFile *
+sys_file_pd(sys_file f)
+{
+	return (SDFile *)(uptr)f.u64[0];
+}
+
+sys_file
 sys_file_open_r(str8 path)
 {
-	return PD->file->open((char *)path.str, kFileRead | kFileReadData);
+	return sys_file_from_pd(PD->file->open((char *)path.str, kFileRead | kFileReadData));
 }
 
-void *
+sys_file
 sys_file_open_w(str8 path)
 {
-	return PD->file->open((char *)path.str, kFileWrite);
+	return sys_file_from_pd(PD->file->open((char *)path.str, kFileWrite));
 }
 
-void *
+sys_file
 sys_file_open_a(str8 path)
 {
-	return PD->file->open((char *)path.str, kFileAppend);
+	return sys_file_from_pd(PD->file->open((char *)path.str, kFileAppend));
 }
 
 b32
-sys_file_close(void *f)
+sys_file_close(sys_file f)
 {
-	return (PD->file->close(f) == 0);
+	if(!sys_file_is_valid(f)) { return false; }
+	return (PD->file->close(sys_file_pd(f)) == 0);
 }
 
 b32
@@ -491,46 +493,46 @@ sys_file_rename(str8 from, str8 to)
 }
 
 b32
-sys_file_flush(void *f)
+sys_file_flush(sys_file f)
 {
-	return (PD->file->flush(f) == 0);
+	if(!sys_file_is_valid(f)) { return false; }
+	return (PD->file->flush(sys_file_pd(f)) == 0);
 }
 
 i32
-sys_file_tell(void *f)
+sys_file_tell(sys_file f)
 {
-	return (i32)PD->file->tell(f);
+	return (i32)PD->file->tell(sys_file_pd(f));
 }
 
 i32
-sys_file_seek_set(void *f, i32 pos)
+sys_file_seek_set(sys_file f, i32 pos)
 {
-	return (i32)PD->file->seek(f, pos, SEEK_SET);
+	return (i32)PD->file->seek(sys_file_pd(f), pos, SEEK_SET);
 }
 
 i32
-sys_file_seek_cur(void *f, i32 pos)
+sys_file_seek_cur(sys_file f, i32 pos)
 {
-	return (i32)PD->file->seek(f, pos, SEEK_CUR);
+	return (i32)PD->file->seek(sys_file_pd(f), pos, SEEK_CUR);
 }
 
 i32
-sys_file_seek_end(void *f, i32 pos)
+sys_file_seek_end(sys_file f, i32 pos)
 {
-	return (i32)PD->file->seek(f, pos, SEEK_END);
+	return (i32)PD->file->seek(sys_file_pd(f), pos, SEEK_END);
 }
 
 ssize
-sys_file_w(void *f, const void *buf, u32 buf_size)
+sys_file_w(sys_file f, const void *buf, u32 buf_size)
 {
-	ssize res = PD_FILE_WRITE(f, buf, (uint)buf_size);
-	return res;
+	return (ssize)PD_FILE_WRITE(sys_file_pd(f), buf, (uint)buf_size);
 }
 
-i32
-sys_file_r(void *f, void *buf, u32 buf_size)
+ssize
+sys_file_r(sys_file f, void *buf, u32 buf_size)
 {
-	return (i32)PD_FILE_READ(f, buf, (uint)buf_size);
+	return (ssize)PD_FILE_READ(sys_file_pd(f), buf, (uint)buf_size);
 }
 
 void
@@ -729,13 +731,6 @@ sys_exe_path(void)
 
 str8
 sys_data_path(void)
-{
-	str8 res = str8_lit("");
-	return res;
-}
-
-str8
-sys_pref_path(void)
 {
 	str8 res = str8_lit("");
 	return res;

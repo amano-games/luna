@@ -13,7 +13,7 @@ struct ser_reader {
 };
 
 struct ser_writer {
-	void *f;
+	sys_file f;
 };
 
 enum ser_value_type {

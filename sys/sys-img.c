@@ -21,14 +21,15 @@
 static void
 sys_img_stbi_w(void *ctx, void *data, int size)
 {
-	sys_file_w(ctx, data, (u32)size);
+	sys_file *f = (sys_file *)ctx;
+	sys_file_w(*f, data, (u32)size);
 }
 
 b32
 sys_img_write(struct tex tex, str8 path, struct gfx_col_pallete pallete, struct alloc scratch)
 {
 	b32 res    = false;
-	void *f    = NULL;
+	sys_file f = sys_file_zero();
 	u32 *rgba  = NULL;
 	i32 w      = tex.w;
 	i32 h      = tex.h;
@@ -44,10 +45,10 @@ sys_img_write(struct tex tex, str8 path, struct gfx_col_pallete pallete, struct 
 	tex_opaque_to_rgba(tex, rgba, px_n, pallete);
 
 	f = sys_file_open_w(path);
-	dbg_check(f != NULL, SYS_IMG_LOG, "failed to open %.*s", str8_spread(path));
+	dbg_check(sys_file_is_valid(f), SYS_IMG_LOG, "failed to open %.*s", str8_spread(path));
 
 	dbg_check(
-		stbi_write_png_to_func(sys_img_stbi_w, f, w, h, SYS_IMG_PNG_COMP, rgba, stride),
+		stbi_write_png_to_func(sys_img_stbi_w, &f, w, h, SYS_IMG_PNG_COMP, rgba, stride),
 		SYS_IMG_LOG,
 		"failed to write png %.*s",
 		str8_spread(path));
@@ -55,7 +56,7 @@ sys_img_write(struct tex tex, str8 path, struct gfx_col_pallete pallete, struct 
 	res = true;
 
 error:
-	if(f != NULL) {
+	if(sys_file_is_valid(f)) {
 		sys_file_close(f);
 	}
 	return res;
