@@ -55,7 +55,6 @@ endif
 
 CFLAGS += $(CDEFS)
 
-ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
@@ -81,6 +80,8 @@ $(BUILD_DIR)/steam-runtime:
 	$(LUNA_DIR)/extract_runtime.sh $(ROOT_DIR)/steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
 
 $(PUBLISH_OBJS): $(BINARY) steam
+	rm -rf $(BUILD_DIR)/gen-assets
+	rm -rf $(BUILD_DIR)/obj
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 steam: $(BUILD_DIR)/steam-runtime

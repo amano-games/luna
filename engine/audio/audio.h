@@ -1,10 +1,10 @@
 #pragma once
 
 #include "engine/assets/asset-db.h"
+#include "engine/assets/assets.h"
 #include "engine/audio/adpcm.h"
 #include "engine/audio/snd.h"
 #include "base/types.h"
-#include "sys/sys-io.h"
 
 #define NUM_SND_CHANNEL   12
 #define NUM_AUD_CMD_QUEUE 128
@@ -84,7 +84,7 @@ struct aud_cmd {
 };
 
 struct mus_channel {
-	sys_file stream;
+	struct asset_stream stream;
 	u32 total_bytes_file;
 	struct adpcm adpcm;
 #if PD_DEVICE

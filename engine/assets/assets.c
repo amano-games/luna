@@ -18,7 +18,7 @@ void *asset_allocf(void *ctx, ssize size, ssize align);
 void
 assets_ini(struct alloc alloc, usize size)
 {
-	log_info("Assets", "init");
+	log_info("assets", "init");
 	void *mem = mem_alloc_size(alloc, size);
 	marena_init(&ASSETS.marena, mem, size);
 	ASSETS.alloc   = (struct alloc){asset_allocf, (void *)&ASSETS};
@@ -26,19 +26,143 @@ assets_ini(struct alloc alloc, usize size)
 	mclr_struct(&ASSETS.db);
 }
 
+void
+assets_qop_ini(struct alloc scratch, str8 path)
+{
+	str8 pack = asset_path_to_full_path(scratch, path);
+	dbg_check(qop_open(pack, &ASSETS.qop) != 0, "assets", "qop open failed");
+
+	// Keep a permanent copy so music can open a second pack handle later.
+	ASSETS.pack_path = str8_cpy_push(ASSETS.alloc, pack);
+	dbg_check(ASSETS.pack_path.str, "assets", "qop path copy failed");
+
+	ASSETS.qop_ht = mem_alloc_size(ASSETS.alloc, ASSETS.qop.hashmap_size);
+	dbg_check(ASSETS.qop_ht, "assets", "qop ht alloc failed");
+	dbg_check(qop_read_index(&ASSETS.qop, ASSETS.qop_ht) != 0, "assets", "qop index failed");
+error:;
+}
+
+void
+assets_qop_close(void)
+{
+	if(sys_file_is_valid(ASSETS.qop.fh)) {
+		qop_close(&ASSETS.qop);
+	}
+	ASSETS.qop_ht    = NULL;
+	ASSETS.pack_path = str8_zero();
+}
+
+struct asset_blob
+asset_blob_read(struct alloc scratch, str8 path)
+{
+	struct asset_blob res = {0};
+	struct qop_file *f    = qop_find(&ASSETS.qop, path);
+
+	dbg_check(f, "assets", "failed to find file: %.*s", str8_spread(path));
+
+	void *data = mem_alloc_size(scratch, (usize)f->size);
+	dbg_check(data, "assets", "failed to alloc memory for file: %.*s", str8_spread(path));
+
+	i32 size = qop_read(&ASSETS.qop, f, data);
+	dbg_check(size == f->size, "assets", "qop size doesn't match: %d %d", size, (i32)f->size);
+
+	res.size = f->size;
+	res.data = data;
+
+error:;
+	return res;
+}
+
+i32
+asset_file_read_ex(str8 path, u8 *dest, ssize start, ssize len)
+{
+	i32 res            = 0;
+	struct qop_file *f = qop_find(&ASSETS.qop, path);
+	dbg_check(f, "assets", "failed to find file: %.*s", str8_spread(path));
+	res = qop_read_ex(&ASSETS.qop, f, dest, start, len);
+error:;
+	return res;
+}
+
+b32
+asset_stream_open(struct asset_stream *s, str8 path)
+{
+	b32 res            = false;
+	struct qop_file *f = qop_find(&ASSETS.qop, path);
+
+	dbg_check(f, "assets", "stream find failed: %.*s", str8_spread(path));
+	dbg_check(ASSETS.pack_path.size, "assets", "pack path missing");
+
+	// Own seek cursor via a second open; share the read-only index.
+	dbg_check(qop_open(ASSETS.pack_path, &s->qop) != 0, "assets", "stream qop open failed");
+	s->qop.ht          = ASSETS.qop.ht;
+	s->qop.hashmap_len = ASSETS.qop.hashmap_len;
+	s->file            = f;
+	s->cursor          = 0;
+	s->open            = true;
+	res                = true;
+
+error:;
+	if(!res && s) {
+		if(sys_file_is_valid(s->qop.fh)) {
+			qop_close(&s->qop);
+		}
+		mclr_struct(s);
+	}
+	return res;
+}
+
+void
+asset_stream_close(struct asset_stream *s)
+{
+	if(!s || !s->open) {
+		return;
+	}
+	if(sys_file_is_valid(s->qop.fh)) {
+		qop_close(&s->qop);
+	}
+	mclr_struct(s);
+}
+
+b32
+asset_stream_is_open(struct asset_stream *s)
+{
+	return s && s->open && sys_file_is_valid(s->qop.fh);
+}
+
+i32
+asset_stream_read(struct asset_stream *s, void *dest, ssize len)
+{
+	i32 n = 0;
+	dbg_check(asset_stream_is_open(s), "assets", "stream not open");
+	n = qop_read_ex(&s->qop, s->file, dest, s->cursor, len);
+	if(n > 0) {
+		s->cursor += n;
+	}
+error:;
+	return n;
+}
+
+void
+asset_stream_seek(struct asset_stream *s, ssize off)
+{
+	dbg_check(asset_stream_is_open(s), "assets", "stream not open");
+	s->cursor = off;
+error:;
+}
+
 void *
 asset_allocf(void *ctx, ssize size, ssize align)
 {
 	struct assets *assets = (struct assets *)ctx;
 	void *mem             = marena_alloc(&assets->marena, size, align);
-	dbg_check_mem(mem != NULL, "Assets");
+	dbg_check_mem(mem != NULL, "assets");
 	return mem;
 
-error: {
-	log_error("Assets", "Ran out of asset mem! requested: %$u", (uint)size);
-	MARENA_LOG_USAGE(&ASSETS.marena, "Assets");
+error:;
+	log_error("assets", "Ran out of asset mem! requested: %$u", (uint)size);
+	MARENA_LOG_USAGE(&ASSETS.marena, "assets");
 	return NULL;
-}
 }
 
 struct tex
@@ -58,21 +182,64 @@ asset_tex_get_id(str8 path)
 	return res;
 }
 
-i32
-asset_tex_load(struct alloc scratch, str8 path, struct tex *tex)
+struct tex
+asset_tex_read(struct alloc alloc, str8 path)
 {
-	i32 res        = 0;
-	str8 full_path = asset_path_to_full_path(scratch, path);
-	struct tex t   = tex_load(full_path, ASSETS.alloc);
+	struct tex res           = {0};
+	struct tex_header header = {0};
+	struct qop_file *f       = qop_find(&ASSETS.qop, path);
 
-	if(t.px == NULL) {
-		log_warn("Assets", "Tex loading failed: %s", full_path.str);
-		return -1;
+	dbg_check(f, "assets", "failed to find tex: %.*s", str8_spread(path));
+	dbg_check(f->size >= (ssize)sizeof(header), "assets", "tex too small: %.*s", str8_spread(path));
+
+	i32 n = qop_read_ex(&ASSETS.qop, f, (u8 *)&header, 0, (ssize)sizeof(header));
+	dbg_check(n == (i32)sizeof(header), "assets", "tex header read failed: %.*s", str8_spread(path));
+	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
+		"assets",
+		"invalid tex fmt %u: %.*s",
+		header.fmt,
+		str8_spread(path));
+	dbg_check(header.w > 0 && header.h > 0,
+		"assets",
+		"invalid tex size %ux%u: %.*s",
+		header.w,
+		header.h,
+		str8_spread(path));
+
+	if(header.fmt == TEX_FMT_MASK) {
+		res = tex_create(alloc, (i32)header.w, (i32)header.h);
+	} else {
+		res = tex_create_opaque(alloc, (i32)header.w, (i32)header.h);
 	}
+	dbg_check(res.px, "assets", "tex alloc failed: %.*s", str8_spread(path));
 
-	log_info("Assets", "Tex loaded: %s", path.str);
+	ssize tex_size = (ssize)sizeof(u32) * res.wword * res.h;
+	dbg_check(f->size >= (ssize)sizeof(header) + tex_size,
+		"assets",
+		"tex truncated: %.*s",
+		str8_spread(path));
+
+	n = qop_read_ex(&ASSETS.qop, f, (u8 *)res.px, (ssize)sizeof(header), tex_size);
+	dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed: %.*s", str8_spread(path));
+
+error:;
+	return res;
+}
+
+i32
+asset_tex_load(str8 path, struct tex *tex)
+{
+	i32 res      = -1;
+	struct tex t = asset_tex_read(ASSETS.alloc, path);
+
+	dbg_check(t.px, "assets", "failed to load tex: %.*s", str8_spread(path));
+
+	log_info("assets", "Tex loaded: %s", path.str);
 	res = asset_db_tex_push(&ASSETS.db, path, t);
 	if(tex) *tex = t;
+	res = 0;
+
+error:;
 	return res;
 }
 
@@ -96,17 +263,26 @@ asset_fnt_get_id(str8 path)
 i32
 asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 {
-	i32 res            = 0;
-	struct alloc alloc = ASSETS.alloc;
-	str8 full_path     = asset_path_to_full_path(scratch, path);
-	struct fnt f       = fnt_load(full_path, alloc, scratch);
-	if(f.t.px == NULL) {
-		log_warn("Assets", "Load failed %s", full_path.str);
-	}
+	i32 res                = -1;
+	struct asset_blob blob = asset_blob_read(scratch, path);
+	struct fnt f           = fnt_load_from_mem(ASSETS.alloc, blob.data, blob.size);
+
+	dbg_check(f.widths, "assets", "failed to load fnt: %.*s", str8_spread(path));
+
+	// Companion atlas lives next to the .fnt member in the pack.
+	str8 base_name = str8_chop_last_dot(path);
+	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", str8_spread(base_name), f.cell_w, f.cell_h);
+	f.t            = asset_tex_read(ASSETS.alloc, tex_path);
+	dbg_check(f.t.px, "assets", "failed to load fnt tex: %.*s", str8_spread(tex_path));
+
+	f.grid_w = f.t.w / f.cell_w;
+	f.grid_h = f.t.h / f.cell_h;
+
+	log_info("assets", "Load fnt %s", path.str);
 	res = asset_db_fnt_push(&ASSETS.db, path, f);
-	log_info("Assets", "Load fnt %s", path.str);
 	if(fnt) *fnt = f;
 
+error:;
 	return res;
 }
 
@@ -117,18 +293,50 @@ asset_snd(i32 id)
 	return res.snd;
 }
 
-i32
-asset_snd_load(struct alloc scratch, str8 path, struct snd *snd)
+struct snd
+asset_snd_read(struct alloc alloc, str8 path)
 {
-	i32 res        = 0;
-	str8 full_path = asset_path_to_full_path(scratch, path);
-	struct snd s   = snd_load(full_path, ASSETS.alloc);
-	if(s.len == 0) {
-		log_warn("Assets", "Load failed %s", full_path.str);
-	}
-	log_info("Assets", "Load snd %s", path.str);
+	struct snd res               = {0};
+	struct snd_header snd_header = {0};
+	struct qop_file *f           = qop_find(&ASSETS.qop, path);
+
+	dbg_check(f, "assets", "failed to find snd: %.*s", str8_spread(path));
+	dbg_check(f->size >= (ssize)sizeof(u32), "assets", "snd too small: %.*s", str8_spread(path));
+
+	i32 n = qop_read_ex(&ASSETS.qop, f, (u8 *)&snd_header, 0, (ssize)sizeof(u32));
+	dbg_check(n == (i32)sizeof(u32), "assets", "snd header read failed: %.*s", str8_spread(path));
+
+	u32 bytes = (snd_header.sample_count + 1) >> 1;
+	dbg_check(f->size >= (ssize)sizeof(u32) + (ssize)bytes,
+		"assets",
+		"snd truncated: %.*s",
+		str8_spread(path));
+
+	u8 *buf = alloc_size_aligned(alloc, bytes, alignof(u8), false);
+	dbg_check(buf, "assets", "snd alloc failed: %.*s", str8_spread(path));
+
+	n = qop_read_ex(&ASSETS.qop, f, buf, (ssize)sizeof(u32), (ssize)bytes);
+	dbg_check(n == (i32)bytes, "assets", "snd samples read failed: %.*s", str8_spread(path));
+
+	res.buf = buf;
+	res.len = snd_header.sample_count;
+
+error:;
+	return res;
+}
+
+i32
+asset_snd_load(str8 path, struct snd *snd)
+{
+	i32 res      = -1;
+	struct snd s = asset_snd_read(ASSETS.alloc, path);
+
+	dbg_check(s.len, "assets", "failed to load snd: %.*s", str8_spread(path));
+	log_info("assets", "Load snd %s", path.str);
 	res = asset_db_snd_push(&ASSETS.db, path, s);
 	if(snd) *snd = s;
+
+error:;
 	return res;
 }
 
@@ -152,17 +360,16 @@ asset_bet(i32 id)
 i32
 asset_bet_load(struct alloc scratch, str8 path, struct bet *bet)
 {
-	i32 res            = 0;
-	struct alloc alloc = ASSETS.alloc;
-	str8 full_path     = asset_path_to_full_path(scratch, path);
-	struct bet b       = bet_load(full_path, alloc, scratch);
-	if(b.nodes == NULL) {
-		log_warn("Assets", "Bet loading failed: %s", full_path.str);
-		return -1;
-	}
-	log_info("Assets", "Bet loaded: %s", path.str);
+	i32 res                = -1;
+	struct asset_blob blob = asset_blob_read(scratch, path);
+	struct bet b           = bet_load_from_mem(ASSETS.alloc, blob.data, (usize)blob.size);
+
+	dbg_check(b.nodes, "assets", "Bet loading failed: %.*s", str8_spread(path));
+	log_info("assets", "Bet loaded: %s", path.str);
 	res = asset_db_bet_push(&ASSETS.db, path, b);
 	if(bet) *bet = b;
+
+error:;
 	return res;
 }
 

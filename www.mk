@@ -57,10 +57,9 @@ LINK_FLAGS += -s ALLOW_MEMORY_GROWTH=1
 LINK_FLAGS += -s USE_WEBGL2
 LINK_FLAGS += -s NO_EXIT_RUNTIME=1
 LINK_FLAGS += --shell-file=$(PLATFORM_DIR)/index.html
-LINK_FLAGS += --preload-file=$(BUILD_DIR)/assets@/assets
+LINK_FLAGS += --preload-file=$(BUILD_DIR)/assets.qop@/assets.qop
 LINK_FLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 
-ASSETS_OUT   := $(BUILD_DIR)/assets
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
@@ -74,7 +73,7 @@ include $(ROOT_DIR)/assets.mk
 all: build
 	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
 
-# Directory existence is not enough: obj/assets may create BUILD_DIR first.
+# Directory existence is not enough: obj may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
 
 $(PLATFORM_READY):
@@ -95,7 +94,8 @@ build:
 	$(MAKE) -f $(ROOT_DIR)/www.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 $(PUBLISH_OBJS): $(BINARY)
-	rm -rf $(BUILD_DIR)/assets
+	rm -f $(BUILD_DIR)/assets.qop
+	rm -rf $(BUILD_DIR)/gen-assets
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 release:

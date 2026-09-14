@@ -9,16 +9,10 @@
 #include "base/utils.h"
 
 struct bet
-bet_load(str8 path, struct alloc alloc, struct alloc scratch)
+bet_load_from_mem(struct alloc alloc, void *data, usize size)
 {
-	log_info("Bet", "Load bet %s", path.str);
-	struct bet res                    = {0};
-	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
-	char *data                        = file_res.data;
-	usize size                        = file_res.size;
-
-	if(data == NULL) {
-		log_error("Bet", "failed to open bet file: %s", path.str);
+	struct bet res = {0};
+	if(data == NULL || size == 0) {
 		return res;
 	}
 
@@ -28,6 +22,22 @@ bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 	};
 	bet_read(&r, &res, alloc);
 
+	return res;
+}
+
+struct bet
+bet_load(str8 path, struct alloc alloc, struct alloc scratch)
+{
+	log_info("Bet", "Load bet %s", path.str);
+	struct bet res                    = {0};
+	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
+
+	if(file_res.data == NULL) {
+		log_error("Bet", "failed to open bet file: %s", path.str);
+		return res;
+	}
+
+	res = bet_load_from_mem(alloc, file_res.data, file_res.size);
 	return res;
 }
 

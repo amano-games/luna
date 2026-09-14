@@ -5,8 +5,8 @@
 #include "lib/serialize/serialize.h"
 #include "base/str.h"
 #include "base/log.h"
-#include "base/log.h"
 #include "base/dbg.h"
+#include "sys/sys-io.h"
 
 i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
@@ -176,10 +176,9 @@ error:
 }
 
 struct fnt
-fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
+fnt_load_from_mem(struct alloc alloc, void *data, usize size)
 {
 	struct fnt res        = {0};
-	str8 fnt_ext          = str8_lit(".fnt");
 	ssize widths_size     = FNT_CHAR_MAX;
 	ssize kern_pairs_size = FNT_KERN_PAIRS_MAX;
 	res.widths            = arr_new(alloc, res.widths, widths_size);
@@ -189,7 +188,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 		log_error("fnt", "Failed to alloc widths array ");
 		return res;
 	}
-	if(res.widths == NULL) {
+	if(res.kern_pairs == NULL) {
 		log_error("fnt", "Failed to alloc kern pairs array ");
 		return res;
 	}
@@ -199,25 +198,42 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	mclr(res.widths, sizeof(*res.widths) * widths_size);
 	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * kern_pairs_size);
 
+	if(data == NULL || size == 0) {
+		log_error("fnt", "Failed loading info from mem");
+		return res;
+	}
+
+	struct ser_reader r = {
+		.data = data,
+		.len  = size,
+	};
+	fnt_read(&r, &res);
+
+	return res;
+}
+
+struct fnt
+fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
+{
+	struct fnt res = {0};
+	str8 fnt_ext   = str8_lit(".fnt");
+
 	dbg_assert(str8_ends_with(path, fnt_ext, 0));
 	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
 	if(file_res.data == NULL) {
 		log_error("fnt", "Failed loading info: %s", path.str);
 		return res;
 	}
-	char *data          = file_res.data;
-	usize size          = file_res.size;
-	struct ser_reader r = {
-		.data = data,
-		.len  = size,
-	};
 
-	fnt_read(&r, &res);
+	res = fnt_load_from_mem(alloc, file_res.data, file_res.size);
+	if(res.widths == NULL) {
+		return res;
+	}
 
 	str8 base_name = str8_chop_last_dot(path);
 	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", str8_spread(base_name), res.cell_w, res.cell_h);
 
-	res.t = tex_load(tex_path, alloc);
+	res.t = tex_load(alloc, tex_path);
 	if(res.t.px == NULL) {
 		log_error("fnt", "Failed loading tex: %s", path.str);
 		return res;

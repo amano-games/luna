@@ -32,9 +32,10 @@ struct tex {
 	int h;
 };
 
-struct tex tex_create(i32 w, i32 h, struct alloc alloc);
-struct tex tex_create_opaque(i32 w, i32 h, struct alloc alloc);
-struct tex tex_load(str8 path, struct alloc alloc);
+struct tex tex_create(struct alloc alloc, i32 w, i32 h);
+struct tex tex_create_opaque(struct alloc alloc, i32 w, i32 h);
+struct tex tex_load(struct alloc alloc, str8 path);
+struct tex tex_load_from_mem(struct alloc alloc, void *data, ssize size);
 void tex_clr(struct tex dst, i32 col);
 i32 tex_px_at(struct tex tex, i32 x, i32 y);
 i32 tex_mask_at(struct tex tex, i32 x, i32 y);
