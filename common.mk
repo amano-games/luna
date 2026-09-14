@@ -23,8 +23,9 @@ WARN_FLAGS += -Wno-unused-parameter
 # Daily builds default to debug; pass BUILD_DEBUG=0 for release.
 BUILD_DEBUG ?= 1
 
-ASSETS_DIR := $(SRC_DIR)/assets
-ASSETS_BIN := bin/luna-asset-gen
+ASSETS_DIR      := $(SRC_DIR)/assets
+ASSETS_BIN      := bin/luna-asset-gen
+ASSETS_PACK_BIN := bin/luna-asset-pack
 
 # Let Make rebuild tools when any luna source/header changes.
 LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print)

@@ -1,6 +1,7 @@
 #include "qop.h"
 
-#include "base/ht.h"
+#include "base/dbg.h"
+#include "base/hash.h"
 #include "base/types.h"
 #include "sys/sys-io.h"
 
@@ -46,31 +47,30 @@ qop_read_u64(sys_file fh)
 i32
 qop_open(str8 path, struct qop_desc *qop)
 {
+	i32 res     = 0;
 	sys_file fh = sys_file_open_r(path);
-	if(!sys_file_is_valid(fh)) {
-		return 0;
-	}
+
+	dbg_check(sys_file_is_valid(fh), "qop", "failed to open %.*s", str8_spread(path));
 
 	sys_file_seek_end(fh, 0);
 	i32 size = sys_file_tell(fh);
-	if(size <= QOP_HEADER_SIZE || sys_file_seek_set(fh, size - QOP_HEADER_SIZE) != 0) {
-		sys_file_close(fh);
-		return 0;
-	}
 
-	qop->fh            = fh;
-	qop->ht            = NULL;
+	dbg_check(
+		(size > QOP_HEADER_SIZE && sys_file_seek_set(fh, size - QOP_HEADER_SIZE) == 0),
+		"qop",
+		"invalid file: %.*s",
+		str8_spread(path));
+
 	ssize index_len    = qop_read_u32(fh);
 	ssize archive_size = qop_read_u32(fh);
 	ssize magic        = qop_read_u32(fh);
 
 	// Check magic, make sure index_len is possible with the file size
-	if(
-		magic != QOP_MAGIC ||
-		index_len * QOP_INDEX_SIZE > (ssize)(size - QOP_HEADER_SIZE)) {
-		sys_file_close(fh);
-		return 0;
-	}
+	dbg_check(
+		(magic == QOP_MAGIC) && index_len * QOP_INDEX_SIZE <= (ssize)(size - QOP_HEADER_SIZE),
+		"qop",
+		"invalid file: %.*s",
+		str8_spread(path));
 
 	// Find a good size for the hashmap: power of 2, at least 1.5x num entries
 	ssize hashmap_len     = 1;
@@ -79,12 +79,18 @@ qop_open(str8 path, struct qop_desc *qop)
 		hashmap_len <<= 1;
 	}
 
+	qop->fh           = fh;
+	qop->ht           = NULL;
 	qop->files_offset = size - archive_size;
 	qop->index_len    = index_len;
 	qop->index_offset = size - qop->index_len * QOP_INDEX_SIZE - QOP_HEADER_SIZE;
 	qop->hashmap_len  = hashmap_len;
 	qop->hashmap_size = qop->hashmap_len * sizeof(struct qop_file);
-	return size;
+	res               = size;
+
+error:;
+	if(res == 0 && sys_file_is_valid(fh)) { sys_file_close(fh); }
+	return res;
 }
 
 i32

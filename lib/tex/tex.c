@@ -1,28 +1,34 @@
 #include "tex.h"
 #include "base/dbg.h"
+#include "base/types.h"
 #include "base/utils.h"
 #include "engine/gfx/gfx-defs.h"
 #include "sys/sys-intrin.h"
 #include "sys/sys-io.h"
 
+// Words per row: width padded to 32px; mask fmt doubles for alpha
+static inline u32
+tex_wword(i32 w, b32 mask)
+{
+	u32 waligned = (w + 31) & ~31;
+	return (waligned >> 5) << (mask != 0);
+}
+
+// Pixel buffer bytes for w x h
+static inline ssize
+tex_mem_size(i32 w, i32 h, b32 mask)
+{
+	return (ssize)sizeof(u32) * tex_wword(w, mask) * (ssize)h;
+}
+
 struct tex
-tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
+tex_create_internal(struct alloc alloc, i32 w, i32 h, b32 mask)
 {
 	struct tex res = {0};
 	b32 m          = mask != 0;
-	// NOTE: Seems that the tex should be padded on creation
-	// If not the correct size won't be calculated
-	// Align the next multiple of 32 greater than or equal to the
-	u32 waligned = (w + 31) & ~31;
-	// Calculates the number of words needed for the width of the texture
-	// It multiplies by 2 if it uses a mask (transparency)
-	// by shifting it by 1 << (0 < mask)
-	u32 wword = (waligned >> 5) << (i32)m;
-	// So each `word` is a row of pixels aligned
-	// To get the size we multiply by the height
-	// getting the full size of the image aligned.
-	u32 size  = sizeof(u32) * wword * h;
-	void *mem = alloc_size_aligned(alloc, size, MEM_ALIGN_PD_CACHE, false);
+	u32 wword      = tex_wword(w, m);
+	ssize size     = tex_mem_size(w, h, m);
+	void *mem      = alloc_size_aligned(alloc, size, MEM_ALIGN_PD_CACHE, false);
 	if(mem) {
 		res.px    = (u32 *)mem;
 		res.fmt   = m;
@@ -34,19 +40,19 @@ tex_create_internal(i32 w, i32 h, b32 mask, struct alloc alloc)
 }
 
 struct tex
-tex_create(i32 w, i32 h, struct alloc alloc)
+tex_create(struct alloc alloc, i32 w, i32 h)
 {
-	return tex_create_internal(w, h, 1, alloc);
+	return tex_create_internal(alloc, w, h, 1);
 }
 
 struct tex
-tex_create_opaque(i32 w, i32 h, struct alloc alloc)
+tex_create_opaque(struct alloc alloc, i32 w, i32 h)
 {
-	return tex_create_internal(w, h, 0, alloc);
+	return tex_create_internal(alloc, w, h, 0);
 }
 
 struct tex
-tex_load(str8 path, struct alloc alloc)
+tex_load(struct alloc alloc, str8 path)
 {
 	struct tex res = {0};
 	sys_file f     = sys_file_open_r(path);
@@ -55,13 +61,42 @@ tex_load(str8 path, struct alloc alloc)
 	struct tex_header header = {0};
 	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
 
-	struct tex t   = tex_create_internal(header.w, header.h, header.fmt, alloc);
-	ssize tex_size = sizeof(u32) * t.wword * t.h;
+	struct tex t   = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	ssize tex_size = tex_mem_size(header.w, header.h, header.fmt);
 	sys_file_r(f, t.px, (u32)tex_size);
 
 error:;
 	if(sys_file_is_valid(f)) { sys_file_close(f); }
 	return t;
+}
+
+struct tex
+tex_load_from_mem(struct alloc alloc, void *data, ssize size)
+{
+	struct tex res           = {0};
+	u8 *src                  = data;
+	struct tex_header header = {0};
+
+	dbg_check(data, "tex", "null tex data");
+	dbg_check(size >= (ssize)sizeof(header), "tex", "tex blob too small");
+
+	mcpy(&header, src, sizeof(header));
+
+	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
+		"tex", "invalid tex fmt %u", header.fmt);
+	dbg_check(header.w > 0 && header.h > 0,
+		"tex", "invalid tex size %ux%u", header.w, header.h);
+
+	ssize tex_size = tex_mem_size(header.w, header.h, header.fmt);
+	dbg_check(size >= (ssize)sizeof(header) + tex_size, "tex", "tex blob truncated");
+
+	res = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	dbg_check_mem(res.px, "tex");
+
+	mcpy(res.px, src + sizeof(header), tex_size);
+
+error:;
+	return res;
 }
 
 void

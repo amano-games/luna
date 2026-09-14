@@ -127,9 +127,7 @@ aud_cmds_flush(struct alloc scratch)
 				break;
 			}
 
-			str8 full_path = asset_path_to_full_path(scratch, path);
-			sys_file f     = sys_file_open_r(full_path);
-			if(!sys_file_is_valid(f)) {
+			if(!asset_stream_open(&mc->stream, path)) {
 				log_warn("Audio", "Can't open music file: %s", path.str);
 				break;
 			}
@@ -137,11 +135,14 @@ aud_cmds_flush(struct alloc scratch)
 			mc->path_handle     = cmd->path_handle;
 			struct adpcm *adpcm = &mc->adpcm;
 			u32 num_samples     = 0;
-			sys_file_r(f, &num_samples, sizeof(u32));
+			if(asset_stream_read(&mc->stream, &num_samples, sizeof(u32)) != (i32)sizeof(u32)) {
+				log_warn("Audio", "Can't read music header: %s", path.str);
+				asset_stream_close(&mc->stream);
+				break;
+			}
 			adpcm->data          = mc->chunk;
 			adpcm->len           = num_samples;
 			adpcm->vol_q8        = cmd->vol_q8;
-			mc->stream           = f;
 			mc->looping          = cmd->loop;
 			mc->total_bytes_file = sizeof(u32) + ((num_samples + 1) >> 1);
 			adpcm_set_pitch(adpcm, 256);
@@ -249,7 +250,7 @@ mus_is_playing(enum mus_channel_id channel_id)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
-	return sys_file_is_valid(mc->stream);
+	return asset_stream_is_open(&mc->stream);
 }
 
 void
@@ -279,16 +280,15 @@ mus_vol_get(enum mus_channel_id channel_id)
 static void
 mus_channel_stop(struct mus_channel *mc)
 {
-	if(!sys_file_is_valid(mc->stream)) return;
-	sys_file_close(mc->stream);
-	mc->stream      = sys_file_zero();
+	if(!asset_stream_is_open(&mc->stream)) return;
+	asset_stream_close(&mc->stream);
 	mc->path_handle = (struct asset_handle){0};
 }
 
 static void
 mus_channel_playback(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 {
-	if(!sys_file_is_valid(mc->stream)) return;
+	if(!asset_stream_is_open(&mc->stream)) return;
 
 	struct adpcm *adpcm = &mc->adpcm;
 	i32 l               = min_i32(len, adpcm->len_pitched - adpcm->pos_pitched - 1);
@@ -298,7 +298,7 @@ mus_channel_playback(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 
 	if(mc->looping) { // loop back to start
 		adpcm_reset_to_start(adpcm);
-		sys_file_seek_set(mc->stream, sizeof(u32));
+		asset_stream_seek(&mc->stream, sizeof(u32));
 		mus_channel_playback_part(mc, &lb[l], rb ? &rb[l] : NULL, len - l);
 	} else {
 		mus_channel_stop(mc);
@@ -318,11 +318,11 @@ mus_channel_playback_part(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 	u32 bneeded = (pos_new - adpcm->pos + (adpcm->nibble == 0)) >> 1;
 
 	if(bneeded) {
-		u32 ft    = sys_file_tell(mc->stream);
+		u32 ft    = (u32)mc->stream.cursor;
 		u32 fnewt = ft + bneeded;
 		dbg_assert(fnewt <= mc->total_bytes_file);
 		dbg_assert(bneeded <= sizeof(mc->chunk));
-		sys_file_r(mc->stream, mc->chunk, bneeded);
+		asset_stream_read(&mc->stream, mc->chunk, bneeded);
 	}
 
 	if(adpcm->vol_q8) {

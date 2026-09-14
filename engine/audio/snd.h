@@ -13,3 +13,4 @@ struct snd {
 };
 
 struct snd snd_load(const str8 path, struct alloc alloc);
+struct snd snd_load_from_mem(struct alloc alloc, void *data, ssize size);
