@@ -19,7 +19,7 @@ enum {
 };
 
 // Calendar fields match Playdate FileStat (month/day 1-based).
-struct sys_file_stats {
+struct sys_file_props {
 	i32 isdir;
 	u32 size;
 	i32 m_year;
@@ -82,7 +82,7 @@ i32 sys_file_seek_cur(sys_file f, i32 pos);
 i32 sys_file_seek_end(sys_file f, i32 pos);
 ssize sys_file_w(sys_file f, const void *buf, u32 bsize);
 ssize sys_file_r(sys_file f, void *buf, u32 bsize);
-struct sys_file_stats sys_file_stats(str8 path);
+struct sys_file_props sys_file_props_get(str8 path);
 b32 sys_make_dir(str8 path);
 
 // @per_os_impl Paths

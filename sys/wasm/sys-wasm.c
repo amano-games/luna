@@ -198,10 +198,10 @@ sys_file_fp(sys_file f)
 	return (FILE *)(uptr)f.u64[0];
 }
 
-struct sys_file_stats
-sys_file_stats(str8 path)
+struct sys_file_props
+sys_file_props_get(str8 path)
 {
-	struct sys_file_stats res = {0};
+	struct sys_file_props res = {0};
 	struct stat st            = {0};
 
 	if(stat((char *)path.str, &st) != 0) {
