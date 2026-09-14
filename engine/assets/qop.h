@@ -4,6 +4,7 @@
 
 https://phoboslab.org/log/2024/09/qop
 -- File format description (pseudo code)
+// Pack keys are FNV-1a instead of murmur
 
 struct {
 	// Path string and data of all files in this archive
@@ -84,6 +85,9 @@ void qop_close(struct qop_desc *qop);
 
 // Find a file with the supplied path. Returns NULL if the file is not found.
 struct qop_file *qop_find(struct qop_desc *qop, str8 path);
+
+// Find a file by path hash. Returns NULL if the file is not found.
+struct qop_file *qop_find_hash(struct qop_desc *qop, u64 hash);
 
 // Copy the path of the file into dest. The dest buffer must be at least
 // file->path_len bytes long. The path is null terminated.

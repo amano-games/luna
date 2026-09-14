@@ -3,7 +3,6 @@
 #include "engine/audio/snd.h"
 #include "lib/bet/bet.h"
 #include "lib/fnt/fnt.h"
-#include "base/date-time.h"
 #include "base/ht.h"
 #include "base/types.h"
 
@@ -43,29 +42,29 @@ struct animation_slice {
 };
 
 struct asset_tex_info {
-	u64 path_hash;
+	u32 path_id;
 	v2_i32 cell_size;
 	v2_i32 tex_size;
 };
 
+// path_id is path_table.arr index so id -> str8 skips the hash table.
 struct asset_tex {
-	u64 path_hash;
+	u32 path_id;
 	struct tex tex;
 };
 
 struct asset_snd {
-	u64 path_hash;
+	u32 path_id;
 	struct snd snd;
 };
 
 struct asset_fnt {
-	u64 path_hash;
+	u32 path_id;
 	struct fnt fnt;
 };
 
 struct asset_bet {
-	u64 path_hash;
-	dense_time timestamp;
+	u32 path_id;
 	struct bet bet;
 };
 
@@ -106,7 +105,6 @@ struct bet_table {
 	struct asset_bet *arr;
 };
 
-// [id] = index and count
 struct asset_db {
 	b32 initialized;
 	struct path_table paths;
@@ -118,7 +116,18 @@ struct asset_db {
 	struct snd_table snds;
 };
 
-void asset_db_ini(struct asset_db *db, usize paths_count, usize textures_count, usize clip_count, usize slice_count, usize fonts_count, usize snds_count, usize bets_count, struct alloc alloc);
+struct asset_db_cap {
+	ssize paths;
+	ssize path_bytes;
+	ssize textures;
+	ssize clips;
+	ssize slices;
+	ssize fonts;
+	ssize snds;
+	ssize bets;
+};
+
+void asset_db_ini(struct asset_db *db, struct asset_db_cap cap, struct alloc alloc);
 struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 
 str8 asset_db_path_push(struct asset_db *db, str8 path);
@@ -157,6 +166,3 @@ struct asset_bet asset_db_bet_get(struct asset_db *db, struct asset_handle handl
 struct asset_bet asset_db_bet_get_by_id(struct asset_db *db, u32 id);
 u32 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle);
 struct str8 asset_db_bet_path_get(struct asset_db *db, u32 id);
-
-dense_time asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle);
-dense_time asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle);

@@ -125,23 +125,34 @@ qop_close(struct qop_desc *qop)
 }
 
 struct qop_file *
-qop_find(struct qop_desc *qop, str8 path)
+qop_find_hash(struct qop_desc *qop, u64 hash)
 {
+	struct qop_file *res = NULL;
+	i32 mask;
+	i32 idx;
+
 	if(qop->ht == NULL) {
-		return NULL;
+		goto done;
 	}
 
-	i32 mask = qop->hashmap_len - 1;
-
-	u64 hash = hash_murmuroaat_str8(path);
-	i32 idx  = hash & mask;
+	mask = qop->hashmap_len - 1;
+	idx  = hash & mask;
 	while(qop->ht[idx].size > 0) {
 		if(qop->ht[idx].hash == hash) {
-			return &qop->ht[idx];
+			res = &qop->ht[idx];
+			goto done;
 		}
 		idx = (idx + 1) & mask;
 	}
-	return NULL;
+
+done:
+	return res;
+}
+
+struct qop_file *
+qop_find(struct qop_desc *qop, str8 path)
+{
+	return qop_find_hash(qop, hash_fnv1a_str8(path));
 }
 
 i32
