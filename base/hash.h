@@ -27,5 +27,5 @@ hash_murmuroaat_str8(str8 v)
 		h *= 0x5bd1e9955bd1e995ull;
 		h ^= h >> 47;
 	}
-	return h ^ h >> 32;
+	return h;
 }

@@ -35,10 +35,18 @@ struct {
 */
 
 #include "base/types.h"
-#define QOP_FLAG_NONE               0
-#define QOP_FLAG_COMPRESSED_ZSTD    (1 << 0)
-#define QOP_FLAG_COMPRESSED_DEFLATE (1 << 1)
-#define QOP_FLAG_ENCRYPTED          (1 << 8)
+
+#define QOP_HEADER_SIZE 12
+#define QOP_MAGIC \
+	(((u32)'q') << 0 | ((u32)'o') << 8 | \
+		((u32)'p') << 16 | ((u32)'f') << 24)
+
+enum qop_flag {
+	QOP_FLAG_NONE               = 0,
+	QOP_FLAG_COMPRESSED_ZSTD    = 1 << 0,
+	QOP_FLAG_COMPRESSED_DEFLATE = 1 << 1,
+	QOP_FLAG_ENCRYPTED          = 1 << 8,
+};
 
 struct qop_file {
 	u64 hash;
