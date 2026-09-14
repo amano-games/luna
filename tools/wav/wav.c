@@ -72,7 +72,7 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 {
 	b32 res                          = false;
 	struct sys_full_file_res in_data = sys_load_full_file(sys_allocator(), in_path);
-	void *out_file                   = NULL;
+	sys_file out_file                = sys_file_zero();
 	u8 *out_data                     = NULL;
 	struct wav wav                   = {0};
 
@@ -85,8 +85,9 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 
 	struct snd_header snd_header = {.sample_count = wav.sample_count};
 	str8 out_file_path           = path_make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
-	dbg_check_warn((out_file = sys_file_open_w(out_file_path)), "snd-gen", "%s failed to open", out_file_path.str);
-	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)), "snd-gen", "%s failed to write", out_file_path.str);
+	out_file                     = sys_file_open_w(out_file_path);
+	dbg_check_warn(sys_file_is_valid(out_file), "snd-gen", "%s failed to open", out_file_path.str);
+	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)) == (ssize)sizeof(snd_header), "snd-gen", "%s failed to write", out_file_path.str);
 
 	{
 		struct alloc alloc = sys_allocator();
@@ -95,7 +96,7 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 		out_data        = (u8 *)alloc_arr(alloc, out_data, data_size);
 
 		adpcm_i16_encode((i16 *)wav.sample_data, out_data, wav.sample_count);
-		dbg_check_warn(sys_file_w(out_file, out_data, data_size), "snd-gen", "%s failed to write", out_file_path.str);
+		dbg_check_warn(sys_file_w(out_file, out_data, data_size) == (ssize)data_size, "snd-gen", "%s failed to write", out_file_path.str);
 	}
 
 	log_info("snd-gen", "%s -> %s", in_path.str, out_file_path.str);
@@ -104,6 +105,6 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 error:;
 	if(in_data.data) { sys_free(in_data.data); }
 	if(out_data) { sys_free(out_data); }
-	if(out_file) { sys_file_close(out_file); }
+	if(sys_file_is_valid(out_file)) { sys_file_close(out_file); }
 	return res;
 }

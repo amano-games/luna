@@ -14,8 +14,8 @@ enum json_copy_flags {
 b32
 json_load(const str8 path, struct alloc alloc, str8 *out)
 {
-	void *f = sys_file_open_r(path);
-	if(!f) {
+	sys_file f = sys_file_open_r(path);
+	if(!sys_file_is_valid(f)) {
 		log_warn("JSON", "Can't open %s\n", path.str);
 		return 0;
 	}
@@ -28,7 +28,7 @@ json_load(const str8 path, struct alloc alloc, str8 *out)
 		log_error("JSON", "loading %s", path.str);
 		return 0;
 	}
-	sys_file_r(f, buf, f_size);
+	sys_file_r(f, buf, (u32)f_size);
 	sys_file_close(f);
 	buf[f_size] = '\0';
 	out->str    = buf;

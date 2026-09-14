@@ -17,8 +17,8 @@
 b32
 fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 {
-	void *f = sys_file_open_r(path);
-	if(!f) {
+	sys_file f = sys_file_open_r(path);
+	if(!sys_file_is_valid(f)) {
 		log_warn("fnt-pd", "Can't open %s\n", path.str);
 		return 0;
 	}
@@ -31,7 +31,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 		log_error("fnt-pd", "loading %s", path.str);
 		return 0;
 	}
-	sys_file_r(f, buf, f_size);
+	sys_file_r(f, buf, (u32)f_size);
 	sys_file_close(f);
 	buf[f_size] = '\0';
 	out->str    = buf;
@@ -200,9 +200,10 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 
 	handle_lines(rest, &fnt, scratch);
 
-	void *out_file;
+	sys_file out_file  = sys_file_zero();
 	str8 out_file_path = out_path;
-	if(!(out_file = sys_file_open_w(out_file_path))) {
+	out_file           = sys_file_open_w(out_file_path);
+	if(!sys_file_is_valid(out_file)) {
 		log_error("ai-gen", "can't open file %s for writing!", out_file_path.str);
 		return -1;
 	}

@@ -4,6 +4,7 @@
 #include "engine/audio/adpcm.h"
 #include "engine/audio/snd.h"
 #include "base/types.h"
+#include "sys/sys-io.h"
 
 #define NUM_SND_CHANNEL   12
 #define NUM_AUD_CMD_QUEUE 128
@@ -83,7 +84,7 @@ struct aud_cmd {
 };
 
 struct mus_channel {
-	void *stream;
+	sys_file stream;
 	u32 total_bytes_file;
 	struct adpcm adpcm;
 #if PD_DEVICE

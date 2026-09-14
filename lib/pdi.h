@@ -40,7 +40,7 @@ b32
 pdi_write(struct pdi pdi, str8 path)
 {
 	b32 res           = false;
-	void *f           = NULL;
+	sys_file f        = sys_file_zero();
 	b32 is_compressed = (pdi.header.flags & 0x80000000) > 0;
 
 	if(is_compressed) {
@@ -48,7 +48,7 @@ pdi_write(struct pdi pdi, str8 path)
 	}
 
 	f = sys_file_open_w(path);
-	dbg_check_warn(f, "pdi", "failed to open file to write %.*s", str8_spread(path));
+	dbg_check_warn(sys_file_is_valid(f), "pdi", "failed to open file to write %.*s", str8_spread(path));
 
 	sys_file_w(f, &pdi.header, sizeof(pdi.header));
 	if(is_compressed) {
@@ -63,7 +63,7 @@ pdi_write(struct pdi pdi, str8 path)
 	res = true;
 
 error:;
-	if(f != NULL) {
+	if(sys_file_is_valid(f)) {
 		sys_file_close(f);
 	}
 	return res;

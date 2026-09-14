@@ -49,18 +49,18 @@ struct tex
 tex_load(str8 path, struct alloc alloc)
 {
 	struct tex res = {0};
-	void *f        = sys_file_open_r(path);
-	dbg_check(f, "tex", "failed to open texture %s", path.str);
+	sys_file f     = sys_file_open_r(path);
+	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %s", path.str);
 
 	struct tex_header header = {0};
-	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)), "tex", "failed to read tex header %s", path.str);
+	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
 
 	struct tex t   = tex_create_internal(header.w, header.h, header.fmt, alloc);
 	ssize tex_size = sizeof(u32) * t.wword * t.h;
-	sys_file_r(f, t.px, tex_size);
+	sys_file_r(f, t.px, (u32)tex_size);
 
 error:;
-	if(f) { sys_file_close(f); }
+	if(sys_file_is_valid(f)) { sys_file_close(f); }
 	return t;
 }
 

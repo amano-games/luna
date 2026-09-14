@@ -6,9 +6,9 @@ struct snd
 snd_load(const str8 path, struct alloc alloc)
 {
 	struct snd res = {0};
-	void *f        = sys_file_open_r(path);
+	sys_file f     = sys_file_open_r(path);
 
-	dbg_check_warn(f, "snd", "failed to open file %s", path.str);
+	dbg_check_warn(sys_file_is_valid(f), "snd", "failed to open file %s", path.str);
 
 	struct snd_header snd_header = {0};
 	sys_file_r(f, &snd_header, sizeof(u32));
@@ -23,7 +23,7 @@ snd_load(const str8 path, struct alloc alloc)
 	res.len = snd_header.sample_count;
 
 error:;
-	if(f) {
+	if(sys_file_is_valid(f)) {
 		sys_file_close(f);
 	}
 	return res;

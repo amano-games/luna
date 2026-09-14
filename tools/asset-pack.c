@@ -31,32 +31,32 @@
 struct qop_w {
 	ssize archive_size;
 	ssize file_count;
-	void *file;
+	sys_file file;
 	struct qop_file *files;
 };
 
 static void
-qop_u16w(u16 v, void *f)
+qop_u16w(u16 v, sys_file f)
 {
 	u8 b[sizeof(u16)];
 	b[0] = 0xff & (v);
 	b[1] = 0xff & (v >> 8);
-	dbg_assert(sys_file_w(f, b, sizeof(u16)));
+	dbg_assert(sys_file_w(f, b, sizeof(u16)) == (ssize)sizeof(u16));
 }
 
 static void
-qop_u32w(u32 v, void *f)
+qop_u32w(u32 v, sys_file f)
 {
 	u8 b[sizeof(u32)];
 	b[0] = 0xff & (v);
 	b[1] = 0xff & (v >> 8);
 	b[2] = 0xff & (v >> 16);
 	b[3] = 0xff & (v >> 24);
-	dbg_assert(sys_file_w(f, b, sizeof(u32)));
+	dbg_assert(sys_file_w(f, b, sizeof(u32)) == (ssize)sizeof(u32));
 }
 
 static void
-qop_u64w(u64 v, void *f)
+qop_u64w(u64 v, sys_file f)
 {
 	u8 b[sizeof(u64)];
 	b[0] = 0xff & (v);
@@ -67,26 +67,26 @@ qop_u64w(u64 v, void *f)
 	b[5] = 0xff & (v >> 40);
 	b[6] = 0xff & (v >> 48);
 	b[7] = 0xff & (v >> 56);
-	dbg_assert(sys_file_w(f, b, sizeof(u64)));
+	dbg_assert(sys_file_w(f, b, sizeof(u64)) == (ssize)sizeof(u64));
 }
 
 // Copy file bytes into archive; return byte count or -1 on failure.
 static ssize
-qop_copy_into(str8 path, void *dst)
+qop_copy_into(str8 path, sys_file dst)
 {
-	ssize res  = -1;
-	void *src  = NULL;
-	void *data = NULL;
+	ssize res   = -1;
+	sys_file src = sys_file_zero();
+	void *data  = NULL;
 	usize f_size;
 
 	src = sys_file_open_r(path);
-	dbg_check(src, LOG_ID, "failed to open file: %.*s", str8_spread(path));
+	dbg_check(sys_file_is_valid(src), LOG_ID, "failed to open file: %.*s", str8_spread(path));
 
 	sys_file_seek_end(src, 0);
 	f_size = (usize)sys_file_tell(src);
 	sys_file_seek_set(src, 0);
 
-	// Empty files are valid archive members; sys_file_r can't read size 0.
+	// Empty files are valid archive members.
 	if(f_size == 0) {
 		res = 0;
 		goto error;
@@ -94,8 +94,8 @@ qop_copy_into(str8 path, void *dst)
 
 	data = mem_alloc_size(sys_allocator(), f_size);
 	dbg_check(data, LOG_ID, "failed alloc for %.*s", str8_spread(path));
-	dbg_check(sys_file_r(src, data, (u32)f_size) == 1, LOG_ID, "failed to read file: %.*s", str8_spread(path));
-	dbg_check(sys_file_w(dst, data, (u32)f_size), LOG_ID, "failed to copy file %.*s", str8_spread(path));
+	dbg_check(sys_file_r(src, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to read file: %.*s", str8_spread(path));
+	dbg_check(sys_file_w(dst, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to copy file %.*s", str8_spread(path));
 
 	res = (ssize)f_size;
 
@@ -103,7 +103,7 @@ error:;
 	if(data) {
 		sys_free(data);
 	}
-	if(src) {
+	if(sys_file_is_valid(src)) {
 		sys_file_close(src);
 	}
 	return res;
@@ -179,8 +179,8 @@ qop_pack_file(struct qop_w *qop, str8 root, str8 path, struct alloc scratch)
 	hash     = hash_murmuroaat_str8(path);
 	path_len = (u16)(path.size + 1);
 
-	dbg_check(sys_file_w(qop->file, path.str, (u32)path.size), LOG_ID, "failed writing path %.*s", str8_spread(path));
-	dbg_check(sys_file_w(qop->file, &zero, 1), LOG_ID, "failed writing path null");
+	dbg_check(sys_file_w(qop->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
+	dbg_check(sys_file_w(qop->file, &zero, 1) == 1, LOG_ID, "failed writing path null");
 
 	size = qop_copy_into(disk_path, qop->file);
 	dbg_check(size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
@@ -214,7 +214,7 @@ qop_pack(struct alloc alloc, str8 input_path, str8 out_path, struct alloc scratc
 	ssize i;
 
 	qop.file = sys_file_open_w(out_path);
-	dbg_check(qop.file, LOG_ID, "failed to open file: %.*s", str8_spread(out_path));
+	dbg_check(sys_file_is_valid(qop.file), LOG_ID, "failed to open file: %.*s", str8_spread(out_path));
 
 	dbg_check(
 		qop_collect_paths(alloc, &paths, input_path, str8_lit(""), scratch),
@@ -244,7 +244,7 @@ qop_pack(struct alloc alloc, str8 input_path, str8 out_path, struct alloc scratc
 	log_info(LOG_ID, "files: %d, size: %_$$u", qop.file_count, (u32)total_size);
 
 error:;
-	if(qop.file) {
+	if(sys_file_is_valid(qop.file)) {
 		sys_file_close(qop.file);
 	}
 	return res;

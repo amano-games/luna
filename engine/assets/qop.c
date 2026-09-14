@@ -11,30 +11,30 @@
 #define QOP_INDEX_SIZE  20
 
 static u16
-qop_read_u16(void *fh)
+qop_read_u16(sys_file fh)
 {
 	u8 b[sizeof(u16)] = {0};
-	if(sys_file_r(fh, b, sizeof(u16)) != 1) {
+	if(sys_file_r(fh, b, sizeof(u16)) != (ssize)sizeof(u16)) {
 		return 0;
 	}
 	return (b[1] << 8) | b[0];
 }
 
 static u32
-qop_read_u32(void *fh)
+qop_read_u32(sys_file fh)
 {
 	u8 b[sizeof(u32)] = {0};
-	if(sys_file_r(fh, b, sizeof(u32)) != 1) {
+	if(sys_file_r(fh, b, sizeof(u32)) != (ssize)sizeof(u32)) {
 		return 0;
 	}
 	return (b[3] << 24) | (b[2] << 16) | (b[1] << 8) | b[0];
 }
 
 static u64
-qop_read_u64(void *fh)
+qop_read_u64(sys_file fh)
 {
 	u8 b[sizeof(u64)] = {0};
-	if(sys_file_r(fh, b, sizeof(u64)) != 1) {
+	if(sys_file_r(fh, b, sizeof(u64)) != (ssize)sizeof(u64)) {
 		return 0;
 	}
 	return ((u64)b[7] << 56) | ((u64)b[6] << 48) |
@@ -46,8 +46,8 @@ qop_read_u64(void *fh)
 i32
 qop_open(str8 path, struct qop_desc *qop)
 {
-	void *fh = sys_file_open_r(path);
-	if(!fh) {
+	sys_file fh = sys_file_open_r(path);
+	if(!sys_file_is_valid(fh)) {
 		return 0;
 	}
 
@@ -142,19 +142,19 @@ i32
 qop_read_path(struct qop_desc *qop, struct qop_file *file, char *dest)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset);
-	return sys_file_r(qop->fh, dest, file->path_len);
+	return (i32)sys_file_r(qop->fh, dest, file->path_len);
 }
 
 i32
 qop_read(struct qop_desc *qop, struct qop_file *file, u8 *dest)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset + file->path_len);
-	return sys_file_r(qop->fh, dest, file->size);
+	return (i32)sys_file_r(qop->fh, dest, file->size);
 }
 
 i32
 qop_read_ex(struct qop_desc *qop, struct qop_file *file, u8 *dest, ssize start, ssize len)
 {
 	sys_file_seek_set(qop->fh, qop->files_offset + file->offset + file->path_len + start);
-	return sys_file_r(qop->fh, dest, len);
+	return (i32)sys_file_r(qop->fh, dest, len);
 }

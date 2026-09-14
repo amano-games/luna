@@ -418,7 +418,7 @@ asset_db_bet_push(
 	u64 key                    = hash_fnv1a_str8(path);
 	u32 value                  = ht_get_u32(&table->ht, key);
 	b32 has_key                = value != 0;
-	usize timestamp            = sys_file_modified(path);
+	dense_time timestamp       = sys_file_modified(path);
 	struct asset_bet asset_bet = {.path_hash = key, .bet = bet, .timestamp = timestamp};
 
 	if(has_key) {
@@ -479,7 +479,7 @@ asset_db_bet_path_get(struct asset_db *db, u32 id)
 	return res;
 }
 
-usize
+dense_time
 asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle handle)
 {
 	u32 index             = ht_get_u32(&db->bets.ht, handle.path_hash);
@@ -487,7 +487,7 @@ asset_db_bet_get_timestamp_by_path(struct asset_db *db, struct asset_handle hand
 	return res->timestamp;
 }
 
-usize
+dense_time
 asset_db_bet_get_timestamp_by_id(struct asset_db *db, struct asset_bet_handle handle)
 {
 	dbg_assert(handle.id < arr_len(db->bets.arr));

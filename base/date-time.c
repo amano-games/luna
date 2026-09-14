@@ -3,28 +3,6 @@
 
 #define SECONDS_IN_A_DAY 86400
 
-dense_time
-dense_time_from_date_time(struct date_time date_time)
-{
-	dense_time res = 0;
-
-	res += date_time.year;
-	res *= 12;
-	res += date_time.mon;
-	res *= 31;
-	res += date_time.day;
-	res *= 24;
-	res += date_time.hour;
-	res *= 60;
-	res += date_time.min;
-	res *= 61;
-	res += date_time.sec;
-	res *= 1000;
-	res += date_time.msec;
-
-	return (res);
-}
-
 struct date_time
 date_time_from_dense_time(dense_time time)
 {

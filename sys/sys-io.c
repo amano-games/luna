@@ -4,7 +4,7 @@
 #include "base/path.h"
 #include "base/str.h"
 
-void *
+sys_file
 sys_file_open(str8 path, i32 sys_file_mode)
 {
 	switch(sys_file_mode) {
@@ -12,15 +12,15 @@ sys_file_open(str8 path, i32 sys_file_mode)
 	case SYS_FILE_MODE_W: return sys_file_open_w(path);
 	case SYS_FILE_MODE_A: return sys_file_open_a(path);
 	}
-	return NULL;
+	return sys_file_zero();
 }
 
 b32
 sys_file_exists(str8 path, i32 sys_file_mode)
 {
-	b32 res = false;
-	void *f = sys_file_open(path, sys_file_mode);
-	if(f != NULL) {
+	b32 res   = false;
+	sys_file f = sys_file_open(path, sys_file_mode);
+	if(sys_file_is_valid(f)) {
 		res = true;
 		sys_file_close(f);
 	}
@@ -31,13 +31,13 @@ struct sys_full_file_res
 sys_load_full_file(struct alloc alloc, str8 path)
 {
 	struct sys_full_file_res res = {0};
-	void *f                      = sys_file_open_r(path);
+	sys_file f                   = sys_file_open_r(path);
 
-	dbg_check_warn(f != NULL, "io", "Failed to open file %.*s", str8_spread(path));
+	dbg_check_warn(sys_file_is_valid(f), "io", "Failed to open file %.*s", str8_spread(path));
 
 	// Get file size
 	sys_file_seek_end(f, 0);
-	usize f_size = sys_file_tell(f);
+	usize f_size = (usize)sys_file_tell(f);
 	sys_file_seek_set(f, 0);
 
 	// Alloc memory
@@ -45,7 +45,7 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	dbg_check(data != NULL, "io", "Failed alloc mem for: %.*s", str8_spread(path));
 
 	// Read contents
-	sys_file_r(f, data, f_size);
+	sys_file_r(f, data, (u32)f_size);
 	sys_file_close(f);
 
 	res.data = data;
@@ -56,8 +56,25 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	return res;
 
 error:
-	if(f != NULL) { sys_file_close(f); }
+	if(sys_file_is_valid(f)) { sys_file_close(f); }
 	return (struct sys_full_file_res){0};
+}
+
+// Pack 1-based FileStat-style calendar into dense_time (0-based day/mon).
+dense_time
+sys_file_modified(str8 path)
+{
+	struct sys_file_stats stats = sys_file_stats(path);
+	struct date_time dt         = {0};
+
+	dt.year = (u32)stats.m_year;
+	dt.mon  = (u32)(stats.m_month > 0 ? stats.m_month - 1 : 0);
+	dt.day  = (u32)(stats.m_day > 0 ? stats.m_day - 1 : 0);
+	dt.hour = (u16)stats.m_hour;
+	dt.min  = (u16)stats.m_minute;
+	dt.sec  = (u16)stats.m_second;
+
+	return dense_time_from_date_time(dt);
 }
 
 str8

@@ -65,38 +65,38 @@ file_cpy_raw(const str8 in_path, const str8 out_path)
 {
 	b32 res                         = false;
 	struct sys_full_file_res in_res = sys_load_full_file(sys_allocator(), in_path);
-	void *out                       = sys_file_open_w(out_path);
-	dbg_check(out, "file-cpy-raw", "failed to open file to write %s", out_path.str);
-	dbg_check(sys_file_w(out, in_res.data, in_res.size), "file-cpy-raw", "failed to write: %s", out_path.str);
+	sys_file out                    = sys_file_open_w(out_path);
+	dbg_check(sys_file_is_valid(out), "file-cpy-raw", "failed to open file to write %s", out_path.str);
+	dbg_check(sys_file_w(out, in_res.data, in_res.size) == (ssize)in_res.size, "file-cpy-raw", "failed to write: %s", out_path.str);
 
 	res = true;
 	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
 
 error:;
 	if(in_res.data) { sys_free(in_res.data); }
-	if(out) { sys_file_close(out); }
+	if(sys_file_is_valid(out)) { sys_file_close(out); }
 	return res;
 }
 
 b32
 file_cpy(const str8 in_path, const str8 out_path)
 {
-	b32 res   = false;
-	void *in  = sys_file_open_r(in_path);
-	void *out = sys_file_open_w(out_path);
+	b32 res    = false;
+	sys_file in  = sys_file_open_r(in_path);
+	sys_file out = sys_file_open_w(out_path);
 	char buffer[7192];
 	ssize n;
 
-	while((n = sys_file_r(in, buffer, sizeof(buffer)) > 0)) {
-		dbg_check(sys_file_w(out, buffer, n), "asset-gen", "Failed to copy file", out_path.str);
+	while((n = sys_file_r(in, buffer, sizeof(buffer))) > 0) {
+		dbg_check(sys_file_w(out, buffer, (u32)n) == n, "asset-gen", "Failed to copy file", out_path.str);
 	}
 
 	res = true;
 	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
 
 error:;
-	if(in) { sys_file_close(in); }
-	if(out) { sys_file_close(out); }
+	if(sys_file_is_valid(in)) { sys_file_close(in); }
+	if(sys_file_is_valid(out)) { sys_file_close(out); }
 	return res;
 }
 

@@ -128,8 +128,8 @@ aud_cmds_flush(struct alloc scratch)
 			}
 
 			str8 full_path = asset_path_to_full_path(scratch, path);
-			void *f        = sys_file_open_r(full_path);
-			if(!f) {
+			sys_file f     = sys_file_open_r(full_path);
+			if(!sys_file_is_valid(f)) {
 				log_warn("Audio", "Can't open music file: %s", path.str);
 				break;
 			}
@@ -249,7 +249,7 @@ mus_is_playing(enum mus_channel_id channel_id)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
 	struct mus_channel *mc = &AUDIO.mus_channel[channel_id];
-	return mc->stream != NULL;
+	return sys_file_is_valid(mc->stream);
 }
 
 void
@@ -279,16 +279,16 @@ mus_vol_get(enum mus_channel_id channel_id)
 static void
 mus_channel_stop(struct mus_channel *mc)
 {
-	if(!mc->stream) return;
+	if(!sys_file_is_valid(mc->stream)) return;
 	sys_file_close(mc->stream);
-	mc->stream      = NULL;
+	mc->stream      = sys_file_zero();
 	mc->path_handle = (struct asset_handle){0};
 }
 
 static void
 mus_channel_playback(struct mus_channel *mc, i16 *lb, i16 *rb, i32 len)
 {
-	if(!mc->stream) return;
+	if(!sys_file_is_valid(mc->stream)) return;
 
 	struct adpcm *adpcm = &mc->adpcm;
 	i32 l               = min_i32(len, adpcm->len_pitched - adpcm->pos_pitched - 1);
