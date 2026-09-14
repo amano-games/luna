@@ -416,15 +416,15 @@ sys_log(
 #endif
 }
 
-struct sys_file_stats
-sys_file_stats(str8 path)
+struct sys_file_props
+sys_file_props_get(str8 path)
 {
 	FileStat pd_stat = {0};
 	int res          = PD->file->stat((const char *)path.str, &pd_stat);
 	if(res == -1) {
 		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
 	}
-	return (struct sys_file_stats){
+	return (struct sys_file_props){
 		.isdir    = pd_stat.isdir,
 		.size     = pd_stat.size,
 		.m_year   = pd_stat.m_year,
