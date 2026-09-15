@@ -244,7 +244,13 @@ asset_tex_read(struct alloc alloc, str8 path)
 i32
 asset_tex_load(str8 path, struct tex *tex)
 {
-	i32 res      = -1;
+	i32 res = asset_tex_get_id(path);
+	if(res != 0 && tex) {
+		*tex = asset_tex(res);
+	}
+	dbg_check_warn(res == 0, "assets", "Tex already loaded: %.*s", str8_spread(path));
+
+	res          = -1;
 	struct tex t = asset_tex_read(ASSETS.alloc, path);
 
 	dbg_check(t.px, "assets", "failed to load tex: %.*s", str8_spread(path));
@@ -279,7 +285,13 @@ asset_fnt_get_id(str8 path)
 i32
 asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 {
-	i32 res                = -1;
+	i32 res = asset_fnt_get_id(path);
+	if(res != 0 && fnt) {
+		*fnt = asset_fnt(res);
+	}
+	dbg_check_warn(res == 0, "assets", "Fnt already loaded: %.*s", str8_spread(path));
+
+	res                    = -1;
 	struct asset_blob blob = asset_blob_read(scratch, path);
 	struct fnt f           = fnt_load_from_mem(ASSETS.alloc, blob.data, blob.size);
 
@@ -350,7 +362,13 @@ asset_snd_read(struct alloc alloc, str8 path)
 i32
 asset_snd_load(str8 path, struct snd *snd)
 {
-	i32 res      = -1;
+	i32 res = asset_snd_get_id(path);
+	if(res != 0 && snd) {
+		*snd = asset_snd(res);
+	}
+	dbg_check_warn(res == 0, "assets", "Snd already loaded: %.*s", str8_spread(path));
+
+	res          = -1;
 	struct snd s = asset_snd_read(ASSETS.alloc, path);
 
 	dbg_check(s.len, "assets", "failed to load snd: %.*s", str8_spread(path));
@@ -382,7 +400,13 @@ asset_bet(i32 id)
 i32
 asset_bet_load(struct alloc scratch, str8 path, struct bet *bet)
 {
-	i32 res                = -1;
+	i32 res = asset_bet_get_id(path);
+	if(res != 0 && bet) {
+		*bet = asset_bet(res);
+	}
+	dbg_check_warn(res == 0, "assets", "Bet already loaded: %.*s", str8_spread(path));
+
+	res                    = -1;
 	struct asset_blob blob = asset_blob_read(scratch, path);
 	struct bet b           = bet_load_from_mem(ASSETS.alloc, blob.data, (usize)blob.size);
 
