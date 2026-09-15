@@ -9,7 +9,6 @@
 
 #include "sys/sys-inc.c"
 
-// NOTE: Another test
 #include "base/date-time.c"
 #include "base/marena.c"
 #include "base/path.c"
