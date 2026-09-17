@@ -528,12 +528,14 @@ prof_upd(b32 record_data)
 				}
 
 #if PROF_HISTORY == PROF_HISTORY_FRAME
-				if(hist_slot) {
-					hist_slot->anchors[i]        = *a;
+				{
 					struct prof_anchor_totals *t = &prof->totals[i];
 					t->sum_exc += a->us_exclusive;
 					t->sum_inc += a->us_inclusive;
 					t->sum_hits += a->hit_count;
+				}
+				if(hist_slot) {
+					hist_slot->anchors[i] = *a;
 				}
 #endif
 			}
@@ -1175,7 +1177,7 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 		str8_spread(app_name),
 		sys_path_timestamp(alloc).str);
 	str8 full_path = sys_path_to_data_path(alloc, path, app_org, app_name);
-	sys_file f = sys_file_open_w(full_path);
+	sys_file f     = sys_file_open_w(full_path);
 
 	if(!sys_file_is_valid(f)) {
 		log_error("prof", "csv save failed: %s", full_path.str);
