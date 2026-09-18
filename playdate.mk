@@ -173,7 +173,7 @@ $(OBJS): assets | $(TMP_DIR)
 	rm -rf "$@"
 	cp -r $(PLATFORM_DIR)/* $(TMP_DIR)
 	$(PDC) $(PDCFLAGS) $(TMP_DIR) "$@"
-	cp -f "$(ASSETS_QOP)" "$@/assets.qop"
+	cp -f "$(ASSETS_PCK)" "$@/assets.pck"
 
 all: build
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
@@ -206,7 +206,7 @@ build:
 		PLATFORM_DIR=$(PLATFORM_DIR) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)" CC="$(CC)"
 
 assets_clean:
-	rm -rf "$(ASSETS_GEN_OUT)" "$(ASSETS_PACK_ROOT)" "$(ASSETS_QOP)"
+	rm -rf "$(ASSETS_GEN_OUT)" "$(ASSETS_PACK_ROOT)" "$(ASSETS_PCK)"
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"

@@ -3,7 +3,7 @@
 #include "base/types.h"
 #include "engine/assets/asset-db.h"
 
-#include "engine/assets/qop.h"
+#include "engine/assets/pck.h"
 #include "engine/gfx/gfx.h"
 #include "base/mem.h"
 #include "base/marena.h"
@@ -14,8 +14,8 @@ struct assets {
 
 	struct asset_db db;
 
-	struct qop_desc qop;
-	void *qop_ht;
+	struct pck_desc pck;
+	void *pck_ht;
 	str8 pack_path;
 
 	struct marena marena;
@@ -23,8 +23,8 @@ struct assets {
 };
 
 struct asset_stream {
-	struct qop_desc qop;
-	struct qop_file *file;
+	struct pck_desc pck;
+	struct pck_file *file;
 	ssize cursor;
 	b32 open;
 };
@@ -33,8 +33,8 @@ extern struct assets ASSETS;
 struct alloc assets_allocator(struct assets *assets);
 
 void assets_ini(struct alloc alloc, usize size);
-void assets_qop_ini(struct alloc scratch, str8 path);
-void assets_qop_close(void);
+void assets_pck_ini(struct alloc scratch, str8 path);
+void assets_pck_close(void);
 
 struct asset_blob asset_blob_from_handle(struct alloc scratch, struct asset_handle handle);
 struct asset_blob asset_blob_read(struct alloc scratch, str8 path);

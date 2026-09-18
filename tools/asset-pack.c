@@ -9,7 +9,7 @@
 #include "base/mem.h"
 #include "base/path.h"
 #include "base/str.h"
-#include "engine/assets/qop.h"
+#include "engine/assets/pck.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "whereami.c"
@@ -18,6 +18,8 @@
 #include "sys/sys-inc.c"
 
 #include "lib/tex/tex.c"
+#include "lz4/lz4.c"
+#include "lz4/lz4hc.c"
 
 #include "base/marena.c"
 #include "base/str.c"
@@ -25,18 +27,24 @@
 #include "base/path.c"
 
 #define LOG_ID           "asset-pack"
-#define DEFAULT_OUT_FILE "assets.qop"
-#define QOP_INDEX_SIZE   20
+#define DEFAULT_OUT_FILE "assets." PCK_EXT
+#define PCK_LZ4HC_LEVEL  LZ4HC_CLEVEL_MAX
 
-struct qop_w {
+struct pck_w {
 	ssize archive_size;
 	ssize file_count;
 	sys_file file;
-	struct qop_file *files;
+	struct pck_file *files;
+};
+
+struct pck_stored {
+	ssize size;
+	ssize base_size;
+	u16 flags;
 };
 
 static void
-qop_u16w(u16 v, sys_file f)
+pck_u16w(u16 v, sys_file f)
 {
 	u8 b[sizeof(u16)];
 	b[0] = 0xff & (v);
@@ -45,7 +53,7 @@ qop_u16w(u16 v, sys_file f)
 }
 
 static void
-qop_u32w(u32 v, sys_file f)
+pck_u32w(u32 v, sys_file f)
 {
 	u8 b[sizeof(u32)];
 	b[0] = 0xff & (v);
@@ -56,7 +64,7 @@ qop_u32w(u32 v, sys_file f)
 }
 
 static void
-qop_u64w(u64 v, sys_file f)
+pck_u64w(u64 v, sys_file f)
 {
 	u8 b[sizeof(u64)];
 	b[0] = 0xff & (v);
@@ -70,39 +78,94 @@ qop_u64w(u64 v, sys_file f)
 	dbg_assert(sys_file_w(f, b, sizeof(u64)) == (ssize)sizeof(u64));
 }
 
-// Copy file bytes into archive; return byte count or -1 on failure.
-static ssize
-qop_copy_into(str8 path, sys_file dst)
+static int
+pck_lz4(const u8 *src, ssize size, u8 *out, ssize out_cap)
 {
-	ssize res   = -1;
-	sys_file src = sys_file_zero();
-	void *data  = NULL;
-	usize f_size;
+	int n     = 0;
+	int bound = 0;
 
-	src = sys_file_open_r(path);
-	dbg_check(sys_file_is_valid(src), LOG_ID, "failed to open file: %.*s", str8_spread(path));
+	if(size <= 0 || size > LZ4_MAX_INPUT_SIZE) {
+		goto done;
+	}
+
+	bound = LZ4_compressBound((int)size);
+	if(bound <= 0 || out_cap < (ssize)bound) {
+		goto done;
+	}
+
+	n = LZ4_compress_HC(
+		(const char *)src,
+		(char *)out,
+		(int)size,
+		(int)out_cap,
+		PCK_LZ4HC_LEVEL);
+
+	// Bare block must shrink vs the uncompressed member.
+	if(n <= 0 || n >= (int)size) {
+		n = 0;
+	}
+
+done:
+	return n;
+}
+
+static struct pck_stored
+pck_store_file(struct alloc alloc, str8 disk_path, str8 pack_path, sys_file dst)
+{
+	struct pck_stored res = {.size = -1, .flags = PCK_FLAG_NONE};
+	sys_file src          = sys_file_zero();
+	u8 *data              = NULL;
+	u8 *lz4               = NULL;
+	usize f_size          = 0;
+	int bound             = 0;
+	int n                 = 0;
+	b32 should_compress   = false;
+
+	src = sys_file_open_r(disk_path);
+	dbg_check(sys_file_is_valid(src), LOG_ID, "failed to open file: %.*s", str8_spread(disk_path));
 
 	sys_file_seek_end(src, 0);
 	f_size = (usize)sys_file_tell(src);
 	sys_file_seek_set(src, 0);
 
-	// Empty files are valid archive members.
+	// Empty files are valid
 	if(f_size == 0) {
-		res = 0;
+		res.size      = 0;
+		res.base_size = 0;
 		goto error;
 	}
 
-	data = mem_alloc_size(sys_allocator(), f_size);
-	dbg_check(data, LOG_ID, "failed alloc for %.*s", str8_spread(path));
-	dbg_check(sys_file_r(src, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to read file: %.*s", str8_spread(path));
-	dbg_check(sys_file_w(dst, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to copy file %.*s", str8_spread(path));
+	data = mem_alloc_size(alloc, f_size);
+	dbg_check(data, LOG_ID, "failed alloc for %.*s", str8_spread(disk_path));
+	dbg_check(sys_file_r(src, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to read file: %.*s", str8_spread(disk_path));
 
-	res = (ssize)f_size;
+#if defined(ASSET_PACK_COMPRESSION)
+	if(str8_ends_with(pack_path, str8_lit("." TEX_EXT), 0) && f_size <= (usize)LZ4_MAX_INPUT_SIZE) {
+		should_compress = true;
+	}
+#endif
+
+	if(should_compress) {
+		bound = LZ4_compressBound((int)f_size);
+		if(bound > 0) {
+			lz4 = mem_alloc_size(alloc, (usize)bound);
+			dbg_check(lz4, LOG_ID, "lz4 alloc failed");
+			n = pck_lz4(data, (ssize)f_size, lz4, bound);
+		}
+	}
+
+	if(n > 0) {
+		dbg_check(sys_file_w(dst, lz4, (u32)n) == (ssize)n, LOG_ID, "failed writing lz4 %.*s", str8_spread(disk_path));
+		res.size      = (ssize)n;
+		res.base_size = (ssize)f_size;
+		res.flags     = PCK_FLAG_COMPRESSED_LZ4;
+	} else {
+		dbg_check(sys_file_w(dst, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to copy file %.*s", str8_spread(disk_path));
+		res.size      = (ssize)f_size;
+		res.base_size = (ssize)f_size;
+	}
 
 error:;
-	if(data) {
-		sys_free(data);
-	}
 	if(sys_file_is_valid(src)) {
 		sys_file_close(src);
 	}
@@ -110,7 +173,7 @@ error:;
 }
 
 static b32
-qop_collect_paths(
+pck_collect_paths(
 	struct alloc alloc,
 	struct str8_list *list,
 	str8 root,
@@ -147,7 +210,7 @@ qop_collect_paths(
 				!str8_match(name, str8_lit("."), 0) &&
 				!str8_match(name, str8_lit(".."), 0)) {
 				dbg_check(
-					qop_collect_paths(alloc, list, root, child_rel, scratch),
+					pck_collect_paths(alloc, list, root, child_rel, scratch),
 					LOG_ID,
 					"failed collecting %.*s",
 					str8_spread(child_rel));
@@ -167,36 +230,40 @@ error:;
 }
 
 static b32
-qop_pack_file(struct qop_w *qop, str8 root, str8 path, struct alloc scratch)
+pck_pack_file(struct pck_w *pack, str8 root, str8 path, struct alloc scratch)
 {
 	b32 res = false;
 	u8 zero = 0;
 	u16 path_len;
 	u64 hash;
-	ssize size;
+	struct pck_stored stored;
 	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(path));
 
 	hash     = hash_fnv1a_str8(path);
 	path_len = (u16)(path.size + 1);
 
-	dbg_check(sys_file_w(qop->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
-	dbg_check(sys_file_w(qop->file, &zero, 1) == 1, LOG_ID, "failed writing path null");
+	dbg_check(sys_file_w(pack->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
+	dbg_check(sys_file_w(pack->file, &zero, 1) == 1, LOG_ID, "failed writing path null");
 
-	size = qop_copy_into(disk_path, qop->file);
-	dbg_check(size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
+	stored = pck_store_file(scratch, disk_path, path, pack->file);
+	dbg_check(stored.size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
 
-	log_info(LOG_ID, "%6d %016llx %_$$10u %.*s", qop->file_count, hash, (u32)size, str8_spread(path));
+	log_info(LOG_ID, "%6d %016llx %_$$10u %.*s", pack->file_count, hash, (u32)stored.size, str8_spread(path));
+	if(stored.flags & PCK_FLAG_COMPRESSED_LZ4) {
+		log_info(LOG_ID, "        lz4 %_$$u -> %_$$u", (u32)stored.base_size, (u32)stored.size);
+	}
 
-	qop->files[qop->file_count] = (struct qop_file){
-		.hash     = hash,
-		.offset   = qop->archive_size,
-		.size     = size,
-		.path_len = path_len,
-		.flags    = QOP_FLAG_NONE,
+	pack->files[pack->file_count] = (struct pck_file){
+		.hash      = hash,
+		.offset    = pack->archive_size,
+		.size      = stored.size,
+		.base_size = stored.base_size,
+		.path_len  = path_len,
+		.flags     = stored.flags,
 	};
 
-	qop->archive_size += size + path_len;
-	qop->file_count++;
+	pack->archive_size += stored.size + path_len;
+	pack->file_count++;
 
 	res = true;
 
@@ -205,47 +272,63 @@ error:;
 }
 
 static b32
-qop_pack(struct alloc alloc, str8 input_path, str8 out_path, struct alloc scratch)
+pck_pack(struct alloc alloc, str8 input_path, str8 out_path)
 {
-	b32 res                = false;
-	struct qop_w qop       = {0};
-	struct str8_list paths = {0};
+	b32 res                      = false;
+	struct pck_w pack            = {0};
+	struct str8_list paths       = {0};
+	struct alloc scratch         = {0};
+	struct marena scratch_marena = {0};
 	ssize total_size;
 	ssize i;
 
-	qop.file = sys_file_open_w(out_path);
-	dbg_check(sys_file_is_valid(qop.file), LOG_ID, "failed to open file: %.*s", str8_spread(out_path));
+	{
+		usize mem_size = MMEGABYTE(4);
+		void *mem      = mem_alloc_size(sys_allocator(), mem_size);
+		dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
+		marena_init(&scratch_marena, mem, mem_size);
+		scratch = marena_allocator(&scratch_marena);
+	}
+
+	pack.file = sys_file_open_w(out_path);
+	dbg_check(sys_file_is_valid(pack.file), LOG_ID, "failed to open file: %.*s", str8_spread(out_path));
 
 	dbg_check(
-		qop_collect_paths(alloc, &paths, input_path, str8_lit(""), scratch),
+		pck_collect_paths(alloc, &paths, input_path, str8_lit(""), scratch),
 		LOG_ID,
 		"failed collecting paths");
-	qop.files = alloc_arr(alloc, qop.files, paths.node_count);
+	pack.files = alloc_arr(alloc, pack.files, paths.node_count);
 
 	for(struct str8_node *node = paths.first; node != NULL; node = node->next) {
-		dbg_check(qop_pack_file(&qop, input_path, node->str, scratch), LOG_ID, "failed packing %.*s", str8_spread(node->str));
+		void *reset_p = scratch_marena.p;
+		dbg_check(pck_pack_file(&pack, input_path, node->str, scratch), LOG_ID, "failed packing %.*s", str8_spread(node->str));
+		marena_reset_to(&scratch_marena, reset_p);
 	}
 
-	total_size = qop.archive_size + QOP_HEADER_SIZE;
-	for(i = 0; i < qop.file_count; ++i) {
-		qop_u64w(qop.files[i].hash, qop.file);
-		qop_u32w((u32)qop.files[i].offset, qop.file);
-		qop_u32w((u32)qop.files[i].size, qop.file);
-		qop_u16w(qop.files[i].path_len, qop.file);
-		qop_u16w(qop.files[i].flags, qop.file);
-		total_size += QOP_INDEX_SIZE;
+	total_size = pack.archive_size + PCK_HEADER_SIZE;
+	for(i = 0; i < pack.file_count; ++i) {
+		pck_u64w(pack.files[i].hash, pack.file);
+		pck_u32w((u32)pack.files[i].offset, pack.file);
+		pck_u32w((u32)pack.files[i].size, pack.file);
+		pck_u32w((u32)pack.files[i].base_size, pack.file);
+		pck_u16w(pack.files[i].path_len, pack.file);
+		pck_u16w(pack.files[i].flags, pack.file);
+		total_size += PCK_INDEX_SIZE;
 	}
 
-	qop_u32w((u32)qop.file_count, qop.file);
-	qop_u32w((u32)total_size, qop.file);
-	qop_u32w(QOP_MAGIC, qop.file);
+	pck_u32w((u32)pack.file_count, pack.file);
+	pck_u32w((u32)total_size, pack.file);
+	pck_u32w(PCK_MAGIC, pack.file);
 
 	res = true;
-	log_info(LOG_ID, "files: %d, size: %_$$u", qop.file_count, (u32)total_size);
+	log_info(LOG_ID, "files: %d, size: %_$$u", pack.file_count, (u32)total_size);
 
 error:;
-	if(sys_file_is_valid(qop.file)) {
-		sys_file_close(qop.file);
+	if(sys_file_is_valid(pack.file)) {
+		sys_file_close(pack.file);
+	}
+	if(scratch_marena.buf) {
+		sys_free(scratch_marena.buf);
 	}
 	return res;
 }
@@ -253,21 +336,13 @@ error:;
 int
 main(int argc, char *argv[])
 {
-	int res                      = EXIT_FAILURE;
-	struct alloc alloc_sys       = sys_allocator();
-	struct alloc alloc           = {0};
-	struct alloc scratch         = {0};
-	struct marena marena         = {0};
-	struct marena scratch_marena = {0};
+	int res                = EXIT_FAILURE;
+	struct alloc alloc_sys = sys_allocator();
+	struct alloc alloc     = {0};
+	struct marena marena   = {0};
 	str8 in_path;
 	str8 out_path;
 
-	{
-		usize mem_size = MMEGABYTE(4);
-		void *mem      = mem_alloc_size(alloc_sys, mem_size);
-		dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
-		marena_init(&scratch_marena, mem, mem_size);
-	}
 	{
 		usize mem_size = MMEGABYTE(4);
 		void *mem      = mem_alloc_size(alloc_sys, mem_size);
@@ -275,16 +350,14 @@ main(int argc, char *argv[])
 		marena_init(&marena, mem, mem_size);
 	}
 
-	scratch = marena_allocator(&scratch_marena);
-	alloc   = marena_allocator(&marena);
-
-	struct cmd_line cmd = cmd_line_from_argcv(scratch, argc, argv);
+	alloc               = marena_allocator(&marena);
+	struct cmd_line cmd = cmd_line_from_argcv(alloc, argc, argv);
 
 	if(cmd.inputs.node_count < 1) {
 		sys_printf(
-			"Usage: %.*s <input-folder|input-qop> [output-folder|output-qop]\n"
+			"Usage: %.*s <input-folder|input-pck> [output-folder|output-pck]\n"
 			"  output defaults to %s\n"
-			"  example: %.*s ./tmp/assets/files ./tmp/assets.qop\n",
+			"  example: %.*s ./tmp/assets/files ./tmp/assets.pck\n",
 			str8_spread(cmd.exe_name),
 			DEFAULT_OUT_FILE,
 			str8_spread(cmd.exe_name));
@@ -300,14 +373,11 @@ main(int argc, char *argv[])
 	}
 
 	log_info(LOG_ID, "Packing assets from %s -> %s", in_path.str, out_path.str);
-	dbg_check(qop_pack(alloc, in_path, out_path, scratch), LOG_ID, "pack failed");
+	dbg_check(pck_pack(alloc, in_path, out_path), LOG_ID, "pack failed");
 
 	res = EXIT_SUCCESS;
 
 error:;
-	if(scratch_marena.buf) {
-		sys_free(scratch_marena.buf);
-	}
 	if(marena.buf) {
 		sys_free(marena.buf);
 	}

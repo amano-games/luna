@@ -61,7 +61,7 @@ CFLAGS += $(CDEFS) -x objective-c $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 
 OBJS           := $(BUILD_DIR)/$(TARGET)
-ASSETS_INSTALL := $(OBJS)/Contents/Resources/assets.qop
+ASSETS_INSTALL := $(OBJS)/Contents/Resources/assets.pck
 EXE_OUT        := $(OBJS)/Contents/MacOS/$(GAME_NAME)
 PUBLISH_OBJS   := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 OBJ_DIR        := $(BUILD_DIR)/obj
@@ -74,7 +74,7 @@ $(BUILD_DIR):
 $(OBJS): $(BUILD_DIR)
 	mkdir -p $(OBJS)/Contents/MacOS
 
-# App bundle dirs must exist before installing assets.qop into Resources.
+# App bundle dirs must exist before installing assets.pck into Resources.
 ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
