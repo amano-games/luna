@@ -21,7 +21,7 @@
 #include "engine/animation/animator.c"
 #include "engine/assets/asset-db.c"
 #include "engine/assets/assets.c"
-#include "engine/assets/qop.c"
+#include "engine/assets/pck.c"
 #include "engine/audio/adpcm.c"
 #include "engine/audio/audio.c"
 #include "engine/audio/snd.c"

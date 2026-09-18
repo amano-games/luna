@@ -2,9 +2,7 @@
 
 /*
 
-https://phoboslab.org/log/2024/09/qop
--- File format description (pseudo code)
-// Pack keys are FNV-1a instead of murmur
+Based on QOP (https://phoboslab.org/log/2024/09/qop).
 
 struct {
 	// Path string and data of all files in this archive
@@ -18,19 +16,20 @@ struct {
 		uint64_t hash;
 		uint32_t offset;
 		uint32_t size;
+		uint32_t base_size;
 		uint16_t path_len;
 		uint16_t flags;
-	} qop_file[];
+	} pck_file[];
 
 	// The number of files in the index
 	uint32_t index_len;
 
 	// The size of the whole archive, including the header
-	uint32_t archive_size; 
+	uint32_t archive_size;
 
-	// Magic bytes "qopf"
+	// Magic bytes "lpck"
 	uint32_t magic;
-} qop;
+} pck;
 
 
 */
@@ -38,29 +37,33 @@ struct {
 #include "base/types.h"
 #include "sys/sys-io.h"
 
-#define QOP_HEADER_SIZE 12
-#define QOP_MAGIC \
-	(((u32)'q') << 0 | ((u32)'o') << 8 | \
-		((u32)'p') << 16 | ((u32)'f') << 24)
+#define PCK_EXT         "pck"
+#define PCK_HEADER_SIZE 12
+#define PCK_INDEX_SIZE  24
+#define PCK_MAGIC \
+	(((u32)'l') << 0 | ((u32)'p') << 8 | \
+		((u32)'c') << 16 | ((u32)'k') << 24)
 
-enum qop_flag {
-	QOP_FLAG_NONE               = 0,
-	QOP_FLAG_COMPRESSED_ZSTD    = 1 << 0,
-	QOP_FLAG_COMPRESSED_DEFLATE = 1 << 1,
-	QOP_FLAG_ENCRYPTED          = 1 << 8,
+enum pck_flag {
+	PCK_FLAG_NONE               = 0,
+	PCK_FLAG_COMPRESSED_ZSTD    = 1 << 0,
+	PCK_FLAG_COMPRESSED_DEFLATE = 1 << 1,
+	PCK_FLAG_COMPRESSED_LZ4     = 1 << 2,
+	PCK_FLAG_ENCRYPTED          = 1 << 8,
 };
 
-struct qop_file {
+struct pck_file {
 	u64 hash;
 	ssize offset;
 	ssize size;
+	ssize base_size;
 	u16 path_len;
 	u16 flags;
 };
 
-struct qop_desc {
+struct pck_desc {
 	sys_file fh;
-	struct qop_file *ht;
+	struct pck_file *ht;
 	ssize files_offset;
 	ssize index_offset;
 	ssize index_len;
@@ -68,38 +71,38 @@ struct qop_desc {
 	ssize hashmap_size;
 };
 
-// Open an archive at path. The supplied qop_desc will be filled with the
+// Open an archive at path. The supplied pck_desc will be filled with the
 // information from the file header. Returns the size of the archvie or 0 on
 // failure.
-i32 qop_open(str8 path, struct qop_desc *qop);
+i32 pck_open(str8 path, struct pck_desc *pack);
 
 // Read the index from an opened archive. The supplied buffer will be filled
-// with the index data and must be at least qop->hashmap_size bytes long.
+// with the index data and must be at least pack->hashmap_size bytes long.
 // No ownership is taken of the buffer; if you allocated it with malloc() you
-// need to free() it yourself after qop_close();
+// need to free() it yourself after pck_close();
 // Returns the number of files in the archive or 0 on error.
-i32 qop_read_index(struct qop_desc *qop, void *buffer);
+i32 pck_read_index(struct pck_desc *pack, void *buffer);
 
 // Close the archive.
-void qop_close(struct qop_desc *qop);
+void pck_close(struct pck_desc *pack);
 
 // Find a file with the supplied path. Returns NULL if the file is not found.
-struct qop_file *qop_find(struct qop_desc *qop, str8 path);
+struct pck_file *pck_find(struct pck_desc *pack, str8 path);
 
 // Find a file by path hash. Returns NULL if the file is not found.
-struct qop_file *qop_find_hash(struct qop_desc *qop, u64 hash);
+struct pck_file *pck_find_hash(struct pck_desc *pack, u64 hash);
 
 // Copy the path of the file into dest. The dest buffer must be at least
 // file->path_len bytes long. The path is null terminated.
 // Returns the path length (including the null terminater) or 0 on error.
-i32 qop_read_path(struct qop_desc *qop, struct qop_file *file, char *dest);
+i32 pck_read_path(struct pck_desc *pack, struct pck_file *file, char *dest);
 
 // Read the whole file into dest. The dest buffer must be at least file->size
 // bytes long.
 // Returns the number of bytes read.
-i32 qop_read(struct qop_desc *qop, struct qop_file *file, u8 *dest);
+i32 pck_read(struct pck_desc *pack, struct pck_file *file, u8 *dest);
 
 // Read part of a file into dest. The dest buffer must be at least len bytes
 // long.
 // Returns the number of bytes read.
-i32 qop_read_ex(struct qop_desc *qop, struct qop_file *file, u8 *dest, ssize start, ssize len);
+i32 pck_read_ex(struct pck_desc *pack, struct pck_file *file, u8 *dest, ssize start, ssize len);

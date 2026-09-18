@@ -57,7 +57,7 @@ LINK_FLAGS += -s ALLOW_MEMORY_GROWTH=1
 LINK_FLAGS += -s USE_WEBGL2
 LINK_FLAGS += -s NO_EXIT_RUNTIME=1
 LINK_FLAGS += --shell-file=$(PLATFORM_DIR)/index.html
-LINK_FLAGS += --preload-file=$(BUILD_DIR)/assets.qop@/assets.qop
+LINK_FLAGS += --preload-file=$(BUILD_DIR)/assets.pck@/assets.pck
 LINK_FLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 
 OBJ_DIR      := $(BUILD_DIR)/obj
@@ -94,7 +94,7 @@ build:
 	$(MAKE) -f $(ROOT_DIR)/www.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
 $(PUBLISH_OBJS): $(BINARY)
-	rm -f $(BUILD_DIR)/assets.qop
+	rm -f $(BUILD_DIR)/assets.pck
 	rm -rf $(BUILD_DIR)/gen-assets
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
