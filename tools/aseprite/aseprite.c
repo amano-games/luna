@@ -1,10 +1,13 @@
 #include "aseprite.h"
 #include "base/arr.h"
 #include "base/dbg.h"
+#include "base/log.h"
+#include "base/mem.h"
 #include "base/path.h"
 #include "base/str.h"
 #include "engine/animation/animation-db.h"
 #include "engine/animation/animation.h"
+#include "engine/assets/tex-atlas.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
@@ -16,6 +19,28 @@
 #include "external/cute_aseprite.h"
 
 static inline str8 str8_skip_until_assets(str8 str);
+
+static void
+aseprite_to_atlas(const ase_t *ase, const str8 out_path, struct alloc scratch)
+{
+	v2_i32 cell_size    = {ase->w, ase->h};
+	str8 atlas_path     = path_make_file_name_with_ext(scratch, out_path, str8_lit(ATLAS_EXT));
+	sys_file file       = sys_file_zero();
+	struct ser_writer w = {0};
+
+	file = sys_file_open_w(atlas_path);
+	dbg_check(sys_file_is_valid(file), "tex-atlas", "can't write %s", atlas_path.str);
+	w.f = file;
+	atlas_write(&w, (struct tex_atlas){
+		.cell_size = cell_size,
+	});
+	log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, cell_size.x, cell_size.y);
+
+error:;
+	if(sys_file_is_valid(file)) {
+		sys_file_close(file);
+	}
+}
 
 b32
 aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum tex_px_enc enc)
@@ -30,6 +55,7 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 		aseprite_to_tex(ase, scratch, sys_allocator(), &blob, enc);
 		res = asset_blob_w(blob, out_file_path);
 	}
+	aseprite_to_atlas(ase, out_path, scratch);
 	aseprite_to_ani(ase, in_path, out_path, scratch);
 
 	res = true;
@@ -105,10 +131,6 @@ aseprite_to_ani(
 	str8 asset_path           = path_make_file_name_with_ext(scratch, str8_skip_until_assets(in_path), str8_lit(TEX_EXT));
 	struct ani_db_asset asset = {
 		.path = asset_path,
-		.info = {
-			.cell_size = {ase->w, ase->h},
-			.tex_size  = {ase->w * ase->frame_count, ase->h},
-		},
 	};
 	asset.clips = arr_new(scratch, asset.clips, ase->tag_count);
 	for(ssize i = 0; i < ase->tag_count; ++i) {

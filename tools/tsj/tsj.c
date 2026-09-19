@@ -1,6 +1,7 @@
 #include "tsj.h"
 
 #include "base/arr.h"
+#include "base/dbg.h"
 #include "lib/json.h"
 #include "base/marena.h"
 #include "base/mem.h"
@@ -11,7 +12,18 @@
 #include "base/log.h"
 #include "base/types.h"
 #include "base/utils.h"
+#include "engine/assets/tex-atlas.h"
 #include "sys/sys.h"
+
+static void tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch);
+
+static str8
+tsj_resolve_image(str8 rel, str8 tsj_path, struct alloc alloc, struct alloc scratch)
+{
+	str8 base_dir       = str8_chop_last_slash(tsj_path);
+	str8 path_with_dots = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(base_dir), str8_spread(rel));
+	return path_resolve_dots(alloc, path_with_dots, path_style_relative, scratch);
+}
 
 str8
 tsj_handle_path(
@@ -23,14 +35,10 @@ tsj_handle_path(
 	// in: ..\/demons\/demon-001.png
 	// root: ./src/assets/map/catcha-diablos.tsj
 	// out: assets/demons/demon-001.png
-	enum path_style style = path_style_relative;
-	str8 res              = {0};
-	str8 base_dir         = str8_chop_last_slash(in_path);
-	str8 path_with_dots   = str8_fmt_push(scratch, "%.*s/%.*s", (i32)base_dir.size, base_dir.str, (i32)path.size, path.str);
-	res                   = path_resolve_dots(scratch, path_with_dots, style, scratch);
-	res                   = path_make_file_name_with_ext(alloc, res, str8_lit("tex"));
-	str8 prefix           = str8_lit("src/");
-	res                   = str8_skip(res, prefix.size);
+	str8 res    = tsj_resolve_image(path, in_path, scratch, scratch);
+	res         = path_make_file_name_with_ext(alloc, res, str8_lit("tex"));
+	str8 prefix = str8_lit("src/");
+	res         = str8_skip(res, prefix.size);
 	return res;
 }
 
@@ -200,15 +208,16 @@ tsj_handle_tile(
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("image")) == 0) {
 			str8 path      = json_str8_cpy_push(json, value, scratch, 0);
+			res.src_path   = tsj_resolve_image(path, in_path, alloc, scratch);
 			res.asset.path = tsj_handle_path(path, in_path, alloc, scratch);
 		} else if(json_eq(json, key, str8_lit("width")) == 0) {
-			res.asset.info.cell_size.x = json_parse_i32(json, value);
+			res.atlas.cell_size.x = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("height")) == 0) {
-			res.asset.info.cell_size.y = json_parse_i32(json, value);
+			res.atlas.cell_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("imagewidth")) == 0) {
-			res.asset.info.tex_size.x = json_parse_i32(json, value);
+			res.tex_size.x = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("imageheight")) == 0) {
-			res.asset.info.tex_size.y = json_parse_i32(json, value);
+			res.tex_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			res.asset.clips = arr_new(alloc, res.asset.clips, value->size);
@@ -235,11 +244,22 @@ tsj_handle_tile(
 		}
 	}
 
-	if(res.asset.info.cell_size.x == 0) {
-		res.asset.info.cell_size.x = res.asset.info.tex_size.x;
+	if(res.atlas.cell_size.x == 0) {
+		res.atlas.cell_size.x = res.tex_size.x;
 	}
-	if(res.asset.info.cell_size.y == 0) {
-		res.asset.info.cell_size.y = res.asset.info.tex_size.y;
+	if(res.atlas.cell_size.y == 0) {
+		res.atlas.cell_size.y = res.tex_size.y;
+	}
+
+	for(ssize j = 0; j < arr_len(res.asset.clips); ++j) {
+		struct animation_clip *clip = res.asset.clips + j;
+		if(clip->tracks[0].frames.len == 0 && res.atlas.cell_size.x) {
+			ssize cells_count          = res.tex_size.x / res.atlas.cell_size.x;
+			clip->tracks[0].frames.len = cells_count;
+			for(ssize k = 0; k < cells_count; ++k) {
+				clip->tracks[0].frames.items[k] = k;
+			}
+		}
 	}
 
 	return res;
@@ -249,6 +269,8 @@ struct ani_db
 tsj_handle_json(
 	str8 in_path,
 	str8 json,
+	str8 src_root,
+	str8 dest_root,
 	struct alloc alloc,
 	struct alloc scratch)
 {
@@ -287,6 +309,9 @@ tsj_handle_json(
 					alloc,
 					scratch);
 				arr_push(res.assets, tile_res.asset);
+				if(tile_res.src_path.size > 0) {
+					tsj_atlas_gen(src_root, dest_root, tile_res.src_path, tile_res.atlas, scratch);
+				}
 
 				i += tile_res.token_count;
 			}
@@ -304,8 +329,67 @@ tsj_handle_json(
 	return res;
 }
 
+static void
+tsj_make_parents(str8 file_path, struct alloc scratch)
+{
+	str8 dir = str8_cpy_push(scratch, str8_chop_last_slash(file_path));
+	usize i;
+
+	for(i = 1; i < dir.size; ++i) {
+		if(dir.str[i] == '/' || dir.str[i] == '\\') {
+			u8 saved   = dir.str[i];
+			dir.str[i] = 0;
+			sys_make_dir((str8){.str = dir.str, .size = i});
+			dir.str[i] = saved;
+		}
+	}
+
+	if(dir.size > 0) {
+		sys_make_dir(dir);
+	}
+}
+
+static void
+tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch)
+{
+	str8 src_n          = path_resolve_dots(scratch, src_path, path_style_relative, scratch);
+	str8 root_n         = path_resolve_dots(scratch, src_root, path_style_relative, scratch);
+	str8 rel            = {0};
+	str8 out            = {0};
+	sys_file file       = sys_file_zero();
+	struct ser_writer w = {0};
+
+	if(root_n.size > 0) {
+		u8 last = root_n.str[root_n.size - 1];
+		if(last == '/' || last == '\\') {
+			root_n.size -= 1;
+		}
+	}
+
+	dbg_assert(str8_starts_with(src_n, root_n, 0));
+	rel = str8_skip(src_n, root_n.size);
+	if(rel.size > 0 && (rel.str[0] == '/' || rel.str[0] == '\\')) {
+		rel = str8_skip(rel, 1);
+	}
+
+	out = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(dest_root), str8_spread(rel));
+	out = path_make_file_name_with_ext(scratch, out, str8_lit(ATLAS_EXT));
+	tsj_make_parents(out, scratch);
+
+	file = sys_file_open_w(out);
+	dbg_check(sys_file_is_valid(file), "tex-atlas", "can't write %s", out.str);
+	w.f = file;
+	atlas_write(&w, atlas);
+	log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_size.x, atlas.cell_size.y);
+
+error:;
+	if(sys_file_is_valid(file)) {
+		sys_file_close(file);
+	}
+}
+
 i32
-handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
+handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct alloc scratch)
 {
 	i32 res                = 0;
 	struct alloc alloc_sys = sys_allocator();
@@ -320,22 +404,7 @@ handle_tsj(str8 in_path, str8 out_path, struct alloc scratch)
 
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
-	struct ani_db db = tsj_handle_json(in_path, json, alloc, scratch);
-
-	// Fill all empty tracks with a sequence 0,1,2,3...num of cells
-	for(ssize i = 0; i < arr_len(db.assets); ++i) {
-		struct ani_db_asset *asset = db.assets + i;
-		for(ssize j = 0; j < arr_len(asset->clips); ++j) {
-			struct animation_clip *clip = asset->clips + j;
-			if(clip->tracks[0].frames.len == 0) {
-				ssize cells_count          = asset->info.tex_size.x / asset->info.cell_size.x;
-				clip->tracks[0].frames.len = cells_count;
-				for(ssize k = 0; k < cells_count; ++k) {
-					clip->tracks[0].frames.items[k] = k;
-				}
-			}
-		}
-	}
+	struct ani_db db = tsj_handle_json(in_path, json, src_root, dest_root, alloc, scratch);
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {

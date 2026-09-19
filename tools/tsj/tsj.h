@@ -2,10 +2,14 @@
 
 #include "engine/animation/animation.h"
 #include "engine/animation/animation-db.h"
+#include "engine/assets/asset-db.h"
 
 struct tsj_tile_res {
 	usize token_count;
 	struct ani_db_asset asset;
+	struct tex_atlas atlas;
+	v2_i32 tex_size;
+	str8 src_path;
 };
 
 struct tsj_property_res {
@@ -25,4 +29,4 @@ struct tsj_track_res {
 
 #define ANIMATION_DB_EXT "lunidb"
 
-i32 handle_tsj(str8 in_path, str8 out_path, struct alloc scratch);
+i32 handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct alloc scratch);

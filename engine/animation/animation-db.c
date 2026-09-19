@@ -52,18 +52,6 @@ ani_db_write_asset(struct ser_writer *w, struct ani_db_asset asset)
 	ser_write_string(w, str8_lit("path"));
 	ser_write_string(w, asset.path);
 
-	ser_write_string(w, str8_lit("tex_width"));
-	ser_write_i32(w, asset.info.tex_size.x);
-
-	ser_write_string(w, str8_lit("tex_height"));
-	ser_write_i32(w, asset.info.tex_size.y);
-
-	ser_write_string(w, str8_lit("cell_width"));
-	ser_write_i32(w, asset.info.cell_size.x);
-
-	ser_write_string(w, str8_lit("cell_height"));
-	ser_write_i32(w, asset.info.cell_size.y);
-
 	ser_write_string(w, str8_lit("clips_count"));
 	ser_write_i32(w, arr_len(asset.clips));
 
@@ -171,14 +159,6 @@ ani_db_asset_read(
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("path"), 0)) {
 			res.path = str8_cpy_push(alloc, value.str);
-		} else if(str8_match(key.str, str8_lit("tex_width"), 0)) {
-			res.info.tex_size.x = ser_get_i32(value);
-		} else if(str8_match(key.str, str8_lit("tex_height"), 0)) {
-			res.info.tex_size.y = ser_get_i32(value);
-		} else if(str8_match(key.str, str8_lit("cell_width"), 0)) {
-			res.info.cell_size.x = ser_get_i32(value);
-		} else if(str8_match(key.str, str8_lit("cell_height"), 0)) {
-			res.info.cell_size.y = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("clips_count"), 0)) {
 			res.clips = arr_new(alloc, res.clips, ser_get_i32(value));
 		} else if(str8_match(key.str, str8_lit("clips"), 0)) {

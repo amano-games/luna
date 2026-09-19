@@ -13,7 +13,6 @@ enum asset_type {
 	ASSET_TYPE_NONE,
 
 	ASSET_TYPE_TEXTURE,
-	ASSET_TYPE_TEXTURE_INFO,
 	ASSET_TYPE_ANIMATION_SLICE,
 	ASSET_TYPE_ANIMATION_CLIP,
 	ASSET_TYPE_SOUND,
@@ -41,10 +40,9 @@ struct animation_slice {
 	u32 size;
 };
 
-struct asset_tex_info {
+struct tex_atlas {
 	u32 path_id;
 	v2_i32 cell_size;
-	v2_i32 tex_size;
 };
 
 // path_id is path_table.arr index so id -> str8 skips the hash table.
@@ -75,9 +73,9 @@ struct path_table {
 	char *data;
 };
 
-struct tex_info_table {
+struct tex_atlas_table {
 	struct ht_u32 ht;
-	struct asset_tex_info *arr;
+	struct tex_atlas *arr;
 };
 
 struct animation_table {
@@ -109,7 +107,7 @@ struct bet_table {
 struct asset_db {
 	b32 initialized;
 	struct path_table paths;
-	struct tex_info_table textures_info;
+	struct tex_atlas_table atlases;
 	struct tex_table textures;
 	struct animation_table animations;
 	struct fnt_table fonts;
@@ -143,8 +141,8 @@ struct asset_tex asset_db_tex_get(struct asset_db *db, struct asset_handle handl
 struct asset_tex asset_db_tex_get_by_id(struct asset_db *db, u32 id);
 struct str8 asset_db_tex_path_get(struct asset_db *db, u32 id);
 
-u32 asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info info);
-struct asset_tex_info asset_db_tex_info_get(struct asset_db *db, struct asset_handle handle);
+u32 asset_db_tex_atlas_push(struct asset_db *db, str8 path, struct tex_atlas atlas);
+struct tex_atlas asset_db_tex_atlas_get(struct asset_db *db, struct asset_handle handle);
 
 u32 asset_db_animation_clip_push(struct asset_db *db, struct animation_clip clip);
 struct animation_clip asset_db_animation_clip_get(struct asset_db *db, struct asset_handle handle, usize index);

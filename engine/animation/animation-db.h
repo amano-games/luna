@@ -12,7 +12,6 @@ struct ani_db {
 
 struct ani_db_asset {
 	str8 path;
-	struct asset_tex_info info;
 	struct animation_clip *clips;
 };
 
