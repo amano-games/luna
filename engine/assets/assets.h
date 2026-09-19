@@ -51,6 +51,7 @@ struct tex asset_tex_from_handle(struct alloc alloc, struct alloc scratch, struc
 struct tex asset_tex_read(struct alloc alloc, struct alloc scratch, str8 path);
 i32 asset_tex_load(struct alloc scratch, str8 path, struct tex *tex);
 i32 asset_tex_get_id(str8 path);
+i32 asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex);
 
 struct fnt asset_fnt(i32 id);
 i32 asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt);
