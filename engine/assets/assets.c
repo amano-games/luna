@@ -2,8 +2,10 @@
 #include "base/dbg.h"
 #include "base/hash.h"
 #include "base/mem.h"
+#include "base/arr.h"
 #include "engine/assets/asset-db.h"
 #include "engine/assets/tex-atlas.h"
+#include "engine/animation/animation-clips.h"
 #include "lib/bet/bet-ser.h"
 #include "lib/fnt/fnt.h"
 #include "engine/gfx/gfx.h"
@@ -308,6 +310,48 @@ asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 	}
 
 	res = (i32)asset_db_tex_atlas_push(&ASSETS.db, tex_path, atlas);
+
+error:;
+	return res;
+}
+
+i32
+asset_ani_load(struct alloc scratch, str8 tex_path)
+{
+	i32 res                           = 0;
+	str8 ani_path                     = path_make_file_name_with_ext(scratch, tex_path, str8_lit(ANI_EXT));
+	struct pck_file *f                = pck_find(&ASSETS.pck, ani_path);
+	void *data                        = NULL;
+	struct ser_reader r               = {0};
+	struct animation_clip *clips      = NULL;
+	struct animation_clip *first_clip = NULL;
+	struct animation_slice slice      = {0};
+	ssize i;
+
+	if(f != NULL) {
+		data = mem_alloc_size(scratch, (usize)f->size);
+		dbg_check(data, "assets", "ani alloc failed %.*s", str8_spread(ani_path));
+		dbg_check(
+			pck_read(&ASSETS.pck, f, data) == f->size,
+			"assets",
+			"ani read failed %.*s",
+			str8_spread(ani_path));
+		r     = (struct ser_reader){.data = data, .len = (int)f->size};
+		clips = ani_clips_read(&r, scratch);
+
+		first_clip = ASSETS.db.animations.data + arr_len(ASSETS.db.animations.data);
+		for(i = 0; i < arr_len(clips); ++i) {
+			dbg_assert(clips[i].count != 0);
+			asset_db_animation_clip_push(&ASSETS.db, clips[i]);
+		}
+
+		slice = (struct animation_slice){
+			.clip = first_clip,
+			.size = arr_len(clips),
+		};
+		res = (i32)asset_db_animation_slice_push(&ASSETS.db, tex_path, slice);
+		log_info("assets", "ani slice for: %s size: %d", tex_path.str, (int)slice.size);
+	}
 
 error:;
 	return res;

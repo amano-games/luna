@@ -28,7 +28,7 @@
 #include "lib/pinb/pinb-ser.c"
 #include "lib/fnt/fnt.c"
 
-#include "engine/animation/animation-db.c"
+#include "engine/animation/animation-clips.c"
 #include "engine/audio/adpcm.c"
 #include "engine/physics/physics.c"
 #include "engine/physics/body-ser.c"
@@ -44,6 +44,7 @@
 #include "tools/tsj/tsj.h"
 #include "tools/tsj/tsj.c"
 #include "engine/assets/tex-atlas.c"
+#include "engine/assets/path-db.c"
 #include "tools/fnt-pd/fnt-pd.c"
 #include "tools/fnt-pd/fnt-pd.h"
 #include "tools/pinbtjson/pinbtjson.h"
@@ -56,7 +57,6 @@
 #define IMG_EXT           "png"
 #define ASE_EXT           "aseprite"
 #define AUD_EXT           "wav"
-#define ANI_EXT           "lunass"
 #define AI_EXT            "btree"
 #define FNT_EXT           "fnt"
 #define ASSETS_DB_EXT     "tsj"
@@ -139,8 +139,6 @@ asset_gen_recursive(
 				sys_free(blob.data);
 			} else if(str8_match(extension, str8_lit(ASE_EXT), 0)) {
 				b32 res = aseprite_to_assets(in_path, out_path, alloc, enc);
-			} else if(str8_match(extension, str8_lit(ANI_EXT), 0)) {
-				b32 res = file_cpy(in_path, out_path);
 			} else if(str8_match(extension, str8_lit(AUD_EXT), 0)) {
 				b32 res = wav_to_snd(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(AI_EXT), 0)) {

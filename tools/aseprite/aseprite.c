@@ -5,7 +5,7 @@
 #include "base/mem.h"
 #include "base/path.h"
 #include "base/str.h"
-#include "engine/animation/animation-db.h"
+#include "engine/animation/animation-clips.h"
 #include "engine/animation/animation.h"
 #include "engine/assets/tex-atlas.h"
 #include "lib/tex/tex.h"
@@ -13,12 +13,9 @@
 #include "sys/sys.h"
 #include "tools/asset/asset-defs.h"
 #include "tools/asset/asset.h"
-#include "tools/tsj/tsj.h"
 
 #define CUTE_ASEPRITE_IMPLEMENTATION
 #include "external/cute_aseprite.h"
-
-static inline str8 str8_skip_until_assets(str8 str);
 
 static void
 aseprite_to_atlas(const ase_t *ase, const str8 out_path, struct alloc scratch)
@@ -56,7 +53,7 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 		res = asset_blob_w(blob, out_file_path);
 	}
 	aseprite_to_atlas(ase, out_path, scratch);
-	aseprite_to_ani(ase, in_path, out_path, scratch);
+	aseprite_to_ani(ase, out_path, scratch);
 
 	res = true;
 
@@ -112,76 +109,57 @@ error:;
 }
 
 b32
-aseprite_to_ani(
-	const ase_t *ase,
-	const str8 in_path,
-	const str8 out_path,
-	struct alloc scratch)
+aseprite_to_ani(const ase_t *ase, const str8 out_path, struct alloc scratch)
 {
-	b32 res       = false;
-	sys_file file = sys_file_zero();
+	b32 res                      = false;
+	sys_file file                = sys_file_zero();
+	struct animation_clip *clips = NULL;
+	str8 out_file_path          = {0};
+	struct ser_writer w         = {0};
 
-	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
-
-	struct ani_db db = {.bank_count = 1, .clip_count = ase->tag_count};
-	db.assets        = arr_new(scratch, db.assets, 1);
-	// in_path  = ./src/assets/img/frog.aseprite
-	// out_path = ./tmp
-	// res      = assets/img/frog.ani_db
-	str8 asset_path           = path_make_file_name_with_ext(scratch, str8_skip_until_assets(in_path), str8_lit(TEX_EXT));
-	struct ani_db_asset asset = {
-		.path = asset_path,
-	};
-	asset.clips = arr_new(scratch, asset.clips, ase->tag_count);
-	for(ssize i = 0; i < ase->tag_count; ++i) {
-		const ase_tag_t *tag       = ase->tags + i;
-		struct animation_clip clip = {0};
-		i32 frame_count            = tag->to_frame - tag->from_frame + 1;
-		clip.count                 = tag->repeat;
-		clip.frame_duration        = ase->frames[tag->from_frame].duration_milliseconds / 1000.0f;
-		clip.scale                 = 1.0f;
-		{
-			struct animation_track *track = &clip.tracks[ANIMATION_TRACK_FRAME - 1];
-			track->type                   = ANIMATION_TRACK_FRAME;
-			track->frames.len             = frame_count;
-			track->frames.cap             = frame_count;
-			for(ssize j = 0; j < frame_count; ++j) {
-				track->frames.items[j] = tag->from_frame + j;
+	if(ase->tag_count > 0) {
+		clips = arr_new(scratch, clips, ase->tag_count);
+		for(ssize i = 0; i < ase->tag_count; ++i) {
+			const ase_tag_t *tag       = ase->tags + i;
+			struct animation_clip clip = {0};
+			i32 frame_count            = tag->to_frame - tag->from_frame + 1;
+			clip.count                 = tag->repeat;
+			clip.frame_duration        = ase->frames[tag->from_frame].duration_milliseconds / 1000.0f;
+			clip.scale                 = 1.0f;
+			{
+				struct animation_track *track = &clip.tracks[ANIMATION_TRACK_FRAME - 1];
+				track->type                   = ANIMATION_TRACK_FRAME;
+				track->frames.len             = frame_count;
+				track->frames.cap             = frame_count;
+				for(ssize j = 0; j < frame_count; ++j) {
+					track->frames.items[j] = tag->from_frame + j;
+				}
 			}
+			{
+				struct animation_track *track = &clip.tracks[ANIMATION_TRACK_SPRITE_MODE - 1];
+				track->type                   = ANIMATION_TRACK_SPRITE_MODE;
+				track->frames.len             = 1;
+				track->frames.cap             = 1;
+			}
+			dbg_assert(clip.frame_duration > 0);
+			dbg_assert(clip.frame_duration < 10);
+			dbg_assert(clip.tracks[0].frames.len > 0 || clip.tracks[1].frames.len > 0);
+			arr_push(clips, clip);
 		}
-		{
-			struct animation_track *track = &clip.tracks[ANIMATION_TRACK_SPRITE_MODE - 1];
-			track->type                   = ANIMATION_TRACK_SPRITE_MODE;
-			track->frames.len             = 1;
-			track->frames.cap             = 1;
-		}
-		dbg_assert(clip.frame_duration > 0);
-		dbg_assert(clip.frame_duration < 10);
-		dbg_assert(clip.tracks[0].frames.len > 0 || clip.tracks[1].frames.len > 0);
-		arr_push(asset.clips, clip);
-	}
-	arr_push(db.assets, asset);
 
-	file = sys_file_open_w(out_file_path);
-	dbg_check(sys_file_is_valid(file), "ani db", "failed to open file to write: %s", out_file_path.str);
-	struct ser_writer w = {.f = file};
-	ani_db_write(&w, db);
-	log_info("ase-ani", "%s -> %s", in_path.str, out_path.str);
+		out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANI_EXT));
+		file          = sys_file_open_w(out_file_path);
+		dbg_check(sys_file_is_valid(file), "ase-ani", "failed to open file to write: %s", out_file_path.str);
+		w.f = file;
+		ani_clips_write(&w, clips);
+		log_info("ase-ani", "%s", out_file_path.str);
+	}
+
+	res = true;
 
 error:;
 	if(sys_file_is_valid(file)) {
 		sys_file_close(file);
 	}
 	return res;
-}
-
-static inline str8
-str8_skip_until_assets(str8 str)
-{
-	str8 res  = str;
-	ssize idx = str8_find_needle(str, 0, str8_lit("assets"), 0);
-	if(idx > 0) {
-		res = str8_skip(str, idx);
-	}
-	return (res);
 }

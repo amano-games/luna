@@ -12,10 +12,13 @@
 #include "base/log.h"
 #include "base/types.h"
 #include "base/utils.h"
+#include "engine/animation/animation-clips.h"
+#include "engine/assets/path-db.h"
 #include "engine/assets/tex-atlas.h"
 #include "sys/sys.h"
 
 static void tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch);
+static void tsj_ani_gen(str8 src_root, str8 dest_root, str8 src_path, struct animation_clip *clips, struct alloc scratch);
 
 static str8
 tsj_resolve_image(str8 rel, str8 tsj_path, struct alloc alloc, struct alloc scratch)
@@ -208,8 +211,8 @@ tsj_handle_tile(
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("image")) == 0) {
 			str8 path      = json_str8_cpy_push(json, value, scratch, 0);
-			res.src_path   = tsj_resolve_image(path, in_path, alloc, scratch);
-			res.asset.path = tsj_handle_path(path, in_path, alloc, scratch);
+			res.src_path = tsj_resolve_image(path, in_path, alloc, scratch);
+			res.path     = tsj_handle_path(path, in_path, alloc, scratch);
 		} else if(json_eq(json, key, str8_lit("width")) == 0) {
 			res.atlas.cell_size.x = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("height")) == 0) {
@@ -220,7 +223,7 @@ tsj_handle_tile(
 			res.tex_size.y = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("properties")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			res.asset.clips = arr_new(alloc, res.asset.clips, value->size);
+			res.clips = arr_new(alloc, res.clips, value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
@@ -233,7 +236,7 @@ tsj_handle_tile(
 					scratch);
 
 				if(item_res.clip.scale > 0) {
-					arr_push(res.asset.clips, item_res.clip);
+					arr_push(res.clips, item_res.clip);
 				}
 				i += item_res.token_count;
 			}
@@ -251,8 +254,8 @@ tsj_handle_tile(
 		res.atlas.cell_size.y = res.tex_size.y;
 	}
 
-	for(ssize j = 0; j < arr_len(res.asset.clips); ++j) {
-		struct animation_clip *clip = res.asset.clips + j;
+	for(ssize j = 0; j < arr_len(res.clips); ++j) {
+		struct animation_clip *clip = res.clips + j;
 		if(clip->tracks[0].frames.len == 0 && res.atlas.cell_size.x) {
 			ssize cells_count          = res.tex_size.x / res.atlas.cell_size.x;
 			clip->tracks[0].frames.len = cells_count;
@@ -265,7 +268,7 @@ tsj_handle_tile(
 	return res;
 }
 
-struct ani_db
+str8 *
 tsj_handle_json(
 	str8 in_path,
 	str8 json,
@@ -286,17 +289,17 @@ tsj_handle_json(
 
 	dbg_assert(root.type == JSMN_OBJECT);
 
-	struct ani_db res = {0};
+	str8 *res = NULL;
 
 	for(usize i = 0; i < (usize)token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("tilecount")) == 0) {
 			usize count = json_parse_i32(json, value);
-			res.assets  = arr_new(alloc, res.assets, count);
+			res         = arr_new(alloc, res, count);
 		} else if(json_eq(json, key, str8_lit("tiles")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
-			dbg_assert(arr_cap(res.assets) == value->size);
+			dbg_assert(arr_cap(res) == value->size);
 			for(i32 j = 0; j < value->size; j++) {
 				i32 item_index  = i + 2;
 				jsmntok_t *item = &tokens[item_index];
@@ -308,22 +311,19 @@ tsj_handle_json(
 					item_index,
 					alloc,
 					scratch);
-				arr_push(res.assets, tile_res.asset);
+				if(tile_res.path.size > 0) {
+					arr_push(res, tile_res.path);
+				}
 				if(tile_res.src_path.size > 0) {
 					tsj_atlas_gen(src_root, dest_root, tile_res.src_path, tile_res.atlas, scratch);
+					if(arr_len(tile_res.clips) > 0) {
+						tsj_ani_gen(src_root, dest_root, tile_res.src_path, tile_res.clips, scratch);
+					}
 				}
 
 				i += tile_res.token_count;
 			}
 		}
-	}
-
-	dbg_assert(arr_len(res.assets) == arr_cap(res.assets));
-	for(ssize i = 0; i < arr_len(res.assets); ++i) {
-		struct ani_db_asset asset = res.assets[i];
-		ssize clip_count          = arr_len(asset.clips);
-		res.clip_count += clip_count;
-		if(clip_count > 0) { res.bank_count++; }
 	}
 
 	return res;
@@ -388,6 +388,45 @@ error:;
 	}
 }
 
+static void
+tsj_ani_gen(str8 src_root, str8 dest_root, str8 src_path, struct animation_clip *clips, struct alloc scratch)
+{
+	str8 src_n          = path_resolve_dots(scratch, src_path, path_style_relative, scratch);
+	str8 root_n         = path_resolve_dots(scratch, src_root, path_style_relative, scratch);
+	str8 rel            = {0};
+	str8 out            = {0};
+	sys_file file       = sys_file_zero();
+	struct ser_writer w = {0};
+
+	if(root_n.size > 0) {
+		u8 last = root_n.str[root_n.size - 1];
+		if(last == '/' || last == '\\') {
+			root_n.size -= 1;
+		}
+	}
+
+	dbg_assert(str8_starts_with(src_n, root_n, 0));
+	rel = str8_skip(src_n, root_n.size);
+	if(rel.size > 0 && (rel.str[0] == '/' || rel.str[0] == '\\')) {
+		rel = str8_skip(rel, 1);
+	}
+
+	out = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(dest_root), str8_spread(rel));
+	out = path_make_file_name_with_ext(scratch, out, str8_lit(ANI_EXT));
+	tsj_make_parents(out, scratch);
+
+	file = sys_file_open_w(out);
+	dbg_check(sys_file_is_valid(file), "ani", "can't write %s", out.str);
+	w.f = file;
+	ani_clips_write(&w, clips);
+	log_info("ani", "%s clips=%d", out.str, (int)arr_len(clips));
+
+error:;
+	if(sys_file_is_valid(file)) {
+		sys_file_close(file);
+	}
+}
+
 i32
 handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct alloc scratch)
 {
@@ -400,20 +439,20 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 	marena_init(&marean, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marean);
 
-	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
+	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ADB_EXT));
 
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
-	struct ani_db db = tsj_handle_json(in_path, json, src_root, dest_root, alloc, scratch);
+	str8 *paths = tsj_handle_json(in_path, json, src_root, dest_root, alloc, scratch);
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
-		log_error("ani-db-gen", "can't open file %s for writing!", out_file_path.str);
+		log_error("path-db-gen", "can't open file %s for writing!", out_file_path.str);
 		return -1;
 	}
 
 	struct ser_writer w = {.f = out_file};
-	ani_db_write(&w, db);
+	path_db_write(&w, paths);
 
 	sys_file_close(out_file);
 
@@ -428,6 +467,6 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 
 #endif
 	sys_free(mem_buffer);
-	log_info("ani-db-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	log_info("path-db-gen", "%s -> %s\n", in_path.str, out_file_path.str);
 	return 1;
 }
