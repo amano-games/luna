@@ -27,12 +27,17 @@ aseprite_to_atlas(const ase_t *ase, const str8 out_path, struct alloc scratch)
 		.cell_h = (u16)ase->h,
 	};
 
-	dbg_check(atlas_to_blob(scratch, atlas, &blob),
-		"tex-atlas",
-		"can't pack %s",
-		atlas_path.str);
-	dbg_check(asset_blob_w(blob, atlas_path), "tex-atlas", "can't write %s", atlas_path.str);
-	log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, atlas.cell_w, atlas.cell_h);
+	i32 tex_w = ase->w * ase->frame_count;
+	i32 tex_h = ase->h;
+
+	if((i32)atlas.cell_w != tex_w || (i32)atlas.cell_h != tex_h) {
+		dbg_check(atlas_to_blob(scratch, atlas, &blob),
+			"tex-atlas",
+			"can't pack %s",
+			atlas_path.str);
+		dbg_check(asset_blob_w(blob, atlas_path), "tex-atlas", "can't write %s", atlas_path.str);
+		log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, atlas.cell_w, atlas.cell_h);
+	}
 
 error:;
 }

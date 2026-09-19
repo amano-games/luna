@@ -18,7 +18,7 @@
 #include "sys/sys.h"
 #include "tools/asset/asset.h"
 
-static void tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch);
+static void tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, v2_i32 tex_size, struct alloc scratch);
 static void tsj_ani_gen(str8 src_root, str8 dest_root, str8 src_path, struct animation_clip *clips, struct alloc scratch);
 
 static str8
@@ -211,7 +211,7 @@ tsj_handle_tile(
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("image")) == 0) {
-			str8 path      = json_str8_cpy_push(json, value, scratch, 0);
+			str8 path    = json_str8_cpy_push(json, value, scratch, 0);
 			res.src_path = tsj_resolve_image(path, in_path, alloc, scratch);
 			res.path     = tsj_handle_path(path, in_path, alloc, scratch);
 		} else if(json_eq(json, key, str8_lit("width")) == 0) {
@@ -316,7 +316,7 @@ tsj_handle_json(
 					arr_push(res, tile_res.path);
 				}
 				if(tile_res.src_path.size > 0) {
-					tsj_atlas_gen(src_root, dest_root, tile_res.src_path, tile_res.atlas, scratch);
+					tsj_atlas_gen(src_root, dest_root, tile_res.src_path, tile_res.atlas, tile_res.tex_size, scratch);
 					if(arr_len(tile_res.clips) > 0) {
 						tsj_ani_gen(src_root, dest_root, tile_res.src_path, tile_res.clips, scratch);
 					}
@@ -351,7 +351,7 @@ tsj_make_parents(str8 file_path, struct alloc scratch)
 }
 
 static void
-tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch)
+tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, v2_i32 tex_size, struct alloc scratch)
 {
 	str8 src_n             = path_resolve_dots(scratch, src_path, path_style_relative, scratch);
 	str8 root_n            = path_resolve_dots(scratch, src_root, path_style_relative, scratch);
@@ -374,11 +374,13 @@ tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atl
 
 	out = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(dest_root), str8_spread(rel));
 	out = path_make_file_name_with_ext(scratch, out, str8_lit(ATLAS_EXT));
-	tsj_make_parents(out, scratch);
 
-	dbg_check(atlas_to_blob(scratch, atlas, &blob), "tex-atlas", "can't pack %s", out.str);
-	dbg_check(asset_blob_w(blob, out), "tex-atlas", "can't write %s", out.str);
-	log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_w, atlas.cell_h);
+	if((i32)atlas.cell_w != tex_size.x || (i32)atlas.cell_h != tex_size.y) {
+		tsj_make_parents(out, scratch);
+		dbg_check(atlas_to_blob(scratch, atlas, &blob), "tex-atlas", "can't pack %s", out.str);
+		dbg_check(asset_blob_w(blob, out), "tex-atlas", "can't write %s", out.str);
+		log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_w, atlas.cell_h);
+	}
 
 error:;
 }
