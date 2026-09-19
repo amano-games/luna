@@ -20,27 +20,25 @@
 static void
 aseprite_to_atlas(const ase_t *ase, const str8 out_path, struct alloc scratch)
 {
-	v2_i32 cell_size    = {ase->w, ase->h};
-	str8 atlas_path     = path_make_file_name_with_ext(scratch, out_path, str8_lit(ATLAS_EXT));
-	sys_file file       = sys_file_zero();
-	struct ser_writer w = {0};
+	str8 atlas_path        = path_make_file_name_with_ext(scratch, out_path, str8_lit(ATLAS_EXT));
+	struct asset_blob blob = {0};
+	struct tex_atlas atlas = {
+		.cell_w = (u16)ase->w,
+		.cell_h = (u16)ase->h,
+	};
 
-	file = sys_file_open_w(atlas_path);
-	dbg_check(sys_file_is_valid(file), "tex-atlas", "can't write %s", atlas_path.str);
-	w.f = file;
-	atlas_write(&w, (struct tex_atlas){
-		.cell_size = cell_size,
-	});
-	log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, cell_size.x, cell_size.y);
+	dbg_check(atlas_to_blob(scratch, atlas, &blob),
+		"tex-atlas",
+		"can't pack %s",
+		atlas_path.str);
+	dbg_check(asset_blob_w(blob, atlas_path), "tex-atlas", "can't write %s", atlas_path.str);
+	log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, atlas.cell_w, atlas.cell_h);
 
 error:;
-	if(sys_file_is_valid(file)) {
-		sys_file_close(file);
-	}
 }
 
 b32
-aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum tex_px_enc enc)
+aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum asset_flag flag)
 {
 	b32 res    = false;
 	ase_t *ase = cute_aseprite_load_from_file((char *)in_path.str, NULL);
@@ -49,7 +47,7 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 
 	{
 		str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
-		aseprite_to_tex(ase, scratch, sys_allocator(), &blob, enc);
+		aseprite_to_tex(ase, scratch, sys_allocator(), &blob, flag);
 		res = asset_blob_w(blob, out_file_path);
 	}
 	aseprite_to_atlas(ase, out_path, scratch);
@@ -68,7 +66,7 @@ error:;
 }
 
 b32
-aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out, enum tex_px_enc enc)
+aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out, enum asset_flag flag)
 {
 	b32 res                     = false;
 	i32 sheet_w                 = ase->w * ase->frame_count;
@@ -99,7 +97,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)sheet_data;
 	struct tex t                   = tex_from_rgb(scratch, in_data, sheet_w, sheet_h);
-	res                            = tex_to_blob(scratch, alloc, t, out, enc);
+	res                            = tex_to_blob(scratch, alloc, t, out, flag);
 
 error:;
 	if(sheet_data != NULL) {
@@ -114,8 +112,8 @@ aseprite_to_ani(const ase_t *ase, const str8 out_path, struct alloc scratch)
 	b32 res                      = false;
 	sys_file file                = sys_file_zero();
 	struct animation_clip *clips = NULL;
-	str8 out_file_path          = {0};
-	struct ser_writer w         = {0};
+	str8 out_file_path           = {0};
+	struct ser_writer w          = {0};
 
 	if(ase->tag_count > 0) {
 		clips = arr_new(scratch, clips, ase->tag_count);

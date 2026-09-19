@@ -109,7 +109,7 @@ asset_gen_recursive(
 	const str8 src_root,
 	const str8 dest_root,
 	struct marena *arena,
-	enum tex_px_enc enc)
+	enum asset_flag flag)
 {
 	struct alloc alloc = marena_allocator(arena);
 	tinydir_dir *dir   = alloc_struct(alloc, dir);
@@ -126,19 +126,19 @@ asset_gen_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, enc);
+				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, flag);
 			}
 		} else {
 			void *reset_p  = arena->p;
 			str8 extension = str8_cstr(file.extension);
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				struct asset_blob blob = {0};
-				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, enc);
+				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, flag);
 				str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(TEX_EXT));
 				b32 res            = asset_blob_w(blob, out_file_path);
 				sys_free(blob.data);
 			} else if(str8_match(extension, str8_lit(ASE_EXT), 0)) {
-				b32 res = aseprite_to_assets(in_path, out_path, alloc, enc);
+				b32 res = aseprite_to_assets(in_path, out_path, alloc, flag);
 			} else if(str8_match(extension, str8_lit(AUD_EXT), 0)) {
 				b32 res = wav_to_snd(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(AI_EXT), 0)) {
@@ -174,11 +174,11 @@ main(int argc, char *argv[])
 	marena_init(&scratch_arena, mem, mem_size);
 	struct alloc scratch = marena_allocator(&scratch_arena);
 
-	struct cmd_line cmd = cmd_line_from_argcv(scratch, argc, argv);
-	b32 packed          = cmd_line_has_flag(&cmd, str8_lit("pack"));
-	enum tex_px_enc enc = cmd_line_has_flag(&cmd, str8_lit("compress"))
-		? TEX_PX_LZ4HC
-		: TEX_PX_RAW;
+	struct cmd_line cmd  = cmd_line_from_argcv(scratch, argc, argv);
+	b32 packed           = cmd_line_has_flag(&cmd, str8_lit("pack"));
+	enum asset_flag flag = cmd_line_has_flag(&cmd, str8_lit("compress"))
+		? ASSET_FLAG_LZ4HC
+		: ASSET_FLAG_NONE;
 
 	if(cmd.inputs.node_count < 2) {
 		sys_printf("Usage: %.*s [--compress] <in_path> <destination_path>", str8_spread(cmd.exe_name));
@@ -192,7 +192,7 @@ main(int argc, char *argv[])
 	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, enc);
+	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, flag);
 
 	res = EXIT_SUCCESS;
 

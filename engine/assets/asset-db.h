@@ -41,8 +41,8 @@ struct animation_slice {
 };
 
 struct tex_atlas {
-	u32 path_id;
-	v2_i32 cell_size;
+	u16 cell_w;
+	u16 cell_h;
 };
 
 // path_id is path_table.arr index so id -> str8 skips the hash table.
