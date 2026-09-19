@@ -43,6 +43,7 @@
 #include "tools/btree/btree.c"
 #include "tools/tsj/tsj.h"
 #include "tools/tsj/tsj.c"
+#include "engine/assets/tex-atlas.c"
 #include "tools/fnt-pd/fnt-pd.c"
 #include "tools/fnt-pd/fnt-pd.h"
 #include "tools/pinbtjson/pinbtjson.h"
@@ -105,6 +106,8 @@ void
 asset_gen_recursive(
 	const str8 in_dir,
 	const str8 out_dir,
+	const str8 src_root,
+	const str8 dest_root,
 	struct marena *arena,
 	enum tex_px_enc enc)
 {
@@ -123,7 +126,7 @@ asset_gen_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				asset_gen_recursive(str8_cstr(file.path), out_path, arena, enc);
+				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, enc);
 			}
 		} else {
 			void *reset_p  = arena->p;
@@ -145,7 +148,7 @@ asset_gen_recursive(
 			} else if(str8_match(extension, str8_lit(FNT_EXT), 0)) {
 				i32 res = handle_fnt_pd(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ASSETS_DB_EXT), 0)) {
-				i32 res = handle_tsj(in_path, out_path, alloc);
+				i32 res = handle_tsj(in_path, out_path, src_root, dest_root, alloc);
 			} else if(str8_match(extension, str8_lit(PINBALL_TABLE_EXT), 0)) {
 				i32 res = pinbtjson_handle(in_path, out_path);
 			} else if(str8_match(extension, str8_lit(RAW_EXT), 0)) {
@@ -191,7 +194,7 @@ main(int argc, char *argv[])
 	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	asset_gen_recursive(in_path, out_path, &scratch_arena, enc);
+	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, enc);
 
 	res = EXIT_SUCCESS;
 

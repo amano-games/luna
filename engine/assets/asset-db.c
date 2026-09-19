@@ -64,10 +64,9 @@ asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc al
 	db->textures.arr = arr_new(alloc, db->textures.arr, counts.textures + 1);
 	arr_push(db->textures.arr, (struct asset_tex){0});
 
-	// tex_info rows come from ani_db assets, one per slice.
-	db->textures_info.ht  = ht_new_u32(ht_exp_from_count(counts.slices), alloc);
-	db->textures_info.arr = arr_new(alloc, db->textures_info.arr, counts.slices + 1);
-	arr_push(db->textures_info.arr, (struct asset_tex_info){0});
+	db->atlases.ht  = ht_new_u32(ht_exp_from_count((usize)counts.textures), alloc);
+	db->atlases.arr = arr_new(alloc, db->atlases.arr, counts.textures + 1);
+	arr_push(db->atlases.arr, (struct tex_atlas){0});
 
 	db->snds.ht  = ht_new_u32(ht_exp_from_count(counts.snds), alloc);
 	db->snds.arr = arr_new(alloc, db->snds.arr, counts.snds + 1);
@@ -249,42 +248,48 @@ asset_db_tex_get_by_id(struct asset_db *db, u32 id)
 }
 
 u32
-asset_db_tex_info_push(struct asset_db *db, str8 path, struct asset_tex_info info)
+asset_db_tex_atlas_push(struct asset_db *db, str8 path, struct tex_atlas atlas)
 {
-	struct tex_info_table *table = &db->textures_info;
-	usize table_len              = arr_len(table->arr);
-	usize table_cap              = arr_cap(table->arr);
+	struct tex_atlas_table *table = &db->atlases;
+	usize table_len               = arr_len(table->arr);
+	usize table_cap               = arr_cap(table->arr);
+	u64 key                       = hash_fnv1a_str8(path);
+	u32 value                     = ht_get_u32(&table->ht, key);
+	b32 has_key                   = value != 0;
 
-	// Can we add the string?
-	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex info");
+	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push atlas");
 
-	u64 key     = hash_fnv1a_str8(path);
-	u32 value   = ht_get_u32(&table->ht, key);
-	b32 has_key = value != 0;
-
-	info.path_id = path_id_intern(db, path);
+	atlas.path_id = path_id_intern(db, path);
 
 	if(has_key) {
-		return value;
-	} else {
-		value = table_len;
-		ht_set_u32(&table->ht, key, value);
-		arr_push(table->arr, info);
+		struct tex_atlas *row = &table->arr[value];
+
+		if(row->cell_size.x && atlas.cell_size.x) {
+			dbg_assert(row->cell_size.x == atlas.cell_size.x);
+			dbg_assert(row->cell_size.y == atlas.cell_size.y);
+		} else if(atlas.cell_size.x) {
+			row->cell_size = atlas.cell_size;
+		}
+
 		return value;
 	}
+
+	value = table_len;
+	ht_set_u32(&table->ht, key, value);
+	arr_push(table->arr, atlas);
+	return value;
 
 error:
 	return 0;
 }
 
-struct asset_tex_info
-asset_db_tex_info_get(struct asset_db *db, struct asset_handle handle)
+struct tex_atlas
+asset_db_tex_atlas_get(struct asset_db *db, struct asset_handle handle)
 {
-	struct asset_tex_info res    = {0};
-	struct tex_info_table *table = &db->textures_info;
-	u32 value                    = ht_get_u32(&table->ht, handle.path_hash);
+	struct tex_atlas res          = {0};
+	struct tex_atlas_table *table = &db->atlases;
+	u32 value                     = ht_get_u32(&table->ht, handle.path_hash);
 
-	// G_TEX refs without ani_db have no cell info.
 	if(value != 0) {
 		res = table->arr[value];
 	}
