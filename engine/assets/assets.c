@@ -41,7 +41,7 @@ assets_pck_ini(struct alloc scratch, str8 path)
 	ASSETS.pack_path = str8_cpy_push(ASSETS.alloc, pack);
 	dbg_check(ASSETS.pack_path.str, "assets", "pck path copy failed");
 
-	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.hashmap_size);
+	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.ht_size);
 	dbg_check(ASSETS.pck_ht, "assets", "pck ht alloc failed");
 	dbg_check(pck_read_index(&ASSETS.pck, ASSETS.pck_ht) != 0, "assets", "pck index failed");
 error:;
@@ -109,15 +109,15 @@ asset_stream_open(struct asset_stream *s, struct asset_handle handle)
 	dbg_check(f, "assets", "stream find failed hash %016llx", handle.path_hash);
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
 	dbg_check(ASSETS.pack_path.size, "assets", "pack path missing");
-
-	// Own seek cursor via a second open; share the read-only index.
 	dbg_check(pck_open(ASSETS.pack_path, &s->pck) != 0, "assets", "stream pck open failed");
-	s->pck.ht          = ASSETS.pck.ht;
-	s->pck.hashmap_len = ASSETS.pck.hashmap_len;
-	s->file            = f;
-	s->cursor          = 0;
-	s->open            = true;
-	res                = true;
+
+	s->pck.ht     = ASSETS.pck.ht;
+	s->pck.ht_len = ASSETS.pck.ht_len;
+	s->file       = f;
+	s->cursor     = 0;
+	dbg_check(pck_seek(&s->pck, f, 0) == 0, "assets", "stream seek failed");
+	s->open = true;
+	res     = true;
 
 error:;
 	if(!res && s) {
@@ -152,7 +152,7 @@ asset_stream_read(struct asset_stream *s, void *dest, ssize len)
 {
 	i32 n = 0;
 	dbg_check(asset_stream_is_open(s), "assets", "stream not open");
-	n = pck_read_ex(&s->pck, s->file, dest, s->cursor, len);
+	n = pck_read_cur(&s->pck, (u8 *)dest, len);
 	if(n > 0) {
 		s->cursor += n;
 	}
@@ -164,6 +164,7 @@ void
 asset_stream_seek(struct asset_stream *s, ssize off)
 {
 	dbg_check(asset_stream_is_open(s), "assets", "stream not open");
+	dbg_check(pck_seek(&s->pck, s->file, off) == 0, "assets", "stream seek failed");
 	s->cursor = off;
 error:;
 }

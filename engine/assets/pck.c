@@ -78,8 +78,8 @@ pck_open(str8 path, struct pck_desc *pack)
 	pack->files_offset = size - archive_size;
 	pack->index_len    = index_len;
 	pack->index_offset = size - pack->index_len * PCK_INDEX_SIZE - PCK_HEADER_SIZE;
-	pack->hashmap_len  = hashmap_len;
-	pack->hashmap_size = pack->hashmap_len * sizeof(struct pck_file);
+	pack->ht_len       = hashmap_len;
+	pack->ht_size      = pack->ht_len * sizeof(struct pck_file);
 	res                = size;
 
 error:;
@@ -91,9 +91,9 @@ i32
 pck_read_index(struct pck_desc *pack, void *buffer)
 {
 	pack->ht = buffer;
-	i32 mask = pack->hashmap_len - 1;
+	i32 mask = pack->ht_len - 1;
 
-	mclr(pack->ht, pack->hashmap_size);
+	mclr(pack->ht, pack->ht_size);
 	sys_file_seek_set(pack->fh, pack->index_offset);
 
 	for(ssize i = 0; i < pack->index_len; i++) {
@@ -130,7 +130,7 @@ pck_find_hash(struct pck_desc *pack, u64 hash)
 		goto done;
 	}
 
-	mask = pack->hashmap_len - 1;
+	mask = pack->ht_len - 1;
 	idx  = hash & mask;
 	while(pack->ht[idx].size > 0) {
 		if(pack->ht[idx].hash == hash) {
@@ -157,16 +157,34 @@ pck_read_path(struct pck_desc *pack, struct pck_file *file, char *dest)
 	return (i32)sys_file_r(pack->fh, dest, file->path_len);
 }
 
+static ssize
+pck_payload_off(struct pck_desc *pack, struct pck_file *file)
+{
+	return pack->files_offset + file->offset + file->path_len;
+}
+
+i32
+pck_seek(struct pck_desc *pack, struct pck_file *file, ssize start)
+{
+	return sys_file_seek_set(pack->fh, pck_payload_off(pack, file) + start);
+}
+
+i32
+pck_read_cur(struct pck_desc *pack, u8 *dest, ssize len)
+{
+	return (i32)sys_file_r(pack->fh, dest, len);
+}
+
 i32
 pck_read(struct pck_desc *pack, struct pck_file *file, u8 *dest)
 {
-	sys_file_seek_set(pack->fh, pack->files_offset + file->offset + file->path_len);
-	return (i32)sys_file_r(pack->fh, dest, file->size);
+	pck_seek(pack, file, 0);
+	return pck_read_cur(pack, dest, file->size);
 }
 
 i32
 pck_read_ex(struct pck_desc *pack, struct pck_file *file, u8 *dest, ssize start, ssize len)
 {
-	sys_file_seek_set(pack->fh, pack->files_offset + file->offset + file->path_len + start);
-	return (i32)sys_file_r(pack->fh, dest, len);
+	pck_seek(pack, file, start);
+	return pck_read_cur(pack, dest, len);
 }

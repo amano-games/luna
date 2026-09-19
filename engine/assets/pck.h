@@ -67,8 +67,8 @@ struct pck_desc {
 	ssize files_offset;
 	ssize index_offset;
 	ssize index_len;
-	ssize hashmap_len;
-	ssize hashmap_size;
+	ssize ht_len;
+	ssize ht_size;
 };
 
 // Open an archive at path. The supplied pck_desc will be filled with the
@@ -106,3 +106,9 @@ i32 pck_read(struct pck_desc *pack, struct pck_file *file, u8 *dest);
 // long.
 // Returns the number of bytes read.
 i32 pck_read_ex(struct pck_desc *pack, struct pck_file *file, u8 *dest, ssize start, ssize len);
+
+// SEEK_SET to file payload + start (0 = first data byte). Returns 0 on success.
+i32 pck_seek(struct pck_desc *pack, struct pck_file *file, ssize start);
+
+// Read from the current handle position. No seek.
+i32 pck_read_cur(struct pck_desc *pack, u8 *dest, ssize len);
