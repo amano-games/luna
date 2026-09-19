@@ -18,7 +18,7 @@
 static inline str8 str8_skip_until_assets(str8 str);
 
 b32
-aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch)
+aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum tex_px_enc enc)
 {
 	b32 res    = false;
 	ase_t *ase = cute_aseprite_load_from_file((char *)in_path.str, NULL);
@@ -27,7 +27,7 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 
 	{
 		str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(TEX_EXT));
-		aseprite_to_tex(ase, scratch, sys_allocator(), &blob);
+		aseprite_to_tex(ase, scratch, sys_allocator(), &blob, enc);
 		res = asset_blob_w(blob, out_file_path);
 	}
 	aseprite_to_ani(ase, in_path, out_path, scratch);
@@ -45,7 +45,7 @@ error:;
 }
 
 b32
-aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out)
+aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out, enum tex_px_enc enc)
 {
 	b32 res                     = false;
 	i32 sheet_w                 = ase->w * ase->frame_count;
@@ -76,7 +76,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)sheet_data;
 	struct tex t                   = tex_from_rgb(scratch, in_data, sheet_w, sheet_h);
-	res                            = tex_to_blob(scratch, alloc, t, out);
+	res                            = tex_to_blob(scratch, alloc, t, out, enc);
 
 error:;
 	if(sheet_data != NULL) {

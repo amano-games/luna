@@ -66,7 +66,7 @@ error:;
 }
 
 b32
-tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out)
+tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum tex_px_enc enc)
 {
 	b32 res        = false;
 	void *px       = NULL;
@@ -78,7 +78,14 @@ tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset
 	dbg_check(out, "tex", "null blob");
 	dbg_check(t.px, "tex", "null px");
 
-	packed   = tex_px_lz4hc(scratch, t, &px, &flags);
+	if(enc == TEX_PX_LZ4HC) {
+		packed = tex_px_lz4hc(scratch, t, &px, &flags);
+	} else {
+		px     = t.px;
+		flags  = TEX_FLAG_NONE;
+		packed = (ssize)sizeof(u32) * t.wword * t.h;
+	}
+
 	out_size = (ssize)sizeof(struct tex_header) + packed;
 	out_data = mem_alloc_size(alloc, out_size);
 	dbg_check_mem(out_data, "tex");

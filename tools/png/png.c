@@ -13,7 +13,8 @@ png_to_tex_blob(
 	str8 in_path,
 	struct alloc scratch,
 	struct alloc alloc,
-	struct asset_blob *out)
+	struct asset_blob *out,
+	enum tex_px_enc enc)
 {
 	b32 res = false;
 	i32 w, h, n;
@@ -22,7 +23,7 @@ png_to_tex_blob(
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)data;
 	struct tex t                   = tex_from_rgb(scratch, in_data, w, h);
-	res                            = tex_to_blob(scratch, alloc, t, out);
+	res                            = tex_to_blob(scratch, alloc, t, out, enc);
 
 error:;
 	if(data != NULL) { stbi_image_free(data); }

@@ -5,5 +5,10 @@
 #include "base/types.h"
 #include "lib/tex/tex.h"
 
+enum tex_px_enc {
+	TEX_PX_RAW,
+	TEX_PX_LZ4HC,
+};
+
 b32 asset_blob_w(struct asset_blob blob, str8 out_path);
-b32 tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out);
+b32 tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum tex_px_enc enc);
