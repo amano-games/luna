@@ -16,6 +16,7 @@
 #include "engine/assets/path-db.h"
 #include "engine/assets/tex-atlas.h"
 #include "sys/sys.h"
+#include "tools/asset/asset.h"
 
 static void tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch);
 static void tsj_ani_gen(str8 src_root, str8 dest_root, str8 src_path, struct animation_clip *clips, struct alloc scratch);
@@ -214,9 +215,9 @@ tsj_handle_tile(
 			res.src_path = tsj_resolve_image(path, in_path, alloc, scratch);
 			res.path     = tsj_handle_path(path, in_path, alloc, scratch);
 		} else if(json_eq(json, key, str8_lit("width")) == 0) {
-			res.atlas.cell_size.x = json_parse_i32(json, value);
+			res.atlas.cell_w = (u16)json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("height")) == 0) {
-			res.atlas.cell_size.y = json_parse_i32(json, value);
+			res.atlas.cell_h = (u16)json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("imagewidth")) == 0) {
 			res.tex_size.x = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("imageheight")) == 0) {
@@ -247,17 +248,17 @@ tsj_handle_tile(
 		}
 	}
 
-	if(res.atlas.cell_size.x == 0) {
-		res.atlas.cell_size.x = res.tex_size.x;
+	if(res.atlas.cell_w == 0) {
+		res.atlas.cell_w = (u16)res.tex_size.x;
 	}
-	if(res.atlas.cell_size.y == 0) {
-		res.atlas.cell_size.y = res.tex_size.y;
+	if(res.atlas.cell_h == 0) {
+		res.atlas.cell_h = (u16)res.tex_size.y;
 	}
 
 	for(ssize j = 0; j < arr_len(res.clips); ++j) {
 		struct animation_clip *clip = res.clips + j;
-		if(clip->tracks[0].frames.len == 0 && res.atlas.cell_size.x) {
-			ssize cells_count          = res.tex_size.x / res.atlas.cell_size.x;
+		if(clip->tracks[0].frames.len == 0 && res.atlas.cell_w) {
+			ssize cells_count          = res.tex_size.x / res.atlas.cell_w;
 			clip->tracks[0].frames.len = cells_count;
 			for(ssize k = 0; k < cells_count; ++k) {
 				clip->tracks[0].frames.items[k] = k;
@@ -352,12 +353,11 @@ tsj_make_parents(str8 file_path, struct alloc scratch)
 static void
 tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atlas, struct alloc scratch)
 {
-	str8 src_n          = path_resolve_dots(scratch, src_path, path_style_relative, scratch);
-	str8 root_n         = path_resolve_dots(scratch, src_root, path_style_relative, scratch);
-	str8 rel            = {0};
-	str8 out            = {0};
-	sys_file file       = sys_file_zero();
-	struct ser_writer w = {0};
+	str8 src_n             = path_resolve_dots(scratch, src_path, path_style_relative, scratch);
+	str8 root_n            = path_resolve_dots(scratch, src_root, path_style_relative, scratch);
+	str8 rel               = {0};
+	str8 out               = {0};
+	struct asset_blob blob = {0};
 
 	if(root_n.size > 0) {
 		u8 last = root_n.str[root_n.size - 1];
@@ -376,16 +376,11 @@ tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atl
 	out = path_make_file_name_with_ext(scratch, out, str8_lit(ATLAS_EXT));
 	tsj_make_parents(out, scratch);
 
-	file = sys_file_open_w(out);
-	dbg_check(sys_file_is_valid(file), "tex-atlas", "can't write %s", out.str);
-	w.f = file;
-	atlas_write(&w, atlas);
-	log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_size.x, atlas.cell_size.y);
+	dbg_check(atlas_to_blob(scratch, atlas, &blob), "tex-atlas", "can't pack %s", out.str);
+	dbg_check(asset_blob_w(blob, out), "tex-atlas", "can't write %s", out.str);
+	log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_w, atlas.cell_h);
 
 error:;
-	if(sys_file_is_valid(file)) {
-		sys_file_close(file);
-	}
 }
 
 static void

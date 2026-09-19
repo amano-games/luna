@@ -259,16 +259,15 @@ asset_db_tex_atlas_push(struct asset_db *db, str8 path, struct tex_atlas atlas)
 
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push atlas");
 
-	atlas.path_id = path_id_intern(db, path);
-
 	if(has_key) {
 		struct tex_atlas *row = &table->arr[value];
 
-		if(row->cell_size.x && atlas.cell_size.x) {
-			dbg_assert(row->cell_size.x == atlas.cell_size.x);
-			dbg_assert(row->cell_size.y == atlas.cell_size.y);
-		} else if(atlas.cell_size.x) {
-			row->cell_size = atlas.cell_size;
+		if(row->cell_w && atlas.cell_w) {
+			dbg_assert(row->cell_w == atlas.cell_w);
+			dbg_assert(row->cell_h == atlas.cell_h);
+		} else if(atlas.cell_w) {
+			row->cell_w = atlas.cell_w;
+			row->cell_h = atlas.cell_h;
 		}
 
 		return value;

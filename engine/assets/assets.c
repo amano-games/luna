@@ -291,11 +291,11 @@ asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 	struct pck_file *f     = pck_find(&ASSETS.pck, atlas_path);
 	struct tex_atlas atlas = {0};
 	void *data             = NULL;
-	struct ser_reader r    = {0};
 
 	if(f == NULL) {
 		atlas = (struct tex_atlas){
-			.cell_size = {tex.w, tex.h},
+			.cell_w = (u16)tex.w,
+			.cell_h = (u16)tex.h,
 		};
 	} else {
 		data = mem_alloc_size(scratch, (usize)f->size);
@@ -305,8 +305,7 @@ asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 			"assets",
 			"atlas read failed %.*s",
 			str8_spread(atlas_path));
-		r     = (struct ser_reader){.data = data, .len = (int)f->size};
-		atlas = atlas_read(&r);
+		atlas = atlas_from_mem(data, f->size);
 	}
 
 	res = (i32)asset_db_tex_atlas_push(&ASSETS.db, tex_path, atlas);

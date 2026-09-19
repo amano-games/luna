@@ -1,39 +1,41 @@
 #include "tex-atlas.h"
 
 #include "base/dbg.h"
-#include "base/str.h"
+#include "base/types.h"
 
-void
-atlas_write(struct ser_writer *w, struct tex_atlas atlas)
+b32
+atlas_to_blob(struct alloc alloc, struct tex_atlas atlas, struct asset_blob *out)
 {
-	ser_write_object(w);
+	b32 res        = false;
+	void *out_data = NULL;
 
-	ser_write_string(w, str8_lit("cell_width"));
-	ser_write_i32(w, atlas.cell_size.x);
+	dbg_check(out, "atlas", "null blob");
+	dbg_check(atlas.cell_w > 0, "atlas", "bad cell_w");
+	dbg_check(atlas.cell_h > 0, "atlas", "bad cell_h");
 
-	ser_write_string(w, str8_lit("cell_height"));
-	ser_write_i32(w, atlas.cell_size.y);
+	out_data = mem_alloc_size(alloc, sizeof(atlas));
+	dbg_check_mem(out_data, "atlas");
+	mcpy(out_data, &atlas, sizeof(atlas));
 
-	ser_write_end(w);
+	out->data = out_data;
+	out->size = (ssize)sizeof(atlas);
+	res       = true;
+
+error:;
+	return res;
 }
 
 struct tex_atlas
-atlas_read(struct ser_reader *r)
+atlas_from_mem(void *data, ssize size)
 {
 	struct tex_atlas res = {0};
-	struct ser_value db  = ser_read(r);
-	struct ser_value key, value;
 
-	dbg_assert(db.type == SER_TYPE_OBJECT);
+	dbg_check(data, "atlas", "null atlas data");
+	dbg_check(size >= (ssize)sizeof(res), "atlas", "atlas blob too small");
 
-	while(ser_iter_object(r, db, &key, &value)) {
-		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("cell_width"), 0)) {
-			res.cell_size.x = ser_get_i32(value);
-		} else if(str8_match(key.str, str8_lit("cell_height"), 0)) {
-			res.cell_size.y = ser_get_i32(value);
-		}
-	}
+	mcpy(&res, data, sizeof(res));
+	dbg_check(res.cell_w > 0 && res.cell_h > 0, "atlas", "invalid cell size");
 
+error:;
 	return res;
 }

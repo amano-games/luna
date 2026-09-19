@@ -5,10 +5,11 @@
 #include "base/types.h"
 #include "lib/tex/tex.h"
 
-enum tex_px_enc {
-	TEX_PX_RAW,
-	TEX_PX_LZ4HC,
+enum asset_flag {
+	ASSET_FLAG_NONE,
+	ASSET_FLAG_LZ4HC,
 };
 
 b32 asset_blob_w(struct asset_blob blob, str8 out_path);
-b32 tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum tex_px_enc enc);
+ssize asset_lz4hc(struct alloc scratch, const void *raw, ssize raw_size, void **out, u32 *flags, u32 flag_lz4);
+b32 tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum asset_flag flag);

@@ -7,6 +7,6 @@
 #include "tools/asset/asset.h"
 #include "tools/asset/asset-defs.h"
 
-b32 aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum tex_px_enc enc);
-b32 aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out, enum tex_px_enc enc);
+b32 aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch, enum asset_flag flag);
+b32 aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, struct asset_blob *out, enum asset_flag flag);
 b32 aseprite_to_ani(const ase_t *ase, const str8 out_path, struct alloc scratch);

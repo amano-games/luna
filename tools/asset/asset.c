@@ -21,43 +21,41 @@ error:;
 	return res;
 }
 
-static ssize
-tex_px_lz4hc(struct alloc scratch, struct tex t, void **out, u32 *flags)
+ssize
+asset_lz4hc(struct alloc scratch, const void *raw, ssize raw_size, void **out, u32 *flags, u32 flag_lz4)
 {
 	ssize res = 0;
-	ssize raw = 0;
 	u8 *lz4   = NULL;
 	int bound = 0;
 	int n     = 0;
 
-	dbg_check(out && flags, "tex", "lz4hc null out");
-	dbg_check(t.px, "tex", "lz4hc null px");
+	dbg_check(out && flags, "asset", "lz4hc null out");
+	dbg_check(raw, "asset", "lz4hc null raw");
 
-	raw    = (ssize)sizeof(u32) * t.wword * t.h;
-	*out   = t.px;
-	*flags = TEX_FLAG_NONE;
-	res    = raw;
+	*out   = (void *)raw;
+	*flags = 0;
+	res    = raw_size;
 
-	if(raw <= 0 || raw > SYS_LZ4_MAX_INPUT) {
+	if(raw_size <= 0 || raw_size > SYS_LZ4_MAX_INPUT) {
 		goto cleanup;
 	}
 
-	bound = sys_lz4_compress_bound(raw);
+	bound = sys_lz4_compress_bound(raw_size);
 	if(bound <= 0) {
 		goto cleanup;
 	}
 
 	lz4 = mem_alloc_size(scratch, (usize)bound);
-	dbg_check(lz4, "tex", "lz4hc alloc failed");
+	dbg_check(lz4, "asset", "lz4hc alloc failed");
 
-	n = sys_lz4_compress_hc(t.px, lz4, raw, bound);
+	n = sys_lz4_compress_hc(raw, lz4, raw_size, bound);
 
-	if(n <= 0 || n >= (int)raw) {
+	if(n <= 0 || n >= (int)raw_size) {
 		goto cleanup;
 	}
 
 	*out   = lz4;
-	*flags = TEX_FLAG_LZ4;
+	*flags = flag_lz4;
 	res    = (ssize)n;
 
 cleanup:
@@ -66,24 +64,26 @@ error:;
 }
 
 b32
-tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum tex_px_enc enc)
+tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset_blob *out, enum asset_flag flag)
 {
 	b32 res        = false;
 	void *px       = NULL;
 	u32 flags      = TEX_FLAG_NONE;
 	ssize packed   = 0;
+	ssize raw      = 0;
 	ssize out_size = 0;
 	void *out_data = NULL;
 
 	dbg_check(out, "tex", "null blob");
 	dbg_check(t.px, "tex", "null px");
 
-	if(enc == TEX_PX_LZ4HC) {
-		packed = tex_px_lz4hc(scratch, t, &px, &flags);
+	raw = (ssize)sizeof(u32) * t.wword * t.h;
+	if(flag == ASSET_FLAG_LZ4HC) {
+		packed = asset_lz4hc(scratch, t.px, raw, &px, &flags, TEX_FLAG_LZ4);
 	} else {
 		px     = t.px;
 		flags  = TEX_FLAG_NONE;
-		packed = (ssize)sizeof(u32) * t.wword * t.h;
+		packed = raw;
 	}
 
 	out_size = (ssize)sizeof(struct tex_header) + packed;
