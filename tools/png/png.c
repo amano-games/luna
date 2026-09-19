@@ -2,6 +2,7 @@
 #include "base/dbg.h"
 #include "base/mem.h"
 #include "lib/tex/tex.h"
+#include "tools/asset/asset.h"
 #include "tools/asset/asset-defs.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -20,18 +21,8 @@ png_to_tex_blob(
 	dbg_check(data != NULL, "png", "Failed to load image with path %s: %s", in_path.str, stbi_failure_reason());
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)data;
-
-	ssize out_size = tex_from_rgb(in_data, w, h, NULL, 0);
-	dbg_check(out_size > 0, "png", "Invalid tex size");
-
-	void *out_data = mem_alloc_size(alloc, out_size);
-	dbg_check_mem(out_data, "png");
-
-	dbg_check(tex_from_rgb(in_data, w, h, out_data, out_size) == out_size, "png", "convertion failed");
-
-	out->data = out_data;
-	out->size = out_size;
-	res       = true;
+	struct tex t                   = tex_from_rgb(scratch, in_data, w, h);
+	res                            = tex_to_blob(scratch, alloc, t, out);
 
 error:;
 	if(data != NULL) { stbi_image_free(data); }

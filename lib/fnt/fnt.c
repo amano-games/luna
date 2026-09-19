@@ -233,7 +233,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	str8 base_name = str8_chop_last_dot(path);
 	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", str8_spread(base_name), res.cell_w, res.cell_h);
 
-	res.t = tex_load(alloc, tex_path);
+	res.t = tex_load(alloc, scratch, tex_path);
 	if(res.t.px == NULL) {
 		log_error("fnt", "Failed loading tex: %s", path.str);
 		return res;

@@ -5,6 +5,8 @@
 #include "engine/gfx/gfx-defs.h"
 #include "sys/sys-intrin.h"
 #include "sys/sys-io.h"
+#include "sys/sys-lz4.h"
+#include "sys/sys.h"
 
 // Words per row: width padded to 32px; mask fmt doubles for alpha
 static inline u32
@@ -52,22 +54,60 @@ tex_create_opaque(struct alloc alloc, i32 w, i32 h)
 }
 
 struct tex
-tex_load(struct alloc alloc, str8 path)
+tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 {
-	struct tex res = {0};
-	sys_file f     = sys_file_open_r(path);
-	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %s", path.str);
-
+	struct tex res           = {0};
+	sys_file f               = sys_file_open_r(path);
 	struct tex_header header = {0};
-	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
+	struct tex t             = {0};
+	ssize tex_size           = 0;
+	ssize file_size          = 0;
+	ssize packed_len         = 0;
+	u8 *packed               = NULL;
+	i32 n                    = 0;
 
-	struct tex t   = tex_create_internal(alloc, header.w, header.h, header.fmt);
-	ssize tex_size = tex_mem_size(header.w, header.h, header.fmt);
-	sys_file_r(f, t.px, (u32)tex_size);
+	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %s", path.str);
+	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
+	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
+		"tex",
+		"invalid tex fmt %u",
+		header.fmt);
+	dbg_check(header.w > 0 && header.h > 0,
+		"tex",
+		"invalid tex size %ux%u",
+		header.w,
+		header.h);
+	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
+		"tex",
+		"invalid tex flags %u",
+		header.flags);
+
+	t        = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	tex_size = tex_mem_size(header.w, header.h, header.fmt);
+	dbg_check(t.px, "tex", "tex alloc failed %s", path.str);
+
+	if(header.flags & TEX_FLAG_LZ4) {
+		sys_file_seek_end(f, 0);
+		file_size = sys_file_tell(f);
+		dbg_check(file_size > (ssize)sizeof(header), "tex", "tex lz4 empty %s", path.str);
+		packed_len = file_size - (ssize)sizeof(header);
+		sys_file_seek_set(f, (ssize)sizeof(header));
+
+		packed = mem_alloc_size(scratch, (usize)packed_len);
+		dbg_check(packed, "tex", "tex lz4 staging failed %s", path.str);
+		dbg_check(sys_file_r(f, packed, (u32)packed_len) == packed_len, "tex", "tex lz4 read failed %s", path.str);
+
+		n = sys_lz4_decompress(packed, t.px, packed_len, tex_size);
+		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %s", path.str);
+	} else {
+		dbg_check(sys_file_r(f, t.px, (u32)tex_size) == tex_size, "tex", "tex pixels read failed %s", path.str);
+	}
+
+	res = t;
 
 error:;
 	if(sys_file_is_valid(f)) { sys_file_close(f); }
-	return t;
+	return res;
 }
 
 struct tex
@@ -76,6 +116,9 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 	struct tex res           = {0};
 	u8 *src                  = data;
 	struct tex_header header = {0};
+	ssize tex_size           = 0;
+	ssize packed_len         = 0;
+	i32 n                    = 0;
 
 	dbg_check(data, "tex", "null tex data");
 	dbg_check(size >= (ssize)sizeof(header), "tex", "tex blob too small");
@@ -83,17 +126,32 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 	mcpy(&header, src, sizeof(header));
 
 	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
-		"tex", "invalid tex fmt %u", header.fmt);
+		"tex",
+		"invalid tex fmt %u",
+		header.fmt);
 	dbg_check(header.w > 0 && header.h > 0,
-		"tex", "invalid tex size %ux%u", header.w, header.h);
+		"tex",
+		"invalid tex size %ux%u",
+		header.w,
+		header.h);
+	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
+		"tex",
+		"invalid tex flags %u",
+		header.flags);
 
-	ssize tex_size = tex_mem_size(header.w, header.h, header.fmt);
-	dbg_check(size >= (ssize)sizeof(header) + tex_size, "tex", "tex blob truncated");
-
-	res = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	tex_size = tex_mem_size(header.w, header.h, header.fmt);
+	res      = tex_create_internal(alloc, header.w, header.h, header.fmt);
 	dbg_check_mem(res.px, "tex");
 
-	mcpy(res.px, src + sizeof(header), tex_size);
+	if(header.flags & TEX_FLAG_LZ4) {
+		packed_len = size - (ssize)sizeof(header);
+		dbg_check(packed_len > 0, "tex", "tex lz4 empty");
+		n = sys_lz4_decompress(src + sizeof(header), res.px, packed_len, tex_size);
+		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %d %d", n, (i32)tex_size);
+	} else {
+		dbg_check(size >= (ssize)sizeof(header) + tex_size, "tex", "tex blob truncated");
+		mcpy(res.px, src + sizeof(header), tex_size);
+	}
 
 error:;
 	return res;
@@ -302,10 +360,18 @@ tex_cpy(struct tex *dst, struct tex *src)
 	mcpy(dst->px, src->px, mem_size);
 }
 
-ssize
-tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize out_size)
+struct tex
+tex_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h)
 {
-	b32 opaque = true;
+	struct tex t  = {0};
+	b32 opaque    = true;
+	u32 *dst      = NULL;
+	i32 w_aligned = 0;
+	ssize bit_idx = 0;
+	u32 color_row = 0;
+	u32 mask_row  = 0;
+
+	// Any pixel with alpha <= 127 makes this a mask tex.
 	for(i32 y = 0; y < h && opaque; ++y) {
 		const struct pixel_u8 *row = in_data + y * w;
 		for(i32 x = 0; x < w; ++x) {
@@ -316,31 +382,11 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 		}
 	}
 
-	u8 *dst            = (u8 *)out_data;
-	i32 w_aligned      = (w + 31) & ~31;
-	ssize u32s_per_row = (w_aligned / 32) * (opaque ? 1 : 2);
-	ssize size_needed  = sizeof(struct tex_header) + (ssize)h * u32s_per_row * sizeof(u32);
+	t = tex_create_internal(alloc, w, h, !opaque);
+	dbg_check_mem(t.px, "tex");
 
-	if(!out_data) {
-		return size_needed;
-	}
-
-	if(out_size < size_needed) {
-		return -1;
-	}
-
-	struct tex_header header = {
-		.w   = w,
-		.h   = h,
-		.fmt = opaque ? TEX_FMT_OPAQUE : TEX_FMT_MASK,
-	};
-
-	mcpy(dst, &header, sizeof(header));
-	dst += sizeof(header);
-
-	ssize bit_idx = 0;
-	u32 color_row = 0;
-	u32 mask_row  = 0;
+	dst       = t.px;
+	w_aligned = (w + 31) & ~31;
 
 	for(ssize y = 0; y < h; ++y) {
 		const struct pixel_u8 *row = in_data + y * w;
@@ -359,13 +405,9 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 			if(alpha) { mask_row |= pixel_mask; }
 
 			if(++bit_idx == 32) {
-				color_row = bswap_u32(color_row);
-				mcpy(dst, &color_row, sizeof(u32));
-				dst += sizeof(u32);
+				*dst++ = bswap_u32(color_row);
 				if(!opaque) {
-					mask_row = bswap_u32(mask_row);
-					mcpy(dst, &mask_row, sizeof(u32));
-					dst += sizeof(u32);
+					*dst++ = bswap_u32(mask_row);
 				}
 
 				color_row = 0;
@@ -374,15 +416,11 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 			}
 		}
 
-		/* flush remainder bits */
+		// Flush leftover bits when width is not a multiple of 32.
 		if(bit_idx > 0) {
-			color_row = bswap_u32(color_row);
-			mcpy(dst, &color_row, sizeof(u32));
-			dst += sizeof(u32);
+			*dst++ = bswap_u32(color_row);
 			if(!opaque) {
-				mask_row = bswap_u32(mask_row);
-				mcpy(dst, &mask_row, sizeof(u32));
-				dst += sizeof(u32);
+				*dst++ = bswap_u32(mask_row);
 			}
 
 			color_row = 0;
@@ -391,5 +429,6 @@ tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize
 		}
 	}
 
-	return size_needed;
+error:;
+	return t;
 }

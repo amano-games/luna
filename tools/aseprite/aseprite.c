@@ -5,6 +5,7 @@
 #include "base/str.h"
 #include "engine/animation/animation-db.h"
 #include "engine/animation/animation.h"
+#include "lib/tex/tex.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "tools/asset/asset-defs.h"
@@ -14,7 +15,6 @@
 #define CUTE_ASEPRITE_IMPLEMENTATION
 #include "external/cute_aseprite.h"
 
-static inline str8 str8_skip_non_alpha(str8 str);
 static inline str8 str8_skip_until_assets(str8 str);
 
 b32
@@ -51,6 +51,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	i32 sheet_w                 = ase->w * ase->frame_count;
 	i32 sheet_h                 = ase->h;
 	struct pixel_u8 *sheet_data = alloc_arr(alloc, sheet_data, sheet_w * sheet_h);
+	dbg_check_mem(sheet_data, "ase");
 	{
 		// Build horizontal sprite sheet
 		{
@@ -74,18 +75,8 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	}
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)sheet_data;
-
-	ssize out_size = tex_from_rgb(in_data, sheet_w, sheet_h, NULL, 0);
-	dbg_check(out_size > 0, "ase", "Invalid tex size");
-
-	void *out_data = mem_alloc_size(alloc, out_size);
-	dbg_check_mem(out_data, "ase");
-
-	dbg_check(tex_from_rgb(in_data, sheet_w, sheet_h, out_data, out_size) == out_size, "ase", "convertion failed");
-
-	out->data = out_data;
-	out->size = out_size;
-	res       = true;
+	struct tex t                   = tex_from_rgb(scratch, in_data, sheet_w, sheet_h);
+	res                            = tex_to_blob(scratch, alloc, t, out);
 
 error:;
 	if(sheet_data != NULL) {
@@ -101,7 +92,7 @@ aseprite_to_ani(
 	const str8 out_path,
 	struct alloc scratch)
 {
-	b32 res      = false;
+	b32 res       = false;
 	sys_file file = sys_file_zero();
 
 	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANIMATION_DB_EXT));
@@ -160,21 +151,6 @@ error:;
 		sys_file_close(file);
 	}
 	return res;
-}
-
-static inline str8
-str8_skip_non_alpha(str8 str)
-{
-	str8 res  = str;
-	u8 *first = str.str;
-	u8 *opl   = first + str.size;
-	for(; first < opl; first += 1) {
-		if(char_is_alpha(*first)) {
-			break;
-		}
-	}
-	res = str8_range(first, opl);
-	return (res);
 }
 
 static inline str8
