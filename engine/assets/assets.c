@@ -280,9 +280,10 @@ asset_tex_read(struct alloc alloc, struct alloc scratch, str8 path)
 	return asset_tex_from_handle(alloc, scratch, asset_db_handle_from_path(path, ASSET_TYPE_TEXTURE));
 }
 
-static void
+i32
 asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 {
+	i32 res                = 0;
 	str8 atlas_path        = path_make_file_name_with_ext(scratch, tex_path, str8_lit(ATLAS_EXT));
 	struct pck_file *f     = pck_find(&ASSETS.pck, atlas_path);
 	struct tex_atlas atlas = {0};
@@ -293,7 +294,6 @@ asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 		atlas = (struct tex_atlas){
 			.cell_size = {tex.w, tex.h},
 		};
-		asset_db_tex_atlas_push(&ASSETS.db, tex_path, atlas);
 	} else {
 		data = mem_alloc_size(scratch, (usize)f->size);
 		dbg_check(data, "assets", "atlas alloc failed %.*s", str8_spread(atlas_path));
@@ -304,10 +304,12 @@ asset_atlas_load(struct alloc scratch, str8 tex_path, struct tex tex)
 			str8_spread(atlas_path));
 		r     = (struct ser_reader){.data = data, .len = (int)f->size};
 		atlas = atlas_read(&r);
-		asset_db_tex_atlas_push(&ASSETS.db, tex_path, atlas);
 	}
 
+	res = (i32)asset_db_tex_atlas_push(&ASSETS.db, tex_path, atlas);
+
 error:;
+	return res;
 }
 
 i32
@@ -326,7 +328,6 @@ asset_tex_load(struct alloc scratch, str8 path, struct tex *tex)
 
 	log_info("assets", "Tex loaded: %s", path.str);
 	res = asset_db_tex_push(&ASSETS.db, path, t);
-	asset_atlas_load(scratch, path, t);
 	if(tex) {
 		*tex = t;
 	}
