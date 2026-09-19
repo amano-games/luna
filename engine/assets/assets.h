@@ -36,8 +36,8 @@ void assets_ini(struct alloc alloc, usize size);
 void assets_pck_ini(struct alloc scratch, str8 path);
 void assets_pck_close(void);
 
-struct asset_blob asset_blob_from_handle(struct alloc scratch, struct asset_handle handle);
-struct asset_blob asset_blob_read(struct alloc scratch, str8 path);
+struct asset_blob asset_blob_from_handle(struct alloc alloc, struct asset_handle handle);
+struct asset_blob asset_blob_read(struct alloc alloc, str8 path);
 i32 asset_file_read_ex(str8 path, u8 *dest, ssize start, ssize len);
 
 b32 asset_stream_open(struct asset_stream *s, struct asset_handle handle);
@@ -47,9 +47,9 @@ i32 asset_stream_read(struct asset_stream *s, void *dest, ssize len);
 void asset_stream_seek(struct asset_stream *s, ssize off);
 
 struct tex asset_tex(i32 id);
-struct tex asset_tex_from_handle(struct alloc alloc, struct asset_handle handle);
-struct tex asset_tex_read(struct alloc alloc, str8 path);
-i32 asset_tex_load(str8 path, struct tex *tex);
+struct tex asset_tex_from_handle(struct alloc alloc, struct alloc scratch, struct asset_handle handle);
+struct tex asset_tex_read(struct alloc alloc, struct alloc scratch, str8 path);
+i32 asset_tex_load(struct alloc scratch, str8 path, struct tex *tex);
 i32 asset_tex_get_id(str8 path);
 
 struct fnt asset_fnt(i32 id);

@@ -7,8 +7,6 @@
 #endif
 #endif
 
-#include "lz4/lz4.c"
-
 #include "sys/sys-inc.c"
 
 #include "base/date-time.c"

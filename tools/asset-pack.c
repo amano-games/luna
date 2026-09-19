@@ -18,8 +18,6 @@
 #include "sys/sys-inc.c"
 
 #include "lib/tex/tex.c"
-#include "lz4/lz4.c"
-#include "lz4/lz4hc.c"
 
 #include "base/marena.c"
 #include "base/str.c"
@@ -28,19 +26,12 @@
 
 #define LOG_ID           "asset-pack"
 #define DEFAULT_OUT_FILE "assets." PCK_EXT
-#define PCK_LZ4HC_LEVEL  LZ4HC_CLEVEL_MAX
 
 struct pck_w {
 	ssize archive_size;
 	ssize file_count;
 	sys_file file;
 	struct pck_file *files;
-};
-
-struct pck_stored {
-	ssize size;
-	ssize base_size;
-	u16 flags;
 };
 
 static void
@@ -78,48 +69,13 @@ pck_u64w(u64 v, sys_file f)
 	dbg_assert(sys_file_w(f, b, sizeof(u64)) == (ssize)sizeof(u64));
 }
 
-static int
-pck_lz4(const u8 *src, ssize size, u8 *out, ssize out_cap)
+static struct pck_file
+pck_store_file(struct alloc alloc, str8 disk_path, sys_file dst)
 {
-	int n     = 0;
-	int bound = 0;
-
-	if(size <= 0 || size > LZ4_MAX_INPUT_SIZE) {
-		goto done;
-	}
-
-	bound = LZ4_compressBound((int)size);
-	if(bound <= 0 || out_cap < (ssize)bound) {
-		goto done;
-	}
-
-	n = LZ4_compress_HC(
-		(const char *)src,
-		(char *)out,
-		(int)size,
-		(int)out_cap,
-		PCK_LZ4HC_LEVEL);
-
-	// Bare block must shrink vs the uncompressed member.
-	if(n <= 0 || n >= (int)size) {
-		n = 0;
-	}
-
-done:
-	return n;
-}
-
-static struct pck_stored
-pck_store_file(struct alloc alloc, str8 disk_path, str8 pack_path, sys_file dst)
-{
-	struct pck_stored res = {.size = -1, .flags = PCK_FLAG_NONE};
-	sys_file src          = sys_file_zero();
-	u8 *data              = NULL;
-	u8 *lz4               = NULL;
-	usize f_size          = 0;
-	int bound             = 0;
-	int n                 = 0;
-	b32 should_compress   = false;
+	struct pck_file res = {.size = -1, .flags = PCK_FLAG_NONE};
+	sys_file src        = sys_file_zero();
+	u8 *data            = NULL;
+	usize f_size        = 0;
 
 	src = sys_file_open_r(disk_path);
 	dbg_check(sys_file_is_valid(src), LOG_ID, "failed to open file: %.*s", str8_spread(disk_path));
@@ -138,32 +94,10 @@ pck_store_file(struct alloc alloc, str8 disk_path, str8 pack_path, sys_file dst)
 	data = mem_alloc_size(alloc, f_size);
 	dbg_check(data, LOG_ID, "failed alloc for %.*s", str8_spread(disk_path));
 	dbg_check(sys_file_r(src, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to read file: %.*s", str8_spread(disk_path));
+	dbg_check(sys_file_w(dst, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to copy file %.*s", str8_spread(disk_path));
 
-#if defined(ASSET_PACK_COMPRESSION)
-	if(str8_ends_with(pack_path, str8_lit("." TEX_EXT), 0) && f_size <= (usize)LZ4_MAX_INPUT_SIZE) {
-		should_compress = true;
-	}
-#endif
-
-	if(should_compress) {
-		bound = LZ4_compressBound((int)f_size);
-		if(bound > 0) {
-			lz4 = mem_alloc_size(alloc, (usize)bound);
-			dbg_check(lz4, LOG_ID, "lz4 alloc failed");
-			n = pck_lz4(data, (ssize)f_size, lz4, bound);
-		}
-	}
-
-	if(n > 0) {
-		dbg_check(sys_file_w(dst, lz4, (u32)n) == (ssize)n, LOG_ID, "failed writing lz4 %.*s", str8_spread(disk_path));
-		res.size      = (ssize)n;
-		res.base_size = (ssize)f_size;
-		res.flags     = PCK_FLAG_COMPRESSED_LZ4;
-	} else {
-		dbg_check(sys_file_w(dst, data, (u32)f_size) == (ssize)f_size, LOG_ID, "failed to copy file %.*s", str8_spread(disk_path));
-		res.size      = (ssize)f_size;
-		res.base_size = (ssize)f_size;
-	}
+	res.size      = (ssize)f_size;
+	res.base_size = (ssize)f_size;
 
 error:;
 	if(sys_file_is_valid(src)) {
@@ -236,7 +170,7 @@ pck_pack_file(struct pck_w *pack, str8 root, str8 path, struct alloc scratch)
 	u8 zero = 0;
 	u16 path_len;
 	u64 hash;
-	struct pck_stored stored;
+	struct pck_file file;
 	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(path));
 
 	hash     = hash_fnv1a_str8(path);
@@ -245,24 +179,17 @@ pck_pack_file(struct pck_w *pack, str8 root, str8 path, struct alloc scratch)
 	dbg_check(sys_file_w(pack->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
 	dbg_check(sys_file_w(pack->file, &zero, 1) == 1, LOG_ID, "failed writing path null");
 
-	stored = pck_store_file(scratch, disk_path, path, pack->file);
-	dbg_check(stored.size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
+	file = pck_store_file(scratch, disk_path, pack->file);
+	dbg_check(file.size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
 
-	log_info(LOG_ID, "%6d %016llx %_$$10u %.*s", pack->file_count, hash, (u32)stored.size, str8_spread(path));
-	if(stored.flags & PCK_FLAG_COMPRESSED_LZ4) {
-		log_info(LOG_ID, "        lz4 %_$$u -> %_$$u", (u32)stored.base_size, (u32)stored.size);
-	}
+	file.hash     = hash;
+	file.offset   = pack->archive_size;
+	file.path_len = path_len;
 
-	pack->files[pack->file_count] = (struct pck_file){
-		.hash      = hash,
-		.offset    = pack->archive_size,
-		.size      = stored.size,
-		.base_size = stored.base_size,
-		.path_len  = path_len,
-		.flags     = stored.flags,
-	};
+	log_info(LOG_ID, "%6d %016llx %_$$10u %.*s", pack->file_count, hash, (u32)file.size, str8_spread(path));
 
-	pack->archive_size += stored.size + path_len;
+	pack->files[pack->file_count] = file;
+	pack->archive_size += file.size + path_len;
 	pack->file_count++;
 
 	res = true;

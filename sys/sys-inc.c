@@ -4,6 +4,7 @@
 #include "sys/sys-io.c"
 #include "sys/sys-sprintf.c"
 #include "sys/sys-mem.c"
+#include "sys/sys-lz4.c"
 
 #if SYS_GFX_SOKOL || OS_PLAYDATE
 #include "sys/sys.c"

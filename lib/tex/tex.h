@@ -11,6 +11,11 @@ enum {
 	TEX_FMT_MASK,   // color and mask interlaced in words
 };
 
+enum {
+	TEX_FLAG_NONE = 0,
+	TEX_FLAG_LZ4  = 1 << 0,
+};
+
 struct pixel_u8 {
 	u8 r;
 	u8 g;
@@ -22,6 +27,7 @@ struct tex_header {
 	u32 fmt;
 	u32 w;
 	u32 h;
+	u32 flags;
 };
 
 struct tex {
@@ -34,7 +40,7 @@ struct tex {
 
 struct tex tex_create(struct alloc alloc, i32 w, i32 h);
 struct tex tex_create_opaque(struct alloc alloc, i32 w, i32 h);
-struct tex tex_load(struct alloc alloc, str8 path);
+struct tex tex_load(struct alloc alloc, struct alloc scratch, str8 path);
 struct tex tex_load_from_mem(struct alloc alloc, void *data, ssize size);
 void tex_clr(struct tex dst, i32 col);
 i32 tex_px_at(struct tex tex, i32 x, i32 y);
@@ -47,4 +53,4 @@ void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);
 void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes);
 
 void tex_cpy(struct tex *dst, struct tex *src);
-ssize tex_from_rgb(const struct pixel_u8 *in_data, i32 w, i32 h, void *out_data, ssize out_size);
+struct tex tex_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h);

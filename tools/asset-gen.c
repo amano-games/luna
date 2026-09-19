@@ -14,6 +14,7 @@
 
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"
+#include "sys/sys-lz4hc.c"
 
 #include "base/marena.c"
 #include "base/str.c"
@@ -81,7 +82,7 @@ error:;
 b32
 file_cpy(const str8 in_path, const str8 out_path)
 {
-	b32 res    = false;
+	b32 res      = false;
 	sys_file in  = sys_file_open_r(in_path);
 	sys_file out = sys_file_open_w(out_path);
 	char buffer[7192];
