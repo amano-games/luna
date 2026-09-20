@@ -2,9 +2,11 @@
 
 #include "base/base-inc.h"
 
-#define SYS_DISPLAY_SCALE  1
+#if !defined(SYS_DISPLAY_SCALE_H)
+#define SYS_DISPLAY_SCALE_H 1
+#endif
 #define SYS_DISPLAY_W      400
-#define SYS_DISPLAY_H      240 * SYS_DISPLAY_SCALE
+#define SYS_DISPLAY_H      (240 * SYS_DISPLAY_SCALE_H)
 #define SYS_DISPLAY_WBYTES 52
 #define SYS_DISPLAY_WWORDS 13
 

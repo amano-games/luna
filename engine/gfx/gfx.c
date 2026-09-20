@@ -483,7 +483,7 @@ gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, enum prim_mode mode)
 void
 gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum prim_mode mode)
 {
-#define GFX_LIN_NUM_SPANS 512
+#define GFX_LIN_NUM_SPANS (SYS_DISPLAY_H + 64)
 #define GFX_LIN_NUM_CIRX  64
 
 	static u16 spans[GFX_LIN_NUM_SPANS][2];

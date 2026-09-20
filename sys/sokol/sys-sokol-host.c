@@ -237,13 +237,13 @@ sokol_main(i32 argc, char **argv)
 	sys_os_init();
 	SOKOL_STATE.menu.next_id = 1;
 	{
-		usize mem_size = MMEGABYTE(1 * SYS_DISPLAY_SCALE);
+		usize mem_size = MMEGABYTE(1 * SYS_DISPLAY_SCALE_H);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 	{
-		usize mem_size = MMEGABYTE(300 * SYS_DISPLAY_SCALE);
+		usize mem_size = MMEGABYTE(300 * SYS_DISPLAY_SCALE_H);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
