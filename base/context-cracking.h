@@ -185,6 +185,9 @@
 #if !defined(SYS_GFX_SOKOL)
 #define SYS_GFX_SOKOL 0
 #endif
+#if !defined(SYS_GFX_DRM)
+#define SYS_GFX_DRM 0
+#endif
 #if !defined(LANG_CPP)
 #define LANG_CPP 0
 #endif
@@ -202,6 +205,12 @@
 
 #if OS_PLAYDATE && SYS_GFX_SOKOL
 #error Playdate platform cannot use Sokol backend.
+#endif
+#if OS_PLAYDATE && SYS_GFX_DRM
+#error Playdate platform cannot use DRM backend.
+#endif
+#if SYS_GFX_SOKOL && SYS_GFX_DRM
+#error Sokol and DRM present backends cannot be combined.
 #endif
 #if OS_PLAYDATE && (PD_DEVICE + PD_SIM) != 1
 #error Playdate builds require exactly one of PD_DEVICE or PD_SIM.
