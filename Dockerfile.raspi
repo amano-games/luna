@@ -1,0 +1,29 @@
+# Pi Zero W (ARMv6zk). Debian armhf gcc and arm-none-linux-gnueabihf are v7.
+FROM debian:bookworm-slim
+
+ARG XTOOLS_VER=1.2.1
+ARG XTOOLS_TAR=x-tools-armv6-rpi-linux-gnueabihf-gcc14.tar.xz
+ARG XTOOLS_URL=https://github.com/tttapa/docker-arm-cross-toolchain/releases/download/${XTOOLS_VER}/${XTOOLS_TAR}
+
+RUN apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		gcc \
+		libc6-dev \
+		make \
+		xz-utils \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /opt \
+	&& curl -fsSL "${XTOOLS_URL}" | tar -xJ -C /opt \
+	&& test -x /opt/x-tools/armv6-rpi-linux-gnueabihf/bin/armv6-rpi-linux-gnueabihf-gcc
+
+ENV PATH="/opt/x-tools/armv6-rpi-linux-gnueabihf/bin:${PATH}"
+
+WORKDIR /app
+
+COPY src/ ./src/
+COPY luna/ ./luna/
+COPY platforms/raspi ./platforms/raspi/
+COPY Makefile ./
