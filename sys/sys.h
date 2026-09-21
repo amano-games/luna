@@ -89,6 +89,7 @@ void sys_menu_clr(void);
 void sys_set_menu_image(struct tex tex, i32 x_offset);
 void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
+void sys_quit(void);
 str8 sys_get_current_path(struct alloc alloc);
 struct sys_process_info *sys_process_info(void);
 
