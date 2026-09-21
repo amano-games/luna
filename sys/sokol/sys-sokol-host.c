@@ -1589,6 +1589,12 @@ sys_set_app_name(str8 value)
 	sapp_set_window_title((const char *)value.str);
 }
 
+void
+sys_quit(void)
+{
+	sapp_request_quit();
+}
+
 static void
 sokol_screenshot_save(struct tex tex)
 {

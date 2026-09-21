@@ -772,6 +772,12 @@ sys_set_app_name(str8 value)
 {
 }
 
+void
+sys_quit(void)
+{
+	PD->system->exitToLauncher();
+}
+
 struct sys_process_info *
 sys_process_info(void)
 {
@@ -825,7 +831,7 @@ sys_pd_serial_msg(const char *data)
 	log_info("pd", "serial message: %s", data);
 
 	if(sys_pd_serial_cmd_is(data, "quit")) {
-		PD->system->exitToLauncher();
+		sys_quit();
 		return;
 	}
 

@@ -406,4 +406,6 @@ sys_set_auto_lock_disabled(int disable)
 
 #if SYS_GFX_SOKOL
 #include "sys/sokol/sys-sokol-host.c"
+#elif SYS_GFX_DRM
+// #include "sys/drm/sys-drm-host.c"
 #endif
