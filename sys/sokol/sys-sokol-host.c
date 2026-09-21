@@ -1,5 +1,6 @@
 #include "sys/sokol/sys-sokol.h"
 #include "sys/sys-gamepad.h"
+#include "sys/sys-keyboard.h"
 #include "sys/sys-os.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"
@@ -141,7 +142,6 @@ struct sokol_state {
 
 	struct sokol_menu menu;
 
-	u8 keys[SYS_KEYS_LEN];
 	b32 crank_docked;
 	f32 crank;
 	f32 volume;
@@ -423,7 +423,7 @@ sokol_event(const sapp_event *ev)
 {
 	switch(ev->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN: {
-		SOKOL_STATE.keys[ev->key_code] = 1;
+		sys_os_keyboard_set(ev->key_code, true);
 		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
 			if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
@@ -498,7 +498,7 @@ sokol_event(const sapp_event *ev)
 		}
 	} break;
 	case SAPP_EVENTTYPE_KEY_UP: {
-		SOKOL_STATE.keys[ev->key_code] = 0;
+		sys_os_keyboard_set(ev->key_code, false);
 	} break;
 	case SAPP_EVENTTYPE_MOUSE_SCROLL: {
 		SOKOL_STATE.crank_docked = false;
@@ -557,67 +557,14 @@ sokol_event(const sapp_event *ev)
 void
 sokol_pause_handle_sokol_event(const sapp_event *ev)
 {
-	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) { return; }
-
 	i32 b = 0;
-	switch(ev->type) {
-	case SAPP_EVENTTYPE_KEY_DOWN: {
-		switch(ev->key_code) {
-		case SAPP_KEYCODE_W: {
-			b |= SYS_INP_DPAD_U;
-		} break;
-		case SAPP_KEYCODE_S: {
-			b |= SYS_INP_DPAD_D;
-		} break;
-		case SAPP_KEYCODE_A: {
-			b |= SYS_INP_DPAD_L;
-		} break;
-		case SAPP_KEYCODE_D: {
-			b |= SYS_INP_DPAD_R;
-		} break;
-		case SAPP_KEYCODE_PERIOD: {
-			b |= SYS_INP_A;
-		} break;
-		case SAPP_KEYCODE_COMMA: {
-			b |= SYS_INP_B;
-		} break;
-		case SAPP_KEYCODE_UP: {
-			b |= SYS_INP_DPAD_U;
-		} break;
-		case SAPP_KEYCODE_DOWN: {
-			b |= SYS_INP_DPAD_D;
-		} break;
-		case SAPP_KEYCODE_LEFT: {
-			b |= SYS_INP_DPAD_L;
-		} break;
-		case SAPP_KEYCODE_RIGHT: {
-			b |= SYS_INP_DPAD_R;
-		} break;
-		case SAPP_KEYCODE_X: {
-			b |= SYS_INP_A;
-		} break;
-		case SAPP_KEYCODE_Z: {
-			b |= SYS_INP_B;
-		} break;
-		case SAPP_KEYCODE_Q: {
-			b |= SYS_INP_A;
-		} break;
-		case SAPP_KEYCODE_E: {
-			b |= SYS_INP_B;
-		} break;
-		case SAPP_KEYCODE_SPACE: {
-			b |= SYS_INP_A;
-		} break;
-		default: {
-		} break;
+
+	if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+		if(ev->type == SAPP_EVENTTYPE_KEY_DOWN) {
+			b = sys_os_keyboard_map(ev->key_code);
 		}
-	} break;
-	case SAPP_EVENTTYPE_KEY_UP: {
-	} break;
-	default: {
-	} break;
+		sokol_pause_handle_buttons(b);
 	}
-	sokol_pause_handle_buttons(b);
 }
 
 void
@@ -929,29 +876,8 @@ sokol_cleanup(void)
 i32
 sys_inp(void)
 {
-	i32 b    = 0;
-	u8 *keys = SOKOL_STATE.keys;
+	i32 b = sys_os_keyboard_buttons();
 
-	if(keys[SAPP_KEYCODE_W]) b |= SYS_INP_DPAD_U;
-	if(keys[SAPP_KEYCODE_S]) b |= SYS_INP_DPAD_D;
-	if(keys[SAPP_KEYCODE_A]) b |= SYS_INP_DPAD_L;
-	if(keys[SAPP_KEYCODE_D]) b |= SYS_INP_DPAD_R;
-	if(keys[SAPP_KEYCODE_PERIOD]) b |= SYS_INP_A;
-	if(keys[SAPP_KEYCODE_COMMA]) b |= SYS_INP_B;
-
-	if(keys[SAPP_KEYCODE_UP]) b |= SYS_INP_DPAD_U;
-	if(keys[SAPP_KEYCODE_DOWN]) b |= SYS_INP_DPAD_D;
-	if(keys[SAPP_KEYCODE_LEFT]) b |= SYS_INP_DPAD_L;
-	if(keys[SAPP_KEYCODE_RIGHT]) b |= SYS_INP_DPAD_R;
-	if(keys[SAPP_KEYCODE_X]) b |= SYS_INP_A;
-	if(keys[SAPP_KEYCODE_Z]) b |= SYS_INP_B;
-
-	if(keys[SAPP_KEYCODE_SPACE]) b |= SYS_INP_A;
-
-	if(keys[SAPP_KEYCODE_Q]) b |= SYS_INP_A;
-	if(keys[SAPP_KEYCODE_E]) b |= SYS_INP_B;
-
-	u32 mouse_btns = SOKOL_STATE.mouse_btns;
 	if((SOKOL_STATE.mouse_btns & (1 << SAPP_MOUSEBUTTON_LEFT)) == (1 << SAPP_MOUSEBUTTON_LEFT)) {
 		b |= SYS_INP_MOUSE_LEFT;
 	}
@@ -970,13 +896,13 @@ sys_inp(void)
 int
 sys_key(i32 key)
 {
-	return SOKOL_STATE.keys[key];
+	return sys_os_keyboard_get(key);
 }
 
 void
 sys_keys(u8 *dest, usize size)
 {
-	mcpy(dest, SOKOL_STATE.keys, sizeof(SOKOL_STATE.keys));
+	sys_os_keyboard_keys(dest, size);
 }
 
 f32

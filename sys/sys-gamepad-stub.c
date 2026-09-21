@@ -1,7 +1,7 @@
 #include "sys/sys-gamepad.h"
 
 void
-sys_os_gamepad_init(void)
+sys_os_gamepad_ini(void)
 {
 }
 
