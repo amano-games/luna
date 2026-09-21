@@ -5,7 +5,7 @@ ROOT_DIR="$1"
 shift
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-DOCKERFILE="$SCRIPT_DIR/Dockerfile"
+DOCKERFILE="$SCRIPT_DIR/Dockerfile.steam"
 
 PROJECT_NAME=pinball
 
