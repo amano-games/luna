@@ -128,7 +128,7 @@ sys_gamepad_map_menu(const mg_gamepad *pad)
 }
 
 void
-sys_os_gamepad_init(void)
+sys_os_gamepad_ini(void)
 {
 	mg_gamepads_init(&SYS_GAMEPAD.pads);
 	// Queue on so poll fills events for Sokol pause; button state still updates if full.
