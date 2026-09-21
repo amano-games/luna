@@ -188,6 +188,10 @@
 #if !defined(SYS_GFX_DRM)
 #define SYS_GFX_DRM 0
 #endif
+// Has a present host (Sokol, DRM, or Playdate). Not which backend.
+#if !defined(SYS_GFX)
+#define SYS_GFX (SYS_GFX_SOKOL || SYS_GFX_DRM || OS_PLAYDATE)
+#endif
 #if !defined(LANG_CPP)
 #define LANG_CPP 0
 #endif
@@ -211,6 +215,9 @@
 #endif
 #if SYS_GFX_SOKOL && SYS_GFX_DRM
 #error Sokol and DRM present backends cannot be combined.
+#endif
+#if SYS_GFX && !OS_PLAYDATE && (SYS_GFX_SOKOL + SYS_GFX_DRM) != 1
+#error SYS_GFX desktop builds require exactly one of SYS_GFX_SOKOL or SYS_GFX_DRM.
 #endif
 #if OS_PLAYDATE && (PD_DEVICE + PD_SIM) != 1
 #error Playdate builds require exactly one of PD_DEVICE or PD_SIM.

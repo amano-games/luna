@@ -1,4 +1,5 @@
 #include "sys/sokol/sys-sokol.h"
+#include "sys/sys-gamepad.h"
 #include "sys/sys-os.h"
 #include "base/mathfunc.h"
 #include "base/marena.h"
@@ -41,28 +42,6 @@
 
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
-
-#if OS_MACOS || OS_WASM
-#define MINI_GAMEPAD_ENABLE 0
-#else
-#define MINI_GAMEPAD_ENABLE 1
-#endif
-
-#if MINI_GAMEPAD_ENABLE
-/* Vendored minigamepad has known UB in mapping parse; keep sanitizers off for it. */
-#if defined(__clang__)
-#pragma clang attribute push( \
-	__attribute__((no_sanitize("address", "undefined", "unreachable"))), \
-	apply_to = function)
-#elif defined(__GNUC__)
-#define MG_API __attribute__((no_sanitize("address", "undefined", "unreachable")))
-#endif
-#define MG_IMPLEMENTATION
-#include "minigamepad.h"
-#if defined(__clang__)
-#pragma clang attribute pop
-#endif
-#endif
 
 #include "sokol/sokol_gfx.h"
 #include "sokol/sokol_app.h"
@@ -172,10 +151,6 @@ struct sokol_state {
 	u32 mouse_btns;
 	b32 mouse_capture_applied;
 
-#if MINI_GAMEPAD_ENABLE
-	mg_gamepads gamepads;
-#endif
-
 	struct fnt fnt;
 	struct sys_opts opts;
 
@@ -208,9 +183,7 @@ void sokol_stream_cb(f32 *buffer, int num_frames, int num_channels);
 void sokol_cleanup(void);
 
 void sokol_pause_handle_sokol_event(const sapp_event *ev);
-#if MINI_GAMEPAD_ENABLE
-void sokol_pause_handle_gamepad_event(const mg_event *ev);
-#endif
+void sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev);
 void sokol_pause_handle_buttons(i32 buttons);
 
 void sokol_pause(void);
@@ -225,11 +198,7 @@ static inline s_buffer_params_t sokol_get_buffer_params(f32 win_w, f32 win_h);
 
 // TODO: move to sys?
 static void sokol_screenshot_save(struct tex tex);
-
-#if MINI_GAMEPAD_ENABLE
-static inline i32 sokol_gamepads_upd(void);
-static inline void sokol_gamepads_ev(void);
-#endif
+static void sokol_gamepad_ev(void);
 
 sapp_desc
 sokol_main(i32 argc, char **argv)
@@ -445,9 +414,6 @@ sokol_init(void)
 		SOKOL_STATE.mouse_capture_applied = want_capture;
 	}
 	sokol_set_icon();
-#if MINI_GAMEPAD_ENABLE
-	mg_gamepads_init(&SOKOL_STATE.gamepads);
-#endif
 
 	sys_internal_init();
 }
@@ -654,38 +620,31 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 	sokol_pause_handle_buttons(b);
 }
 
-#if MINI_GAMEPAD_ENABLE
 void
-sokol_pause_handle_gamepad_event(const mg_event *ev)
+sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev)
 {
-	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) { return; }
-
 	i32 b = 0;
-	switch(ev->type) {
-	case MG_EVENT_BUTTON_PRESS: {
-		switch(ev->button) {
-		case MG_BUTTON_DPAD_UP: {
+
+	if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+		switch(ev) {
+		case SYS_OS_PAD_EV_DPAD_U: {
 			b |= SYS_INP_DPAD_U;
 		} break;
-		case MG_BUTTON_DPAD_DOWN: {
+		case SYS_OS_PAD_EV_DPAD_D: {
 			b |= SYS_INP_DPAD_D;
 		} break;
-		case MG_BUTTON_SOUTH: {
+		case SYS_OS_PAD_EV_A: {
 			b |= SYS_INP_A;
 		} break;
-		case MG_BUTTON_EAST: {
+		case SYS_OS_PAD_EV_B: {
 			b |= SYS_INP_B;
 		} break;
 		default: {
 		} break;
 		}
-	} break;
-	default: {
-	} break;
+		sokol_pause_handle_buttons(b);
 	}
-	sokol_pause_handle_buttons(b);
 }
-#endif
 
 void
 sokol_pause_handle_buttons(i32 buttons)
@@ -804,9 +763,7 @@ sokol_frame(void)
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	usize size                      = ARRLEN(SOKOL_PIXELS);
-#if MINI_GAMEPAD_ENABLE
-	sokol_gamepads_ev();
-#endif
+	sokol_gamepad_ev();
 
 	{
 		b32 want_capture = SOKOL_STATE.opts.video.mouse_capture;
@@ -1005,9 +962,7 @@ sys_inp(void)
 		b |= SYS_INP_MOUSE_MIDDLE;
 	}
 
-#if MINI_GAMEPAD_ENABLE
-	b |= sokol_gamepads_upd();
-#endif
+	b |= sys_os_gamepad_buttons();
 
 	return b;
 }
@@ -1623,145 +1578,20 @@ sokol_prof_csv_save(void)
 	prof_csv_save(alloc, str8_lit(SOKOL_NAME), str8_lit(SOKOL_ORG));
 }
 
-#if MINI_GAMEPAD_ENABLE
-static inline i32
-sokol_gamepads_upd(void)
+static void
+sokol_gamepad_ev(void)
 {
-	i32 res                      = 0;
-	struct mg_gamepads *gamepads = &SOKOL_STATE.gamepads;
-	mg_gamepads_poll(gamepads);
+	enum sys_os_gamepad_ev ev = SYS_OS_PAD_EV_NONE;
 
-	mg_gamepad *gamepad = gamepads->list.head;
-
-	if(!gamepad) { goto end; }
-
-	for(ssize i = 0; i < MG_BUTTON_COUNT; i++) {
-		mg_button button_type  = i;
-		mg_button_state button = gamepad->buttons[i];
-		if(button.supported == MG_FALSE) continue;
-		if(button.current == MG_FALSE) continue;
-
-		switch(button_type) {
-		case MG_BUTTON_SOUTH: {
-			res |= SYS_INP_A;
-		} break;
-		case MG_BUTTON_EAST: {
-			res |= SYS_INP_B;
-		} break;
-		case MG_BUTTON_WEST: {
-			res |= SYS_INP_A;
-		} break;
-		case MG_BUTTON_NORTH: {
-			res |= SYS_INP_B;
-		} break;
-		case MG_BUTTON_LEFT_SHOULDER: {
-			res |= SYS_INP_B;
-		} break;
-		case MG_BUTTON_RIGHT_SHOULDER: {
-			res |= SYS_INP_A;
-		} break;
-		case MG_BUTTON_DPAD_LEFT: {
-			res |= SYS_INP_DPAD_L;
-		} break;
-		case MG_BUTTON_DPAD_RIGHT: {
-			res |= SYS_INP_DPAD_R;
-		} break;
-		case MG_BUTTON_DPAD_UP: {
-			res |= SYS_INP_DPAD_U;
-		} break;
-		case MG_BUTTON_DPAD_DOWN: {
-			res |= SYS_INP_DPAD_D;
-		} break;
-		default: {
-		} break;
+	sys_os_gamepad_poll();
+	while(sys_os_gamepad_event(&ev)) {
+		if(ev == SYS_OS_PAD_EV_START || ev == SYS_OS_PAD_EV_BACK) {
+			if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+				sokol_pause();
+			} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+				sokol_resume();
+			}
 		}
+		sokol_pause_handle_gamepad_event(ev);
 	}
-
-	for(ssize i = 0; i < MG_AXIS_COUNT; i++) {
-		mg_axis axis_type  = i;
-		mg_axis_state axis = gamepad->axes[i];
-		f32 value          = axis.value;
-		switch(axis_type) {
-		case MG_AXIS_LEFT_X: {
-			if(value > 0.8f) {
-				res |= SYS_INP_DPAD_R;
-			}
-			if(value < -0.8f) {
-				res |= SYS_INP_DPAD_L;
-			}
-		} break;
-		case MG_AXIS_LEFT_Y: {
-			if(value > 0.8f) {
-				res |= SYS_INP_DPAD_D;
-			}
-			if(value < -0.8f) {
-				res |= SYS_INP_DPAD_U;
-			}
-		} break;
-		case MG_AXIS_LEFT_TRIGGER: {
-			if(value > 0.8f) {
-				res |= SYS_INP_B;
-			}
-		} break;
-		case MG_AXIS_RIGHT_TRIGGER: {
-			if(value > 0.8f) {
-				res |= SYS_INP_A;
-			}
-		} break;
-		default: {
-		} break;
-		}
-	}
-
-end:;
-	return res;
 }
-
-static inline void
-sokol_gamepads_ev(void)
-{
-	i32 res                      = 0;
-	struct mg_gamepads *gamepads = &SOKOL_STATE.gamepads;
-	mg_gamepads_poll(gamepads);
-	mg_gamepad *gamepad = gamepads->list.head;
-
-	if(!gamepad) { goto end; }
-
-	mg_event ev;
-	while(mg_gamepads_check_event(gamepads, &ev)) {
-		sokol_pause_handle_gamepad_event(&ev);
-		switch(ev.type) {
-		case MG_EVENT_BUTTON_PRESS: {
-			switch(ev.button) {
-			case MG_BUTTON_BACK: {
-				if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-					sokol_pause();
-				} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-					sokol_resume();
-				}
-			} break;
-			case MG_BUTTON_START: {
-				if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-					sokol_pause();
-				} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-					sokol_resume();
-				}
-			} break;
-			}
-		} break;
-		case MG_EVENT_BUTTON_RELEASE: {
-			switch(ev.button) {
-			case MG_BUTTON_BACK: {
-			} break;
-			case MG_BUTTON_GUIDE: {
-			} break;
-			}
-		} break;
-		default: {
-		} break;
-		}
-	}
-
-end:;
-}
-#endif
