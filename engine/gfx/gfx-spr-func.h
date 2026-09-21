@@ -16,7 +16,7 @@
 #include "base/mathfunc.h"
 #include "engine/gfx/gfx-spr.h"
 #include "engine/gfx/gfx.h"
-#include "sys/sys-intrin.h"
+#include "base/intrin.h"
 
 #if !defined(SPRBLIT_FLIPPEDX)
 #define SPRBLIT_FLIPPEDX 0

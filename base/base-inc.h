@@ -6,6 +6,7 @@
 #include "base/context-cracking.h"
 
 #include "base/types.h"
+#include "base/intrin.h"
 #include "base/utils.h"
 #include "base/mem.h"
 #include "base/log.h"
