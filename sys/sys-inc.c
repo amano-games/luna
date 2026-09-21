@@ -6,7 +6,7 @@
 #include "sys/sys-mem.c"
 #include "sys/sys-lz4.c"
 
-#if SYS_GFX_SOKOL || SYS_GFX_DRM || OS_PLAYDATE
+#if SYS_GFX
 #include "sys/sys.c"
 #include "sys/sys-opts.c"
 #endif

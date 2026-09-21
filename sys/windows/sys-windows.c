@@ -11,6 +11,10 @@
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
+#if SYS_GFX
+#include "sys/sys-gamepad.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -138,6 +142,10 @@ sys_os_init(void)
 	stm_setup();
 	OS_STATE.tick_start   = stm_now();
 	OS_STATE.tick_elapsed = OS_STATE.tick_start;
+
+#if SYS_GFX
+	sys_os_gamepad_init();
+#endif
 }
 
 struct sys_process_info *
@@ -394,6 +402,9 @@ sys_set_auto_lock_disabled(int disable)
 
 #include "sys/sys-log.c"
 
+#if SYS_GFX
+#include "sys/sys-gamepad.c"
+#endif
 #if SYS_GFX_SOKOL
 #include "sys/sokol/sys-sokol-host.c"
 #endif
