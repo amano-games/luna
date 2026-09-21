@@ -13,6 +13,7 @@
 
 #if SYS_GFX
 #include "sys/sys-gamepad.h"
+#include "sys/sys-keyboard.h"
 #endif
 
 #include <limits.h>
@@ -156,7 +157,8 @@ sys_os_init(void)
 	OS_STATE.tick_elapsed = OS_STATE.tick_start;
 
 #if SYS_GFX
-	sys_os_gamepad_init();
+	sys_os_gamepad_ini();
+	sys_os_keyboard_ini();
 #endif
 }
 
@@ -414,6 +416,7 @@ sys_set_auto_lock_disabled(int disable)
 
 #if SYS_GFX
 #include "sys/sys-gamepad.c"
+#include "sys/sys-keyboard.c"
 #endif
 #if SYS_GFX_SOKOL
 #include "sys/sokol/sys-sokol-host.c"
