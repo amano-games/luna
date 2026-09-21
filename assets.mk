@@ -8,8 +8,10 @@ ASSETS_PACK_ROOT ?= $(BUILD_DIR)/gen-assets
 ASSETS_PCK       ?= $(BUILD_DIR)/assets.pck
 ASSETS_INSTALL   ?= $(ASSETS_PCK)
 
+HOSTCC ?= cc
+
 $(ASSETS_BIN) $(ASSETS_PACK_BIN): $(LUNA_C_H)
-	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0
+	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0 CC="$(HOSTCC)"
 
 .PHONY: assets_gen assets_pack assets
 
