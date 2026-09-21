@@ -1,6 +1,6 @@
 #include "adpcm.h"
 #include "base/mathfunc.h"
-#include "sys/sys-intrin.h"
+#include "base/intrin.h"
 #include "base/utils.h"
 
 static inline i32 adpcm_advance_step(struct adpcm *adpcm);

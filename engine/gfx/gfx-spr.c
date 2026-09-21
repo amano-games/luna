@@ -1,7 +1,6 @@
 #include "gfx-spr.h"
 #include "base/dbg.h"
 #include "base/mathfunc.h"
-#include "sys/sys-intrin.h"
 
 #define SPRBLIT_FUNCNAME gfx_spr_d_s
 #define SPRBLIT_SRC_MASK 0

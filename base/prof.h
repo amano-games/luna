@@ -11,7 +11,6 @@
 #include "base/str.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
-#include "sys/sys-intrin.h"
 #include "base/dbg.h"
 
 // #define PROF_UNIQUE_NAMES

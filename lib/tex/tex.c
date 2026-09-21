@@ -3,7 +3,7 @@
 #include "base/types.h"
 #include "base/utils.h"
 #include "engine/gfx/gfx-defs.h"
-#include "sys/sys-intrin.h"
+#include "base/intrin.h"
 #include "sys/sys-io.h"
 #include "sys/sys-lz4.h"
 #include "sys/sys.h"
