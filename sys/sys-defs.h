@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/base-inc.h"
+#include "lib/fnt/fnt-defs.h"
 
 #if !defined(SYS_DISPLAY_SCALE_H)
 #define SYS_DISPLAY_SCALE_H 1
@@ -80,6 +81,7 @@ struct sys_timing {
 };
 
 struct sys_data {
+	struct fnt fnt_mono;
 	void *frame_buffer;
 
 	u32 tick;
