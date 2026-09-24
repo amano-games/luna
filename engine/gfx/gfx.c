@@ -337,7 +337,7 @@ gfx_rec(
 		{x, y2},
 	};
 
-	gfx_poly(ctx, verts, 4, col, 1);
+	gfx_poly(ctx, verts, 4, 1, col);
 }
 
 void
@@ -666,7 +666,7 @@ gfx_poly(
 		v2_i32 a = verts[i];
 		v2_i32 b = verts[(i + 1) % count];
 
-		gfx_lin_thick(ctx, a.x, a.y, b.x, b.y, col, r);
+		gfx_lin_thick(ctx, a.x, a.y, b.x, b.y, r, col);
 	}
 }
 
@@ -758,9 +758,9 @@ gfx_ellipse_section(
 void
 gfx_tri(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy, i32 r, u8 col)
 {
-	gfx_lin_thick(ctx, ax, ay, bx, by, col, r);
-	gfx_lin_thick(ctx, ax, ay, cx, cy, col, r);
-	gfx_lin_thick(ctx, bx, by, cx, cy, col, r);
+	gfx_lin_thick(ctx, ax, ay, bx, by, r, col);
+	gfx_lin_thick(ctx, ax, ay, cx, cy, r, col);
+	gfx_lin_thick(ctx, bx, by, cx, cy, r, col);
 }
 
 void
@@ -777,6 +777,7 @@ gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 	i32 th = t2.y - t0.y;
 
 	if(th == 0) return;
+	b32 indexed = ctx.dst.fmt == TEX_FMT_8B_INDEX;
 
 	i32 h1  = t1.y - t0.y + 1;
 	i32 h2  = t2.y - t1.y + 1;
@@ -795,7 +796,11 @@ gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 		x2 = min_i32(x2, ctx.clip_x2);
 		if(x2 < x1) continue;
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
-		prim_blit_span(&info);
+		if(indexed) {
+			prim_blit_span_8b(&info);
+		} else {
+			prim_blit_span(&info);
+		}
 	}
 
 	i32 yb0 = max_i32(ctx.clip_y1, t1.y);
@@ -810,7 +815,11 @@ gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 		x2 = min_i32(x2, ctx.clip_x2);
 		if(x2 < x1) continue;
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
-		prim_blit_span(&info);
+		if(indexed) {
+			prim_blit_span_8b(&info);
+		} else {
+			prim_blit_span(&info);
+		}
 	}
 }
 
