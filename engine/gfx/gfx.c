@@ -464,7 +464,7 @@ gfx_cir_fill(
 	i32 px,
 	i32 py,
 	i32 d,
-	u8 mode)
+	u8 col)
 {
 	if(d <= 0) return;
 
@@ -473,7 +473,7 @@ gfx_cir_fill(
 	switch(d) {
 	case 1:
 	case 2:
-		gfx_rec_fill(ctx, px - r, py - r, d, d, mode);
+		gfx_rec_fill(ctx, px - r, py - r, d, d, col);
 		return;
 	default: break;
 	}
@@ -481,9 +481,10 @@ gfx_cir_fill(
 	// Jesko's Method, shameless copy
 	// https://schwarzers.com/algorithms/
 
-	i32 x = r;
-	i32 y = 0;
-	i32 t = r >> 4;
+	b32 indexed = ctx.dst.fmt == TEX_FMT_8B_INDEX;
+	i32 x       = r;
+	i32 y       = 0;
+	i32 t       = r >> 4;
 
 	do {
 		i32 x1 = max_i32(px - x, ctx.clip_x1);
@@ -496,20 +497,36 @@ gfx_cir_fill(
 		i32 y3 = py + x;
 
 		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y4, x3, x4, mode);
-			prim_blit_span(&info);
+			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y4, x3, x4, col);
+			if(indexed) {
+				prim_blit_span_8b(&info);
+			} else {
+				prim_blit_span(&info);
+			}
 		}
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y2, x1, x2, mode);
-			prim_blit_span(&info);
+			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y2, x1, x2, col);
+			if(indexed) {
+				prim_blit_span_8b(&info);
+			} else {
+				prim_blit_span(&info);
+			}
 		}
 		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y1, x1, x2, mode);
-			prim_blit_span(&info);
+			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y1, x1, x2, col);
+			if(indexed) {
+				prim_blit_span_8b(&info);
+			} else {
+				prim_blit_span(&info);
+			}
 		}
 		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y3, x3, x4, mode);
-			prim_blit_span(&info);
+			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y3, x3, x4, col);
+			if(indexed) {
+				prim_blit_span_8b(&info);
+			} else {
+				prim_blit_span(&info);
+			}
 		}
 
 		y++;
