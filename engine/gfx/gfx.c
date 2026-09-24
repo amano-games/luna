@@ -45,11 +45,17 @@ struct tex
 tex_dbg_buffer(void)
 {
 	struct tex t = {0};
+#if defined(SYS_GFX_SOKOL)
+	t.fmt        = TEX_FMT_8B_INDEX;
+	t.pxu8       = (u8 *)sys_dbg_buffer();
+	t.wword      = (SYS_DISPLAY_W + 3) >> 2;
+#else
 	t.fmt        = TEX_FMT_1B_OPAQUE;
 	t.px1b       = (u32 *)sys_dbg_buffer();
+	t.wword      = SYS_DISPLAY_WWORDS;
+#endif
 	t.w          = SYS_DISPLAY_W;
 	t.h          = SYS_DISPLAY_H;
-	t.wword      = SYS_DISPLAY_WWORDS;
 	return t;
 }
 

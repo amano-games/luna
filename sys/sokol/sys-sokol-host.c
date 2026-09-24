@@ -158,7 +158,6 @@ static struct sys_recording SYS_RECORDING_STATE;
 
 static struct sokol_state SOKOL_STATE;
 static u32 *SOKOL_PIXELS[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
-static u32 *SOKOL_PIXELS_DEBUG[SYS_DISPLAY_W * SYS_DISPLAY_H * 4] = {0};
 
 #define SOKOL_ORG       "amano"
 #define SOKOL_NAME      "luna"
@@ -232,9 +231,9 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex      = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		struct tex tex      = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.dbg_ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px1b, "sokol", "Failed to create debug buffer");
+		dbg_check(tex.pxu8, "sokol", "Failed to create debug buffer");
 	}
 
 	{
@@ -346,6 +345,7 @@ sokol_init(void)
 	};
 
 	SOKOL_STATE.bind.images[IMG_tex]       = sg_make_image(&img_desc);
+	img_desc.pixel_format                = SG_PIXELFORMAT_R8;
 	SOKOL_STATE.bind.images[IMG_tex_debug] = sg_make_image(&img_desc);
 
 	// clang-format off
@@ -705,7 +705,9 @@ sokol_frame(void)
 
 	mcpy_struct(&colors.color_black, &COL_BLACK);
 	mcpy_struct(&colors.color_white, &COL_WHITE);
-	mcpy_struct(&colors.color_debug, &COL_RED);
+	for(usize i = 0; i < ARRLEN(colors.colors_debug); ++i) {
+		colors.colors_debug[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors_dbg.colors[i]);
+	}
 
 	params.filter_mode           = SOKOL_STATE.opts.video.filter;
 	SOKOL_STATE.bind.samplers[0] = SOKOL_STATE.opts.video.filter == SYS_VIDEO_FILTER_NEAREST
@@ -714,7 +716,6 @@ sokol_frame(void)
 
 	// mcpy_array(colors.color_black, COL_PURPLE);
 	// mcpy_array(colors.color_white, COL_PURPLE);
-	// mcpy_array(colors.color_debug, COL_RED);
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		b32 updated = sys_internal_update();
@@ -815,7 +816,6 @@ sokol_frame(void)
 	}
 
 	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
-	tex_opaque_to_rgba(SOKOL_STATE.dbg_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -830,8 +830,8 @@ sokol_frame(void)
 		SOKOL_STATE.bind.images[IMG_tex_debug],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = SOKOL_PIXELS_DEBUG,
-				.size = size,
+				.ptr  = SOKOL_STATE.dbg_ctx.dst.pxu8,
+				.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
 			},
 		});
 
@@ -966,7 +966,7 @@ sys_1bit_buffer(void)
 void *
 sys_dbg_buffer(void)
 {
-	return SOKOL_STATE.dbg_ctx.dst.px1b;
+	return SOKOL_STATE.dbg_ctx.dst.pxu8;
 }
 
 i32

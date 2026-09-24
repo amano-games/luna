@@ -1,4 +1,5 @@
 @ctype vec2 v2
+@ctype vec4 v4
 
 // shared code for all shaders
 @block uniforms
@@ -10,7 +11,7 @@ layout(binding=2) uniform s_params {
 layout(binding=3) uniform s_colors {
   vec3 color_black;
   vec3 color_white;
-  vec3 color_debug;
+  vec4 colors_debug[256];
 };
 layout(binding=4) uniform s_buffer_params {
   vec2 offset;
@@ -73,15 +74,19 @@ void main() {
 
   vec2 tex_uv = rel / size;
   tex_uv.y = 1.0 - tex_uv.y;
+  ivec2 debug_size = textureSize(sampler2D(tex_debug, smp), 0);
+  ivec2 debug_pos = clamp(ivec2(tex_uv * vec2(debug_size)), ivec2(0), debug_size - 1);
+  int debug_index = int(texelFetch(sampler2D(tex_debug, smp), debug_pos, 0).r * 255.0 + 0.5);
+  vec4 debug_color = colors_debug[debug_index];
   // SYS_VIDEO_FILTER_SHARP == 3
   if(filter_mode == 3){
     tex_uv = uv_iq(tex_uv, ivec2(app_size));
   }
   vec4 app_sample = texture(sampler2D(tex, smp), tex_uv);
-  vec4 debug_sample = texture(sampler2D(tex_debug, smp), tex_uv);
   // vec3 app_color = (app_sample.r > 0.0) ? color_white : color_black;
   vec3 app_color = app_sample.rgb;
-  vec4 col = mix(vec4(app_color, 1.0), vec4(color_debug, 1.0), debug_sample.r > 0.0 ? 0.5 : 0.0);
+  float debug_alpha = debug_index != 0 ? debug_color.a * 0.5 : 0.0;
+  vec4 col = vec4(mix(app_color, debug_color.rgb, debug_alpha), 1.0);
   frag_color = col;
   // frag_color = vec4(app_color, 1.0);
 }

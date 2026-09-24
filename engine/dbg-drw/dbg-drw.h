@@ -11,19 +11,20 @@ void dbg_drw_ctx_set(struct gfx_ctx ctx);
 v2_i32 dbg_drw_offset_set(i32 x, i32 y);
 v2_i32 dbg_drw_offset_get(void);
 void dbg_drw_clr(void);
-void dbg_drw_txt(f32 x, f32 y, str8 text);
+// Drawing colors are palette indices on 8-bit targets; 1-bit targets use white.
+void dbg_drw_txt(f32 x, f32 y, str8 text, u8 col);
 
-void dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2);
-void dbg_drw_cir(f32 x, f32 y, f32 r);
-void dbg_drw_cir_fill(f32 x, f32 y, f32 r);
-void dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry);
-void dbg_drw_rec(f32 x, f32 y, f32 w, f32 h);
-void dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h);
-void dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2);
-void dbg_drw_collider(struct col_shape shape);
-void dbg_drw_rec_i32(struct rec_i32 r);
-void dbg_drw_poly(struct v2 *verts, ssize count);
-void dbg_drw_tri(f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc);
+void dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2, u8 col);
+void dbg_drw_cir(f32 x, f32 y, f32 r, u8 col);
+void dbg_drw_cir_fill(f32 x, f32 y, f32 r, u8 col);
+void dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry, u8 col);
+void dbg_drw_rec(f32 x, f32 y, f32 w, f32 h, u8 col);
+void dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h, u8 col);
+void dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2, u8 col);
+void dbg_drw_collider(struct col_shape shape, u8 col);
+void dbg_drw_rec_i32(struct rec_i32 r, u8 col);
+void dbg_drw_poly(struct v2 *verts, ssize count, u8 col);
+void dbg_drw_tri(f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc, u8 col);
 
 #else
 
