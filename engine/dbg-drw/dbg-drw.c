@@ -1,8 +1,10 @@
 #include "dbg-drw.h"
 
 #include "base/v2.h"
+#include "engine/gfx/gfx-txt.h"
 #include "engine/gfx/gfx.h"
 #include "lib/tex/tex.h"
+#include "sys/sys.h"
 
 #if BUILD_DEBUG && !PD_DEVICE
 
@@ -38,6 +40,20 @@ void
 dbg_drw_clr(void)
 {
 	tex_clr(DBG_DRW_STATE.ctx.dst, GFX_COL_BLACK);
+}
+
+void
+dbg_drw_txt(f32 x, f32 y, str8 text)
+{
+	fnt_mono_draw_str(
+		DBG_DRW_STATE.ctx,
+		sys_fnt_mono_get(),
+		text,
+		(i32)(x + DBG_DRW_STATE.offset.x),
+		(i32)(y + DBG_DRW_STATE.offset.y),
+		0,
+		0,
+		SPR_MODE_WHITE);
 }
 
 void

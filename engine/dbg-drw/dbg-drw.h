@@ -2,6 +2,7 @@
 
 #include "engine/collisions/collisions.h"
 #include "base/mem.h"
+#include "base/str.h"
 #include "base/types.h"
 #include "engine/gfx/gfx.h"
 
@@ -10,6 +11,7 @@ void dbg_drw_ctx_set(struct gfx_ctx ctx);
 v2_i32 dbg_drw_offset_set(i32 x, i32 y);
 v2_i32 dbg_drw_offset_get(void);
 void dbg_drw_clr(void);
+void dbg_drw_txt(f32 x, f32 y, str8 text);
 
 void dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2);
 void dbg_drw_cir(f32 x, f32 y, f32 r);
@@ -33,6 +35,7 @@ dbg_drw_offset_zero(void)
 #define dbg_drw_offset_set(...) dbg_drw_offset_zero()
 #define dbg_drw_offset_get(...) dbg_drw_offset_zero()
 #define dbg_drw_clr(...)        ((void)0)
+#define dbg_drw_txt(...)        ((void)0)
 #define dbg_drw_lin(...)        ((void)0)
 #define dbg_drw_cir(...)        ((void)0)
 #define dbg_drw_cir_fill(...)   ((void)0)
