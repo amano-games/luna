@@ -86,7 +86,7 @@ struct gfx_pattern gfx_pattern_interpolate(i32 num, i32 den);
 struct gfx_pattern gfx_pattern_interpolatec(i32 num, i32 den, i32 (*ease)(i32 a, i32 b, i32 num, i32 den));
 
 void gfx_rec(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
-void gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode);
+void gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, u8 mode);
 void gfx_rrec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, i32 r, i32 mode);
 void gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode);
 void gfx_cir_fill(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode);
