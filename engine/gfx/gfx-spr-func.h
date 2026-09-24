@@ -92,8 +92,8 @@ SPRBLIT_FUNCNAME(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 fli
 	i32 dw2        = x2 >> 5;
 	struct tex t_d = ctx.dst;
 	struct tex t_s = src.t;
-	dbg_assert(t_d.px);
-	dbg_assert(t_s.px);
+	dbg_assert(t_d.px1b);
+	dbg_assert(t_s.px1b);
 
 	// for every affected row of target texture
 	for(i32 y_d = y1; y_d <= y2; y_d++) {
@@ -122,8 +122,8 @@ SPRBLIT_FUNCNAME(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 fli
 			i32 si2 = ((sx2 >> 5) << SPRBLIT_SRC_MASK) + y_s * t_s.wword;
 #if SPRBLIT_SRC_MASK
 			// assemble transparency word to blit out of 2 source words
-			u32 sm1 = SPRBLIT_GET_WORD(t_s.px[si1 + 1]);
-			u32 sm2 = SPRBLIT_GET_WORD(t_s.px[si2 + 1]);
+			u32 sm1 = SPRBLIT_GET_WORD(t_s.px1b[si1 + 1]);
+			u32 sm2 = SPRBLIT_GET_WORD(t_s.px1b[si2 + 1]);
 			u32 smm = bswap_u32((u32)((u64)sm1 << shl) | (u32)((u64)sm2 >> shr));
 
 			// skip empty transparent words
@@ -137,11 +137,11 @@ SPRBLIT_FUNCNAME(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 fli
 #endif
 			{
 				// assemble pixel color word to blit out of 2 source words
-				u32 sp1 = SPRBLIT_GET_WORD(t_s.px[si1 + 0]);
-				u32 sp2 = SPRBLIT_GET_WORD(t_s.px[si2 + 0]);
+				u32 sp1 = SPRBLIT_GET_WORD(t_s.px1b[si1 + 0]);
+				u32 sp2 = SPRBLIT_GET_WORD(t_s.px1b[si2 + 0]);
 				u32 spp = bswap_u32((u32)((u64)sp1 << shl) | (u32)((u64)sp2 >> shr));
 
-				u32 *dpp = &t_d.px[(d_w << SPRBLIT_DST_MASK) + y_d * t_d.wword];
+				u32 *dpp = &t_d.px1b[(d_w << SPRBLIT_DST_MASK) + y_d * t_d.wword];
 #if SPRBLIT_DST_MASK
 				u32 *dmm = dpp + 1;
 				SPRBLIT_BLITFUNC(dpp, dmm, spp, smm, pat, mode);

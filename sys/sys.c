@@ -181,10 +181,10 @@ sys_internal_init(void)
 		.metrics.cap_height = -1,
 		.metrics.descent    = -1,
 		.t.wword            = 4,
-		.t.fmt              = TEX_FMT_MASK,
+		.t.fmt              = TEX_FMT_1B_MASK,
 		.t.w                = 60,
 		.t.h                = 108,
-		.t.px               = (u32 *)SYS_MONO_FONT,
+		.t.px1b             = (u32 *)SYS_MONO_FONT,
 	});
 
 	sys_ups_target_set(SYS_DEFAULT_UPS);

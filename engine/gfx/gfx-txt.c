@@ -107,7 +107,7 @@ fnt_draw_str_pivot(
 	enum spr_mode mode)
 {
 	rec_i32 res = {0};
-	if(fnt.t.px != NULL) {
+	if(fnt.t.px1b != NULL) {
 		v2_i32 text_size = fnt_size_px(fnt, str, tracking, leading);
 		i32 txt_x        = x - (i32)(text_size.x * pivot.x);
 		i32 txt_y        = y - (i32)(text_size.y * pivot.y);

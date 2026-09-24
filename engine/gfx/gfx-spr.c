@@ -123,8 +123,8 @@
 void
 gfx_spr_cpy(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip)
 {
-	dbg_assert(ctx.dst.fmt == TEX_FMT_OPAQUE);
-	if(src.t.fmt == TEX_FMT_OPAQUE) {
+	dbg_assert(ctx.dst.fmt == TEX_FMT_1B_OPAQUE);
+	if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
 		if(flip & SPR_FLIP_X) {
 			gfx_spr_d_s_fx_copy(ctx, src, px, py, flip, 0);
 		} else {
@@ -132,7 +132,7 @@ gfx_spr_cpy(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip)
 		}
 		return;
 	}
-	dbg_assert(src.t.fmt == TEX_FMT_MASK);
+	dbg_assert(src.t.fmt == TEX_FMT_1B_MASK);
 	if(flip & SPR_FLIP_X) {
 		gfx_spr_sm_fx_copy(ctx, src, px, py, flip, 0);
 	} else {
@@ -143,10 +143,10 @@ gfx_spr_cpy(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip)
 void
 gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py)
 {
-	dbg_assert(src.fmt == TEX_FMT_OPAQUE);
-	dbg_assert(ctx.dst.fmt == TEX_FMT_OPAQUE);
-	dbg_assert(src.px != NULL);
-	dbg_assert(ctx.dst.px != NULL);
+	dbg_assert(src.fmt == TEX_FMT_1B_OPAQUE);
+	dbg_assert(ctx.dst.fmt == TEX_FMT_1B_OPAQUE);
+	dbg_assert(src.px1b != NULL);
+	dbg_assert(ctx.dst.px1b != NULL);
 
 	struct tex dst = ctx.dst;
 	i32 x1         = max_i32(ctx.clip_x1, 0);
@@ -177,8 +177,8 @@ gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py)
 		if(src_word >= 0 && nwords > 0) {
 			usize row_b = (usize)nwords * sizeof(u32);
 			for(i32 y = y1; y <= y2; ++y) {
-				u32 *sp = src.px + (src_y0 + y) * src.wword + src_word;
-				u32 *dp = dst.px + y * dst.wword + dw1;
+				u32 *sp = src.px1b + (src_y0 + y) * src.wword + src_word;
+				u32 *dp = dst.px1b + y * dst.wword + dw1;
 				mcpy(dp, sp, row_b);
 			}
 		}
@@ -189,8 +189,8 @@ gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py)
 	i32 shr = 32 - shl;
 	i32 sw0 = src_x0 >> 5;
 	for(i32 y = y1; y <= y2; ++y) {
-		u32 *src_row = src.px + (src_y0 + y) * src.wword;
-		u32 *dst_row = dst.px + y * dst.wword;
+		u32 *src_row = src.px1b + (src_y0 + y) * src.wword;
+		u32 *dst_row = dst.px1b + y * dst.wword;
 		for(i32 dw = dw1; dw <= dw2; ++dw) {
 			i32 s0      = sw0 + dw;
 			u32 w0      = (0 <= s0 && s0 < src.wword) ? bswap_u32(src_row[s0]) : 0;
@@ -203,12 +203,12 @@ gfx_spr_d_s_cpy_fast(struct gfx_ctx ctx, struct tex src, i32 px, i32 py)
 void
 gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
-	if(!src.t.px) return;
+	if(!src.t.px1b) return;
 
-	if(ctx.dst.fmt == TEX_FMT_OPAQUE) {
+	if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
 		if(mode == SPR_MODE_COPY) {
 			gfx_spr_cpy(ctx, src, px, py, flip);
-		} else if(src.t.fmt == TEX_FMT_OPAQUE) {
+		} else if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
 			gfx_spr_d_s(ctx, src, px, py, flip, mode);
 		} else {
 			if(flip & SPR_FLIP_X) {
@@ -218,7 +218,7 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 			}
 		}
 	} else {
-		if(src.t.fmt == TEX_FMT_OPAQUE) {
+		if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
 			if(flip & SPR_FLIP_X) {
 				gfx_spr_dm_s_fx(ctx, src, px, py, flip, mode);
 			} else {

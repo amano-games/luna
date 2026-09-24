@@ -20,8 +20,8 @@ struct tex
 tex_frame_buffer(void)
 {
 	struct tex t = {0};
-	t.fmt        = TEX_FMT_OPAQUE;
-	t.px         = (u32 *)sys_1bit_buffer();
+	t.fmt        = TEX_FMT_1B_OPAQUE;
+	t.px1b       = (u32 *)sys_1bit_buffer();
 	t.w          = SYS_DISPLAY_W;
 	t.h          = SYS_DISPLAY_H;
 	t.wword      = SYS_DISPLAY_WWORDS;
@@ -32,8 +32,8 @@ struct tex
 tex_dbg_buffer(void)
 {
 	struct tex t = {0};
-	t.fmt        = TEX_FMT_OPAQUE;
-	t.px         = (u32 *)sys_dbg_buffer();
+	t.fmt        = TEX_FMT_1B_OPAQUE;
+	t.px1b       = (u32 *)sys_dbg_buffer();
 	t.w          = SYS_DISPLAY_W;
 	t.h          = SYS_DISPLAY_H;
 	t.wword      = SYS_DISPLAY_WWORDS;
@@ -203,7 +203,7 @@ struct span_blit
 span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, enum prim_mode mode)
 {
 	i32 nbit              = (x2 + 1) - x1; // number of bits in a row to blit
-	i32 lsh               = (ctx.dst.fmt == TEX_FMT_MASK);
+	i32 lsh               = (ctx.dst.fmt == TEX_FMT_1B_MASK);
 	struct span_blit info = {0};
 	info.y                = y;
 	info.doff             = x1 & 31;
@@ -212,7 +212,7 @@ span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, enum prim_mode mode)
 	info.ml               = bswap_u32(0xFFFFFFFFU >> (31 & info.doff));           // mask to cut off boundary left
 	info.mr               = bswap_u32(0xFFFFFFFFU << (31 & (-info.doff - nbit))); // mask to cut off boundary right
 	info.dst_wword        = ctx.dst.wword;
-	info.dp               = &ctx.dst.px[((x1 >> 5) << lsh) + y * ctx.dst.wword];
+	info.dp               = &ctx.dst.px1b[((x1 >> 5) << lsh) + y * ctx.dst.wword];
 	info.dadd             = 1 + lsh;
 	info.pat              = ctx.pat;
 	return info;
@@ -326,7 +326,7 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mode
 	dbg_assert(y2 <= ctx.clip_y2);
 	struct tex dtex       = ctx.dst;
 	struct span_blit info = span_blit_gen(ctx, y1, x1, x2, mode);
-	if(dtex.fmt == TEX_FMT_OPAQUE) {
+	if(dtex.fmt == TEX_FMT_1B_OPAQUE) {
 		for(i32 row = y1; row <= y2; row++) {
 			prim_blit_span_x(info);
 			span_blit_incr_y(&info);
@@ -366,7 +366,7 @@ void
 gfx_fill_rows(struct tex dst, struct gfx_pattern pat, i32 y1, i32 y2)
 {
 	dbg_assert(0 <= y1 && y2 <= dst.h);
-	u32 *px = &dst.px[y1 * dst.wword];
+	u32 *px = &dst.px1b[y1 * dst.wword];
 	for(i32 y = y1; y < y2; y++) {
 		const u32 p = pat.p[y & 7];
 		for(i32 x = 0; x < dst.wword; x++) {

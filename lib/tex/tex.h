@@ -7,8 +7,9 @@
 #define TEX_EXT "tex"
 
 enum {
-	TEX_FMT_OPAQUE, // only color pixels
-	TEX_FMT_MASK,   // color and mask interlaced in words
+	TEX_FMT_1B_OPAQUE, // only color pixels
+	TEX_FMT_1B_MASK,   // color and mask interlaced in words
+	TEX_FMT_8B_INDEX,  // Color is a u8 bit index
 };
 
 enum {
@@ -31,7 +32,10 @@ struct tex_header {
 };
 
 struct tex {
-	u32 *px; // either black/white words or black/white and transparent/opaque words interlaced
+	union {
+		u32 *px1b;
+		u8 *pxu8;
+	};
 	int wword;
 	int fmt;
 	int w;

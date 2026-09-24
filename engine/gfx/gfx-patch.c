@@ -36,7 +36,7 @@ gfx_spr_tiled(
 	i32 flip,
 	i32 mode)
 {
-	if(!src.t.px || src.r.w <= 0 || src.r.h <= 0 || dst.w <= 0 || dst.h <= 0) {
+	if(!src.t.px1b || src.r.w <= 0 || src.r.h <= 0 || dst.w <= 0 || dst.h <= 0) {
 		return;
 	}
 
@@ -61,11 +61,11 @@ gfx_spr_tiled(
 		mclr(stamp_px, sizeof(stamp_px));
 
 		struct tex stamp_tex = {
-			.px    = stamp_px,
+			.px1b  = stamp_px,
 			.w     = GFX_SPR_TILED_STAMP_W,
 			.h     = tile_h,
 			.fmt   = src.t.fmt,
-			.wword = src.t.fmt == TEX_FMT_MASK ? 2 : 1,
+			.wword = src.t.fmt == TEX_FMT_1B_MASK ? 2 : 1,
 		};
 		struct gfx_ctx stamp_ctx = gfx_ctx_default(stamp_tex);
 		for(i32 x = 0; x < GFX_SPR_TILED_STAMP_W; x += tile_w) {

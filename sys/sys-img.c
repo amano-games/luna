@@ -36,8 +36,8 @@ sys_img_write(struct tex tex, str8 path, struct gfx_col_pallete pallete, struct 
 	i32 stride = w * SYS_IMG_PNG_COMP;
 	ssize px_n = (ssize)w * (ssize)h;
 
-	dbg_check(tex.fmt == TEX_FMT_OPAQUE, SYS_IMG_LOG, "tex must be opaque");
-	dbg_check(tex.px != NULL, SYS_IMG_LOG, "tex has no pixels");
+	dbg_check(tex.fmt == TEX_FMT_1B_OPAQUE, SYS_IMG_LOG, "tex must be opaque");
+	dbg_check(tex.px1b != NULL, SYS_IMG_LOG, "tex has no pixels");
 	dbg_check(w > 0 && h > 0, SYS_IMG_LOG, "invalid tex size %d x %d", w, h);
 
 	rgba = alloc_arr(scratch, rgba, px_n);
