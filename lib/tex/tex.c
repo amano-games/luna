@@ -287,7 +287,17 @@ tex_mskset(struct tex tex, i32 x, i32 y, u8 col)
 void
 tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete)
 {
-	dbg_assert(tex.fmt == TEX_FMT_1B_OPAQUE);
+	dbg_assert(tex.fmt == TEX_FMT_1B_OPAQUE || tex.fmt == TEX_FMT_8B_INDEX);
+	dbg_assert(size >= tex.w * tex.h);
+	if(tex.fmt == TEX_FMT_8B_INDEX) {
+		for(i32 y = 0; y < tex.h; ++y) {
+			const u8 *row = tex.pxu8 + (ssize)y * tex.wword * sizeof(u32);
+			for(i32 x = 0; x < tex.w; ++x) {
+				out[x + y * tex.w] = bswap_u32(pallete.colors[row[x]]);
+			}
+		}
+		return;
+	}
 	u32 *pixels       = out;
 	i32 width_alinged = (tex.w + 31) & ~31;
 	i32 wbytes        = width_alinged / 8;

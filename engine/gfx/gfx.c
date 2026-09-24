@@ -11,7 +11,6 @@ struct span_blit1b {
 	u32 mr;   // boundary mask right
 	u16 dst_wword;
 	i16 y;
-	struct gfx_pattern pat;
 	i16 mode; // 1-bit drawing mode or indexed palette color
 };
 
@@ -19,6 +18,8 @@ struct span_blit8b {
 	u8 *dp;       // destination, offset to the first pixel
 	ssize stride; // bytes per row
 	i32 px_count;
+	i32 x;
+	i32 y;
 	u8 col; // indexed palette color
 };
 
@@ -27,17 +28,23 @@ struct gfx_span_blit {
 		struct span_blit1b b1;
 		struct span_blit8b b8;
 	};
+	struct gfx_pattern pat;
 };
 
 struct tex
 tex_frame_buffer(void)
 {
 	struct tex t = {0};
-	t.fmt        = TEX_FMT_1B_OPAQUE;
-	t.px1b       = (u32 *)sys_1bit_buffer();
-	t.w          = SYS_DISPLAY_W;
-	t.h          = SYS_DISPLAY_H;
-	t.wword      = SYS_DISPLAY_WWORDS;
+#if SYS_GFX_SOKOL
+	t.fmt   = TEX_FMT_8B_INDEX;
+	t.wword = (SYS_DISPLAY_W + 3) >> 2;
+#else
+	t.fmt   = TEX_FMT_1B_OPAQUE;
+	t.wword = SYS_DISPLAY_WWORDS;
+#endif
+	t.px1b = (u32 *)sys_1bit_buffer();
+	t.w    = SYS_DISPLAY_W;
+	t.h    = SYS_DISPLAY_H;
 	return t;
 }
 
@@ -45,17 +52,17 @@ struct tex
 tex_dbg_buffer(void)
 {
 	struct tex t = {0};
-#if defined(SYS_GFX_SOKOL)
-	t.fmt        = TEX_FMT_8B_INDEX;
-	t.pxu8       = (u8 *)sys_dbg_buffer();
-	t.wword      = (SYS_DISPLAY_W + 3) >> 2;
+#if SYS_GFX_SOKOL
+	t.fmt   = TEX_FMT_8B_INDEX;
+	t.pxu8  = (u8 *)sys_dbg_buffer();
+	t.wword = (SYS_DISPLAY_W + 3) >> 2;
 #else
-	t.fmt        = TEX_FMT_1B_OPAQUE;
-	t.px1b       = (u32 *)sys_dbg_buffer();
-	t.wword      = SYS_DISPLAY_WWORDS;
+	t.fmt   = TEX_FMT_1B_OPAQUE;
+	t.px1b  = (u32 *)sys_dbg_buffer();
+	t.wword = SYS_DISPLAY_WWORDS;
 #endif
-	t.w          = SYS_DISPLAY_W;
-	t.h          = SYS_DISPLAY_H;
+	t.w = SYS_DISPLAY_W;
+	t.h = SYS_DISPLAY_H;
 	return t;
 }
 
@@ -221,12 +228,14 @@ gfx_ctx_clipwh(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h)
 struct gfx_span_blit
 gfx_span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, u8 col)
 {
-	struct gfx_span_blit info = {0};
+	struct gfx_span_blit info = {.pat = ctx.pat};
 	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
 		info.b8.stride   = (ssize)ctx.dst.wword * (ssize)sizeof(u32);
 		info.b8.dp       = ctx.dst.pxu8 + (ssize)y * info.b8.stride + x1;
 		info.b8.px_count = x2 - x1 + 1;
 		info.b8.col      = col;
+		info.b8.x        = x1;
+		info.b8.y        = y;
 	} else {
 		i32 nbit          = (x2 + 1) - x1; // number of bits in a row to blit
 		i32 lsh           = (ctx.dst.fmt == TEX_FMT_1B_MASK);
@@ -238,27 +247,31 @@ gfx_span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, u8 col)
 		info.b1.mr        = bswap_u32(0xFFFFFFFFU << (31 & (-doff - nbit)));
 		info.b1.dp        = &ctx.dst.px1b[((x1 >> 5) << lsh) + y * ctx.dst.wword];
 		info.b1.dadd      = 1 + lsh;
-		info.b1.pat       = ctx.pat;
 		info.b1.mode      = col;
 	}
 	return info;
 }
 
 static inline void
-prim_blit_span_8b(const struct gfx_span_blit *info)
+gfx_prim_blit_pixel(struct gfx_ctx ctx, i32 x, i32 y, u8 col)
 {
-	mset(info->b8.dp, (u8)info->b8.col, info->b8.px_count);
+	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
+		if(x < ctx.clip_x1 || x > ctx.clip_x2 || y < ctx.clip_y1 || y > ctx.clip_y2) return;
+		u32 bit = bswap_u32(0x80000000U >> (x & 31));
+		if(!(ctx.pat.p[y & 7] & bit)) return;
+	}
+	tex_pxset(ctx.dst, x, y, col);
 }
 
 static inline void
-span_blit_incr_y(struct gfx_span_blit *info)
+gfx_span_blit_incr_y(struct gfx_span_blit *info)
 {
 	info->b1.y++;
 	info->b1.dp += info->b1.dst_wword;
 }
 
 static void
-apply_prim_mode(u32 *restrict dp, u32 *restrict dm, u32 sm, u8 mode, u32 pt)
+gfx_prim_mode(u32 *restrict dp, u32 *restrict dm, u32 sm, u8 mode, u32 pt)
 {
 	switch(mode) {
 	case PRIM_MODE_INV: sm &= pt, *dp = (*dp & ~sm) | (~*dp & sm); break;
@@ -272,57 +285,32 @@ apply_prim_mode(u32 *restrict dp, u32 *restrict dm, u32 sm, u8 mode, u32 pt)
 }
 
 static void
-prim_blit_span(const struct gfx_span_blit *info)
+gfx_prim_blit_span(const struct gfx_span_blit *info)
 {
 	u32 *restrict dp = (u32 *restrict)info->b1.dp;
-	u32 pt           = info->b1.pat.p[info->b1.y & 7];
+	u32 pt           = info->pat.p[info->b1.y & 7];
 	u32 m            = info->b1.ml;
 	for(i32 i = 0; i < info->b1.dmax; i++) {
-		apply_prim_mode(dp, info->b1.dadd == 2 ? dp + 1 : NULL, m, info->b1.mode, pt);
+		gfx_prim_mode(dp, info->b1.dadd == 2 ? dp + 1 : NULL, m, info->b1.mode, pt);
 		m = 0xFFFFFFFFU;
 		dp += info->b1.dadd;
 	}
-	apply_prim_mode(dp, info->b1.dadd == 2 ? dp + 1 : NULL, m & info->b1.mr, info->b1.mode, pt);
+	gfx_prim_mode(dp, info->b1.dadd == 2 ? dp + 1 : NULL, m & info->b1.mr, info->b1.mode, pt);
 }
 
-static void
-apply_prim_mode_x(u32 *restrict dp, u32 sm, u8 mode, u32 pt)
+static inline void
+gfx_prim_blit_span_8b(const struct gfx_span_blit *info)
 {
-	switch(mode) {
-	case PRIM_MODE_INV: sm &= pt, *dp = (*dp & ~sm) | (~*dp & sm); break;
-	case PRIM_MODE_WHITE: sm &= pt, *dp |= sm; break;
-	case PRIM_MODE_BLACK: sm &= pt, *dp &= ~sm; break;
-	case PRIM_MODE_WHITE_BLACK: pt = ~pt; // fallthrough
-	case PRIM_MODE_BLACK_WHITE: *dp = (*dp & ~(sm & pt)) | (sm & ~pt); break;
+	u32 pt = info->pat.p[info->b8.y & 7];
+	if(pt == 0) return;
+	if(pt == U32_MAX) {
+		mset(info->b8.dp, info->b8.col, info->b8.px_count);
+		return;
 	}
-}
-
-static void
-prim_blit_span_x(struct gfx_span_blit info)
-{
-	u32 *restrict dp = (u32 *restrict)info.b1.dp;
-	u32 pt           = info.b1.pat.p[info.b1.y & 7];
-	u32 m            = info.b1.ml;
-	for(i32 i = 0; i < info.b1.dmax; i++) {
-		apply_prim_mode_x(dp, m, info.b1.mode, pt);
-		m = 0xFFFFFFFFU;
-		dp++;
+	for(i32 i = 0; i < info->b8.px_count; i++) {
+		u32 bit = bswap_u32(0x80000000U >> ((info->b8.x + i) & 31));
+		if(pt & bit) info->b8.dp[i] = info->b8.col;
 	}
-	apply_prim_mode_x(dp, m & info.b1.mr, info.b1.mode, pt);
-}
-
-static void
-prim_blit_span_y(struct gfx_span_blit info)
-{
-	u32 *restrict dp = (u32 *restrict)info.b1.dp;
-	u32 pt           = info.b1.pat.p[info.b1.y & 7];
-	u32 m            = info.b1.ml;
-	for(i32 i = 0; i < info.b1.dmax; i++) {
-		apply_prim_mode(dp, dp + 1, m, info.b1.mode, pt);
-		m = 0xFFFFFFFFU;
-		dp += 2;
-	}
-	apply_prim_mode(dp, dp + 1, m & info.b1.mr, info.b1.mode, pt);
 }
 
 void
@@ -360,25 +348,25 @@ gfx_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, u8 col)
 	if(x2 < x1 || y2 < y1) goto cleanup;
 
 	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
-		// TODO: support for pattern
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y1, x1, x2, col);
-		prim_blit_span_8b(&info);
+		gfx_prim_blit_span_8b(&info);
 		for(i32 yy = y1; yy < y2; ++yy) {
 			info.b8.dp += info.b8.stride;
-			prim_blit_span_8b(&info);
+			info.b8.y++;
+			gfx_prim_blit_span_8b(&info);
 		}
 	} else {
 		struct tex dtex           = ctx.dst;
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y1, x1, x2, col);
 		if(dtex.fmt == TEX_FMT_1B_OPAQUE) {
 			for(i32 row = y1; row <= y2; row++) {
-				prim_blit_span_x(info);
-				span_blit_incr_y(&info);
+				gfx_prim_blit_span(&info);
+				gfx_span_blit_incr_y(&info);
 			}
 		} else {
 			for(i32 row = y1; row <= y2; row++) {
-				prim_blit_span_y(info);
-				span_blit_incr_y(&info);
+				gfx_prim_blit_span(&info);
+				gfx_span_blit_incr_y(&info);
 			}
 		}
 	}
@@ -412,7 +400,7 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, u8 col)
 {
 	if(d <= 0) return;
 	if(d == 1) {
-		tex_pxset(ctx.dst, px, py, col);
+		gfx_prim_blit_pixel(ctx, px, py, col);
 		return;
 	}
 	if(d == 2) {
@@ -438,20 +426,20 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, u8 col)
 		i32 y3 = py + x;
 
 		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			tex_pxset(ctx.dst, x3, y4, col);
-			tex_pxset(ctx.dst, x4, y4, col);
+			gfx_prim_blit_pixel(ctx, x3, y4, col);
+			gfx_prim_blit_pixel(ctx, x4, y4, col);
 		}
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			tex_pxset(ctx.dst, x1, y2, col);
-			tex_pxset(ctx.dst, x2, y2, col);
+			gfx_prim_blit_pixel(ctx, x1, y2, col);
+			gfx_prim_blit_pixel(ctx, x2, y2, col);
 		}
 		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			tex_pxset(ctx.dst, x1, y1, col);
-			tex_pxset(ctx.dst, x2, y1, col);
+			gfx_prim_blit_pixel(ctx, x1, y1, col);
+			gfx_prim_blit_pixel(ctx, x2, y1, col);
 		}
 		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			tex_pxset(ctx.dst, x3, y3, col);
-			tex_pxset(ctx.dst, x4, y3, col);
+			gfx_prim_blit_pixel(ctx, x3, y3, col);
+			gfx_prim_blit_pixel(ctx, x4, y3, col);
 		}
 
 		y++;
@@ -505,33 +493,33 @@ gfx_cir_fill(
 		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y4, x3, x4, col);
 			if(indexed) {
-				prim_blit_span_8b(&info);
+				gfx_prim_blit_span_8b(&info);
 			} else {
-				prim_blit_span(&info);
+				gfx_prim_blit_span(&info);
 			}
 		}
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y2, x1, x2, col);
 			if(indexed) {
-				prim_blit_span_8b(&info);
+				gfx_prim_blit_span_8b(&info);
 			} else {
-				prim_blit_span(&info);
+				gfx_prim_blit_span(&info);
 			}
 		}
 		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y1, x1, x2, col);
 			if(indexed) {
-				prim_blit_span_8b(&info);
+				gfx_prim_blit_span_8b(&info);
 			} else {
-				prim_blit_span(&info);
+				gfx_prim_blit_span(&info);
 			}
 		}
 		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y3, x3, x4, col);
 			if(indexed) {
-				prim_blit_span_8b(&info);
+				gfx_prim_blit_span_8b(&info);
 			} else {
-				prim_blit_span(&info);
+				gfx_prim_blit_span(&info);
 			}
 		}
 
@@ -646,7 +634,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, u8 col)
 			i32 x2 = spans[n][1];
 			if(x2 < x1) continue;
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
-			prim_blit_span_8b(&info);
+			gfx_prim_blit_span_8b(&info);
 		}
 	} else {
 		for(i32 y = ymin; y <= ymax; y++) {
@@ -655,7 +643,7 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, u8 col)
 			i32 x2 = spans[n][1];
 			if(x2 < x1) continue;
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
-			prim_blit_span(&info);
+			gfx_prim_blit_span(&info);
 		}
 	}
 }
@@ -703,14 +691,14 @@ gfx_arc(
 		// Get the percentage of 1/8th circle drawn with a fast approximation of arctan(x/y)
 		ratio = x * 255 / y;                                                // x/y [0..255]
 		ratio = ratio * (770195 - (ratio - 255) * (ratio + 941)) / 6137491; // arctan(x/y) [0..32] // Fill the pixels of the 8 sections of the circle, but only on the arc defined by the angles (start and end)
-		if(full || ((ratio >= a_start && ratio < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 + y, y0 - x, col);
-		if(full || (((ratio + a_end) > 63 && (ratio + a_start) <= 63) ^ inverted)) tex_pxset(ctx.dst, x0 + x, y0 - y, col);
-		if(full || (((ratio + 64) >= a_start && (ratio + 64) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 - x, y0 - y, col);
-		if(full || (((ratio + a_end) > 127 && (ratio + a_start) <= 127) ^ inverted)) tex_pxset(ctx.dst, x0 - y, y0 - x, col);
-		if(full || (((ratio + 128) >= a_start && (ratio + 128) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 - y, y0 + x, col);
-		if(full || (((ratio + a_end) > 191 && (ratio + a_start) <= 191) ^ inverted)) tex_pxset(ctx.dst, x0 - x, y0 + y, col);
-		if(full || (((ratio + 192) >= a_start && (ratio + 192) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 + x, y0 + y, col);
-		if(full || (((ratio + a_end) > 255 && (ratio + a_start) <= 255) ^ inverted)) tex_pxset(ctx.dst, x0 + y, y0 + x, col);
+		if(full || ((ratio >= a_start && ratio < a_end) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 + y, y0 - x, col);
+		if(full || (((ratio + a_end) > 63 && (ratio + a_start) <= 63) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 + x, y0 - y, col);
+		if(full || (((ratio + 64) >= a_start && (ratio + 64) < a_end) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 - x, y0 - y, col);
+		if(full || (((ratio + a_end) > 127 && (ratio + a_start) <= 127) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 - y, y0 - x, col);
+		if(full || (((ratio + 128) >= a_start && (ratio + 128) < a_end) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 - y, y0 + x, col);
+		if(full || (((ratio + a_end) > 191 && (ratio + a_start) <= 191) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 - x, y0 + y, col);
+		if(full || (((ratio + 192) >= a_start && (ratio + 192) < a_end) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 + x, y0 + y, col);
+		if(full || (((ratio + a_end) > 255 && (ratio + a_start) <= 255) ^ inverted)) gfx_prim_blit_pixel(ctx, x0 + y, y0 + x, col);
 		if(d >= 2 * x) {
 			d = d - 2 * x - 1;
 			x = x + 1;
@@ -752,13 +740,13 @@ gfx_ellipse_section(
 	u8 col)
 {
 	// Upper right
-	tex_pxset(ctx.dst, x0 + x, y0 - y, col);
+	gfx_prim_blit_pixel(ctx, x0 + x, y0 - y, col);
 	// Upper left
-	tex_pxset(ctx.dst, x0 - x, y0 - y, col);
+	gfx_prim_blit_pixel(ctx, x0 - x, y0 - y, col);
 	// Lower right
-	tex_pxset(ctx.dst, x0 + x, y0 + y, col);
+	gfx_prim_blit_pixel(ctx, x0 + x, y0 + y, col);
 	// Lower left
-	tex_pxset(ctx.dst, x0 - x, y0 + y, col);
+	gfx_prim_blit_pixel(ctx, x0 - x, y0 + y, col);
 }
 
 void
@@ -803,9 +791,9 @@ gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 		if(x2 < x1) continue;
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
 		if(indexed) {
-			prim_blit_span_8b(&info);
+			gfx_prim_blit_span_8b(&info);
 		} else {
-			prim_blit_span(&info);
+			gfx_prim_blit_span(&info);
 		}
 	}
 
@@ -822,9 +810,9 @@ gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 		if(x2 < x1) continue;
 		struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, col);
 		if(indexed) {
-			prim_blit_span_8b(&info);
+			gfx_prim_blit_span_8b(&info);
 		} else {
-			prim_blit_span(&info);
+			gfx_prim_blit_span(&info);
 		}
 	}
 }

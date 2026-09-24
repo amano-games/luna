@@ -137,6 +137,9 @@ struct sokol_state {
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
+#if defined(SOKOL_RECORDING_ENABLED)
+	struct tex recording_frame;
+#endif
 
 	struct sokol_menu menu;
 
@@ -157,7 +160,6 @@ struct sokol_state {
 static struct sys_recording SYS_RECORDING_STATE;
 
 static struct sokol_state SOKOL_STATE;
-static u32 *SOKOL_PIXELS[SYS_DISPLAY_W * SYS_DISPLAY_H * 4]       = {0};
 
 #define SOKOL_ORG       "amano"
 #define SOKOL_NAME      "luna"
@@ -225,7 +227,7 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex        = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		struct tex tex        = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create frame buffer");
 	}
@@ -237,12 +239,12 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex               = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		struct tex tex               = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.paused_state.ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create paused gfx ctx");
 	}
 	{
-		struct tex tex                     = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		struct tex tex                     = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.paused_state.frame_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create paused frame tex");
 	}
@@ -258,6 +260,8 @@ sokol_main(i32 argc, char **argv)
 		u32 ups            = SYS_DEFAULT_UPS;
 		ssize frames       = ups * SOKOL_STATE.opts.recording.seconds_count;
 		struct alloc alloc = SOKOL_STATE.alloc;
+		SOKOL_STATE.recording_frame = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		dbg_check(SOKOL_STATE.recording_frame.px1b, "sokol", "Failed to create recording frame");
 		recording_1b_ini(alloc, &SYS_RECORDING_STATE.gfx, ups * SOKOL_STATE.opts.recording.seconds_count);
 		recording_aud_ini(alloc, &SYS_RECORDING_STATE.aud, ups * SOKOL_STATE.opts.recording.seconds_count);
 	}
@@ -340,12 +344,11 @@ sokol_init(void)
 	sg_image_desc img_desc = {
 		.width        = SYS_DISPLAY_W,
 		.height       = SYS_DISPLAY_H,
-		.pixel_format = SG_PIXELFORMAT_RGBA8,
+		.pixel_format = SG_PIXELFORMAT_R8,
 		.usage        = {.stream_update = true},
 	};
 
 	SOKOL_STATE.bind.images[IMG_tex]       = sg_make_image(&img_desc);
-	img_desc.pixel_format                = SG_PIXELFORMAT_R8;
 	SOKOL_STATE.bind.images[IMG_tex_debug] = sg_make_image(&img_desc);
 
 	// clang-format off
@@ -683,6 +686,41 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 #endif
 }
 
+#if defined(SOKOL_RECORDING_ENABLED)
+static void
+sokol_record_frame(void)
+{
+	struct tex frame = SOKOL_STATE.frame_ctx.dst;
+	struct tex mono = SOKOL_STATE.recording_frame;
+	tex_clr(mono, GFX_COL_BLACK);
+	for(i32 y = 0; y < frame.h; ++y) {
+		for(i32 x = 0; x < frame.w; ++x) {
+			if(frame.pxu8[(ssize)y * frame.wword * sizeof(u32) + x] != 0) {
+				mono.px1b[y * mono.wword + (x >> 5)] |= bswap_u32(0x80000000U >> (x & 31));
+			}
+		}
+	}
+	recording_1b_record(&SYS_RECORDING_STATE.gfx, &mono);
+}
+#endif
+
+static void
+sokol_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
+{
+	i32 x1 = max_i32(ctx.clip_x1, x);
+	i32 y1 = max_i32(ctx.clip_y1, y);
+	i32 x2 = min_i32(ctx.clip_x2, x + w - 1);
+	i32 y2 = min_i32(ctx.clip_y2, y + h - 1);
+	for(i32 yy = y1; yy <= y2; ++yy) {
+		u8 *row = ctx.dst.pxu8 + (ssize)yy * ctx.dst.wword * sizeof(u32);
+		for(i32 xx = x1; xx <= x2; ++xx) {
+			if(!(ctx.pat.p[yy & 7] & bswap_u32(0x80000000U >> (xx & 31)))) continue;
+			if(!invert) row[xx] = 0;
+			else if(row[xx] <= 1) row[xx] ^= 1;
+		}
+	}
+}
+
 void
 sokol_frame(void)
 {
@@ -691,7 +729,6 @@ sokol_frame(void)
 	s_params_t params               = {.time = sys_time_elapsed()};
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
-	usize size                      = ARRLEN(SOKOL_PIXELS);
 	sokol_gamepad_ev();
 
 	{
@@ -721,7 +758,7 @@ sokol_frame(void)
 		b32 updated = sys_internal_update();
 		if(updated) {
 #if defined(SOKOL_RECORDING_ENABLED)
-			recording_1b_record(&SYS_RECORDING_STATE.gfx, &SOKOL_STATE.frame_ctx.dst);
+			sokol_record_frame();
 #endif
 		}
 
@@ -744,7 +781,7 @@ sokol_frame(void)
 				struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
 				gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 				ctx.pat = gfx_pattern_50();
-				gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
+				sokol_pause_rect(ctx, 0, 0, tex.w, tex.h, false);
 				ctx.pat = gfx_pattern_100();
 			}
 			{
@@ -789,7 +826,7 @@ sokol_frame(void)
 						} break;
 						}
 						if(menu.idx == i) {
-							gfx_rec_fill(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, PRIM_MODE_INV);
+							sokol_pause_rect(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, true);
 						}
 					}
 				}
@@ -815,14 +852,19 @@ sokol_frame(void)
 		}
 	}
 
-	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
+	for(usize i = 0; i < ARRLEN(colors.colors); ++i) {
+		colors.colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors.colors[i]);
+	}
+
+	// R8 uploads are tightly packed; the fixed display width has no row padding.
+	dbg_assert(SOKOL_STATE.frame_ctx.dst.wword * (i32)sizeof(u32) == SYS_DISPLAY_W);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = SOKOL_PIXELS,
-				.size = size,
+				.ptr  = SOKOL_STATE.frame_ctx.dst.pxu8,
+				.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
 			},
 		});
 

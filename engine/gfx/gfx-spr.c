@@ -120,23 +120,84 @@
 #undef SPRBLIT_FLIPPEDX
 #undef SPRBLIT_COPYMODE
 
+static void
+gfx_spr_8b(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip, enum spr_mode mode)
+{
+	if(!src.t.pxu8 || !ctx.dst.pxu8) return;
+	if(src.t.fmt != TEX_FMT_8B_INDEX && src.t.fmt != TEX_FMT_1B_OPAQUE && src.t.fmt != TEX_FMT_1B_MASK) {
+		dbg_assert(0);
+		return;
+	}
+
+	i32 x1 = max_i32(max_i32(ctx.clip_x1, 0), px);
+	i32 y1 = max_i32(max_i32(ctx.clip_y1, 0), py);
+	i32 x2 = min_i32(min_i32(ctx.clip_x2, ctx.dst.w - 1), px + src.r.w - 1);
+	i32 y2 = min_i32(min_i32(ctx.clip_y2, ctx.dst.h - 1), py + src.r.h - 1);
+
+	for(i32 y = y1; y <= y2; ++y) {
+		i32 sy = src.r.y + ((flip & SPR_FLIP_Y) ? src.r.h - 1 - (y - py) : y - py);
+		u8 *dp = ctx.dst.pxu8 + (ssize)y * ctx.dst.wword * sizeof(u32);
+
+		for(i32 x = x1; x <= x2; ++x) {
+			u32 pat_bit = bswap_u32(0x80000000U >> (x & 31));
+
+			if(!(ctx.pat.p[y & 7] & pat_bit)) continue;
+
+			i32 sx = src.r.x + ((flip & SPR_FLIP_X) ? src.r.w - 1 - (x - px) : x - px);
+
+			if(src.t.fmt == TEX_FMT_8B_INDEX) {
+				dp[x] = src.t.pxu8[(ssize)sy * src.t.wword * sizeof(u32) + sx];
+			} else {
+				b32 masked = src.t.fmt == TEX_FMT_1B_MASK;
+				u32 bit    = bswap_u32(0x80000000U >> (sx & 31));
+				u32 *sp    = src.t.px1b + (ssize)sy * src.t.wword + ((sx >> 5) << masked);
+				if(masked && !(sp[1] & bit)) continue;
+				u8 col = (sp[0] & bit) != 0;
+				switch(mode) {
+				case SPR_MODE_COPY: dp[x] = col; break;
+				case SPR_MODE_INV: dp[x] = col ^ 1; break;
+				case SPR_MODE_BLACK: dp[x] = 0; break;
+				case SPR_MODE_WHITE: dp[x] = 1; break;
+				case SPR_MODE_BLACK_ONLY:
+					if(!col) dp[x] = 0;
+					break;
+				case SPR_MODE_WHITE_ONLY:
+					if(col) dp[x] = 1;
+					break;
+				case SPR_MODE_XOR:
+				case SPR_MODE_NXOR:
+					// Only monochrome palette indices have a defined inverse.
+					if(dp[x] <= 1 && col == (mode == SPR_MODE_XOR)) dp[x] ^= 1;
+					break;
+				}
+			}
+		}
+	}
+}
+
 void
 gfx_spr_cpy(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip)
 {
-	dbg_assert(ctx.dst.fmt == TEX_FMT_1B_OPAQUE);
-	if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
-		if(flip & SPR_FLIP_X) {
-			gfx_spr_d_s_fx_copy(ctx, src, px, py, flip, 0);
-		} else {
-			gfx_spr_d_s_copy(ctx, src, px, py, flip, 0);
-		}
-		return;
-	}
-	dbg_assert(src.t.fmt == TEX_FMT_1B_MASK);
-	if(flip & SPR_FLIP_X) {
-		gfx_spr_sm_fx_copy(ctx, src, px, py, flip, 0);
+	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
+		gfx_spr_8b(ctx, src, px, py, flip, SPR_MODE_COPY);
 	} else {
-		gfx_spr_sm_copy(ctx, src, px, py, flip, 0);
+		dbg_assert(src.t.fmt != TEX_FMT_8B_INDEX);
+		dbg_assert(ctx.dst.fmt == TEX_FMT_1B_OPAQUE);
+
+		if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
+			if(flip & SPR_FLIP_X) {
+				gfx_spr_d_s_fx_copy(ctx, src, px, py, flip, 0);
+			} else {
+				gfx_spr_d_s_copy(ctx, src, px, py, flip, 0);
+			}
+		} else {
+			dbg_assert(src.t.fmt == TEX_FMT_1B_MASK);
+			if(flip & SPR_FLIP_X) {
+				gfx_spr_sm_fx_copy(ctx, src, px, py, flip, 0);
+			} else {
+				gfx_spr_sm_copy(ctx, src, px, py, flip, 0);
+			}
+		}
 	}
 }
 
@@ -205,30 +266,39 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 {
 	if(!src.t.px1b) return;
 
-	if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
-		if(mode == SPR_MODE_COPY) {
-			gfx_spr_cpy(ctx, src, px, py, flip);
-		} else if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
-			gfx_spr_d_s(ctx, src, px, py, flip, mode);
-		} else {
-			if(flip & SPR_FLIP_X) {
-				gfx_spr_sm_fx(ctx, src, px, py, flip, mode);
-			} else {
-				gfx_spr_sm(ctx, src, px, py, flip, mode);
-			}
-		}
+	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
+		dbg_assert(src.t.fmt != TEX_FMT_8B_INDEX || mode == SPR_MODE_COPY);
+		gfx_spr_8b(ctx, src, px, py, flip, mode);
+
 	} else {
-		if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
-			if(flip & SPR_FLIP_X) {
-				gfx_spr_dm_s_fx(ctx, src, px, py, flip, mode);
+
+		dbg_assert(src.t.fmt != TEX_FMT_8B_INDEX);
+
+		if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
+			if(mode == SPR_MODE_COPY) {
+				gfx_spr_cpy(ctx, src, px, py, flip);
+			} else if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
+				gfx_spr_d_s(ctx, src, px, py, flip, mode);
 			} else {
-				gfx_spr_dm_s(ctx, src, px, py, flip, mode);
+				if(flip & SPR_FLIP_X) {
+					gfx_spr_sm_fx(ctx, src, px, py, flip, mode);
+				} else {
+					gfx_spr_sm(ctx, src, px, py, flip, mode);
+				}
 			}
 		} else {
-			if(flip & SPR_FLIP_X) {
-				gfx_spr_dm_sm_fx(ctx, src, px, py, flip, mode);
+			if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
+				if(flip & SPR_FLIP_X) {
+					gfx_spr_dm_s_fx(ctx, src, px, py, flip, mode);
+				} else {
+					gfx_spr_dm_s(ctx, src, px, py, flip, mode);
+				}
 			} else {
-				gfx_spr_dm_sm(ctx, src, px, py, flip, mode);
+				if(flip & SPR_FLIP_X) {
+					gfx_spr_dm_sm_fx(ctx, src, px, py, flip, mode);
+				} else {
+					gfx_spr_dm_sm(ctx, src, px, py, flip, mode);
+				}
 			}
 		}
 	}

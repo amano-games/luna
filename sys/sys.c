@@ -429,8 +429,18 @@ sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 		i32 cx = ((i32)*c & 31);
 		i32 cy = ((i32)*c >> 5) << 3;
 		for(i32 n = 0; n < 8; n++) {
-			fb[x + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] =
-				((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
+			u8 bits = ((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
+#if SYS_GFX_SOKOL
+			i32 yy = (tile_y << 3) + n;
+			for(i32 bit = 0; bit < 8; ++bit) {
+				i32 xx = x * 8 + bit;
+				if(0 <= xx && xx < SYS_DISPLAY_W && 0 <= yy && yy < SYS_DISPLAY_H) {
+					fb[xx + yy * ((SYS_DISPLAY_W + 3) & ~3)] = (bits >> (7 - bit)) & 1;
+				}
+			}
+#else
+			fb[x + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] = bits;
+#endif
 		}
 		x++;
 	}
