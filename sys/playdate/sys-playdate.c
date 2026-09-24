@@ -680,7 +680,7 @@ sys_data_path(void)
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	if(tex.px == NULL) {
+	if(tex.px1b == NULL) {
 		PD->system->setMenuImage(NULL, x_offset);
 		return;
 	}
@@ -697,7 +697,7 @@ sys_set_menu_image(struct tex tex, i32 x_offset)
 		&mk,
 		&px);
 
-	if(tex.fmt == TEX_FMT_OPAQUE) {
+	if(tex.fmt == TEX_FMT_1B_OPAQUE) {
 		if(mk != NULL) {
 			mset(mk, 0xFF, bb * bh);
 		}
