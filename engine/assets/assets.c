@@ -218,7 +218,7 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 
 	n = pck_read_ex(&ASSETS.pck, f, (u8 *)&header, 0, header_size);
 	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016llx", f->hash);
-	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK,
+	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"assets",
 		"invalid tex fmt %u hash %016llx",
 		header.fmt,
@@ -235,11 +235,7 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 		header.flags,
 		f->hash);
 
-	if(header.fmt == TEX_FMT_1B_MASK) {
-		res = tex_create(alloc, (i32)header.w, (i32)header.h);
-	} else {
-		res = tex_create_opaque(alloc, (i32)header.w, (i32)header.h);
-	}
+	res = tex_create(alloc, (i32)header.w, (i32)header.h, header.fmt);
 	dbg_check(res.px1b, "assets", "tex alloc failed hash %016llx", f->hash);
 
 	tex_size   = (ssize)sizeof(u32) * res.wword * res.h;
