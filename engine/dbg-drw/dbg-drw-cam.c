@@ -3,6 +3,8 @@
 #include "engine/cam/cam.h"
 #include "sys/sys-defs.h"
 
+#if BUILD_DEBUG && !PD_DEVICE
+
 void
 dbg_drw_cam(struct cam *c)
 {
@@ -102,3 +104,5 @@ dbg_drw_cam(struct cam *c)
 
 	dbg_drw_cir(tp.x, tp.y, 2);
 }
+
+#endif
