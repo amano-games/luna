@@ -15,10 +15,10 @@ fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 
 	i32 x            = 0;
 	i32 is_last_char = (b == '\n') || (b == -1);
-	x += fnt.widths[a] ? fnt.widths[a] : fnt.cell_w;
+	x += (fnt.widths && fnt.widths[a]) ? fnt.widths[a] : fnt.cell_w;
 	u16 kern_i         = ((u16)a << 8) | b;
 	i32 has_kern_pairs = (fnt.kern_pairs != NULL) && (b > 0);
-	x += has_kern_pairs * (kern_i > 0) * fnt.kern_pairs[kern_i];
+	if(has_kern_pairs && kern_i > 0) { x += fnt.kern_pairs[kern_i]; }
 	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
 	return x;

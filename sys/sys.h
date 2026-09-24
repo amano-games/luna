@@ -18,6 +18,9 @@ void app_stream_end(void);
 
 struct app_mem sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear);
 
+void sys_fnt_mono_set(struct fnt fnt);
+struct fnt sys_fnt_mono_get(void);
+
 void sys_ups_target_set(u32 value);
 u32 sys_ups_target_get(void);
 void sys_fps_target_set(u32 value);

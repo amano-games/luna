@@ -6,6 +6,7 @@
 #include "engine/dbg-drw/dbg-drw.h"
 #include "engine/gfx/gfx.h"
 #include "sys/sys-font.h"
+#include "sys/sys-font-mono.h"
 #include "base/log.h"
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
@@ -28,6 +29,18 @@ struct prof_hist_slot PROF_FRAME_HIST[PROF_HISTORY_SIZE];
 #elif PROF_HISTORY == PROF_HISTORY_ZONE
 u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
 #endif
+
+void
+sys_fnt_mono_set(struct fnt fnt)
+{
+	SYS.fnt_mono = fnt;
+}
+
+struct fnt
+sys_fnt_mono_get(void)
+{
+	return SYS.fnt_mono;
+}
 
 struct app_mem
 sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
@@ -158,6 +171,22 @@ sys_timing_reset(void)
 void
 sys_internal_init(void)
 {
+	sys_fnt_mono_set((struct fnt){
+		.cell_h             = 9,
+		.cell_w             = 6,
+		.grid_h             = 12,
+		.grid_w             = 10,
+		.metrics.baseline   = 8,
+		.metrics.x_height   = -1,
+		.metrics.cap_height = -1,
+		.metrics.descent    = -1,
+		.t.wword            = 4,
+		.t.fmt              = TEX_FMT_MASK,
+		.t.w                = 60,
+		.t.h                = 108,
+		.t.px               = (u32 *)SYS_MONO_FONT,
+	});
+
 	sys_ups_target_set(SYS_DEFAULT_UPS);
 	sys_fps_target_set(SYS_DEFAULT_FPS);
 	sys_dt_cap_us_set(SYS_DEFAULT_UPS_DT_CAP_US);

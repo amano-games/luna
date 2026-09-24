@@ -13,7 +13,6 @@
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
 #include "base/types.h"
-#include "sys/sys-font-mono.h"
 #include "sys/sys-opts.h"
 #include "sys/sys-record.h"
 #include "sys/sys-scoreboards.h"
@@ -150,7 +149,6 @@ struct sokol_state {
 	u32 mouse_btns;
 	b32 mouse_capture_applied;
 
-	struct fnt fnt;
 	struct sys_opts opts;
 
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
@@ -275,21 +273,6 @@ sokol_main(i32 argc, char **argv)
 		sys_make_dir(dir_path);
 	}
 
-	SOKOL_STATE.fnt = (struct fnt){
-		.cell_h             = 9,
-		.cell_w             = 6,
-		.grid_h             = 12,
-		.grid_w             = 10,
-		.metrics.baseline   = 8,
-		.metrics.x_height   = -1,
-		.metrics.cap_height = -1,
-		.metrics.descent    = -1,
-		.t.wword            = 4,
-		.t.fmt              = 1,
-		.t.w                = 60,
-		.t.h                = 108,
-		.t.px               = (u32 *)SYS_MONO_FONT,
-	};
 	SOKOL_STATE.status = SOKOL_STATUS_INI;
 
 error:;
@@ -764,7 +747,7 @@ sokol_frame(void)
 				ctx.pat = gfx_pattern_100();
 			}
 			{
-				struct fnt fnt         = SOKOL_STATE.fnt;
+				struct fnt fnt         = sys_fnt_mono_get();
 				struct sokol_menu menu = SOKOL_STATE.menu;
 				rec_i32 root           = {SYS_DISPLAY_W * 0.5f, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
 				gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
