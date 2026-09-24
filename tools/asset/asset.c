@@ -75,13 +75,13 @@ tex_to_blob(struct alloc scratch, struct alloc alloc, struct tex t, struct asset
 	void *out_data = NULL;
 
 	dbg_check(out, "tex", "null blob");
-	dbg_check(t.px, "tex", "null px");
+	dbg_check(t.px1b, "tex", "null px");
 
 	raw = (ssize)sizeof(u32) * t.wword * t.h;
 	if(flag == ASSET_FLAG_LZ4HC) {
-		packed = asset_lz4hc(scratch, t.px, raw, &px, &flags, TEX_FLAG_LZ4);
+		packed = asset_lz4hc(scratch, t.px1b, raw, &px, &flags, TEX_FLAG_LZ4);
 	} else {
-		px     = t.px;
+		px     = t.px1b;
 		flags  = TEX_FLAG_NONE;
 		packed = raw;
 	}

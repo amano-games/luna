@@ -228,29 +228,29 @@ sokol_main(i32 argc, char **argv)
 	{
 		struct tex tex        = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px, "sokol", "Failed to create frame buffer");
+		dbg_check(tex.px1b, "sokol", "Failed to create frame buffer");
 	}
 
 	{
 		struct tex tex      = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
 		SOKOL_STATE.dbg_ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
+		dbg_check(tex.px1b, "sokol", "Failed to create debug buffer");
 	}
 
 	{
 		struct tex tex               = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
 		SOKOL_STATE.paused_state.ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px, "sokol", "Failed to create paused gfx ctx");
+		dbg_check(tex.px1b, "sokol", "Failed to create paused gfx ctx");
 	}
 	{
 		struct tex tex                     = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
 		SOKOL_STATE.paused_state.frame_tex = tex;
-		dbg_check(tex.px, "sokol", "Failed to create paused frame tex");
+		dbg_check(tex.px1b, "sokol", "Failed to create paused frame tex");
 	}
 	{
 		struct tex tex                    = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
 		SOKOL_STATE.paused_state.menu_tex = tex;
-		dbg_check(tex.px, "sokol", "Failed to create menu tex");
+		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
 	}
 
 #if defined(SOKOL_RECORDING_ENABLED)
@@ -767,7 +767,7 @@ sokol_frame(void)
 						rec_i32_cut_left(&row_layout, 10);
 						rec_i32_cut_right(&row_layout, 10);
 						v2_i32 cntr = rec_i32_cntr(row_layout);
-						if(fnt.t.px != 0) {
+						if(fnt.t.px1b != 0) {
 							i32 x = row_layout.x + 4;
 							i32 y = cntr.y - (fnt.cell_h * 0.5f);
 							fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
@@ -960,13 +960,13 @@ sys_color_u32_set(enum gfx_col color, u32 value)
 void *
 sys_1bit_buffer(void)
 {
-	return SOKOL_STATE.frame_ctx.dst.px;
+	return SOKOL_STATE.frame_ctx.dst.px1b;
 }
 
 void *
 sys_dbg_buffer(void)
 {
-	return SOKOL_STATE.dbg_ctx.dst.px;
+	return SOKOL_STATE.dbg_ctx.dst.px1b;
 }
 
 i32
@@ -1105,7 +1105,7 @@ void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
 	SOKOL_STATE.paused_state.x_offset = x_offset;
-	if(tex.px == NULL) {
+	if(tex.px1b == NULL) {
 		tex_clr(SOKOL_STATE.paused_state.menu_tex, GFX_COL_CLEAR);
 		return;
 	}

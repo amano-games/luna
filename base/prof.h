@@ -934,9 +934,9 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 	dbg_assert(y2 <= ctx.clip_y2);
 
 	struct tex dtex = ctx.dst;
-	dbg_assert(dtex.fmt == TEX_FMT_OPAQUE);
+	dbg_assert(dtex.fmt == TEX_FMT_1B_OPAQUE);
 
-	u32 *base  = dtex.px;
+	u32 *base  = dtex.px1b;
 	i32 stride = dtex.wword; // words per row
 
 	i32 start_w = x1 >> 5;

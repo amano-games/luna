@@ -218,7 +218,7 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 
 	n = pck_read_ex(&ASSETS.pck, f, (u8 *)&header, 0, header_size);
 	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016llx", f->hash);
-	dbg_check(header.fmt == TEX_FMT_OPAQUE || header.fmt == TEX_FMT_MASK,
+	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK,
 		"assets",
 		"invalid tex fmt %u hash %016llx",
 		header.fmt,
@@ -235,12 +235,12 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 		header.flags,
 		f->hash);
 
-	if(header.fmt == TEX_FMT_MASK) {
+	if(header.fmt == TEX_FMT_1B_MASK) {
 		res = tex_create(alloc, (i32)header.w, (i32)header.h);
 	} else {
 		res = tex_create_opaque(alloc, (i32)header.w, (i32)header.h);
 	}
-	dbg_check(res.px, "assets", "tex alloc failed hash %016llx", f->hash);
+	dbg_check(res.px1b, "assets", "tex alloc failed hash %016llx", f->hash);
 
 	tex_size   = (ssize)sizeof(u32) * res.wword * res.h;
 	packed_len = f->size - header_size;
@@ -251,11 +251,11 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 		dbg_check(px_src, "assets", "scratch too small for packed tex hash %016llx", f->hash);
 		n = pck_read_ex(&ASSETS.pck, f, px_src, header_size, packed_len);
 		dbg_check(n == (i32)packed_len, "assets", "tex packed read failed hash %016llx", f->hash);
-		n = sys_lz4_decompress(px_src, res.px, packed_len, tex_size);
+		n = sys_lz4_decompress(px_src, res.px1b, packed_len, tex_size);
 		dbg_check(n == (int)tex_size, "assets", "tex lz4 decode failed hash %016llx", f->hash);
 	} else {
 		dbg_check(packed_len >= tex_size, "assets", "tex truncated hash %016llx", f->hash);
-		n = pck_read_ex(&ASSETS.pck, f, (u8 *)res.px, header_size, tex_size);
+		n = pck_read_ex(&ASSETS.pck, f, (u8 *)res.px1b, header_size, tex_size);
 		dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed hash %016llx", f->hash);
 	}
 
@@ -367,7 +367,7 @@ asset_tex_load(struct alloc scratch, str8 path, struct tex *tex)
 	res          = -1;
 	struct tex t = asset_tex_read(ASSETS.alloc, scratch, path);
 
-	dbg_check(t.px, "assets", "failed to load tex: %.*s", str8_spread(path));
+	dbg_check(t.px1b, "assets", "failed to load tex: %.*s", str8_spread(path));
 
 	log_info("assets", "Tex loaded: %s", path.str);
 	res = asset_db_tex_push(&ASSETS.db, path, t);
@@ -415,7 +415,7 @@ asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 	str8 base_name = str8_chop_last_dot(path);
 	str8 tex_path  = str8_fmt_push(scratch, "%.*s-table-%d-%d.tex", str8_spread(base_name), f.cell_w, f.cell_h);
 	f.t            = asset_tex_read(ASSETS.alloc, scratch, tex_path);
-	dbg_check(f.t.px, "assets", "failed to load fnt tex: %.*s", str8_spread(tex_path));
+	dbg_check(f.t.px1b, "assets", "failed to load fnt tex: %.*s", str8_spread(tex_path));
 
 	f.grid_w = f.t.w / f.cell_w;
 	f.grid_h = f.t.h / f.cell_h;
