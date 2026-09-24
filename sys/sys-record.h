@@ -38,7 +38,7 @@ recording_1b_ini(
 	gfx->frames = alloc_arr(alloc, gfx->frames, gfx->cap);
 	dbg_check_mem(gfx->frames, "sys-recording");
 	for(ssize i = 0; i < gfx->cap; ++i) {
-		gfx->frames[i] = tex_create_opaque(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		gfx->frames[i] = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 	}
 	res = true;
 error:;

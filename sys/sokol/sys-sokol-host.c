@@ -226,29 +226,29 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex        = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex        = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create frame buffer");
 	}
 
 	{
-		struct tex tex      = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex      = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		SOKOL_STATE.dbg_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create debug buffer");
 	}
 
 	{
-		struct tex tex               = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex               = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		SOKOL_STATE.paused_state.ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create paused gfx ctx");
 	}
 	{
-		struct tex tex                     = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex                     = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		SOKOL_STATE.paused_state.frame_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create paused frame tex");
 	}
 	{
-		struct tex tex                    = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex                    = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
 		SOKOL_STATE.paused_state.menu_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
 	}

@@ -6,7 +6,7 @@
 
 #define TEX_EXT "tex"
 
-enum {
+enum tex_fmt {
 	TEX_FMT_1B_OPAQUE, // only color pixels
 	TEX_FMT_1B_MASK,   // color and mask interlaced in words
 	TEX_FMT_8B_INDEX,  // Color is a u8 bit index
@@ -42,8 +42,7 @@ struct tex {
 	int h;
 };
 
-struct tex tex_create(struct alloc alloc, i32 w, i32 h);
-struct tex tex_create_opaque(struct alloc alloc, i32 w, i32 h);
+struct tex tex_create(struct alloc alloc, i32 w, i32 h, enum tex_fmt fmt);
 struct tex tex_load(struct alloc alloc, struct alloc scratch, str8 path);
 struct tex tex_load_from_mem(struct alloc alloc, void *data, ssize size);
 void tex_clr(struct tex dst, i32 col);

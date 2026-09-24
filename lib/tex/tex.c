@@ -8,49 +8,41 @@
 #include "sys/sys-lz4.h"
 #include "sys/sys.h"
 
-// Words per row: width padded to 32px; mask fmt doubles for alpha
+// 32-bit words per row, including padding and interlaced mask words.
 static inline u32
-tex_wword(i32 w, b32 mask)
+tex_wword(i32 w, enum tex_fmt fmt)
 {
-	u32 waligned = (w + 31) & ~31;
-	return (waligned >> 5) << (mask != 0);
+	switch(fmt) {
+	case TEX_FMT_1B_OPAQUE: return ((u32)w + 31) >> 5;
+	case TEX_FMT_1B_MASK: return (((u32)w + 31) >> 5) * 2;
+	case TEX_FMT_8B_INDEX: return ((u32)w + 3) >> 2;
+	}
+	dbg_assert(0);
+	return 0;
 }
 
-// Pixel buffer bytes for w x h
+// Pixel buffer bytes for w x h, including row padding.
 static inline ssize
-tex_mem_size(i32 w, i32 h, b32 mask)
+tex_mem_size(i32 w, i32 h, enum tex_fmt fmt)
 {
-	return (ssize)sizeof(u32) * tex_wword(w, mask) * (ssize)h;
+	return (ssize)sizeof(u32) * tex_wword(w, fmt) * (ssize)h;
 }
 
 struct tex
-tex_create_internal(struct alloc alloc, i32 w, i32 h, b32 mask)
+tex_create(struct alloc alloc, i32 w, i32 h, enum tex_fmt fmt)
 {
 	struct tex res = {0};
-	b32 m          = mask != 0;
-	u32 wword      = tex_wword(w, m);
-	ssize size     = tex_mem_size(w, h, m);
+	u32 wword      = tex_wword(w, fmt);
+	ssize size     = tex_mem_size(w, h, fmt);
 	void *mem      = alloc_size_aligned(alloc, size, MEM_ALIGN_PD_CACHE, false);
 	if(mem) {
 		res.px1b  = (u32 *)mem;
-		res.fmt   = m;
+		res.fmt   = fmt;
 		res.w     = w;
 		res.h     = h;
 		res.wword = wword;
 	}
 	return res;
-}
-
-struct tex
-tex_create(struct alloc alloc, i32 w, i32 h)
-{
-	return tex_create_internal(alloc, w, h, 1);
-}
-
-struct tex
-tex_create_opaque(struct alloc alloc, i32 w, i32 h)
-{
-	return tex_create_internal(alloc, w, h, 0);
 }
 
 struct tex
@@ -68,7 +60,7 @@ tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 
 	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %s", path.str);
 	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
-	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK,
+	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"tex",
 		"invalid tex fmt %u",
 		header.fmt);
@@ -82,7 +74,7 @@ tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 		"invalid tex flags %u",
 		header.flags);
 
-	t        = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	t        = tex_create(alloc, header.w, header.h, header.fmt);
 	tex_size = tex_mem_size(header.w, header.h, header.fmt);
 	dbg_check(t.px1b, "tex", "tex alloc failed %s", path.str);
 
@@ -125,7 +117,7 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 
 	mcpy(&header, src, sizeof(header));
 
-	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK,
+	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"tex",
 		"invalid tex fmt %u",
 		header.fmt);
@@ -140,7 +132,7 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 		header.flags);
 
 	tex_size = tex_mem_size(header.w, header.h, header.fmt);
-	res      = tex_create_internal(alloc, header.w, header.h, header.fmt);
+	res      = tex_create(alloc, header.w, header.h, header.fmt);
 	dbg_check_mem(res.px1b, "tex");
 
 	if(header.flags & TEX_FLAG_LZ4) {
@@ -382,7 +374,7 @@ tex_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h)
 		}
 	}
 
-	t = tex_create_internal(alloc, w, h, !opaque);
+	t = tex_create(alloc, w, h, opaque ? TEX_FMT_1B_OPAQUE : TEX_FMT_1B_MASK);
 	dbg_check_mem(t.px1b, "tex");
 
 	dst       = t.px1b;

@@ -1446,13 +1446,13 @@ main(int argc, char **argv)
 		str8_lit(DRM_HOST_NAME));
 
 	{
-		struct tex tex     = tex_create_opaque(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex     = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.frame_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px, "drm", "1-bit framebuffer");
 	}
 
 	{
-		struct tex tex   = tex_create_opaque(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		struct tex tex   = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.dbg_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px, "drm", "dbg framebuffer");
 	}
