@@ -28,6 +28,18 @@ tex_frame_buffer(void)
 	return t;
 }
 
+struct tex
+tex_dbg_buffer(void)
+{
+	struct tex t = {0};
+	t.fmt        = TEX_FMT_OPAQUE;
+	t.px         = (u32 *)sys_dbg_buffer();
+	t.w          = SYS_DISPLAY_W;
+	t.h          = SYS_DISPLAY_H;
+	t.wword      = SYS_DISPLAY_WWORDS;
+	return t;
+}
+
 struct gfx_pattern
 gfx_pattern_2x2(i32 p0, i32 p1)
 {
@@ -111,6 +123,13 @@ struct gfx_ctx
 gfx_ctx_display(void)
 {
 	struct gfx_ctx ctx = gfx_ctx_default(tex_frame_buffer());
+	return ctx;
+}
+
+struct gfx_ctx
+gfx_ctx_dbg(void)
+{
+	struct gfx_ctx ctx = gfx_ctx_default(tex_dbg_buffer());
 	return ctx;
 }
 

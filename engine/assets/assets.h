@@ -10,8 +10,6 @@
 #include "tools/asset/asset-defs.h"
 
 struct assets {
-	struct tex display;
-
 	struct asset_db db;
 
 	struct pck_desc pck;

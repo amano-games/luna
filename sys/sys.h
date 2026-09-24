@@ -56,6 +56,7 @@ u32 sys_epoch_2000(u32 *milliseconds);
 // @per_os_impl Display (1-bit framebuffer)
 void sys_1bit_invert(b32 i);
 void *sys_1bit_buffer(void);
+void *sys_dbg_buffer(void);
 v4 sys_color_v4_get(enum gfx_col color);
 void sys_color_v4_set(enum gfx_col color, v4 value);
 u32 sys_color_u32_get(enum gfx_col color);

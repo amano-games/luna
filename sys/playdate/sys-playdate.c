@@ -8,7 +8,6 @@
 
 #include "engine/gfx/gfx-defs.h"
 #include "lib/tex/tex.h"
-#include "sys/sys-debug-draw.h"
 #include "sys/sys.h"
 #include "base/types.h"
 #include "base/log.h"
@@ -310,6 +309,26 @@ void *
 sys_1bit_buffer(void)
 {
 	return PD->graphics->getFrame();
+}
+
+void *
+sys_dbg_buffer(void)
+{
+	// getDebugBitmap is NULL on the physical device.
+	if(!PD->graphics->getDebugBitmap) return NULL;
+	int bw, bh, bb;
+	u8 *mk        = NULL;
+	u8 *px        = NULL;
+	LCDBitmap *bm = PD->graphics->getDebugBitmap();
+	if(!bm) return NULL;
+	PD->graphics->getBitmapData(
+		bm,
+		&bw,
+		&bh,
+		&bb,
+		&mk,
+		&px);
+	return px;
 }
 
 v4
@@ -635,84 +654,6 @@ sys_menu_clr(void)
 	PD_STATE.menu.len = 0;
 	PD_STATE.menu.idx = 0;
 	PD->system->removeAllMenuItems();
-}
-
-void
-sys_draw_debug_clear(void)
-{
-	// LCDBitmap *ctx = PD->graphics->getDebugBitmap();
-	// PD->graphics->pushContext(ctx);
-	// PD->graphics->popContext();
-}
-
-void
-sys_debug_draw(struct debug_shape *shapes, int count)
-{
-#if BUILD_DEBUG && !PD_DEVICE
-	LCDBitmap *ctx = PD->graphics->getDebugBitmap();
-	PD->graphics->pushContext(ctx);
-	for(int i = 0; i < count; ++i) {
-		struct debug_shape *shape = &shapes[i];
-
-		switch(shape->type) {
-		case DEBUG_CIR: {
-			struct debug_shape_cir cir = shape->cir;
-
-			i32 r = cir.d * 0.5;
-			int x = cir.p.x - r;
-			int y = cir.p.y - r;
-			int w = cir.d;
-			int h = w;
-
-			if(cir.filled) {
-				PD->graphics->fillEllipse(x, y, w, h, 0, 0, kColorWhite);
-			} else {
-				PD->graphics->drawEllipse(x, y, w, h, 1, 0, 0, kColorWhite);
-			}
-		} break;
-		case DEBUG_REC: {
-			struct debug_shape_rec rec = shape->rec;
-			int x                      = rec.x;
-			int y                      = rec.y;
-			int w                      = rec.w;
-			int h                      = rec.h;
-			if(rec.filled) {
-				PD->graphics->fillRect(x, y, w, h, kColorWhite);
-			} else {
-				PD->graphics->drawRect(x, y, w, h, kColorWhite);
-			}
-		} break;
-		case DEBUG_POLY: {
-			struct debug_shape_poly poly = shape->poly;
-
-			for(ssize j = 0; j < poly.count; ++j) {
-				v2_i32 a = poly.verts[j];
-				v2_i32 b = poly.verts[(j + 1) % poly.count];
-
-				PD->graphics->drawLine(a.x, a.y, b.x, b.y, 1, kColorWhite);
-			}
-
-		} break;
-		case DEBUG_LIN: {
-			struct debug_shape_lin lin = shape->lin;
-			PD->graphics->drawLine(lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1, kColorWhite);
-		} break;
-		case DEBUG_ELLIPSIS: {
-			struct debug_shape_ellipsis ellipsis = shape->ellipsis;
-			PD->graphics->drawEllipse(
-				ellipsis.x - ellipsis.rx,
-				ellipsis.y - ellipsis.ry,
-				(ellipsis.rx * 2) + 2,
-				(ellipsis.ry * 2) + 2,
-				1,
-				0,
-				0,
-				kColorWhite);
-		} break;
-		}
-	}
-	PD->graphics->popContext();
-#endif
 }
 
 struct str8

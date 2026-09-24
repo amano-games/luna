@@ -1,5 +1,7 @@
 #include "dbg-drw-cam.h"
 #include "dbg-drw.h"
+#include "engine/cam/cam.h"
+#include "sys/sys-defs.h"
 
 void
 dbg_drw_cam(struct cam *c)

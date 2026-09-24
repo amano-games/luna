@@ -12,7 +12,6 @@
 #include "lib/fnt/fnt.h"
 #include "lib/rndm.h"
 #include "lib/tex/tex.h"
-#include "sys/sys-debug-draw.h"
 #include "base/types.h"
 #include "sys/sys-font-mono.h"
 #include "sys/sys-opts.h"
@@ -138,7 +137,7 @@ struct sokol_state {
 	struct sokol_paused_state paused_state;
 
 	struct gfx_ctx frame_ctx;
-	struct gfx_ctx debug_ctx;
+	struct gfx_ctx dbg_ctx;
 
 	struct sokol_menu menu;
 
@@ -235,8 +234,8 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex        = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
-		SOKOL_STATE.debug_ctx = gfx_ctx_default(tex);
+		struct tex tex      = tex_create_opaque(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		SOKOL_STATE.dbg_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px, "sokol", "Failed to create debug buffer");
 	}
 
@@ -741,6 +740,17 @@ sokol_frame(void)
 			recording_1b_record(&SYS_RECORDING_STATE.gfx, &SOKOL_STATE.frame_ctx.dst);
 #endif
 		}
+
+#if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
+		// After the drawing-frame clear, so the waveform is still there at upload.
+		struct recording_aud *rec = &SYS_RECORDING_STATE.recording_aud;
+		struct gfx_ctx ctx        = SOKOL_STATE.dbg_ctx;
+		for(ssize i = 0; i < rec->len; ++i) {
+			i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
+			i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
+			gfx_cir(ctx, x, y, 1, PRIM_MODE_WHITE);
+		}
+#endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
 		{
 			struct gfx_ctx ctx = SOKOL_STATE.paused_state.ctx;
@@ -822,7 +832,7 @@ sokol_frame(void)
 	}
 
 	tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, (u32 *)SOKOL_PIXELS, size, SOKOL_STATE.opts.colors);
-	tex_opaque_to_rgba(SOKOL_STATE.debug_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
+	tex_opaque_to_rgba(SOKOL_STATE.dbg_ctx.dst, (u32 *)SOKOL_PIXELS_DEBUG, size, SOKOL_STATE.opts.colors_dbg);
 
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
@@ -970,6 +980,12 @@ sys_1bit_buffer(void)
 	return SOKOL_STATE.frame_ctx.dst.px;
 }
 
+void *
+sys_dbg_buffer(void)
+{
+	return SOKOL_STATE.dbg_ctx.dst.px;
+}
+
 i32
 sys_menu_item_add(
 	const char *title,
@@ -1058,68 +1074,6 @@ sys_menu_clr(void)
 	mclr_array(SOKOL_STATE.menu.items);
 	SOKOL_STATE.menu.len = 0;
 	SOKOL_STATE.menu.idx = 0;
-}
-
-void
-sys_draw_debug_clear(void)
-{
-}
-
-void
-sys_debug_draw(struct debug_shape *shapes, int count)
-{
-#if BUILD_DEBUG
-	struct gfx_ctx ctx = SOKOL_STATE.debug_ctx;
-	tex_clr(ctx.dst, GFX_COL_BLACK);
-
-	for(int i = 0; i < count; ++i) {
-		struct debug_shape *shape = &shapes[i];
-		switch(shape->type) {
-		case DEBUG_CIR: {
-			struct debug_shape_cir cir = shape->cir;
-			if(cir.filled) {
-				gfx_cir_fill(ctx, cir.p.x, cir.p.y, cir.d, 1);
-			} else {
-				gfx_cir(ctx, cir.p.x, cir.p.y, cir.d, 1);
-			}
-		} break;
-		case DEBUG_REC: {
-			struct debug_shape_rec rec = shape->rec;
-			if(rec.filled) {
-				gfx_rec_fill(ctx, rec.x, rec.y, rec.w, rec.h, 1);
-			} else {
-				gfx_rec(ctx, rec.x, rec.y, rec.w, rec.h, 1);
-			}
-		} break;
-		case DEBUG_POLY: {
-			dbg_sentinel("sokol");
-		} break;
-		case DEBUG_LIN: {
-			struct debug_shape_lin lin = shape->lin;
-			gfx_lin(ctx, lin.a.x, lin.a.y, lin.b.x, lin.b.y, 1);
-		} break;
-		case DEBUG_ELLIPSIS: {
-			struct debug_shape_ellipsis ellipsis = shape->ellipsis;
-			gfx_ellipsis(ctx, ellipsis.x, ellipsis.y, ellipsis.rx, ellipsis.ry, 1);
-		} break;
-		default: {
-		} break;
-		}
-	}
-
-#if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
-	struct recording_aud *rec = &SYS_RECORDING_STATE.recording_aud;
-	for(ssize i = 0; i < rec->len; ++i) {
-		i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
-		i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
-		gfx_cir(ctx, x, y, 1, 1);
-	}
-#endif
-
-error:
-	return;
-
-#endif
 }
 
 void
