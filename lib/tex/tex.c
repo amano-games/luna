@@ -150,94 +150,103 @@ error:;
 }
 
 void
-tex_clr(struct tex dst, i32 col)
+tex_clr(struct tex dst, u8 col)
 {
 	i32 nn = dst.wword * dst.h;
 	u32 *p = dst.px1b;
 	if(!p) return;
-	switch(col) {
-	case GFX_COL_BLACK:
-		switch(dst.fmt) {
-		case TEX_FMT_1B_OPAQUE:
+	if(dst.fmt == TEX_FMT_8B_INDEX) {
+		mset(dst.pxu8, col, (ssize)sizeof(u32) * dst.wword * dst.h);
+	} else {
+		switch(col) {
+		case GFX_COL_BLACK:
+			switch(dst.fmt) {
+			case TEX_FMT_1B_OPAQUE:
+				for(i32 n = 0; n < nn; n++) {
+					*p++ = 0U;
+				}
+				break;
+			case TEX_FMT_1B_MASK:
+				for(i32 n = 0; n < nn; n += 2) {
+					*p++ = 0U;          // data
+					*p++ = 0xFFFFFFFFU; // mask
+				}
+				break;
+			}
+			break;
+		case GFX_COL_WHITE:
+			switch(dst.fmt) {
+			case TEX_FMT_1B_OPAQUE:
+				for(i32 n = 0; n < nn; n++) {
+					*p++ = 0xFFFFFFFFU;
+				}
+				break;
+			case TEX_FMT_1B_MASK:
+				for(i32 n = 0; n < nn; n += 2) {
+					*p++ = 0xFFFFFFFFU; // data
+					*p++ = 0xFFFFFFFFU; // mask
+				}
+				break;
+			}
+			break;
+		case GFX_COL_CLEAR:
+			if(dst.fmt == TEX_FMT_1B_OPAQUE) break;
 			for(i32 n = 0; n < nn; n++) {
-				*p++ = 0U;
-			}
-			break;
-		case TEX_FMT_1B_MASK:
-			for(i32 n = 0; n < nn; n += 2) {
-				*p++ = 0U;          // data
-				*p++ = 0xFFFFFFFFU; // mask
+				*p++ = 0;
 			}
 			break;
 		}
-		break;
-	case GFX_COL_WHITE:
-		switch(dst.fmt) {
-		case TEX_FMT_1B_OPAQUE:
-			for(i32 n = 0; n < nn; n++) {
-				*p++ = 0xFFFFFFFFU;
-			}
-			break;
-		case TEX_FMT_1B_MASK:
-			for(i32 n = 0; n < nn; n += 2) {
-				*p++ = 0xFFFFFFFFU; // data
-				*p++ = 0xFFFFFFFFU; // mask
-			}
-			break;
-		}
-		break;
-	case GFX_COL_CLEAR:
-		if(dst.fmt == TEX_FMT_1B_OPAQUE) break;
-		for(i32 n = 0; n < nn; n++) {
-			*p++ = 0;
-		}
-		break;
 	}
 }
 
-static i32
+static u8
 tex_px_at_unsafe(struct tex tex, i32 x, i32 y)
 {
-	u32 b = bswap_u32(0x80000000U >> (x & 31));
-	switch(tex.fmt) {
-	case TEX_FMT_1B_MASK: return (tex.px1b[y * tex.wword + ((x >> 5) << 1)] & b);
-	case TEX_FMT_1B_OPAQUE: return (tex.px1b[y * tex.wword + (x >> 5)] & b);
+	u8 res = 0;
+	if(tex.fmt == TEX_FMT_8B_INDEX) {
+		res = tex.pxu8[(ssize)y * tex.wword * sizeof(u32) + x];
+	} else {
+		u32 b = bswap_u32(0x80000000U >> (x & 31));
+		switch(tex.fmt) {
+		case TEX_FMT_1B_MASK: {
+			res = (tex.px1b[y * tex.wword + ((x >> 5) << 1)] & b);
+		} break;
+		case TEX_FMT_1B_OPAQUE: {
+			res = (tex.px1b[y * tex.wword + (x >> 5)] & b);
+		} break;
+		}
 	}
-	return 0;
+	return res;
 }
 
-static i32
-tex_mask_at_unsafe(struct tex tex, i32 x, i32 y)
+static u8
+tex_mskget_unsafe(struct tex tex, i32 x, i32 y)
 {
-	if(tex.fmt == TEX_FMT_1B_OPAQUE) return 1;
+	if(tex.fmt != TEX_FMT_1B_MASK) return 1;
 
 	u32 b = bswap_u32(0x80000000U >> (x & 31));
 	return (tex.px1b[y * tex.wword + ((x >> 5) << 1) + 1] & b);
 }
 
 static void
-tex_px_unsafe(struct tex tex, i32 x, i32 y, i32 col)
+tex_pxset_unsafe(struct tex tex, i32 x, i32 y, u8 col)
 {
-	u32 b  = bswap_u32(0x80000000U >> (x & 31));
-	u32 *p = NULL;
-	switch(tex.fmt) {
-	case TEX_FMT_1B_MASK: p = &tex.px1b[y * tex.wword + ((x >> 5) << 1)]; break;
-	case TEX_FMT_1B_OPAQUE: p = &tex.px1b[y * tex.wword + (x >> 5)]; break;
-	default: return;
+	if(tex.fmt == TEX_FMT_8B_INDEX) {
+		tex.pxu8[(ssize)y * tex.wword * sizeof(u32) + x] = col;
+	} else {
+		u32 b  = bswap_u32(0x80000000U >> (x & 31));
+		u32 *p = NULL;
+		switch(tex.fmt) {
+		case TEX_FMT_1B_MASK: p = &tex.px1b[y * tex.wword + ((x >> 5) << 1)]; break;
+		case TEX_FMT_1B_OPAQUE: p = &tex.px1b[y * tex.wword + (x >> 5)]; break;
+		default: return;
+		}
+		*p = (col == 0 ? *p & ~b : *p | b);
 	}
-	*p = (col == 0 ? *p & ~b : *p | b);
-}
-
-void
-tex_px_unsafe_display(struct tex tex, i32 x, i32 y, i32 col)
-{
-	u32 b  = bswap_u32(0x80000000U >> (x & 31));
-	u32 *p = &tex.px1b[y * tex.wword + (x >> 5)];
-	*p     = (col == 0 ? *p & ~b : *p | b);
 }
 
 static void
-tex_mask_unsafe(struct tex tex, i32 x, i32 y, i32 col)
+tex_mskset_unsafe(struct tex tex, i32 x, i32 y, u8 col)
 {
 	if(tex.fmt == TEX_FMT_1B_OPAQUE) return;
 	u32 b  = bswap_u32(0x80000000U >> (x & 31));
@@ -245,33 +254,33 @@ tex_mask_unsafe(struct tex tex, i32 x, i32 y, i32 col)
 	*p     = (col == 0 ? *p & ~b : *p | b);
 }
 
-i32
-tex_px_at(struct tex tex, i32 x, i32 y)
+u8
+tex_pxget(struct tex tex, i32 x, i32 y)
 {
 	if(!(0 <= x && x < tex.w && 0 <= y && y < tex.h)) return 0;
 	return tex_px_at_unsafe(tex, x, y);
 }
 
-i32
-tex_mask_at(struct tex tex, i32 x, i32 y)
+u8
+tex_mskget(struct tex tex, i32 x, i32 y)
 {
 	if(!(0 <= x && x < tex.w && 0 <= y && y < tex.h)) return 1;
-	return tex_mask_at_unsafe(tex, x, y);
+	return tex_mskget_unsafe(tex, x, y);
 }
 
 void
-tex_px(struct tex tex, i32 x, i32 y, i32 col)
+tex_pxset(struct tex tex, i32 x, i32 y, u8 col)
 {
 	if(0 <= x && x < tex.w && 0 <= y && y < tex.h) {
-		tex_px_unsafe(tex, x, y, col);
+		tex_pxset_unsafe(tex, x, y, col);
 	}
 }
 
 void
-tex_mask(struct tex tex, i32 x, i32 y, i32 col)
+tex_mskset(struct tex tex, i32 x, i32 y, u8 col)
 {
 	if(0 <= x && x < tex.w && 0 <= y && y < tex.h) {
-		tex_mask_unsafe(tex, x, y, col);
+		tex_mskset_unsafe(tex, x, y, col);
 	}
 }
 

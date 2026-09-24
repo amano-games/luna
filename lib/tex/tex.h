@@ -45,11 +45,11 @@ struct tex {
 struct tex tex_create(struct alloc alloc, i32 w, i32 h, enum tex_fmt fmt);
 struct tex tex_load(struct alloc alloc, struct alloc scratch, str8 path);
 struct tex tex_load_from_mem(struct alloc alloc, void *data, ssize size);
-void tex_clr(struct tex dst, i32 col);
-i32 tex_px_at(struct tex tex, i32 x, i32 y);
-i32 tex_mask_at(struct tex tex, i32 x, i32 y);
-void tex_px(struct tex tex, i32 x, i32 y, i32 col);
-void tex_mask(struct tex tex, i32 x, i32 y, i32 col);
+void tex_clr(struct tex dst, u8 col);
+u8 tex_pxget(struct tex tex, i32 x, i32 y);
+u8 tex_mskget(struct tex tex, i32 x, i32 y);
+void tex_pxset(struct tex tex, i32 x, i32 y, u8 col);
+void tex_mskset(struct tex tex, i32 x, i32 y, u8 col);
 
 void tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete);
 void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);

@@ -380,7 +380,7 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 {
 	if(d <= 0) return;
 	if(d == 1) {
-		tex_px(ctx.dst, px, py, mode);
+		tex_pxset(ctx.dst, px, py, mode);
 		return;
 	}
 	if(d == 2) {
@@ -406,20 +406,20 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 		i32 y3 = py + x;
 
 		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			tex_px(ctx.dst, x3, y4, mode);
-			tex_px(ctx.dst, x4, y4, mode);
+			tex_pxset(ctx.dst, x3, y4, mode);
+			tex_pxset(ctx.dst, x4, y4, mode);
 		}
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			tex_px(ctx.dst, x1, y2, mode);
-			tex_px(ctx.dst, x2, y2, mode);
+			tex_pxset(ctx.dst, x1, y2, mode);
+			tex_pxset(ctx.dst, x2, y2, mode);
 		}
 		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			tex_px(ctx.dst, x1, y1, mode);
-			tex_px(ctx.dst, x2, y1, mode);
+			tex_pxset(ctx.dst, x1, y1, mode);
+			tex_pxset(ctx.dst, x2, y1, mode);
 		}
 		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			tex_px(ctx.dst, x3, y3, mode);
-			tex_px(ctx.dst, x4, y3, mode);
+			tex_pxset(ctx.dst, x3, y3, mode);
+			tex_pxset(ctx.dst, x4, y3, mode);
 		}
 
 		y++;
@@ -630,14 +630,14 @@ gfx_arc(
 		// Get the percentage of 1/8th circle drawn with a fast approximation of arctan(x/y)
 		ratio = x * 255 / y;                                                // x/y [0..255]
 		ratio = ratio * (770195 - (ratio - 255) * (ratio + 941)) / 6137491; // arctan(x/y) [0..32] // Fill the pixels of the 8 sections of the circle, but only on the arc defined by the angles (start and end)
-		if(full || ((ratio >= a_start && ratio < a_end) ^ inverted)) tex_px(ctx.dst, x0 + y, y0 - x, mode);
-		if(full || (((ratio + a_end) > 63 && (ratio + a_start) <= 63) ^ inverted)) tex_px(ctx.dst, x0 + x, y0 - y, mode);
-		if(full || (((ratio + 64) >= a_start && (ratio + 64) < a_end) ^ inverted)) tex_px(ctx.dst, x0 - x, y0 - y, mode);
-		if(full || (((ratio + a_end) > 127 && (ratio + a_start) <= 127) ^ inverted)) tex_px(ctx.dst, x0 - y, y0 - x, mode);
-		if(full || (((ratio + 128) >= a_start && (ratio + 128) < a_end) ^ inverted)) tex_px(ctx.dst, x0 - y, y0 + x, mode);
-		if(full || (((ratio + a_end) > 191 && (ratio + a_start) <= 191) ^ inverted)) tex_px(ctx.dst, x0 - x, y0 + y, mode);
-		if(full || (((ratio + 192) >= a_start && (ratio + 192) < a_end) ^ inverted)) tex_px(ctx.dst, x0 + x, y0 + y, mode);
-		if(full || (((ratio + a_end) > 255 && (ratio + a_start) <= 255) ^ inverted)) tex_px(ctx.dst, x0 + y, y0 + x, mode);
+		if(full || ((ratio >= a_start && ratio < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 + y, y0 - x, mode);
+		if(full || (((ratio + a_end) > 63 && (ratio + a_start) <= 63) ^ inverted)) tex_pxset(ctx.dst, x0 + x, y0 - y, mode);
+		if(full || (((ratio + 64) >= a_start && (ratio + 64) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 - x, y0 - y, mode);
+		if(full || (((ratio + a_end) > 127 && (ratio + a_start) <= 127) ^ inverted)) tex_pxset(ctx.dst, x0 - y, y0 - x, mode);
+		if(full || (((ratio + 128) >= a_start && (ratio + 128) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 - y, y0 + x, mode);
+		if(full || (((ratio + a_end) > 191 && (ratio + a_start) <= 191) ^ inverted)) tex_pxset(ctx.dst, x0 - x, y0 + y, mode);
+		if(full || (((ratio + 192) >= a_start && (ratio + 192) < a_end) ^ inverted)) tex_pxset(ctx.dst, x0 + x, y0 + y, mode);
+		if(full || (((ratio + a_end) > 255 && (ratio + a_start) <= 255) ^ inverted)) tex_pxset(ctx.dst, x0 + y, y0 + x, mode);
 		if(d >= 2 * x) {
 			d = d - 2 * x - 1;
 			x = x + 1;
@@ -679,13 +679,13 @@ gfx_ellipse_section(
 	enum prim_mode mode)
 {
 	// Upper right
-	tex_px(ctx.dst, x0 + x, y0 - y, mode);
+	tex_pxset(ctx.dst, x0 + x, y0 - y, mode);
 	// Upper left
-	tex_px(ctx.dst, x0 - x, y0 - y, mode);
+	tex_pxset(ctx.dst, x0 - x, y0 - y, mode);
 	// Lower right
-	tex_px(ctx.dst, x0 + x, y0 + y, mode);
+	tex_pxset(ctx.dst, x0 + x, y0 + y, mode);
 	// Lower left
-	tex_px(ctx.dst, x0 - x, y0 + y, mode);
+	tex_pxset(ctx.dst, x0 - x, y0 + y, mode);
 }
 
 void
