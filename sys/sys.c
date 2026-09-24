@@ -3,6 +3,8 @@
 #include "sys/sys.h"
 #include "base/mem.h"
 #include "base/prof.h"
+#include "engine/dbg-drw/dbg-drw.h"
+#include "engine/gfx/gfx.h"
 #include "sys/sys-font.h"
 #include "base/log.h"
 #include "base/dbg.h"
@@ -230,6 +232,7 @@ sys_internal_update(void)
 #endif
 
 		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
+		dbg_drw_clr();
 		app_draw();
 		prof_block_end();
 

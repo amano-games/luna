@@ -101,6 +101,7 @@ void gfx_tri(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy,
 void gfx_tri_fill(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 cx, i32 cy, i32 mode);
 
 struct gfx_ctx gfx_ctx_display(void);
+struct gfx_ctx gfx_ctx_dbg(void);
 struct gfx_ctx gfx_ctx_default(struct tex dst);
 struct gfx_ctx gfx_ctx_unclip(struct gfx_ctx ctx);
 struct gfx_ctx gfx_ctx_clip(struct gfx_ctx ctx, i32 x1, i32 y1, i32 x2, i32 y2);

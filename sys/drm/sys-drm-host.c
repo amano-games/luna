@@ -1125,6 +1125,7 @@ struct drm_host {
 	struct marena scratch_arena;
 	struct alloc scratch;
 	struct gfx_ctx frame_ctx;
+	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
 	volatile sig_atomic_t running;
 	i32 evdev_fds[DRM_EVDEV_MAX];
@@ -1450,6 +1451,12 @@ main(int argc, char **argv)
 		dbg_check(tex.px, "drm", "1-bit framebuffer");
 	}
 
+	{
+		struct tex tex   = tex_create_opaque(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H);
+		DRM_HOST.dbg_ctx = gfx_ctx_default(tex);
+		dbg_check(tex.px, "drm", "dbg framebuffer");
+	}
+
 	st = drm_display_open();
 	if(st != DRM_STATUS_OK) {
 		log_error("drm", "display open");
@@ -1595,9 +1602,9 @@ sys_color_u32_set(enum gfx_col color, u32 value)
 }
 
 void *
-sys_1bit_buffer(void)
+sys_dbg_buffer(void)
 {
-	return DRM_HOST.frame_ctx.dst.px;
+	return DRM_HOST.dbg_ctx.dst.px;
 }
 
 i32
@@ -1672,11 +1679,6 @@ void
 sys_audio_unlock(void)
 {
 	drm_alsa_unlock();
-}
-
-void
-sys_debug_draw(struct debug_shape *shapes, int count)
-{
 }
 
 int
