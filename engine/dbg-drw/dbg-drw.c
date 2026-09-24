@@ -43,7 +43,7 @@ dbg_drw_clr(void)
 }
 
 void
-dbg_drw_txt(f32 x, f32 y, str8 text)
+dbg_drw_txt(f32 x, f32 y, str8 text, u8 col)
 {
 	fnt_mono_draw_str(
 		DBG_DRW_STATE.ctx,
@@ -53,11 +53,11 @@ dbg_drw_txt(f32 x, f32 y, str8 text)
 		(i32)(y + DBG_DRW_STATE.offset.y),
 		0,
 		0,
-		SPR_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2)
+dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2, u8 col)
 {
 	gfx_lin(
 		DBG_DRW_STATE.ctx,
@@ -65,22 +65,22 @@ dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2)
 		y1 + DBG_DRW_STATE.offset.y,
 		x2 + DBG_DRW_STATE.offset.x,
 		y2 + DBG_DRW_STATE.offset.y,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_cir(f32 x, f32 y, f32 d)
+dbg_drw_cir(f32 x, f32 y, f32 d, u8 col)
 {
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
+dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry, u8 col)
 {
 	gfx_ellipsis(
 		DBG_DRW_STATE.ctx,
@@ -88,11 +88,11 @@ dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
 		(i32)(y + DBG_DRW_STATE.offset.y),
 		(i32)rx,
 		(i32)ry,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_poly(struct v2 *verts, ssize count)
+dbg_drw_poly(struct v2 *verts, ssize count, u8 col)
 {
 	for(ssize i = 0; i < count; ++i) {
 		v2 a = verts[i];
@@ -103,12 +103,12 @@ dbg_drw_poly(struct v2 *verts, ssize count)
 			a.y + DBG_DRW_STATE.offset.y,
 			b.x + DBG_DRW_STATE.offset.x,
 			b.y + DBG_DRW_STATE.offset.y,
-			PRIM_MODE_WHITE);
+			DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 	}
 }
 
 void
-dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy)
+dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy, u8 col)
 {
 	gfx_tri(
 		DBG_DRW_STATE.ctx,
@@ -119,22 +119,22 @@ dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy)
 		cx + DBG_DRW_STATE.offset.x,
 		cy + DBG_DRW_STATE.offset.y,
 		1,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_cir_fill(f32 x, f32 y, f32 d)
+dbg_drw_cir_fill(f32 x, f32 y, f32 d, u8 col)
 {
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_rec_i32(struct rec_i32 r)
+dbg_drw_rec_i32(struct rec_i32 r, u8 col)
 {
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
@@ -142,11 +142,11 @@ dbg_drw_rec_i32(struct rec_i32 r)
 		r.y + DBG_DRW_STATE.offset.y,
 		r.w,
 		r.h,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_rec(f32 x, f32 y, f32 w, f32 h)
+dbg_drw_rec(f32 x, f32 y, f32 w, f32 h, u8 col)
 {
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
@@ -154,11 +154,11 @@ dbg_drw_rec(f32 x, f32 y, f32 w, f32 h)
 		y + DBG_DRW_STATE.offset.y,
 		w,
 		h,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h)
+dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h, u8 col)
 {
 	gfx_rec_fill(
 		DBG_DRW_STATE.ctx,
@@ -166,11 +166,11 @@ dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h)
 		y + DBG_DRW_STATE.offset.y,
 		w,
 		h,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 void
-dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2)
+dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2, u8 col)
 {
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
@@ -178,43 +178,43 @@ dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2)
 		y1 + DBG_DRW_STATE.offset.y,
 		x2 - x1,
 		y2 - y1,
-		PRIM_MODE_WHITE);
+		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
 }
 
 // TODO: Re-do all of this
 void
-dbg_drw_collider(struct col_shape shape)
+dbg_drw_collider(struct col_shape shape, u8 col)
 {
 	switch(shape.type) {
 	case COL_TYPE_AABB: {
-		struct col_aabb col = shape.aabb;
-		dbg_drw_aabb(col.min.x, col.min.y, col.max.x, col.max.y);
+		struct col_aabb collider = shape.aabb;
+		dbg_drw_aabb(collider.min.x, collider.min.y, collider.max.x, collider.max.y, col);
 	} break;
 	case COL_TYPE_CIR: {
-		struct col_cir col = shape.cir;
-		dbg_drw_cir(col.p.x, col.p.y, col.r * 2);
+		struct col_cir collider = shape.cir;
+		dbg_drw_cir(collider.p.x, collider.p.y, collider.r * 2, col);
 	} break;
 	case COL_TYPE_CAPSULE: {
-		struct col_capsule col = shape.capsule;
-		v2 a                   = col.a.p;
-		f32 ra                 = col.a.r;
-		v2 b                   = col.b.p;
-		f32 rb                 = col.b.r;
+		struct col_capsule collider = shape.capsule;
+		v2 a                       = collider.a.p;
+		f32 ra                     = collider.a.r;
+		v2 b                       = collider.b.p;
+		f32 rb                     = collider.b.r;
 
-		dbg_drw_cir(a.x, a.y, ra * 2);
-		dbg_drw_cir(b.x, b.y, rb * 2);
-		dbg_drw_lin(a.x, a.y, b.x, b.y);
-		dbg_drw_lin(col.tangents.a.a.x, col.tangents.a.a.y, col.tangents.a.b.x, col.tangents.a.b.y);
-		dbg_drw_lin(col.tangents.b.a.x, col.tangents.b.a.y, col.tangents.b.b.x, col.tangents.b.b.y);
+		dbg_drw_cir(a.x, a.y, ra * 2, col);
+		dbg_drw_cir(b.x, b.y, rb * 2, col);
+		dbg_drw_lin(a.x, a.y, b.x, b.y, col);
+		dbg_drw_lin(collider.tangents.a.a.x, collider.tangents.a.a.y, collider.tangents.a.b.x, collider.tangents.a.b.y, col);
+		dbg_drw_lin(collider.tangents.b.a.x, collider.tangents.b.a.y, collider.tangents.b.b.x, collider.tangents.b.b.y, col);
 
 	} break;
 	case COL_TYPE_POLY: {
-		col_poly col = shape.poly;
+		col_poly collider = shape.poly;
 		v2 verts[COL_MAX_POLYGON_VERTS];
-		for(ssize i = 0; i < col.count; ++i) {
-			verts[i] = col_v2_from_c2v(col.verts[i]);
+		for(ssize i = 0; i < collider.count; ++i) {
+			verts[i] = col_v2_from_c2v(collider.verts[i]);
 		}
-		dbg_drw_poly(verts, col.count);
+		dbg_drw_poly(verts, collider.count, col);
 	} break;
 	default: {
 	} break;

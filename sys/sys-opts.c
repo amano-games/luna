@@ -71,8 +71,12 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 		.colors.colors[GFX_COL_BLACK] = 0x110B0DFF,
 		.colors.colors[GFX_COL_WHITE] = 0xA5A5A2FF,
 
-		.colors_dbg.colors[GFX_COL_BLACK] = 0x000000FF,
-		.colors_dbg.colors[GFX_COL_WHITE] = 0xFFFFFFFF,
+		.colors_dbg.colors = {
+			[0] = 0x00000000,
+			[1] = 0xFF0000FF,
+			[2] = 0x00FF00FF,
+			[3] = 0x0000FFFF,
+		},
 
 		.recording = {
 			.save_path     = default_save_path,
