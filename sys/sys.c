@@ -164,6 +164,7 @@ sys_internal_init(void)
 
 	SYS.frame_buffer = sys_1bit_buffer();
 	prof_ini();
+	dbg_drw_ctx_set(gfx_ctx_dbg());
 	app_init(SYS_MAX_MEM);
 	sys_timing_reset();
 }

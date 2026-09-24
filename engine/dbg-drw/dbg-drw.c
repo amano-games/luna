@@ -4,12 +4,14 @@
 #include "engine/gfx/gfx.h"
 #include "lib/tex/tex.h"
 
+#if BUILD_DEBUG && !PD_DEVICE
+
 struct dbg_drw {
 	struct gfx_ctx ctx;
 	v2_i32 offset;
 };
 
-struct dbg_drw DBG_DRW_STATE;
+static struct dbg_drw DBG_DRW_STATE;
 
 void
 dbg_drw_ctx_set(struct gfx_ctx ctx)
@@ -35,15 +37,12 @@ dbg_drw_offset_set(i32 x, i32 y)
 void
 dbg_drw_clr(void)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	tex_clr(DBG_DRW_STATE.ctx.dst, GFX_COL_BLACK);
-#endif
 }
 
 void
 dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_lin(
 		DBG_DRW_STATE.ctx,
 		x1 + DBG_DRW_STATE.offset.x,
@@ -51,26 +50,22 @@ dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2)
 		x2 + DBG_DRW_STATE.offset.x,
 		y2 + DBG_DRW_STATE.offset.y,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
 dbg_drw_cir(f32 x, f32 y, f32 d)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
 dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_ellipsis(
 		DBG_DRW_STATE.ctx,
 		(i32)(x + DBG_DRW_STATE.offset.x),
@@ -78,7 +73,6 @@ dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry)
 		(i32)rx,
 		(i32)ry,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
@@ -115,14 +109,12 @@ dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy)
 void
 dbg_drw_cir_fill(f32 x, f32 y, f32 d)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
@@ -140,7 +132,6 @@ dbg_drw_rec_i32(struct rec_i32 r)
 void
 dbg_drw_rec(f32 x, f32 y, f32 w, f32 h)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
@@ -148,13 +139,11 @@ dbg_drw_rec(f32 x, f32 y, f32 w, f32 h)
 		w,
 		h,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
 dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h)
 {
-#if BUILD_DEBUG && !PD_DEVICE && !defined(APP_DISABLE_DEBUG_DRAW)
 	gfx_rec_fill(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
@@ -162,7 +151,6 @@ dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h)
 		w,
 		h,
 		PRIM_MODE_WHITE);
-#endif
 }
 
 void
@@ -216,3 +204,5 @@ dbg_drw_collider(struct col_shape shape)
 	} break;
 	}
 }
+
+#endif
