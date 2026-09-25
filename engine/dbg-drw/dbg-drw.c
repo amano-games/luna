@@ -1,6 +1,7 @@
 #include "dbg-drw.h"
 
 #include "base/v2.h"
+#include "engine/gfx/gfx-defs.h"
 #include "engine/gfx/gfx-txt.h"
 #include "engine/gfx/gfx.h"
 #include "lib/tex/tex.h"
@@ -45,6 +46,7 @@ dbg_drw_clr(void)
 void
 dbg_drw_txt(f32 x, f32 y, str8 text, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	fnt_mono_draw_str(
 		DBG_DRW_STATE.ctx,
 		sys_fnt_mono_get(),
@@ -53,47 +55,51 @@ dbg_drw_txt(f32 x, f32 y, str8 text, u8 col)
 		(i32)(y + DBG_DRW_STATE.offset.y),
 		0,
 		0,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_lin(f32 x1, f32 y1, f32 x2, f32 y2, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_lin(
 		DBG_DRW_STATE.ctx,
 		x1 + DBG_DRW_STATE.offset.x,
 		y1 + DBG_DRW_STATE.offset.y,
 		x2 + DBG_DRW_STATE.offset.x,
 		y2 + DBG_DRW_STATE.offset.y,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_cir(f32 x, f32 y, f32 d, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_ellipsis(f32 x, f32 y, f32 rx, f32 ry, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_ellipsis(
 		DBG_DRW_STATE.ctx,
 		(i32)(x + DBG_DRW_STATE.offset.x),
 		(i32)(y + DBG_DRW_STATE.offset.y),
 		(i32)rx,
 		(i32)ry,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_poly(struct v2 *verts, ssize count, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	for(ssize i = 0; i < count; ++i) {
 		v2 a = verts[i];
 		v2 b = verts[(i + 1) % count];
@@ -103,13 +109,14 @@ dbg_drw_poly(struct v2 *verts, ssize count, u8 col)
 			a.y + DBG_DRW_STATE.offset.y,
 			b.x + DBG_DRW_STATE.offset.x,
 			b.y + DBG_DRW_STATE.offset.y,
-			DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+			PRIM_MODE_WHITE);
 	}
 }
 
 void
 dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_tri(
 		DBG_DRW_STATE.ctx,
 		ax + DBG_DRW_STATE.offset.x,
@@ -119,69 +126,73 @@ dbg_drw_tri(f32 ax, f32 ay, f32 bx, f32 by, f32 cx, f32 cy, u8 col)
 		cx + DBG_DRW_STATE.offset.x,
 		cy + DBG_DRW_STATE.offset.y,
 		1,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_cir_fill(f32 x, f32 y, f32 d, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_cir(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		(i32)d,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_rec_i32(struct rec_i32 r, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
 		r.x + DBG_DRW_STATE.offset.x,
 		r.y + DBG_DRW_STATE.offset.y,
 		r.w,
 		r.h,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_rec(f32 x, f32 y, f32 w, f32 h, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		w,
 		h,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_rec_fill(f32 x, f32 y, f32 w, f32 h, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_rec_fill(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
 		w,
 		h,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
 void
 dbg_drw_aabb(f32 x1, f32 y1, f32 x2, f32 y2, u8 col)
 {
+	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
 	gfx_rec(
 		DBG_DRW_STATE.ctx,
 		x1 + DBG_DRW_STATE.offset.x,
 		y1 + DBG_DRW_STATE.offset.y,
 		x2 - x1,
 		y2 - y1,
-		DBG_DRW_STATE.ctx.dst.fmt == TEX_FMT_8B_INDEX ? col : GFX_COL_WHITE);
+		PRIM_MODE_WHITE);
 }
 
-// TODO: Re-do all of this
 void
 dbg_drw_collider(struct col_shape shape, u8 col)
 {
@@ -196,10 +207,10 @@ dbg_drw_collider(struct col_shape shape, u8 col)
 	} break;
 	case COL_TYPE_CAPSULE: {
 		struct col_capsule collider = shape.capsule;
-		v2 a                       = collider.a.p;
-		f32 ra                     = collider.a.r;
-		v2 b                       = collider.b.p;
-		f32 rb                     = collider.b.r;
+		v2 a                        = collider.a.p;
+		f32 ra                      = collider.a.r;
+		v2 b                        = collider.b.p;
+		f32 rb                      = collider.b.r;
 
 		dbg_drw_cir(a.x, a.y, ra * 2, col);
 		dbg_drw_cir(b.x, b.y, rb * 2, col);
