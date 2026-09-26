@@ -1,0 +1,211 @@
+#pragma once
+
+#include "base/types.h"
+#include "engine/gfx/gfx-spr.h"
+#include "engine/gfx/gfx-txt.h"
+#include "engine/gfx/gfx.h"
+#include "lib/tex/tex.h"
+#include "sys/sys-defs.h"
+#include "sys/sys-input.h"
+
+enum sys_menu_item_type {
+	SOKOL_MENU_ITEM_TYPE_NONE,
+
+	SOKOL_MENU_ITEM_TYPE_ACTION,
+	SOKOL_MENU_ITEM_TYPE_BOOL,
+
+	SOKOL_MENU_ITEM_TYPE_NUM_COUNT,
+};
+
+struct sys_menu_item {
+	i32 id;
+	enum sys_menu_item_type type;
+	str8 title;
+	i32 value;
+	void (*callback)(void *arg);
+	void *arg;
+};
+
+struct sys_menu {
+	i32 next_id;
+	i32 idx;
+	i32 len;
+	struct sys_menu_item items[3];
+};
+
+struct sys_pause_state {
+	f32 timestamp;
+	i32 x_offset;
+	struct tex frame_tex;
+	struct tex menu_tex;
+	struct gfx_ctx ctx;
+	struct sys_menu menu;
+};
+
+void
+sys_pause_ini(struct alloc alloc, struct sys_pause_state *pause)
+{
+	pause->menu.next_id = 1;
+
+	{
+		struct tex tex = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		pause->ctx     = gfx_ctx_default(tex);
+		dbg_check(tex.px1b, "sys-pause", "Failed to create pause gfx ctx");
+	}
+
+error:;
+}
+
+b32
+sys_pause_inp(struct sys_menu *menu, i32 buttons)
+{
+	b32 res = false;
+
+	if(menu->len > 0) {
+		struct sys_menu_item *item = menu->items + menu->idx;
+		if(buttons & SYS_INP_A) {
+			switch(item->type) {
+			case SOKOL_MENU_ITEM_TYPE_ACTION: {
+				res = true;
+			} break;
+			case SOKOL_MENU_ITEM_TYPE_BOOL: {
+				if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+					item->value = !item->value;
+				}
+			} break;
+			default: {
+			} break;
+			}
+		}
+		if(buttons & SYS_INP_DPAD_U) {
+			menu->idx = max_i32(menu->idx - 1, 0);
+		}
+		if(buttons & SYS_INP_DPAD_D) {
+			menu->idx = min_i32(menu->idx + 1, menu->len - 1);
+		}
+		if(buttons & SYS_INP_DPAD_R) {
+			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+				item->value = true;
+			}
+		}
+		if(buttons & SYS_INP_DPAD_L) {
+			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
+				item->value = false;
+			}
+		}
+	} else {
+		if((buttons & SYS_INP_A)) {
+			res = true;
+		}
+	}
+
+	if((buttons & SYS_INP_B)) {
+		res = true;
+	}
+
+	if(res) {
+		if(menu->len > 0) {
+			struct sys_menu_item *item = menu->items + menu->idx;
+			if(item->callback) {
+				item->callback(item->arg);
+			}
+		}
+	}
+	return res;
+}
+
+static void
+sys_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
+{
+	i32 x1 = max_i32(ctx.clip_x1, x);
+	i32 y1 = max_i32(ctx.clip_y1, y);
+	i32 x2 = min_i32(ctx.clip_x2, x + w - 1);
+	i32 y2 = min_i32(ctx.clip_y2, y + h - 1);
+	for(i32 yy = y1; yy <= y2; ++yy) {
+		u8 *row = ctx.dst.pxu8 + (ssize)yy * ctx.dst.wword * sizeof(u32);
+		for(i32 xx = x1; xx <= x2; ++xx) {
+			if(!(ctx.pat.p[yy & 7] & bswap_u32(0x80000000U >> (xx & 31)))) continue;
+			if(!invert)
+				row[xx] = 0;
+			else if(row[xx] <= 1)
+				row[xx] ^= 1;
+		}
+	}
+}
+
+void
+sys_pause_drw(struct sys_pause_state *pause)
+{
+	struct gfx_ctx ctx = pause->ctx;
+	tex_clr(ctx.dst, GFX_COL_BLACK);
+
+	{
+		// Dim black
+		struct tex tex     = pause->frame_tex;
+		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+		gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+		ctx.pat = gfx_pattern_50();
+		sys_pause_rect(ctx, 0, 0, tex.w, tex.h, false);
+		ctx.pat = gfx_pattern_100();
+	}
+
+	{
+		struct fnt fnt       = sys_fnt_mono_get();
+		struct sys_menu menu = pause->menu;
+		rec_i32 root         = {SYS_DISPLAY_W * 0.5f, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
+		gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
+		rec_i32_cut_left(&root, 3);
+		gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
+
+		{
+			i32 menu_height = 99;
+			rec_i32 layout  = rec_i32_cut_top(&root, menu_height);
+			i32 row_height  = menu_height / 3;
+			for(ssize i = 0; i < menu.len; ++i) {
+				rec_i32 row_layout           = rec_i32_cut_top(&layout, row_height);
+				struct sys_menu_item item    = menu.items[i];
+				str8 str                     = item.title;
+				i32 value                    = item.value;
+				enum sys_menu_item_type type = item.type;
+				rec_i32_cut_left(&row_layout, 10);
+				rec_i32_cut_right(&row_layout, 10);
+				v2_i32 cntr = rec_i32_cntr(row_layout);
+				if(fnt.t.px1b != 0) {
+					i32 x = row_layout.x + 4;
+					i32 y = cntr.y - (fnt.cell_h * 0.5f);
+					fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
+				}
+				switch(type) {
+				case SOKOL_MENU_ITEM_TYPE_BOOL: {
+					i32 margin      = 4;
+					i32 checkbox_w  = 11;
+					i32 checkbox_ww = checkbox_w * 0.5f;
+					i32 x           = row_layout.x + row_layout.w - checkbox_w - margin;
+					i32 y           = cntr.y - (checkbox_ww);
+					gfx_rec_fill(ctx, x, y, checkbox_w, checkbox_w, PRIM_MODE_BLACK);
+					if(value) {
+						gfx_cir_fill(ctx, x + checkbox_ww, y + checkbox_ww, checkbox_w - 5, PRIM_MODE_WHITE);
+					}
+				} break;
+				default: {
+				} break;
+				}
+				if(menu.idx == i) {
+					sys_pause_rect(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, true);
+				}
+			}
+		}
+		{
+			rec_i32 layout = rec_i32_cut_top(&root, 2);
+			rec_i32_cut_left(&layout, 10);
+			rec_i32_cut_right(&layout, 10);
+			gfx_lin(ctx, layout.x, layout.y, layout.x + layout.w, layout.y, PRIM_MODE_BLACK);
+			gfx_lin(ctx, layout.x, layout.y + 1, layout.x + layout.w, layout.y + 1, PRIM_MODE_BLACK);
+		}
+	}
+	{
+		struct tex tex     = pause->menu_tex;
+		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+		gfx_spr(ctx, src, -pause->x_offset, 0, 0, SPR_MODE_COPY);
+	}
+}
