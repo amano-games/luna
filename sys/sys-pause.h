@@ -38,22 +38,13 @@ struct sys_pause_state {
 	i32 x_offset;
 	struct tex frame_tex;
 	struct tex menu_tex;
-	struct gfx_ctx ctx;
 	struct sys_menu menu;
 };
 
 void
-sys_pause_ini(struct alloc alloc, struct sys_pause_state *pause)
+sys_pause_ini(struct sys_pause_state *pause)
 {
 	pause->menu.next_id = 1;
-
-	{
-		struct tex tex = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, pause->frame_tex.fmt);
-		pause->ctx     = gfx_ctx_default(tex);
-		dbg_check(tex.px1b, "sys-pause", "Failed to create pause gfx ctx");
-	}
-
-error:;
 }
 
 static i32
@@ -173,9 +164,8 @@ sys_pause_inp(struct sys_menu *menu, i32 buttons)
 }
 
 void
-sys_pause_drw(struct sys_pause_state *pause)
+sys_pause_drw(struct sys_pause_state *pause, struct gfx_ctx ctx)
 {
-	struct gfx_ctx ctx = pause->ctx;
 	tex_clr(ctx.dst, GFX_COL_BLACK);
 
 	{

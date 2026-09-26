@@ -212,7 +212,7 @@ sokol_main(i32 argc, char **argv)
 		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
 	}
 
-	sys_pause_ini(SOKOL_STATE.alloc, &SOKOL_STATE.pause);
+	sys_pause_ini(&SOKOL_STATE.pause);
 
 #if defined(SOKOL_RECORDING_ENABLED)
 	{
@@ -660,13 +660,7 @@ sokol_frame(void)
 		}
 #endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-		struct gfx_ctx ctx = SOKOL_STATE.pause.ctx;
-		sys_pause_drw(&SOKOL_STATE.pause);
-		{
-			struct tex tex     = ctx.dst;
-			struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-			gfx_spr(SOKOL_STATE.frame_ctx, src, 0, 0, 0, SPR_MODE_COPY);
-		}
+		sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx);
 	}
 
 	// R8 uploads are tightly packed; the fixed display width has no row padding.
