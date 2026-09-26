@@ -48,12 +48,67 @@ sys_pause_ini(struct alloc alloc, struct sys_pause_state *pause)
 	pause->menu.next_id = 1;
 
 	{
-		struct tex tex = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		struct tex tex = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, pause->frame_tex.fmt);
 		pause->ctx     = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sys-pause", "Failed to create pause gfx ctx");
 	}
 
 error:;
+}
+
+static i32
+sys_pause_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type,
+	i32 value, void (*callback)(void *), void *arg)
+{
+	dbg_assert(menu->len < (i32)ARRLEN(menu->items));
+	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
+	struct sys_menu_item *item = &menu->items[menu->len++];
+	*item = (struct sys_menu_item){
+		.id = menu->next_id++, .type = type, .title = str8_cstr((char *)title),
+		.value = value, .callback = callback, .arg = arg,
+	};
+	return item->id;
+}
+
+static i32
+sys_pause_menu_value(struct sys_menu *menu, i32 id)
+{
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(menu->items[i].id == id) return menu->items[i].value;
+	}
+	return 0;
+}
+
+static void
+sys_pause_menu_remove(struct sys_menu *menu, i32 id)
+{
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(menu->items[i].id != id) continue;
+		for(i32 j = i; j < menu->len - 1; ++j) menu->items[j] = menu->items[j + 1];
+		mclr_struct(&menu->items[--menu->len]);
+		if(i < menu->idx) --menu->idx;
+		menu->idx = max_i32(0, min_i32(menu->idx, menu->len - 1));
+		return;
+	}
+}
+
+static void
+sys_pause_menu_clear(struct sys_menu *menu)
+{
+	mclr_array(menu->items);
+	menu->len = 0;
+	menu->idx = 0;
+}
+
+static void
+sys_pause_set_image(struct sys_pause_state *pause, struct tex tex, i32 x_offset)
+{
+	pause->x_offset = x_offset;
+	tex_clr(pause->menu_tex, GFX_COL_CLEAR);
+	if(tex.px1b == NULL) return;
+	struct gfx_ctx ctx = gfx_ctx_default(pause->menu_tex);
+	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 }
 
 b32
@@ -117,6 +172,10 @@ sys_pause_inp(struct sys_menu *menu, i32 buttons)
 static void
 sys_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
 {
+	if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
+		gfx_rec_fill(ctx, x, y, w, h, invert ? PRIM_MODE_INV : PRIM_MODE_BLACK);
+		return;
+	}
 	i32 x1 = max_i32(ctx.clip_x1, x);
 	i32 y1 = max_i32(ctx.clip_y1, y);
 	i32 x2 = min_i32(ctx.clip_x2, x + w - 1);
