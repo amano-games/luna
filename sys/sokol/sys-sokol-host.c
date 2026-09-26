@@ -161,12 +161,8 @@ static struct sys_recording SYS_RECORDING_STATE;
 
 static struct sokol_state SOKOL_STATE;
 
-#define SOKOL_ORG       "amano"
-#define SOKOL_NAME      "luna"
-#define SOKOL_WHITE     "#A2A5A5"
-#define SOKOL_BLACK     "#0D0B11"
-#define SOKOL_DBG_WHITE "FFFFFF00"
-#define SOKOL_DBG_BLACK "00000000"
+#define SOKOL_ORG  "amano"
+#define SOKOL_NAME "luna"
 
 const f32 COL_WHITE[3]  = {0.64f, 0.64f, 0.64f};
 const f32 COL_BLACK[3]  = {0.05f, 0.04f, 0.06f};
@@ -257,9 +253,9 @@ sokol_main(i32 argc, char **argv)
 #if defined(SOKOL_RECORDING_ENABLED)
 	{
 		// TODO: use sys_ups_target_get and when fps is changed change recording
-		u32 ups            = SYS_DEFAULT_UPS;
-		ssize frames       = ups * SOKOL_STATE.opts.recording.seconds_count;
-		struct alloc alloc = SOKOL_STATE.alloc;
+		u32 ups                     = SYS_DEFAULT_UPS;
+		ssize frames                = ups * SOKOL_STATE.opts.recording.seconds_count;
+		struct alloc alloc          = SOKOL_STATE.alloc;
 		SOKOL_STATE.recording_frame = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		dbg_check(SOKOL_STATE.recording_frame.px1b, "sokol", "Failed to create recording frame");
 		recording_1b_ini(alloc, &SYS_RECORDING_STATE.gfx, ups * SOKOL_STATE.opts.recording.seconds_count);
@@ -691,7 +687,7 @@ static void
 sokol_record_frame(void)
 {
 	struct tex frame = SOKOL_STATE.frame_ctx.dst;
-	struct tex mono = SOKOL_STATE.recording_frame;
+	struct tex mono  = SOKOL_STATE.recording_frame;
 	tex_clr(mono, GFX_COL_BLACK);
 	for(i32 y = 0; y < frame.h; ++y) {
 		for(i32 x = 0; x < frame.w; ++x) {
@@ -715,8 +711,10 @@ sokol_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
 		u8 *row = ctx.dst.pxu8 + (ssize)yy * ctx.dst.wword * sizeof(u32);
 		for(i32 xx = x1; xx <= x2; ++xx) {
 			if(!(ctx.pat.p[yy & 7] & bswap_u32(0x80000000U >> (xx & 31)))) continue;
-			if(!invert) row[xx] = 0;
-			else if(row[xx] <= 1) row[xx] ^= 1;
+			if(!invert)
+				row[xx] = 0;
+			else if(row[xx] <= 1)
+				row[xx] ^= 1;
 		}
 	}
 }
@@ -740,19 +738,17 @@ sokol_frame(void)
 		}
 	}
 
-	mcpy_struct(&colors.color_black, &COL_BLACK);
-	mcpy_struct(&colors.color_white, &COL_WHITE);
-	for(usize i = 0; i < ARRLEN(colors.colors_debug); ++i) {
-		colors.colors_debug[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors_dbg.colors[i]);
-	}
-
 	params.filter_mode           = SOKOL_STATE.opts.video.filter;
 	SOKOL_STATE.bind.samplers[0] = SOKOL_STATE.opts.video.filter == SYS_VIDEO_FILTER_NEAREST
 		? SOKOL_STATE.smp_nearest
 		: SOKOL_STATE.smp_linear;
 
-	// mcpy_array(colors.color_black, COL_PURPLE);
-	// mcpy_array(colors.color_white, COL_PURPLE);
+	for(usize i = 0; i < ARRLEN(colors.app_colors); ++i) {
+		colors.app_colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors.colors[i]);
+	}
+	for(usize i = 0; i < ARRLEN(colors.dbg_colors); ++i) {
+		colors.dbg_colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors_dbg.colors[i]);
+	}
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		b32 updated = sys_internal_update();
@@ -850,10 +846,6 @@ sokol_frame(void)
 			struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
 			gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 		}
-	}
-
-	for(usize i = 0; i < ARRLEN(colors.colors); ++i) {
-		colors.colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors.colors[i]);
 	}
 
 	// R8 uploads are tightly packed; the fixed display width has no row padding.

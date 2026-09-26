@@ -29,6 +29,9 @@
 #define SYS_OPTS_COLOR_PALLETE_WHITE_KEY "white"
 #define SYS_OPTS_COLOR_PALLETE_CLEAR_KEY "clear"
 
+#define APP_DEFAULT_WHITE 0xA5A5A2FF
+#define APP_DEFAULT_BLACK 0xA5A5A2FF
+
 static const str8 SYS_VIDEO_SCALING_LABELS[SYS_VIDEO_SCALING_NUM_COUNT] = {
 	[SYS_VIDEO_SCALING_NONE]      = str8_lit_comp("none"),
 	[SYS_VIDEO_SCALING_INTEGER]   = str8_lit_comp("integer"),
@@ -68,8 +71,8 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 			.mouse_capture = false,
 		},
 
-		.colors.colors[GFX_COL_BLACK] = 0x110B0DFF,
-		.colors.colors[GFX_COL_WHITE] = 0xA5A5A2FF,
+		.colors.colors[GFX_COL_BLACK] = APP_DEFAULT_BLACK,
+		.colors.colors[GFX_COL_WHITE] = APP_DEFAULT_WHITE,
 
 		.colors_dbg.colors = {
 			[0] = 0x00000000,
