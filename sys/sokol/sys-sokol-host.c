@@ -146,7 +146,8 @@ void sokol_cleanup(void);
 void sokol_pause_handle_sokol_event(const sapp_event *ev);
 void sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev);
 
-void sokol_pause(void);
+void sokol_pause_start(void);
+void sokol_pause_end(void);
 void sokol_resume(void);
 
 static void sokol_set_icon(void);
@@ -371,9 +372,9 @@ sokol_event(const sapp_event *ev)
 		switch(ev->key_code) {
 		case SAPP_KEYCODE_ESCAPE: {
 			if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-				sokol_pause();
+				sokol_pause_start();
 			} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-				sokol_resume();
+				sokol_pause_end();
 			}
 		} break;
 		case SAPP_KEYCODE_F6: {
@@ -508,7 +509,7 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 			b = sys_os_keyboard_map(ev->key_code);
 		}
 		if(sys_menu_inp(&SOKOL_STATE.pause.menu, b)) {
-			sokol_resume();
+			sokol_pause_end();
 		}
 	}
 }
@@ -536,7 +537,7 @@ sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev)
 		} break;
 		}
 		if(sys_menu_inp(&SOKOL_STATE.pause.menu, b)) {
-			sokol_resume();
+			sokol_pause_end();
 		}
 	}
 }
@@ -660,7 +661,10 @@ sokol_frame(void)
 		}
 #endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-		sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx, time);
+		b32 is_finished = sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx, time);
+		if(is_finished) {
+			sokol_resume();
+		}
 	}
 
 	// R8 uploads are tightly packed; the fixed display width has no row padding.
@@ -890,11 +894,21 @@ sys_audio_unlock(void)
 }
 
 void
-sokol_pause(void)
+sokol_pause_start(void)
 {
-	SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
-	sys_pause_start(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx.dst, sys_time_elapsed());
-	sys_internal_pause();
+	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) {
+		SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
+		sys_pause_start(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx.dst, sys_time_elapsed());
+		sys_internal_pause();
+	}
+}
+
+void
+sokol_pause_end(void)
+{
+	if(SOKOL_STATE.pause.timestamp_end == 0) {
+		sys_pause_end(&SOKOL_STATE.pause, sys_time_elapsed());
+	}
 }
 
 void
@@ -1244,9 +1258,9 @@ sokol_gamepad_ev(void)
 	while(sys_os_gamepad_event(&ev)) {
 		if(ev == SYS_OS_PAD_EV_START || ev == SYS_OS_PAD_EV_BACK) {
 			if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-				sokol_pause();
+				sokol_pause_start();
 			} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-				sokol_resume();
+				sokol_pause_end();
 			}
 		}
 		sokol_pause_handle_gamepad_event(ev);
