@@ -14,6 +14,7 @@
 #include "lib/tex/tex.h"
 #include "base/types.h"
 #include "sys/sys-opts.h"
+#include "sys/sys-pause.h"
 #include "sys/sys-record.h"
 #include "sys/sys-scoreboards.h"
 
@@ -84,39 +85,6 @@ enum sokol_status {
 	SOKOL_STATUS_NUM_COUNT,
 };
 
-struct sokol_paused_state {
-	f32 timestamp;
-	i32 x_offset;
-	struct tex frame_tex;
-	struct tex menu_tex;
-	struct gfx_ctx ctx;
-};
-
-enum sokol_menu_item_type {
-	SOKOL_MENU_ITEM_TYPE_NONE,
-
-	SOKOL_MENU_ITEM_TYPE_ACTION,
-	SOKOL_MENU_ITEM_TYPE_BOOL,
-
-	SOKOL_MENU_ITEM_TYPE_NUM_COUNT,
-};
-
-struct sokol_menu_item {
-	i32 id;
-	enum sokol_menu_item_type type;
-	str8 title;
-	i32 value;
-	void (*callback)(void *arg);
-	void *arg;
-};
-
-struct sokol_menu {
-	i32 next_id;
-	i32 idx;
-	i32 len;
-	struct sokol_menu_item items[3];
-};
-
 struct sokol_state {
 	enum sokol_status status;
 
@@ -134,15 +102,13 @@ struct sokol_state {
 
 	f32 mouse_scroll_sensitivity;
 
-	struct sokol_paused_state paused_state;
+	struct sys_pause_state pause;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
 #if defined(SOKOL_RECORDING_ENABLED)
 	struct tex recording_frame;
 #endif
-
-	struct sokol_menu menu;
 
 	b32 crank_docked;
 	f32 crank;
@@ -179,7 +145,7 @@ void sokol_cleanup(void);
 
 void sokol_pause_handle_sokol_event(const sapp_event *ev);
 void sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev);
-void sokol_pause_handle_buttons(i32 buttons);
+b32 sys_pause_inp(struct sys_menu *menu, i32 buttons);
 
 void sokol_pause(void);
 void sokol_resume(void);
@@ -199,7 +165,6 @@ sapp_desc
 sokol_main(i32 argc, char **argv)
 {
 	sys_os_init();
-	SOKOL_STATE.menu.next_id = 1;
 	{
 		usize mem_size = MMEGABYTE(1 * SYS_DISPLAY_SCALE_H);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
@@ -236,20 +201,18 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex               = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
-		SOKOL_STATE.paused_state.ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px1b, "sokol", "Failed to create paused gfx ctx");
-	}
-	{
-		struct tex tex                     = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
-		SOKOL_STATE.paused_state.frame_tex = tex;
+		struct tex tex              = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		SOKOL_STATE.pause.frame_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create paused frame tex");
 	}
+
 	{
-		struct tex tex                    = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
-		SOKOL_STATE.paused_state.menu_tex = tex;
+		struct tex tex             = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
+		SOKOL_STATE.pause.menu_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
 	}
+
+	sys_pause_ini(SOKOL_STATE.alloc, &SOKOL_STATE.pause);
 
 #if defined(SOKOL_RECORDING_ENABLED)
 	{
@@ -545,7 +508,9 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 		if(ev->type == SAPP_EVENTTYPE_KEY_DOWN) {
 			b = sys_os_keyboard_map(ev->key_code);
 		}
-		sokol_pause_handle_buttons(b);
+		if(sys_pause_inp(&SOKOL_STATE.pause.menu, b)) {
+			sokol_resume();
+		}
 	}
 }
 
@@ -571,66 +536,9 @@ sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev)
 		default: {
 		} break;
 		}
-		sokol_pause_handle_buttons(b);
-	}
-}
-
-void
-sokol_pause_handle_buttons(i32 buttons)
-{
-	struct sokol_menu *menu = &SOKOL_STATE.menu;
-	b32 close               = false;
-
-	if(menu->len > 0) {
-		struct sokol_menu_item *item = menu->items + menu->idx;
-		if(buttons & SYS_INP_A) {
-			switch(item->type) {
-			case SOKOL_MENU_ITEM_TYPE_ACTION: {
-				close = true;
-			} break;
-			case SOKOL_MENU_ITEM_TYPE_BOOL: {
-				if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
-					item->value = !item->value;
-				}
-			} break;
-			default: {
-			} break;
-			}
+		if(sys_pause_inp(&SOKOL_STATE.pause.menu, b)) {
+			sokol_resume();
 		}
-		if(buttons & SYS_INP_DPAD_U) {
-			menu->idx = max_i32(menu->idx - 1, 0);
-		}
-		if(buttons & SYS_INP_DPAD_D) {
-			menu->idx = min_i32(menu->idx + 1, menu->len - 1);
-		}
-		if(buttons & SYS_INP_DPAD_R) {
-			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
-				item->value = true;
-			}
-		}
-		if(buttons & SYS_INP_DPAD_L) {
-			if(item->type == SOKOL_MENU_ITEM_TYPE_BOOL) {
-				item->value = false;
-			}
-		}
-	} else {
-		if((buttons & SYS_INP_A)) {
-			close = true;
-		}
-	}
-
-	if((buttons & SYS_INP_B)) {
-		close = true;
-	}
-
-	if(close) {
-		if(menu->len > 0) {
-			struct sokol_menu_item *item = menu->items + menu->idx;
-			if(item->callback) {
-				item->callback(item->arg);
-			}
-		}
-		sokol_resume();
 	}
 }
 
@@ -701,25 +609,6 @@ sokol_record_frame(void)
 }
 #endif
 
-static void
-sokol_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
-{
-	i32 x1 = max_i32(ctx.clip_x1, x);
-	i32 y1 = max_i32(ctx.clip_y1, y);
-	i32 x2 = min_i32(ctx.clip_x2, x + w - 1);
-	i32 y2 = min_i32(ctx.clip_y2, y + h - 1);
-	for(i32 yy = y1; yy <= y2; ++yy) {
-		u8 *row = ctx.dst.pxu8 + (ssize)yy * ctx.dst.wword * sizeof(u32);
-		for(i32 xx = x1; xx <= x2; ++xx) {
-			if(!(ctx.pat.p[yy & 7] & bswap_u32(0x80000000U >> (xx & 31)))) continue;
-			if(!invert)
-				row[xx] = 0;
-			else if(row[xx] <= 1)
-				row[xx] ^= 1;
-		}
-	}
-}
-
 void
 sokol_frame(void)
 {
@@ -771,82 +660,12 @@ sokol_frame(void)
 		}
 #endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
+		struct gfx_ctx ctx = SOKOL_STATE.pause.ctx;
+		sys_pause_drw(&SOKOL_STATE.pause);
 		{
-			struct gfx_ctx ctx = SOKOL_STATE.paused_state.ctx;
-			tex_clr(ctx.dst, GFX_COL_BLACK);
-			{
-				struct tex tex     = SOKOL_STATE.paused_state.frame_tex;
-				struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-				gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
-				ctx.pat = gfx_pattern_50();
-				sokol_pause_rect(ctx, 0, 0, tex.w, tex.h, false);
-				ctx.pat = gfx_pattern_100();
-			}
-			{
-				struct fnt fnt         = sys_fnt_mono_get();
-				struct sokol_menu menu = SOKOL_STATE.menu;
-				rec_i32 root           = {SYS_DISPLAY_W * 0.5f, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
-				gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
-				rec_i32_cut_left(&root, 3);
-				gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
-
-				{
-					i32 menu_height = 99;
-					rec_i32 layout  = rec_i32_cut_top(&root, menu_height);
-					i32 row_height  = menu_height / 3;
-					for(ssize i = 0; i < menu.len; ++i) {
-						rec_i32 row_layout             = rec_i32_cut_top(&layout, row_height);
-						struct sokol_menu_item item    = menu.items[i];
-						str8 str                       = item.title;
-						i32 value                      = item.value;
-						enum sokol_menu_item_type type = item.type;
-						rec_i32_cut_left(&row_layout, 10);
-						rec_i32_cut_right(&row_layout, 10);
-						v2_i32 cntr = rec_i32_cntr(row_layout);
-						if(fnt.t.px1b != 0) {
-							i32 x = row_layout.x + 4;
-							i32 y = cntr.y - (fnt.cell_h * 0.5f);
-							fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
-						}
-						switch(type) {
-						case SOKOL_MENU_ITEM_TYPE_BOOL: {
-							i32 margin      = 4;
-							i32 checkbox_w  = 11;
-							i32 checkbox_ww = checkbox_w * 0.5f;
-							i32 x           = row_layout.x + row_layout.w - checkbox_w - margin;
-							i32 y           = cntr.y - (checkbox_ww);
-							gfx_rec_fill(ctx, x, y, checkbox_w, checkbox_w, PRIM_MODE_BLACK);
-							if(value) {
-								gfx_cir_fill(ctx, x + checkbox_ww, y + checkbox_ww, checkbox_w - 5, PRIM_MODE_WHITE);
-							}
-						} break;
-						default: {
-						} break;
-						}
-						if(menu.idx == i) {
-							sokol_pause_rect(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, true);
-						}
-					}
-				}
-				{
-					rec_i32 layout = rec_i32_cut_top(&root, 2);
-					rec_i32_cut_left(&layout, 10);
-					rec_i32_cut_right(&layout, 10);
-					gfx_lin(ctx, layout.x, layout.y, layout.x + layout.w, layout.y, PRIM_MODE_BLACK);
-					gfx_lin(ctx, layout.x, layout.y + 1, layout.x + layout.w, layout.y + 1, PRIM_MODE_BLACK);
-				}
-			}
-			{
-				struct tex tex     = SOKOL_STATE.paused_state.menu_tex;
-				struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-				gfx_spr(ctx, src, -SOKOL_STATE.paused_state.x_offset, 0, 0, SPR_MODE_COPY);
-			}
-		}
-		{
-			struct gfx_ctx ctx = SOKOL_STATE.frame_ctx;
-			struct tex tex     = SOKOL_STATE.paused_state.ctx.dst;
+			struct tex tex     = ctx.dst;
 			struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-			gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+			gfx_spr(SOKOL_STATE.frame_ctx, src, 0, 0, 0, SPR_MODE_COPY);
 		}
 	}
 
@@ -1015,43 +834,43 @@ sys_menu_item_add(
 	void (*callback)(void *arg),
 	void *arg)
 {
-	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
-	ssize idx                    = SOKOL_STATE.menu.len++;
-	struct sokol_menu_item *item = SOKOL_STATE.menu.items + idx;
-	item->id                     = SOKOL_STATE.menu.next_id++;
-	item->type                   = SOKOL_MENU_ITEM_TYPE_ACTION;
-	item->title                  = str8_cstr((char *)title);
-	item->arg                    = arg;
-	item->callback               = callback;
+	dbg_assert(SOKOL_STATE.pause.menu.len < (ssize)ARRLEN(SOKOL_STATE.pause.menu.items));
+	ssize idx                  = SOKOL_STATE.pause.menu.len++;
+	struct sys_menu_item *item = SOKOL_STATE.pause.menu.items + idx;
+	item->id                   = SOKOL_STATE.pause.menu.next_id++;
+	item->type                 = SOKOL_MENU_ITEM_TYPE_ACTION;
+	item->title                = str8_cstr((char *)title);
+	item->arg                  = arg;
+	item->callback             = callback;
 	return item->id;
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
-	ssize idx                    = SOKOL_STATE.menu.len++;
-	struct sokol_menu_item *item = SOKOL_STATE.menu.items + idx;
-	item->type                   = SOKOL_MENU_ITEM_TYPE_BOOL;
-	item->title                  = str8_cstr((char *)title);
-	item->arg                    = arg;
-	item->callback               = callback;
-	item->value                  = val;
+	dbg_assert(SOKOL_STATE.pause.menu.len < (ssize)ARRLEN(SOKOL_STATE.pause.menu.items));
+	ssize idx                  = SOKOL_STATE.pause.menu.len++;
+	struct sys_menu_item *item = SOKOL_STATE.pause.menu.items + idx;
+	item->type                 = SOKOL_MENU_ITEM_TYPE_BOOL;
+	item->title                = str8_cstr((char *)title);
+	item->arg                  = arg;
+	item->callback             = callback;
+	item->value                = val;
 	return item->id;
 }
 
 i32
 sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
 {
-	dbg_assert(SOKOL_STATE.menu.len < (ssize)ARRLEN(SOKOL_STATE.menu.items));
+	dbg_assert(SOKOL_STATE.pause.menu.len < (ssize)ARRLEN(SOKOL_STATE.pause.menu.items));
 	return 0;
 }
 
 int
 sys_menu_value(int id)
 {
-	struct sokol_menu_item *items = SOKOL_STATE.menu.items;
-	ssize len                     = SOKOL_STATE.menu.len;
+	struct sys_menu_item *items = SOKOL_STATE.pause.menu.items;
+	ssize len                   = SOKOL_STATE.pause.menu.len;
 	for(ssize i = 0; i < len; i++) {
 		if(items[i].id == id) {
 			return items[i].value;
@@ -1063,8 +882,8 @@ sys_menu_value(int id)
 void
 sys_menu_item_remove(int id)
 {
-	struct sokol_menu_item *items = SOKOL_STATE.menu.items;
-	ssize len                     = SOKOL_STATE.menu.len;
+	struct sys_menu_item *items = SOKOL_STATE.pause.menu.items;
+	ssize len                   = SOKOL_STATE.pause.menu.len;
 
 	// Find the index of the item with this id
 	ssize idx = -1;
@@ -1088,15 +907,15 @@ sys_menu_item_remove(int id)
 	// Clear last element (optional, for safety/debug)
 	mclr_struct(&items[len - 1]);
 
-	SOKOL_STATE.menu.len--;
+	SOKOL_STATE.pause.menu.len--;
 }
 
 void
 sys_menu_clr(void)
 {
-	mclr_array(SOKOL_STATE.menu.items);
-	SOKOL_STATE.menu.len = 0;
-	SOKOL_STATE.menu.idx = 0;
+	mclr_array(SOKOL_STATE.pause.menu.items);
+	SOKOL_STATE.pause.menu.len = 0;
+	SOKOL_STATE.pause.menu.idx = 0;
 }
 
 void
@@ -1130,7 +949,7 @@ void
 sokol_pause(void)
 {
 	SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
-	tex_cpy(&SOKOL_STATE.paused_state.frame_tex, &SOKOL_STATE.frame_ctx.dst);
+	tex_cpy(&SOKOL_STATE.pause.frame_tex, &SOKOL_STATE.frame_ctx.dst);
 	sys_internal_pause();
 }
 
@@ -1144,14 +963,14 @@ sokol_resume(void)
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	SOKOL_STATE.paused_state.x_offset = x_offset;
+	SOKOL_STATE.pause.x_offset = x_offset;
 	if(tex.px1b == NULL) {
-		tex_clr(SOKOL_STATE.paused_state.menu_tex, GFX_COL_CLEAR);
+		tex_clr(SOKOL_STATE.pause.menu_tex, GFX_COL_CLEAR);
 		return;
 	}
 
-	tex_clr(SOKOL_STATE.paused_state.menu_tex, GFX_COL_CLEAR);
-	struct gfx_ctx ctx = gfx_ctx_default(SOKOL_STATE.paused_state.menu_tex);
+	tex_clr(SOKOL_STATE.pause.menu_tex, GFX_COL_CLEAR);
+	struct gfx_ctx ctx = gfx_ctx_default(SOKOL_STATE.pause.menu_tex);
 	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
 	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 }
