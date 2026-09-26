@@ -1481,8 +1481,7 @@ main(int argc, char **argv)
 	dbg_check(DRM_HOST.pause.frame_tex.px1b, "drm", "paused framebuffer");
 	DRM_HOST.pause.menu_tex = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
 	dbg_check(DRM_HOST.pause.menu_tex.px1b, "drm", "pause menu image");
-	sys_pause_ini(DRM_HOST.alloc, &DRM_HOST.pause);
-	dbg_check(DRM_HOST.pause.ctx.dst.px1b, "drm", "pause drawing context");
+	sys_pause_ini(&DRM_HOST.pause);
 
 	st = drm_display_open();
 	if(st != DRM_STATUS_OK) {
@@ -1505,8 +1504,7 @@ main(int argc, char **argv)
 		drm_host_evdev_poll();
 		drm_host_gamepad_poll();
 		if(DRM_HOST.paused) {
-			sys_pause_drw(&DRM_HOST.pause);
-			tex_cpy(&DRM_HOST.frame_ctx.dst, &DRM_HOST.pause.ctx.dst);
+			sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx);
 			drew = true;
 		} else {
 			drew = sys_internal_update();
