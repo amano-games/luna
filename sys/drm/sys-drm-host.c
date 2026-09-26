@@ -9,11 +9,11 @@
 #include "engine/gfx/gfx.h"
 #include "lib/color.h"
 #include "lib/tex/tex.h"
-#include "sys/sys-debug-draw.h"
 #include "sys/sys-gamepad.h"
 #include "sys/sys-input.h"
 #include "sys/sys-keyboard.h"
 #include "sys/sys-opts.h"
+#include "sys/sys-pause.h"
 #include "sys/sys-os.h"
 #include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
@@ -1126,6 +1126,8 @@ struct drm_host {
 	struct marena scratch_arena;
 	struct alloc scratch;
 	struct gfx_ctx frame_ctx;
+	struct sys_pause_state pause;
+	b32 paused;
 	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
 	volatile sig_atomic_t running;
@@ -1150,7 +1152,7 @@ static void
 drm_host_present(void)
 {
 	drm_display_present(
-		(const u8 *)DRM_HOST.frame_ctx.dst.px,
+		(const u8 *)DRM_HOST.frame_ctx.dst.px1b,
 		DRM_HOST.opts.colors.colors[GFX_COL_BLACK],
 		DRM_HOST.opts.colors.colors[GFX_COL_WHITE]);
 }
@@ -1307,45 +1309,62 @@ done:
 	return st;
 }
 
-static b32
-drm_host_is_menu(u16 code)
+static void
+drm_host_resume(void)
 {
-	b32 ok = false;
-
-	switch(code) {
-	case KEY_ESC:
-	case KEY_ENTER:
-	case KEY_MENU:
-	case KEY_BACK:
-	case KEY_HOMEPAGE:
-	case KEY_SELECT:
-	case KEY_EXIT:
-	case BTN_START:
-	case BTN_SELECT:
-	case BTN_MODE:
-		ok = true;
-		break;
-	default:
-		break;
-	}
-
-	return ok;
+	DRM_HOST.paused = false;
+	sys_internal_resume();
 }
 
 static void
-drm_host_on_key(u16 code, b32 down)
+drm_host_toggle_pause(void)
 {
-	i32 sys = drm_host_key_to_sys(code);
+	if(DRM_HOST.paused) {
+		drm_host_resume();
+	} else {
+		DRM_HOST.paused = true;
+		tex_cpy(&DRM_HOST.pause.frame_tex, &DRM_HOST.frame_ctx.dst);
+		sys_internal_pause();
+	}
+}
 
-	if(drm_host_is_menu(code)) {
-		sys_os_keyboard_set('P', down);
-		if(down) {
-			log_info("drm", "menu key %u -> P", (unsigned)code);
+static void
+drm_host_pause_input(i32 buttons)
+{
+	if(DRM_HOST.paused && sys_pause_inp(&DRM_HOST.pause.menu, buttons)) {
+		drm_host_resume();
+	}
+}
+
+static void
+drm_host_gamepad_poll(void)
+{
+	enum sys_os_gamepad_ev ev;
+	sys_os_gamepad_poll();
+	while(sys_os_gamepad_event(&ev)) {
+		switch(ev) {
+		case SYS_OS_PAD_EV_START:
+		case SYS_OS_PAD_EV_BACK: drm_host_toggle_pause(); break;
+		case SYS_OS_PAD_EV_DPAD_U: drm_host_pause_input(SYS_INP_DPAD_U); break;
+		case SYS_OS_PAD_EV_DPAD_D: drm_host_pause_input(SYS_INP_DPAD_D); break;
+		case SYS_OS_PAD_EV_A: drm_host_pause_input(SYS_INP_A); break;
+		case SYS_OS_PAD_EV_B: drm_host_pause_input(SYS_INP_B); break;
+		default: break;
 		}
 	}
+}
 
-	if(sys != 0) {
-		sys_os_keyboard_set(sys, down);
+static void
+drm_host_on_key(u16 code, i32 value)
+{
+	i32 key = drm_host_key_to_sys(code);
+	if(code == KEY_ESC) {
+		if(value == 1) drm_host_toggle_pause();
+		return;
+	}
+	if(key != 0) {
+		sys_os_keyboard_set(key, value != 0);
+		if(value != 0) drm_host_pause_input(sys_os_keyboard_map(key));
 	}
 }
 
@@ -1403,7 +1422,7 @@ drm_host_evdev_poll(void)
 		while(read(DRM_HOST.evdev_fds[i], &ev, sizeof(ev)) == (ssize_t)sizeof(ev)) {
 			b32 down = ev.value != 0;
 			if(ev.type == EV_KEY) {
-				drm_host_on_key(ev.code, down);
+				drm_host_on_key(ev.code, ev.value);
 				drm_host_on_btn(ev.code, down);
 			} else if(ev.type == EV_REL) {
 				drm_host_on_rel(ev.code, ev.value);
@@ -1449,14 +1468,21 @@ main(int argc, char **argv)
 	{
 		struct tex tex     = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.frame_ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px, "drm", "1-bit framebuffer");
+		dbg_check(tex.px1b, "drm", "1-bit framebuffer");
 	}
 
 	{
 		struct tex tex   = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.dbg_ctx = gfx_ctx_default(tex);
-		dbg_check(tex.px, "drm", "dbg framebuffer");
+		dbg_check(tex.px1b, "drm", "dbg framebuffer");
 	}
+
+	DRM_HOST.pause.frame_tex = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+	dbg_check(DRM_HOST.pause.frame_tex.px1b, "drm", "paused framebuffer");
+	DRM_HOST.pause.menu_tex = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
+	dbg_check(DRM_HOST.pause.menu_tex.px1b, "drm", "pause menu image");
+	sys_pause_ini(DRM_HOST.alloc, &DRM_HOST.pause);
+	dbg_check(DRM_HOST.pause.ctx.dst.px1b, "drm", "pause drawing context");
 
 	st = drm_display_open();
 	if(st != DRM_STATUS_OK) {
@@ -1477,8 +1503,14 @@ main(int argc, char **argv)
 	while(DRM_HOST.running && !DRM_HOST.want_quit) {
 		i32 drew = 0;
 		drm_host_evdev_poll();
-		sys_os_gamepad_poll();
-		drew = sys_internal_update();
+		drm_host_gamepad_poll();
+		if(DRM_HOST.paused) {
+			sys_pause_drw(&DRM_HOST.pause);
+			tex_cpy(&DRM_HOST.frame_ctx.dst, &DRM_HOST.pause.ctx.dst);
+			drew = true;
+		} else {
+			drew = sys_internal_update();
+		}
 		if(drew) {
 			drm_host_present();
 			dbg_drw_clr();
@@ -1534,10 +1566,6 @@ sys_key(int k)
 {
 	int res = sys_os_keyboard_get(k);
 
-	if(k == 'P' && sys_os_gamepad_menu()) {
-		res = 1;
-	}
-
 	return res;
 }
 
@@ -1545,9 +1573,6 @@ void
 sys_keys(u8 *dest, usize count)
 {
 	sys_os_keyboard_keys(dest, count);
-	if(sys_os_gamepad_menu() && count > (usize)'P') {
-		dest['P'] = 1;
-	}
 }
 
 f32
@@ -1604,21 +1629,27 @@ sys_color_u32_set(enum gfx_col color, u32 value)
 }
 
 void *
+sys_1bit_buffer(void)
+{
+	return DRM_HOST.frame_ctx.dst.px1b;
+}
+
+void *
 sys_dbg_buffer(void)
 {
-	return DRM_HOST.dbg_ctx.dst.px;
+	return DRM_HOST.dbg_ctx.dst.px1b;
 }
 
 i32
 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg)
 {
-	return 0;
+	return sys_pause_menu_add(&DRM_HOST.pause.menu, title, SOKOL_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	return 0;
+	return sys_pause_menu_add(&DRM_HOST.pause.menu, title, SOKOL_MENU_ITEM_TYPE_BOOL, val, callback, arg);
 }
 
 i32
@@ -1630,22 +1661,25 @@ sys_menu_options_add(const char *title, const char **options, int count, void (*
 int
 sys_menu_value(int id)
 {
-	return 0;
+	return sys_pause_menu_value(&DRM_HOST.pause.menu, id);
 }
 
 void
 sys_menu_item_remove(int id)
 {
+	sys_pause_menu_remove(&DRM_HOST.pause.menu, id);
 }
 
 void
 sys_menu_clr(void)
 {
+	sys_pause_menu_clear(&DRM_HOST.pause.menu);
 }
 
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
+	sys_pause_set_image(&DRM_HOST.pause, tex, x_offset);
 }
 
 void

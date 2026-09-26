@@ -834,29 +834,13 @@ sys_menu_item_add(
 	void (*callback)(void *arg),
 	void *arg)
 {
-	dbg_assert(SOKOL_STATE.pause.menu.len < (ssize)ARRLEN(SOKOL_STATE.pause.menu.items));
-	ssize idx                  = SOKOL_STATE.pause.menu.len++;
-	struct sys_menu_item *item = SOKOL_STATE.pause.menu.items + idx;
-	item->id                   = SOKOL_STATE.pause.menu.next_id++;
-	item->type                 = SOKOL_MENU_ITEM_TYPE_ACTION;
-	item->title                = str8_cstr((char *)title);
-	item->arg                  = arg;
-	item->callback             = callback;
-	return item->id;
+	return sys_pause_menu_add(&SOKOL_STATE.pause.menu, title, SOKOL_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	dbg_assert(SOKOL_STATE.pause.menu.len < (ssize)ARRLEN(SOKOL_STATE.pause.menu.items));
-	ssize idx                  = SOKOL_STATE.pause.menu.len++;
-	struct sys_menu_item *item = SOKOL_STATE.pause.menu.items + idx;
-	item->type                 = SOKOL_MENU_ITEM_TYPE_BOOL;
-	item->title                = str8_cstr((char *)title);
-	item->arg                  = arg;
-	item->callback             = callback;
-	item->value                = val;
-	return item->id;
+	return sys_pause_menu_add(&SOKOL_STATE.pause.menu, title, SOKOL_MENU_ITEM_TYPE_BOOL, val, callback, arg);
 }
 
 i32
@@ -869,53 +853,19 @@ sys_menu_options_add(const char *title, const char **options, int count, void (*
 int
 sys_menu_value(int id)
 {
-	struct sys_menu_item *items = SOKOL_STATE.pause.menu.items;
-	ssize len                   = SOKOL_STATE.pause.menu.len;
-	for(ssize i = 0; i < len; i++) {
-		if(items[i].id == id) {
-			return items[i].value;
-		}
-	}
-	return 0;
+	return sys_pause_menu_value(&SOKOL_STATE.pause.menu, id);
 }
 
 void
 sys_menu_item_remove(int id)
 {
-	struct sys_menu_item *items = SOKOL_STATE.pause.menu.items;
-	ssize len                   = SOKOL_STATE.pause.menu.len;
-
-	// Find the index of the item with this id
-	ssize idx = -1;
-	for(ssize i = 0; i < len; i++) {
-		if(items[i].id == id) {
-			idx = i;
-			break;
-		}
-	}
-
-	// Not found → nothing to remove (or assert if you prefer)
-	if(idx == -1) {
-		return;
-	}
-
-	// Shift elements left to fill the gap
-	for(ssize i = idx; i < len - 1; i++) {
-		items[i] = items[i + 1];
-	}
-
-	// Clear last element (optional, for safety/debug)
-	mclr_struct(&items[len - 1]);
-
-	SOKOL_STATE.pause.menu.len--;
+	sys_pause_menu_remove(&SOKOL_STATE.pause.menu, id);
 }
 
 void
 sys_menu_clr(void)
 {
-	mclr_array(SOKOL_STATE.pause.menu.items);
-	SOKOL_STATE.pause.menu.len = 0;
-	SOKOL_STATE.pause.menu.idx = 0;
+	sys_pause_menu_clear(&SOKOL_STATE.pause.menu);
 }
 
 void
@@ -963,16 +913,7 @@ sokol_resume(void)
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	SOKOL_STATE.pause.x_offset = x_offset;
-	if(tex.px1b == NULL) {
-		tex_clr(SOKOL_STATE.pause.menu_tex, GFX_COL_CLEAR);
-		return;
-	}
-
-	tex_clr(SOKOL_STATE.pause.menu_tex, GFX_COL_CLEAR);
-	struct gfx_ctx ctx = gfx_ctx_default(SOKOL_STATE.pause.menu_tex);
-	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+	sys_pause_set_image(&SOKOL_STATE.pause, tex, x_offset);
 }
 
 int
