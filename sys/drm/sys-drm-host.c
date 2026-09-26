@@ -1323,7 +1323,7 @@ drm_host_toggle_pause(void)
 		drm_host_resume();
 	} else {
 		DRM_HOST.paused = true;
-		tex_cpy(&DRM_HOST.pause.frame_tex, &DRM_HOST.frame_ctx.dst);
+		sys_pause_start(&DRM_HOST.pause, DRM_HOST.frame_ctx.dst, sys_time_elapsed());
 		sys_internal_pause();
 	}
 }
@@ -1331,7 +1331,7 @@ drm_host_toggle_pause(void)
 static void
 drm_host_pause_input(i32 buttons)
 {
-	if(DRM_HOST.paused && sys_pause_inp(&DRM_HOST.pause.menu, buttons)) {
+	if(DRM_HOST.paused && sys_menu_inp(&DRM_HOST.pause.menu, buttons)) {
 		drm_host_resume();
 	}
 }
@@ -1504,7 +1504,7 @@ main(int argc, char **argv)
 		drm_host_evdev_poll();
 		drm_host_gamepad_poll();
 		if(DRM_HOST.paused) {
-			sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx);
+			sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx, sys_time_elapsed());
 			drew = true;
 		} else {
 			drew = sys_internal_update();
@@ -1641,13 +1641,13 @@ sys_dbg_buffer(void)
 i32
 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg)
 {
-	return sys_pause_menu_add(&DRM_HOST.pause.menu, title, SOKOL_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
+	return sys_menu_add(&DRM_HOST.pause.menu, title, SYS_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	return sys_pause_menu_add(&DRM_HOST.pause.menu, title, SOKOL_MENU_ITEM_TYPE_BOOL, val, callback, arg);
+	return sys_menu_add(&DRM_HOST.pause.menu, title, SYS_MENU_ITEM_TYPE_BOOL, val, callback, arg);
 }
 
 i32
@@ -1659,25 +1659,25 @@ sys_menu_options_add(const char *title, const char **options, int count, void (*
 int
 sys_menu_value(int id)
 {
-	return sys_pause_menu_value(&DRM_HOST.pause.menu, id);
+	return sys_menu_get_value(&DRM_HOST.pause.menu, id);
 }
 
 void
 sys_menu_item_remove(int id)
 {
-	sys_pause_menu_remove(&DRM_HOST.pause.menu, id);
+	sys_menu_remove(&DRM_HOST.pause.menu, id);
 }
 
 void
 sys_menu_clr(void)
 {
-	sys_pause_menu_clear(&DRM_HOST.pause.menu);
+	sys_menu_clear(&DRM_HOST.pause.menu);
 }
 
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	sys_pause_set_image(&DRM_HOST.pause, tex, x_offset);
+	sys_pause_set_img(&DRM_HOST.pause, tex, x_offset);
 }
 
 void
