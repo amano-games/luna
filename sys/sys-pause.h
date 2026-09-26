@@ -57,15 +57,18 @@ error:;
 }
 
 static i32
-sys_pause_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type,
-	i32 value, void (*callback)(void *), void *arg)
+sys_pause_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type, i32 value, void (*callback)(void *), void *arg)
 {
 	dbg_assert(menu->len < (i32)ARRLEN(menu->items));
 	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
 	struct sys_menu_item *item = &menu->items[menu->len++];
-	*item = (struct sys_menu_item){
-		.id = menu->next_id++, .type = type, .title = str8_cstr((char *)title),
-		.value = value, .callback = callback, .arg = arg,
+	*item                      = (struct sys_menu_item){
+		.id       = menu->next_id++,
+		.type     = type,
+		.title    = str8_cstr((char *)title),
+		.value    = value,
+		.callback = callback,
+		.arg      = arg,
 	};
 	return item->id;
 }
@@ -169,29 +172,6 @@ sys_pause_inp(struct sys_menu *menu, i32 buttons)
 	return res;
 }
 
-static void
-sys_pause_rect(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, b32 invert)
-{
-	if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
-		gfx_rec_fill(ctx, x, y, w, h, invert ? PRIM_MODE_INV : PRIM_MODE_BLACK);
-		return;
-	}
-	i32 x1 = max_i32(ctx.clip_x1, x);
-	i32 y1 = max_i32(ctx.clip_y1, y);
-	i32 x2 = min_i32(ctx.clip_x2, x + w - 1);
-	i32 y2 = min_i32(ctx.clip_y2, y + h - 1);
-	for(i32 yy = y1; yy <= y2; ++yy) {
-		u8 *row = ctx.dst.pxu8 + (ssize)yy * ctx.dst.wword * sizeof(u32);
-		for(i32 xx = x1; xx <= x2; ++xx) {
-			if(!(ctx.pat.p[yy & 7] & bswap_u32(0x80000000U >> (xx & 31)))) continue;
-			if(!invert)
-				row[xx] = 0;
-			else if(row[xx] <= 1)
-				row[xx] ^= 1;
-		}
-	}
-}
-
 void
 sys_pause_drw(struct sys_pause_state *pause)
 {
@@ -204,7 +184,7 @@ sys_pause_drw(struct sys_pause_state *pause)
 		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
 		gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 		ctx.pat = gfx_pattern_50();
-		sys_pause_rect(ctx, 0, 0, tex.w, tex.h, false);
+		gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
 		ctx.pat = gfx_pattern_100();
 	}
 
@@ -250,7 +230,7 @@ sys_pause_drw(struct sys_pause_state *pause)
 				} break;
 				}
 				if(menu.idx == i) {
-					sys_pause_rect(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, true);
+					gfx_rec_fill(ctx, row_layout.x, cntr.y - 10, row_layout.w, 20, PRIM_MODE_INV);
 				}
 			}
 		}
