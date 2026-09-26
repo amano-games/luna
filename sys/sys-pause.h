@@ -4,6 +4,8 @@
 #include "engine/gfx/gfx-spr.h"
 #include "engine/gfx/gfx-txt.h"
 #include "engine/gfx/gfx.h"
+#include "lib/easing-type.h"
+#include "lib/easing.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
 #include "sys/sys-input.h"
@@ -30,7 +32,7 @@ struct sys_menu {
 	i32 next_id;
 	i32 idx;
 	i32 len;
-	struct sys_menu_item items[3];
+	struct sys_menu_item items[6];
 };
 
 struct sys_pause_state {
@@ -47,62 +49,14 @@ sys_pause_ini(struct sys_pause_state *pause)
 	pause->menu.next_id = 1;
 }
 
-static i32
-sys_pause_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type, i32 value, void (*callback)(void *), void *arg)
-{
-	dbg_assert(menu->len < (i32)ARRLEN(menu->items));
-	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
-	struct sys_menu_item *item = &menu->items[menu->len++];
-	*item                      = (struct sys_menu_item){
-		.id       = menu->next_id++,
-		.type     = type,
-		.title    = str8_cstr((char *)title),
-		.value    = value,
-		.callback = callback,
-		.arg      = arg,
-	};
-	return item->id;
-}
-
-static i32
-sys_pause_menu_value(struct sys_menu *menu, i32 id)
-{
-	for(i32 i = 0; i < menu->len; ++i) {
-		if(menu->items[i].id == id) return menu->items[i].value;
-	}
-	return 0;
-}
-
 static void
-sys_pause_menu_remove(struct sys_menu *menu, i32 id)
+sys_pause_start(
+	struct sys_pause_state *pause,
+	struct tex tex,
+	f32 timestamp)
 {
-	for(i32 i = 0; i < menu->len; ++i) {
-		if(menu->items[i].id != id) continue;
-		for(i32 j = i; j < menu->len - 1; ++j) menu->items[j] = menu->items[j + 1];
-		mclr_struct(&menu->items[--menu->len]);
-		if(i < menu->idx) --menu->idx;
-		menu->idx = max_i32(0, min_i32(menu->idx, menu->len - 1));
-		return;
-	}
-}
-
-static void
-sys_pause_menu_clear(struct sys_menu *menu)
-{
-	mclr_array(menu->items);
-	menu->len = 0;
-	menu->idx = 0;
-}
-
-static void
-sys_pause_set_image(struct sys_pause_state *pause, struct tex tex, i32 x_offset)
-{
-	pause->x_offset = x_offset;
-	tex_clr(pause->menu_tex, GFX_COL_CLEAR);
-	if(tex.px1b == NULL) return;
-	struct gfx_ctx ctx = gfx_ctx_default(pause->menu_tex);
-	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+	pause->timestamp = timestamp;
+	tex_cpy(&pause->frame_tex, &tex);
 }
 
 b32
@@ -164,24 +118,44 @@ sys_pause_inp(struct sys_menu *menu, i32 buttons)
 }
 
 void
-sys_pause_drw(struct sys_pause_state *pause, struct gfx_ctx ctx)
+sys_pause_drw(
+	struct sys_pause_state *pause,
+	struct gfx_ctx ctx,
+	f32 timestamp)
 {
 	tex_clr(ctx.dst, GFX_COL_BLACK);
+	struct fnt fnt       = sys_fnt_mono_get();
+	struct sys_menu menu = pause->menu;
 
 	{
 		// Dim black
 		struct tex tex     = pause->frame_tex;
 		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
 		gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
-		ctx.pat = gfx_pattern_50();
+		f32 duration = 0.3f;
+		f32 elapsed  = timestamp - pause->timestamp;
+		f32 t        = ease(clamp_f32(elapsed / duration, 0.0f, 1.0f), EASE_TYPE_QUART_OUT);
+		ctx.pat      = gfx_pattern_bayer_4x4(16 * t);
 		gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
 		ctx.pat = gfx_pattern_100();
 	}
 
 	{
-		struct fnt fnt       = sys_fnt_mono_get();
-		struct sys_menu menu = pause->menu;
-		rec_i32 root         = {SYS_DISPLAY_W * 0.5f, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
+		struct tex tex     = pause->menu_tex;
+		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+		f32 duration       = 0.3f;
+		f32 elapsed        = timestamp - (pause->timestamp);
+		f32 t              = ease(clamp_f32(elapsed / duration, 0.0f, 1.0f), EASE_TYPE_QUART_OUT);
+		i32 x              = (f32)-pause->x_offset * t;
+		gfx_spr(ctx, src, x, 0, 0, SPR_MODE_COPY);
+	}
+
+	{
+		f32 duration = 0.2f;
+		f32 elapsed  = timestamp - (pause->timestamp);
+		f32 t        = ease(clamp_f32(elapsed / duration, 0.0f, 1.0f), EASE_TYPE_QUART_OUT);
+		i32 tx       = SYS_DISPLAY_W - ((f32)(SYS_DISPLAY_W * 0.5f) * t);
+		rec_i32 root = {tx, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
 		gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
 		rec_i32_cut_left(&root, 3);
 		gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
@@ -232,9 +206,65 @@ sys_pause_drw(struct sys_pause_state *pause, struct gfx_ctx ctx)
 			gfx_lin(ctx, layout.x, layout.y + 1, layout.x + layout.w, layout.y + 1, PRIM_MODE_BLACK);
 		}
 	}
-	{
-		struct tex tex     = pause->menu_tex;
-		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-		gfx_spr(ctx, src, -pause->x_offset, 0, 0, SPR_MODE_COPY);
+}
+
+static i32
+sys_pause_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type, i32 value, void (*callback)(void *), void *arg)
+{
+	dbg_assert(menu->len < (i32)ARRLEN(menu->items));
+	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
+	struct sys_menu_item *item = &menu->items[menu->len++];
+	*item                      = (struct sys_menu_item){
+		.id       = menu->next_id++,
+		.type     = type,
+		.title    = str8_cstr((char *)title),
+		.value    = value,
+		.callback = callback,
+		.arg      = arg,
+	};
+	return item->id;
+}
+
+static i32
+sys_pause_menu_value(struct sys_menu *menu, i32 id)
+{
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(menu->items[i].id == id) return menu->items[i].value;
 	}
+	return 0;
+}
+
+static void
+sys_pause_menu_remove(struct sys_menu *menu, i32 id)
+{
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(menu->items[i].id != id) continue;
+		for(i32 j = i; j < menu->len - 1; ++j) menu->items[j] = menu->items[j + 1];
+		mclr_struct(&menu->items[--menu->len]);
+		if(i < menu->idx) --menu->idx;
+		menu->idx = max_i32(0, min_i32(menu->idx, menu->len - 1));
+		return;
+	}
+}
+
+static void
+sys_pause_menu_clear(struct sys_menu *menu)
+{
+	mclr_array(menu->items);
+	menu->len = 0;
+	menu->idx = 0;
+}
+
+static void
+sys_pause_set_img(
+	struct sys_pause_state *pause,
+	struct tex tex,
+	i32 x_offset)
+{
+	pause->x_offset = x_offset;
+	tex_clr(pause->menu_tex, GFX_COL_CLEAR);
+	if(tex.px1b == NULL) return;
+	struct gfx_ctx ctx = gfx_ctx_default(pause->menu_tex);
+	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
 }

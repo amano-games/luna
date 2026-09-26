@@ -612,9 +612,10 @@ sokol_record_frame(void)
 void
 sokol_frame(void)
 {
+	f32 time                        = sys_time_elapsed();
 	f32 win_w                       = sapp_widthf();
 	f32 win_h                       = sapp_heightf();
-	s_params_t params               = {.time = sys_time_elapsed()};
+	s_params_t params               = {.time = time};
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	sokol_gamepad_ev();
@@ -660,7 +661,7 @@ sokol_frame(void)
 		}
 #endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-		sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx);
+		sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx, time);
 	}
 
 	// R8 uploads are tightly packed; the fixed display width has no row padding.
@@ -893,7 +894,7 @@ void
 sokol_pause(void)
 {
 	SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
-	tex_cpy(&SOKOL_STATE.pause.frame_tex, &SOKOL_STATE.frame_ctx.dst);
+	sys_pause_start(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx.dst, sys_time_elapsed());
 	sys_internal_pause();
 }
 
@@ -907,7 +908,7 @@ sokol_resume(void)
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
-	sys_pause_set_image(&SOKOL_STATE.pause, tex, x_offset);
+	sys_pause_set_img(&SOKOL_STATE.pause, tex, x_offset);
 }
 
 int
