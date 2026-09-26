@@ -128,9 +128,9 @@ gfx_pattern_interpolate(i32 num, i32 den)
 }
 
 struct gfx_pattern
-gfx_pattern_interpolatec(i32 num, i32 den, i32 (*ease)(i32 a, i32 b, i32 num, i32 den))
+gfx_pattern_interpolatec(i32 num, i32 den, i32 (*ease_f)(i32 a, i32 b, i32 num, i32 den))
 {
-	i32 i = ease(0, 16, num, den);
+	i32 i = ease_f(0, 16, num, den);
 	return gfx_pattern_bayer_4x4(i);
 }
 
