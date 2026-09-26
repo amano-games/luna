@@ -145,7 +145,6 @@ void sokol_cleanup(void);
 
 void sokol_pause_handle_sokol_event(const sapp_event *ev);
 void sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev);
-b32 sys_pause_inp(struct sys_menu *menu, i32 buttons);
 
 void sokol_pause(void);
 void sokol_resume(void);
@@ -508,7 +507,7 @@ sokol_pause_handle_sokol_event(const sapp_event *ev)
 		if(ev->type == SAPP_EVENTTYPE_KEY_DOWN) {
 			b = sys_os_keyboard_map(ev->key_code);
 		}
-		if(sys_pause_inp(&SOKOL_STATE.pause.menu, b)) {
+		if(sys_menu_inp(&SOKOL_STATE.pause.menu, b)) {
 			sokol_resume();
 		}
 	}
@@ -536,7 +535,7 @@ sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev)
 		default: {
 		} break;
 		}
-		if(sys_pause_inp(&SOKOL_STATE.pause.menu, b)) {
+		if(sys_menu_inp(&SOKOL_STATE.pause.menu, b)) {
 			sokol_resume();
 		}
 	}
@@ -829,13 +828,13 @@ sys_menu_item_add(
 	void (*callback)(void *arg),
 	void *arg)
 {
-	return sys_pause_menu_add(&SOKOL_STATE.pause.menu, title, SOKOL_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
+	return sys_menu_add(&SOKOL_STATE.pause.menu, title, SYS_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	return sys_pause_menu_add(&SOKOL_STATE.pause.menu, title, SOKOL_MENU_ITEM_TYPE_BOOL, val, callback, arg);
+	return sys_menu_add(&SOKOL_STATE.pause.menu, title, SYS_MENU_ITEM_TYPE_BOOL, val, callback, arg);
 }
 
 i32
@@ -848,19 +847,19 @@ sys_menu_options_add(const char *title, const char **options, int count, void (*
 int
 sys_menu_value(int id)
 {
-	return sys_pause_menu_value(&SOKOL_STATE.pause.menu, id);
+	return sys_menu_get_value(&SOKOL_STATE.pause.menu, id);
 }
 
 void
 sys_menu_item_remove(int id)
 {
-	sys_pause_menu_remove(&SOKOL_STATE.pause.menu, id);
+	sys_menu_remove(&SOKOL_STATE.pause.menu, id);
 }
 
 void
 sys_menu_clr(void)
 {
-	sys_pause_menu_clear(&SOKOL_STATE.pause.menu);
+	sys_menu_clear(&SOKOL_STATE.pause.menu);
 }
 
 void
