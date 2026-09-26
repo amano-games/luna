@@ -92,6 +92,7 @@ sys_menu_inp(struct sys_menu *menu, i32 buttons)
 			}
 		}
 	}
+
 	return res;
 }
 
