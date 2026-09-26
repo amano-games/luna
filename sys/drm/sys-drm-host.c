@@ -17,6 +17,7 @@
 #include "sys/sys-os.h"
 #include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
+#include "engine/dbg-drw/dbg-drw.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -1480,6 +1481,7 @@ main(int argc, char **argv)
 		drew = sys_internal_update();
 		if(drew) {
 			drm_host_present();
+			dbg_drw_clr();
 		} else {
 			drm_host_idle();
 		}

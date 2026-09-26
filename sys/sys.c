@@ -262,7 +262,6 @@ sys_internal_update(void)
 #endif
 
 		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
-		dbg_drw_clr();
 		app_draw();
 		prof_block_end();
 
