@@ -108,8 +108,7 @@ void main() {
     tex_uv = uv_iq(tex_uv, ivec2(app_size));
   }
   vec3 app_color = sample_palette(tex_uv);
-  float debug_alpha = 0.5f;
-  vec4 col = vec4(mix(app_color, debug_color.rgb, debug_alpha), 1.0);
+  vec4 col = vec4(mix(app_color, debug_color.rgb, debug_color.a), 1.0);
   frag_color = col;
   // frag_color = vec4(app_color, 1.0);
 }

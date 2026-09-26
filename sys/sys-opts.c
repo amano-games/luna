@@ -75,10 +75,20 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 		.colors.colors[GFX_COL_WHITE] = APP_DEFAULT_WHITE,
 
 		.colors_dbg.colors = {
-			[0] = 0x00000000,
-			[1] = 0xFF0000FF,
-			[2] = 0x00FF00FF,
-			[3] = 0x0000FFFF,
+			0x00000000,
+			0xff000080,
+			0x00ff0080,
+			0x0000ff80,
+			0x10c6f880,
+			0xaaff7f80,
+			0x92ff1880,
+			0x55007f80,
+			0x8c60a680,
+			0xaf1f7d80,
+			0x55aaff80,
+			0xdb72a080,
+			0xbfff1a80,
+			0x1e00ff80,
 		},
 
 		.recording = {
