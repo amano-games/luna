@@ -9,6 +9,7 @@
 #include "engine/gfx/gfx-defs.h"
 #include "lib/tex/tex.h"
 #include "sys/sys.h"
+#include "engine/dbg-drw/dbg-drw.h"
 #include "base/types.h"
 #include "base/log.h"
 #include "sys/sys-mem.h"
@@ -189,7 +190,8 @@ sys_pd_update(void *pd)
 	// Playdate: `setRefreshRate(0)` and the OS waits `rows_dirtied/240 * 20ms` (panel ceiling 50 fps).
 	// `sys_pd_update` must always `sys_pd_update_rows(0, 239)` and return 1, even when the render gate
 	// skips `app_draw`. If a callback dirties nothing / returns 0, the wait is 0, the callback rate
-	// rises, and `M` explodes. Do not make draws partial without replacing that wait.
+	// rises, and `M` explodes. Do not make draws partial
+	dbg_drw_clr();
 	sys_internal_update();
 	sys_pd_update_rows(0, 239);
 	return 1;

@@ -27,6 +27,7 @@
 #include "base/str.h"
 #include "base/utils.h"
 #include "sys/sys-input.h"
+#include "engine/dbg-drw/dbg-drw.h"
 #include "sys/sys-io.h"
 #include "sys/sys-img.h"
 #include "base/log.h"
@@ -750,8 +751,9 @@ sokol_frame(void)
 		colors.dbg_colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors_dbg.colors[i]);
 	}
 
+	b32 updated = false;
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-		b32 updated = sys_internal_update();
+		updated = sys_internal_update();
 		if(updated) {
 #if defined(SOKOL_RECORDING_ENABLED)
 			sokol_record_frame();
@@ -759,7 +761,7 @@ sokol_frame(void)
 		}
 
 #if defined(SOKOL_RECORDING_ENABLED) && defined(SOKOL_DBG_AUDIO)
-		// After the drawing-frame clear, so the waveform is still there at upload.
+		// Draw the waveform before uploading the debug buffer.
 		struct recording_aud *rec = &SYS_RECORDING_STATE.recording_aud;
 		struct gfx_ctx ctx        = SOKOL_STATE.dbg_ctx;
 		for(ssize i = 0; i < rec->len; ++i) {
@@ -860,14 +862,17 @@ sokol_frame(void)
 			},
 		});
 
-	sg_update_image(
-		SOKOL_STATE.bind.images[IMG_tex_debug],
-		&(sg_image_data){
-			.subimage[0][0] = {
-				.ptr  = SOKOL_STATE.dbg_ctx.dst.pxu8,
-				.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
-			},
-		});
+	// NOTE: Don't update dbg overlay on skipped drw frames
+	if(updated) {
+		sg_update_image(
+			SOKOL_STATE.bind.images[IMG_tex_debug],
+			&(sg_image_data){
+				.subimage[0][0] = {
+					.ptr  = SOKOL_STATE.dbg_ctx.dst.pxu8,
+					.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
+				},
+			});
+	}
 
 	sg_begin_pass(&(sg_pass){
 		.action    = SOKOL_STATE.pass_action,
@@ -881,6 +886,7 @@ sokol_frame(void)
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
+	if(updated) { dbg_drw_clr(); }
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
 		sys_internal_init();
