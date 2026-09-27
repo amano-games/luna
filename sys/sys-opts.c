@@ -233,7 +233,7 @@ sys_opts_parse_color_palette(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ss
 {
 	struct {
 		struct opts_parse_ctx *ctx;
-		struct gfx_col_pallete *pal;
+		struct gfx_col_palette *pal;
 	} *ctx = user;
 
 	str8 json = ctx->ctx->json;
@@ -279,7 +279,7 @@ recording_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, v
 		if(value->type == JSMN_OBJECT) {
 			struct {
 				struct opts_parse_ctx *ctx;
-				struct gfx_col_pallete *pal;
+				struct gfx_col_palette *pal;
 			} sub = {ctx, &data->recording.colors};
 
 			json_obj_foreach(
@@ -306,7 +306,7 @@ screenshot_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, 
 		if(value->type == JSMN_OBJECT) {
 			struct {
 				struct opts_parse_ctx *ctx;
-				struct gfx_col_pallete *pal;
+				struct gfx_col_palette *pal;
 			} sub = {ctx, &data->screentshot.colors};
 
 			json_obj_foreach(
@@ -392,7 +392,7 @@ sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, vo
 		if(value->type == JSMN_OBJECT) {
 			struct {
 				struct opts_parse_ctx *ctx;
-				struct gfx_col_pallete *pal;
+				struct gfx_col_palette *pal;
 			} sub = {ctx, &data->colors};
 
 			json_obj_foreach(

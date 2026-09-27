@@ -15,14 +15,14 @@ struct opts_parse_ctx {
 struct sys_screenshot_opts {
 	i32 scale;
 	str8 save_path;
-	struct gfx_col_pallete colors;
+	struct gfx_col_palette colors;
 };
 
 struct sys_recording_opts {
 	i32 scale;
 	str8 save_path;
 	i32 seconds_count;
-	struct gfx_col_pallete colors;
+	struct gfx_col_palette colors;
 };
 
 enum sys_video_scaling {
@@ -63,8 +63,8 @@ struct sys_video_opts {
 
 struct sys_opts {
 	struct sys_video_opts video;
-	struct gfx_col_pallete colors;
-	struct gfx_col_pallete colors_dbg;
+	struct gfx_col_palette colors;
+	struct gfx_col_palette colors_dbg;
 	struct sys_screenshot_opts screentshot;
 	struct sys_recording_opts recording;
 };

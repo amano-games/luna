@@ -285,7 +285,7 @@ tex_mskset(struct tex tex, i32 x, i32 y, u8 col)
 }
 
 void
-tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_pallete pallete)
+tex_opaque_to_rgba(struct tex tex, u32 *out, ssize size, struct gfx_col_palette pallete)
 {
 	dbg_assert(tex.fmt == TEX_FMT_1B_OPAQUE || tex.fmt == TEX_FMT_8B_INDEX);
 	dbg_assert(size >= tex.w * tex.h);

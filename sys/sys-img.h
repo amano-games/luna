@@ -5,4 +5,4 @@
 #include "engine/gfx/gfx-defs.h"
 #include "lib/tex/tex.h"
 
-b32 sys_img_write(struct tex tex, str8 path, struct gfx_col_pallete pallete, struct alloc scratch);
+b32 sys_img_write(struct tex tex, str8 path, struct gfx_col_palette pallete, struct alloc scratch);
