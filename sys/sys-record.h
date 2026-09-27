@@ -77,7 +77,7 @@ sys_recording_write(
 	struct alloc scratch,
 	struct recording_1b *recording,
 	i32 scale,
-	struct gfx_col_pallete colors,
+	struct gfx_col_palette colors,
 	str8 path)
 {
 	if(!recording || recording->len == 0) return;

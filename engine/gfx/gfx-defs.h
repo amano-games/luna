@@ -9,7 +9,7 @@ enum gfx_col {
 	GFX_COL_NUM_COUNT,
 };
 
-struct gfx_col_pallete {
+struct gfx_col_palette {
 	ssize len;
 	u32 colors[256];
 };

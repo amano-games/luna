@@ -14,6 +14,7 @@ png_to_tex_blob(
 	struct alloc scratch,
 	struct alloc alloc,
 	struct asset_blob *out,
+	struct gfx_col_palette palette,
 	enum asset_flag flag)
 {
 	b32 res = false;
