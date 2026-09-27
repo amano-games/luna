@@ -7,6 +7,8 @@ ASSETS_GEN_OUT   ?= $(BUILD_DIR)/gen-assets/assets
 ASSETS_PACK_ROOT ?= $(BUILD_DIR)/gen-assets
 ASSETS_PCK       ?= $(BUILD_DIR)/assets.pck
 ASSETS_INSTALL   ?= $(ASSETS_PCK)
+ASSETS_PALETTE   ?=
+ASSETS_ARGS      := --compress $(if $(strip $(ASSETS_PALETTE)),--palette="$(ASSETS_PALETTE)")
 
 HOSTCC ?= cc
 
@@ -18,7 +20,7 @@ $(ASSETS_BIN) $(ASSETS_PACK_BIN): $(LUNA_C_H)
 # Cook src/assets into gen-assets/assets/ so pack members keep the assets/ prefix.
 assets_gen: $(ASSETS_BIN) $(ASSETS_EXTRA)
 	mkdir -p "$(ASSETS_GEN_OUT)"
-	"$(ASSETS_BIN)" --compress "$(ASSETS_DIR)" "$(ASSETS_GEN_OUT)"
+	"$(ASSETS_BIN)" $(ASSETS_ARGS) "$(ASSETS_DIR)" "$(ASSETS_GEN_OUT)"
 
 assets_pack: assets_gen $(ASSETS_PACK_BIN)
 	mkdir -p "$(dir $(ASSETS_PCK))"
