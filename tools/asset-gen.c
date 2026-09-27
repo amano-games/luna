@@ -2,10 +2,12 @@
 
 #include <tinydir.h>
 #include "base/cmd-line.h"
+#include "base/dbg.h"
 #include "base/log.h"
 #include "base/marena.h"
 #include "base/path.h"
 #include "base/str.h"
+#include "lib/color.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
@@ -161,6 +163,30 @@ asset_gen_recursive(
 	tinydir_close(dir);
 }
 
+struct gfx_col_pallete
+asset_gen_load_palette(str8 path)
+{
+	struct gfx_col_pallete res = {0};
+	dbg_check(path.size > 0, "asset-gen", "palette path empty");
+
+	i32 w, h, n;
+	stbi_uc *data = stbi_load((char *)path.str, &w, &h, &n, 4);
+	dbg_check(data, "asset-gen", "palette failed to load: %.*s", str8_spread(path));
+	dbg_check(h == 1 && w < U8_MAX, "asset-gen", "palette wrong dimensions (%dx%d): %.*s", w, h, str8_spread(path));
+
+	for(ssize i = 0; i < w; ++i) {
+		const stbi_uc *p = data + i * 4;
+		res.colors[i]    = ((u32)p[0] << 24) | ((u32)p[1] << 16) | ((u32)p[2] << 8) | (u32)p[3];
+	}
+	res.len = w;
+
+error:;
+	if(data) {
+		stbi_image_free(data);
+	}
+	return res;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -185,6 +211,13 @@ main(int argc, char *argv[])
 		res = EXIT_FAILURE;
 		goto error;
 	}
+
+	struct gfx_col_pallete palette = {.len = 2, .colors = {[0] = 0x000000ff, [1] = 0xffffffff}};
+	str8 palette_path              = cmd_line_str8(&cmd, str8_lit("palette"));
+	if(palette_path.size > 0) {
+		palette = asset_gen_load_palette(palette_path);
+	}
+	log_info("asset-gen", "color palette: %d", palette.len);
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;

@@ -10,5 +10,6 @@ enum gfx_col {
 };
 
 struct gfx_col_pallete {
+	ssize len;
 	u32 colors[256];
 };
