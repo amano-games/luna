@@ -56,4 +56,4 @@ void tex_opaque_to_pdi(struct tex tex, u8 *px_out, i32 bw, i32 bh, i32 bb);
 void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32 row_bytes);
 
 void tex_cpy(struct tex *dst, struct tex *src);
-struct tex tex_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h);
+struct tex tex_1b_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h);

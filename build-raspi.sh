@@ -3,7 +3,7 @@ set -eu
 
 # Build the Raspberrypi binary inside the armv6 SDK image. (Compatible with raspi zero w and 2B)
 # Usage: ./luna/build-raspi.sh <repo-root> <make-args...>
-# Does not wipe build/ (sysroot lives there).
+# The image provides the sysroot; build/ holds the output artifacts.
 
 ROOT_DIR="$1"
 shift
@@ -13,6 +13,7 @@ DOCKERFILE="$SCRIPT_DIR/Dockerfile.raspi"
 PROJECT_NAME=pinball-raspi
 
 cd "$ROOT_DIR"
+ROOT_DIR="$PWD"
 
 podman build -t "$PROJECT_NAME" -f "$DOCKERFILE" .
 

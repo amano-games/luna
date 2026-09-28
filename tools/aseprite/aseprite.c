@@ -101,7 +101,7 @@ aseprite_to_tex(const ase_t *ase, struct alloc scratch, struct alloc alloc, stru
 	}
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)sheet_data;
-	struct tex t                   = tex_from_rgb(scratch, in_data, sheet_w, sheet_h);
+	struct tex t                   = tex_1b_from_rgb(scratch, in_data, sheet_w, sheet_h);
 	res                            = tex_to_blob(scratch, alloc, t, out, flag);
 
 error:;

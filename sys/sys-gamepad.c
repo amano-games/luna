@@ -22,7 +22,9 @@
 static struct {
 	mg_gamepads pads;
 	i32 buttons;
+	i32 direction_presses;
 	b32 menu;
+	b32 select;
 } SYS_GAMEPAD;
 
 // First connected pad → Playdate-style SYS_INP_* bits.
@@ -52,16 +54,32 @@ sys_gamepad_map_pad(const mg_gamepad *pad)
 			res |= SYS_INP_B;
 			break;
 		case MG_BUTTON_DPAD_LEFT:
+#if SYS_GFX_DRM
+			res |= SYS_INP_DPAD_U;
+#else
 			res |= SYS_INP_DPAD_L;
+#endif
 			break;
 		case MG_BUTTON_DPAD_RIGHT:
+#if SYS_GFX_DRM
+			res |= SYS_INP_DPAD_D;
+#else
 			res |= SYS_INP_DPAD_R;
+#endif
 			break;
 		case MG_BUTTON_DPAD_UP:
+#if SYS_GFX_DRM
+			res |= SYS_INP_DPAD_R;
+#else
 			res |= SYS_INP_DPAD_U;
+#endif
 			break;
 		case MG_BUTTON_DPAD_DOWN:
+#if SYS_GFX_DRM
+			res |= SYS_INP_DPAD_L;
+#else
 			res |= SYS_INP_DPAD_D;
+#endif
 			break;
 		default:
 			break;
@@ -73,18 +91,34 @@ sys_gamepad_map_pad(const mg_gamepad *pad)
 		switch((mg_axis)i) {
 		case MG_AXIS_LEFT_X:
 			if(value > SYS_GAMEPAD_AXIS_DEADZONE) {
+#if SYS_GFX_DRM
+				res |= SYS_INP_DPAD_D;
+#else
 				res |= SYS_INP_DPAD_R;
+#endif
 			}
 			if(value < -SYS_GAMEPAD_AXIS_DEADZONE) {
+#if SYS_GFX_DRM
+				res |= SYS_INP_DPAD_U;
+#else
 				res |= SYS_INP_DPAD_L;
+#endif
 			}
 			break;
 		case MG_AXIS_LEFT_Y:
 			if(value > SYS_GAMEPAD_AXIS_DEADZONE) {
+#if SYS_GFX_DRM
+				res |= SYS_INP_DPAD_L;
+#else
 				res |= SYS_INP_DPAD_D;
+#endif
 			}
 			if(value < -SYS_GAMEPAD_AXIS_DEADZONE) {
+#if SYS_GFX_DRM
+				res |= SYS_INP_DPAD_R;
+#else
 				res |= SYS_INP_DPAD_U;
+#endif
 			}
 			break;
 		case MG_AXIS_LEFT_TRIGGER:
@@ -134,13 +168,16 @@ sys_os_gamepad_ini(void)
 	// Queue on so poll fills events for Sokol pause; button state still updates if full.
 	SYS_GAMEPAD.pads.queue_events = MG_TRUE;
 	SYS_GAMEPAD.buttons           = 0;
+	SYS_GAMEPAD.direction_presses = 0;
 	SYS_GAMEPAD.menu              = false;
+	SYS_GAMEPAD.select            = false;
 }
 
 void
 sys_os_gamepad_poll(void)
 {
 	mg_gamepad *pad = NULL;
+	i32 prev_buttons = SYS_GAMEPAD.buttons;
 
 	SYS_GAMEPAD.pads.queue_events = MG_TRUE;
 	mg_gamepads_poll(&SYS_GAMEPAD.pads);
@@ -148,16 +185,28 @@ sys_os_gamepad_poll(void)
 	pad                 = SYS_GAMEPAD.pads.list.head;
 	SYS_GAMEPAD.buttons = 0;
 	SYS_GAMEPAD.menu    = false;
+	SYS_GAMEPAD.select  = false;
 	if(pad != NULL) {
 		SYS_GAMEPAD.buttons = sys_gamepad_map_pad(pad);
 		SYS_GAMEPAD.menu    = sys_gamepad_map_menu(pad);
+		mg_button_state select = pad->buttons[MG_BUTTON_BACK];
+		SYS_GAMEPAD.select = select.supported == MG_TRUE && select.current == MG_TRUE;
 	}
+	// Use gameplay's D-pad/stick mapping, including the DRM display rotation.
+	SYS_GAMEPAD.direction_presses = SYS_GAMEPAD.buttons & ~prev_buttons &
+		(SYS_INP_DPAD_U | SYS_INP_DPAD_D | SYS_INP_DPAD_L | SYS_INP_DPAD_R);
 }
 
 i32
 sys_os_gamepad_buttons(void)
 {
 	return SYS_GAMEPAD.buttons;
+}
+
+b32
+sys_os_gamepad_select(void)
+{
+	return SYS_GAMEPAD.select;
 }
 
 b32
@@ -191,14 +240,6 @@ sys_os_gamepad_event(enum sys_os_gamepad_ev *ev)
 			*ev = SYS_OS_PAD_EV_BACK;
 			got = true;
 		} break;
-		case MG_BUTTON_DPAD_UP: {
-			*ev = SYS_OS_PAD_EV_DPAD_U;
-			got = true;
-		} break;
-		case MG_BUTTON_DPAD_DOWN: {
-			*ev = SYS_OS_PAD_EV_DPAD_D;
-			got = true;
-		} break;
 		case MG_BUTTON_SOUTH: {
 			*ev = SYS_OS_PAD_EV_A;
 			got = true;
@@ -212,5 +253,18 @@ sys_os_gamepad_event(enum sys_os_gamepad_ev *ev)
 		}
 	}
 
+	if(!got) {
+		const i32 buttons[] = {SYS_INP_DPAD_U, SYS_INP_DPAD_D, SYS_INP_DPAD_L, SYS_INP_DPAD_R};
+		const enum sys_os_gamepad_ev events[] = {
+			SYS_OS_PAD_EV_DPAD_U, SYS_OS_PAD_EV_DPAD_D, SYS_OS_PAD_EV_DPAD_L, SYS_OS_PAD_EV_DPAD_R,
+		};
+		for(usize i = 0; i < ARRLEN(buttons); i++) {
+			if(SYS_GAMEPAD.direction_presses & buttons[i]) {
+				SYS_GAMEPAD.direction_presses &= ~buttons[i];
+				*ev = events[i];
+				return true;
+			}
+		}
+	}
 	return got;
 }

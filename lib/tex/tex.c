@@ -372,7 +372,7 @@ tex_cpy(struct tex *dst, struct tex *src)
 }
 
 struct tex
-tex_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h)
+tex_1b_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h)
 {
 	struct tex t  = {0};
 	b32 opaque    = true;

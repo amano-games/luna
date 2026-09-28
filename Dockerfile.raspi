@@ -1,4 +1,33 @@
 # Pi Zero W (ARMv6zk). Debian armhf gcc and arm-none-linux-gnueabihf are v7.
+FROM debian:bookworm-slim AS sysroot
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends ca-certificates curl \
+	&& rm -rf /var/lib/apt/lists/*
+
+# Download Raspbian ARMv6 packages without installing or executing ARM code.
+# Keep target package resolution separate from the builder's installed packages.
+RUN curl -fsSL https://archive.raspbian.org/raspbian.public.key \
+		-o /usr/share/keyrings/raspbian.asc \
+	&& echo 'deb [arch=armhf signed-by=/usr/share/keyrings/raspbian.asc] https://archive.raspbian.org/raspbian bookworm main' > /tmp/raspbian.list \
+	&& mkdir -p /tmp/raspbian-lists/partial /tmp/raspbian-debs/partial /opt/raspi-sysroot \
+	&& touch /tmp/raspbian-status \
+	&& apt_raspi() { apt-get \
+		-o APT::Architecture=armhf \
+		-o Dir::Etc::sourcelist=/tmp/raspbian.list \
+		-o Dir::Etc::sourceparts=- \
+		-o Dir::State::lists=/tmp/raspbian-lists \
+		-o Dir::State::status=/tmp/raspbian-status \
+		-o Dir::Cache::archives=/tmp/raspbian-debs "$@"; } \
+	&& apt_raspi update \
+	&& apt_raspi install -y --download-only --no-install-recommends libc6-dev libdrm-dev libasound2-dev \
+	&& for package in /tmp/raspbian-debs/*.deb; do dpkg-deb -x "$package" /opt/raspi-sysroot; done
+
+# Absolute package symlinks must resolve within the sysroot, not the host.
+RUN find /opt/raspi-sysroot -type l -lname '/*' -exec sh -c \
+	'for link do target=$(readlink "$link"); ln -snf "$(realpath -m --relative-to="$(dirname "$link")" "/opt/raspi-sysroot$target")" "$link"; done' sh {} + \
+	&& test -f /opt/raspi-sysroot/usr/include/stdint.h
+
 FROM debian:bookworm-slim
 
 ARG XTOOLS_VER=1.2.1
@@ -20,6 +49,8 @@ RUN mkdir -p /opt \
 	&& test -x /opt/x-tools/armv6-rpi-linux-gnueabihf/bin/armv6-rpi-linux-gnueabihf-gcc
 
 ENV PATH="/opt/x-tools/armv6-rpi-linux-gnueabihf/bin:${PATH}"
+
+COPY --from=sysroot /opt/raspi-sysroot /opt/raspi-sysroot
 
 WORKDIR /app
 
