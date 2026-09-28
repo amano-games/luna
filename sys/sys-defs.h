@@ -4,7 +4,7 @@
 #include "lib/fnt/fnt-defs.h"
 
 #if !defined(SYS_DISPLAY_SCALE_H)
-#define SYS_DISPLAY_SCALE_H 3
+#define SYS_DISPLAY_SCALE_H 1
 #endif
 
 #define SYS_PD_DISPLAY_W   400
