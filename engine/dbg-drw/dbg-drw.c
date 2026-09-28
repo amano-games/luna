@@ -133,7 +133,7 @@ void
 dbg_drw_cir_fill(f32 x, f32 y, f32 d, u8 col)
 {
 	DBG_DRW_STATE.ctx.color_map[GFX_COL_WHITE] = col;
-	gfx_cir(
+	gfx_cir_fill(
 		DBG_DRW_STATE.ctx,
 		x + DBG_DRW_STATE.offset.x,
 		y + DBG_DRW_STATE.offset.y,
