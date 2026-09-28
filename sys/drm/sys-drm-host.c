@@ -1317,10 +1317,18 @@ drm_host_resume(void)
 }
 
 static void
+drm_host_pause_end(void)
+{
+	if(DRM_HOST.pause.timestamp_end == 0) {
+		sys_pause_end(&DRM_HOST.pause, sys_time_elapsed());
+	}
+}
+
+static void
 drm_host_toggle_pause(void)
 {
 	if(DRM_HOST.paused) {
-		drm_host_resume();
+		drm_host_pause_end();
 	} else {
 		DRM_HOST.paused = true;
 		sys_pause_start(&DRM_HOST.pause, DRM_HOST.frame_ctx.dst, sys_time_elapsed());
@@ -1332,7 +1340,7 @@ static void
 drm_host_pause_input(i32 buttons)
 {
 	if(DRM_HOST.paused && sys_menu_inp(&DRM_HOST.pause.menu, buttons)) {
-		drm_host_resume();
+		drm_host_pause_end();
 	}
 }
 
@@ -1343,10 +1351,11 @@ drm_host_gamepad_poll(void)
 	sys_os_gamepad_poll();
 	while(sys_os_gamepad_event(&ev)) {
 		switch(ev) {
-		case SYS_OS_PAD_EV_START:
-		case SYS_OS_PAD_EV_BACK: drm_host_toggle_pause(); break;
+		case SYS_OS_PAD_EV_START: drm_host_toggle_pause(); break;
 		case SYS_OS_PAD_EV_DPAD_U: drm_host_pause_input(SYS_INP_DPAD_U); break;
 		case SYS_OS_PAD_EV_DPAD_D: drm_host_pause_input(SYS_INP_DPAD_D); break;
+		case SYS_OS_PAD_EV_DPAD_L: drm_host_pause_input(SYS_INP_DPAD_L); break;
+		case SYS_OS_PAD_EV_DPAD_R: drm_host_pause_input(SYS_INP_DPAD_R); break;
 		case SYS_OS_PAD_EV_A: drm_host_pause_input(SYS_INP_A); break;
 		case SYS_OS_PAD_EV_B: drm_host_pause_input(SYS_INP_B); break;
 		default: break;
@@ -1504,7 +1513,10 @@ main(int argc, char **argv)
 		drm_host_evdev_poll();
 		drm_host_gamepad_poll();
 		if(DRM_HOST.paused) {
-			sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx, sys_time_elapsed());
+			b32 is_finished = sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx, sys_time_elapsed());
+			if(is_finished) {
+				drm_host_resume();
+			}
 			drew = true;
 		} else {
 			drew = sys_internal_update();
@@ -1563,6 +1575,7 @@ int
 sys_key(int k)
 {
 	int res = sys_os_keyboard_get(k);
+	if(k == 'P') res |= sys_os_gamepad_select();
 
 	return res;
 }
@@ -1571,6 +1584,7 @@ void
 sys_keys(u8 *dest, usize count)
 {
 	sys_os_keyboard_keys(dest, count);
+	if(count > 'P') dest['P'] |= sys_os_gamepad_select();
 }
 
 f32

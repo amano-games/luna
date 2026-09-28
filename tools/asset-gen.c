@@ -3,6 +3,7 @@
 #include <tinydir.h>
 #include "base/cmd-line.h"
 #include "base/dbg.h"
+#include "base/ht.h"
 #include "base/log.h"
 #include "base/marena.h"
 #include "base/path.h"
@@ -111,7 +112,7 @@ asset_gen_recursive(
 	const str8 src_root,
 	const str8 dest_root,
 	struct marena *arena,
-	struct gfx_col_palette palette,
+	struct gfx_col_palette_map palette_map,
 	enum asset_flag flag)
 {
 	struct alloc alloc = marena_allocator(arena);
@@ -129,14 +130,14 @@ asset_gen_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, palette, flag);
+				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, palette_map, flag);
 			}
 		} else {
 			void *reset_p  = arena->p;
 			str8 extension = str8_cstr(file.extension);
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				struct asset_blob blob = {0};
-				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, palette, flag);
+				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, palette_map, flag);
 				str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(TEX_EXT));
 				b32 res            = asset_blob_w(blob, out_file_path);
 				sys_free(blob.data);
@@ -213,12 +214,18 @@ main(int argc, char *argv[])
 		goto error;
 	}
 
-	struct gfx_col_palette palette = {.len = 2, .colors = {[0] = 0x000000ff, [1] = 0xffffffff}};
-	str8 palette_path              = cmd_line_str8(&cmd, str8_lit("palette"));
+	struct gfx_col_palette_map palette_map = {
+		.ht      = ht_new_u32(ht_exp_from_count(250), scratch),
+		.palette = {
+			.len    = 2,
+			.colors = {[0] = 0x000000ff, [1] = 0xffffffff},
+		},
+	};
+	str8 palette_path = cmd_line_str8(&cmd, str8_lit("palette"));
 	if(palette_path.size > 0) {
-		palette = asset_gen_load_palette(palette_path);
+		// palette_map.palette = asset_gen_load_palette(palette_path);
 	}
-	log_info("asset-gen", "color palette: %d", palette.len);
+	log_info("asset-gen", "color palette: %d", palette_map.palette.len);
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;
@@ -226,7 +233,7 @@ main(int argc, char *argv[])
 	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, palette, flag);
+	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, palette_map, flag);
 
 	res = EXIT_SUCCESS;
 

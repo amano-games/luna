@@ -5,4 +5,4 @@
 #include "tools/asset/asset.h"
 #include "tools/asset/asset-defs.h"
 
-b32 png_to_tex_blob(str8 in_path, struct alloc scratch, struct alloc alloc, struct asset_blob *out, struct gfx_col_palette palette, enum asset_flag flag);
+b32 png_to_tex_blob(str8 in_path, struct alloc scratch, struct alloc alloc, struct asset_blob *out, struct gfx_col_palette_map palette_map, enum asset_flag flag);

@@ -527,6 +527,12 @@ sokol_pause_handle_gamepad_event(enum sys_os_gamepad_ev ev)
 		case SYS_OS_PAD_EV_DPAD_D: {
 			b |= SYS_INP_DPAD_D;
 		} break;
+		case SYS_OS_PAD_EV_DPAD_L: {
+			b |= SYS_INP_DPAD_L;
+		} break;
+		case SYS_OS_PAD_EV_DPAD_R: {
+			b |= SYS_INP_DPAD_R;
+		} break;
 		case SYS_OS_PAD_EV_A: {
 			b |= SYS_INP_A;
 		} break;
