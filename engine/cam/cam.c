@@ -53,13 +53,23 @@ cam_drag_position(struct cam *c, int tx, int ty, v2 min, v2 max)
 }
 
 v2
-cam_limit_position(v2 p, struct col_aabb limits)
+cam_limit_position(const struct cam *c, v2 p, struct col_aabb limits)
 {
 
 	f32 left   = limits.min.x + CAM_HALF_W;
 	f32 top    = limits.min.y + CAM_HALF_H;
 	f32 right  = limits.max.x - CAM_HALF_W;
 	f32 bottom = limits.max.y - CAM_HALF_H;
+
+	// Collapse inverted limits to a fixed camera position.
+	if(left > right) {
+		left  = left + (right - left) * c->bounds_alignment.x;
+		right = left;
+	}
+	if(top > bottom) {
+		top    = top + (bottom - top) * c->bounds_alignment.y;
+		bottom = top;
+	}
 
 	v2 v = {
 		clamp_f32(p.x, left, right),
@@ -78,7 +88,7 @@ cam_upd(struct cam *c, int tx, int ty, f32 dt)
 	f32 smoothing_speed         = data.drag_vel;
 
 	v2 soft_pos = cam_drag_position(c, tx, ty, data.soft_drag.min, data.soft_drag.max);
-	soft_pos    = cam_limit_position(soft_pos, data.soft_limits);
+	soft_pos    = cam_limit_position(c, soft_pos, data.soft_limits);
 
 	v2 a = cam_pos;
 	v2 b = soft_pos;
@@ -124,7 +134,7 @@ cam_upd(struct cam *c, int tx, int ty, f32 dt)
 #endif
 	}
 
-	v2 limited_pos = cam_limit_position(cam_pos, hard_limits);
+	v2 limited_pos = cam_limit_position(c, cam_pos, hard_limits);
 	c->p           = limited_pos;
 
 	if(c->shake_ticks) {

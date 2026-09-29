@@ -20,6 +20,7 @@ struct cam_data {
 };
 
 struct cam {
+	v2 bounds_alignment; // Placement within an oversized viewport
 	v2 p;
 	v2 p_final;
 	v2 p_initial;
@@ -42,5 +43,5 @@ void cam_set_pos_px(struct cam *c, int x, int y);
 void cam_upd(struct cam *c, int tx, int ty, f32 dt);
 void cam_shake(struct cam *c, i32 ticks, i32 str);
 void cam_shake_xy(struct cam *c, i32 ticks, i32 str_x, i32 str_y);
-v2 cam_limit_position(v2 p, struct col_aabb limits);
+v2 cam_limit_position(const struct cam *c, v2 p, struct col_aabb limits);
 str8 cam_data_to_str8(struct alloc alloc, struct cam_data *value);
