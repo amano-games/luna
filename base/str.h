@@ -68,7 +68,7 @@ str8 string8(u8 *str, u64 size);
 str8 str8_range(u8 *first, u8 *one_past_last);
 str8 str8_zero(void);
 str8 str8_cstr(char *c);
-str8 str8_cstr_cappend(void *cstr, void *cap);
+str8 str8_cstr_capped(void *cstr, void *cap);
 
 b32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
 b32 str8_starts_with(str8 str, str8 start, str_match_flags flags);
