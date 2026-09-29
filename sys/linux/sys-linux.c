@@ -17,6 +17,7 @@
 #endif
 
 #include <limits.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -341,11 +342,22 @@ sys_file_close(sys_file f)
 	return fclose(sys_file_fp(f)) == 0;
 }
 
+static b32
+sys_linux_sync_fd(int fd)
+{
+	int result;
+	do {
+		result = fsync(fd);
+	} while(result < 0 && errno == EINTR);
+	return result == 0;
+}
+
+// TODO: write directly through file descriptors
 b32
 sys_file_flush(sys_file f)
 {
 	if(!sys_file_is_valid(f)) { return false; }
-	return fflush(sys_file_fp(f)) == 0;
+	return fflush(sys_file_fp(f)) == 0 && sys_linux_sync_fd(fileno(sys_file_fp(f)));
 }
 
 ssize
