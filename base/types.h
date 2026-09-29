@@ -135,6 +135,11 @@ typedef struct str8 {
 	u64 size;
 } str8;
 
+typedef struct str16 {
+	u16 *str;
+	u64 size;
+} str16;
+
 union rng_u64 {
 	struct {
 		u64 min;

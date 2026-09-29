@@ -56,6 +56,7 @@ u8 char_to_correct_slash(u8 c);
 
 // C-String mesurement
 usize cstr8_len(u8 *c);
+usize cstr16_len(u16 *c);
 
 // String Constructors
 #define str8_lit(S)         string8((u8 *)(S), sizeof(S) - 1)
@@ -69,6 +70,10 @@ str8 str8_range(u8 *first, u8 *one_past_last);
 str8 str8_zero(void);
 str8 str8_cstr(char *c);
 str8 str8_cstr_capped(void *cstr, void *cap);
+str16 str16_cstr(u16 *c);
+
+str8 str8_from_16(struct alloc alloc, str16 in);
+str16 str16_from_8(struct alloc alloc, str8 in);
 
 b32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
 b32 str8_starts_with(str8 str, str8 start, str_match_flags flags);
