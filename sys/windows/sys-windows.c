@@ -39,23 +39,6 @@ static struct {
 	u64 tick_elapsed;
 } OS_STATE;
 
-static str8
-sys_windows_str8_from_wide(struct alloc alloc, const WCHAR *wide)
-{
-	str8 res = {0};
-	if(wide == NULL) {
-		return res;
-	}
-	i32 bytes = WideCharToMultiByte(CP_UTF8, 0, wide, -1, NULL, 0, NULL, NULL);
-	if(bytes <= 1) {
-		return res;
-	}
-	u8 *buf = alloc_arr(alloc, buf, bytes);
-	WideCharToMultiByte(CP_UTF8, 0, wide, -1, (char *)buf, bytes, NULL, NULL);
-	res = (str8){.str = buf, .size = (usize)(bytes - 1)};
-	return res;
-}
-
 str8
 sys_get_current_path(struct alloc alloc)
 {
@@ -64,12 +47,13 @@ sys_get_current_path(struct alloc alloc)
 		return (str8){0};
 	}
 	marena_reset(&OS_STATE.scratch_arena);
-	WCHAR *wide = alloc_arr(OS_STATE.scratch, wide, needed);
-	if(GetCurrentDirectoryW(needed, wide) == 0) {
+	WCHAR *wide  = alloc_arr(OS_STATE.scratch, wide, needed);
+	DWORD length = GetCurrentDirectoryW(needed, wide);
+	if(length == 0 || length >= needed) {
 		marena_reset(&OS_STATE.scratch_arena);
 		return (str8){0};
 	}
-	str8 res = sys_windows_str8_from_wide(alloc, wide);
+	str8 res = str8_from_16(alloc, (str16){(u16 *)wide, length});
 	marena_reset(&OS_STATE.scratch_arena);
 	return res;
 }
@@ -102,7 +86,7 @@ sys_os_init(void)
 		DWORD length  = GetModuleFileNameW(0, buffer, size);
 		if(length > 0 && length < size) {
 			// UTF-8 into alloc: scratch is already full of WCHARs (size * sizeof(WCHAR)).
-			info->binary_file_path = sys_windows_str8_from_wide(alloc, buffer);
+			info->binary_file_path = str8_from_16(alloc, str16_cstr((u16 *)buffer));
 			info->binary_path      = str8_chop_last_slash(info->binary_file_path);
 		}
 		marena_reset(&OS_STATE.scratch_arena);
@@ -114,7 +98,7 @@ sys_os_init(void)
 		marena_reset(&OS_STATE.scratch_arena);
 		WCHAR *buffer = alloc_arr(scratch, buffer, MAX_PATH);
 		if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, buffer))) {
-			str8 appdata                        = sys_windows_str8_from_wide(alloc, buffer);
+			str8 appdata                        = str8_from_16(alloc, str16_cstr((u16 *)buffer));
 			info->user_program_config_data_path = appdata;
 			info->user_program_cache_data_path  = appdata;
 			info->user_program_logs_data_path   = appdata;
@@ -131,7 +115,7 @@ sys_os_init(void)
 					if(start_idx == idx) {
 						break;
 					}
-					str8 entry = sys_windows_str8_from_wide(alloc, env + start_idx);
+					str8 entry = str8_from_16(alloc, (str16){(u16 *)(env + start_idx), idx - start_idx});
 					str8_list_push(alloc, &info->environment, entry);
 					start_idx = idx + 1;
 				}
@@ -395,6 +379,21 @@ b32
 sys_file_rename(str8 from, str8 to)
 {
 	return (rename((char *)from.str, (char *)to.str) == 0);
+}
+
+b32
+sys_file_replace(str8 from, str8 to)
+{
+	if(!from.size || !to.size || from.size > 32767 * 4 || to.size > 32767 * 4) { return false; }
+
+	ssize scratch_size = (ssize)((from.size + to.size + 2) * sizeof(u16) + MEM_ALIGN_DEFAULT);
+	marena_stack(arena, MKILOBYTE(4));
+	if(scratch_size > marena_size_rem(&arena)) { return false; }
+	struct alloc scratch = marena_allocator(&arena);
+	str16 from_wide      = str16_from_8(scratch, from);
+	str16 to_wide        = str16_from_8(scratch, to);
+	if(!from_wide.str || !to_wide.str || from_wide.size > 32767 || to_wide.size > 32767) { return false; }
+	return MoveFileExW((WCHAR *)from_wide.str, (WCHAR *)to_wide.str, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
 }
 
 void

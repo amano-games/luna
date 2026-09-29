@@ -75,6 +75,7 @@ sys_file sys_file_open_a(str8 path);
 b32 sys_file_close(sys_file f);
 b32 sys_file_del(str8 path);
 b32 sys_file_rename(str8 from, str8 to);
+b32 sys_file_replace(str8 from, str8 to);
 b32 sys_file_flush(sys_file f);
 i32 sys_file_tell(sys_file f);
 i32 sys_file_seek_set(sys_file f, i32 pos);

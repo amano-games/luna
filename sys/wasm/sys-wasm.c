@@ -328,6 +328,12 @@ sys_file_rename(str8 from, str8 to)
 	return (rename((char *)from.str, (char *)to.str) == 0);
 }
 
+b32
+sys_file_replace(str8 from, str8 to)
+{
+	return sys_file_rename(from, to);
+}
+
 void
 sys_set_auto_lock_disabled(int disable)
 {
