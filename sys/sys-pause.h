@@ -65,8 +65,9 @@ sys_pause_drw(
 		// Dim black
 		struct tex tex     = pause->frame_tex;
 		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
+		f32 alpha          = min_f32(t, 0.7f);
 		gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
-		ctx.pat = gfx_pattern_bayer_4x4(16 * t);
+		ctx.pat = gfx_pattern_bayer_4x4(16 * alpha);
 		gfx_rec_fill(ctx, 0, 0, tex.w, tex.h, PRIM_MODE_BLACK);
 		ctx.pat = gfx_pattern_100();
 	}
