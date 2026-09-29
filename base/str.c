@@ -874,3 +874,111 @@ str8_from_os(enum os_kind value)
 	}
 	return res;
 }
+
+usize
+cstr16_len(u16 *c)
+{
+	usize size = 0;
+	if(c) {
+		while(c[size]) { ++size; }
+	}
+	return size;
+}
+
+str16
+str16_cstr(u16 *c)
+{
+	return (str16){c, cstr16_len(c)};
+}
+
+static u32
+str_utf8_next(str8 in, u64 *offset)
+{
+	u64 at  = (*offset)++;
+	u8 lead = in.str[at];
+	if(lead < 0x80) { return lead; }
+	u32 count =
+		lead >= 0xc2 &&
+			lead <= 0xdf
+		? 2
+		: lead >= 0xe0 && lead <= 0xef ? 3
+		: lead >= 0xf0 && lead <= 0xf4 ? 4
+									   : 0;
+
+	if(!count || count > in.size - at) { return '?'; }
+
+	u32 cp = lead & (0x7f >> count);
+
+	for(u32 i = 1; i < count; ++i) {
+		u8 byte = in.str[at + i];
+		if((byte & 0xc0) != 0x80) { return '?'; }
+		cp = (cp << 6) | (byte & 0x3f);
+	}
+
+	if(
+		(count == 3 && cp < 0x800) ||
+		(count == 4 && cp < 0x10000) ||
+		cp > 0x10ffff ||
+		(cp >= 0xd800 && cp <= 0xdfff)) {
+		return '?';
+	}
+
+	*offset = at + count;
+	return cp;
+}
+
+str16
+str16_from_8(struct alloc alloc, str8 in)
+{
+	str16 result = {0};
+	if(!in.size || !in.str || in.size > (u64)PTRDIFF_MAX / sizeof(u16) - 1) { return result; }
+	result.str = alloc_arr(alloc, result.str, in.size + 1);
+	if(!result.str) { return result; }
+	for(u64 at = 0; at < in.size;) {
+		u32 cp = str_utf8_next(in, &at);
+		if(cp < 0x10000) {
+			result.str[result.size++] = (u16)cp;
+		} else {
+			cp -= 0x10000;
+			result.str[result.size++] = (u16)(0xd800 + (cp >> 10));
+			result.str[result.size++] = (u16)(0xdc00 + (cp & 0x3ff));
+		}
+	}
+	result.str[result.size] = 0;
+	return result;
+}
+
+str8
+str8_from_16(struct alloc alloc, str16 in)
+{
+	str8 result = {0};
+	if(!in.size || !in.str || in.size > ((u64)PTRDIFF_MAX - 1) / 3) { return result; }
+
+	result.str = alloc_arr(alloc, result.str, in.size * 3 + 1);
+
+	if(!result.str) { return result; }
+
+	for(u64 at = 0; at < in.size; ++at) {
+		u32 cp = in.str[at];
+		if(cp >= 0xd800 && cp <= 0xdbff && at + 1 < in.size &&
+			in.str[at + 1] >= 0xdc00 && in.str[at + 1] <= 0xdfff) {
+			cp = 0x10000 + ((cp - 0xd800) << 10) + (in.str[++at] - 0xdc00);
+		} else if(cp >= 0xd800 && cp <= 0xdfff) {
+			cp = '?';
+		}
+		if(cp < 0x80) {
+			result.str[result.size++] = (u8)cp;
+		} else {
+			u32 count                 = cp < 0x800 ? 2 : cp < 0x10000 ? 3
+																	  : 4;
+			result.str[result.size++] = (u8)((0xff << (8 - count)) | (cp >> (6 * (count - 1))));
+			for(u32 i = count - 1; i > 0; --i) {
+				result.str[result.size++] = (u8)(0x80 | ((cp >> (6 * (i - 1))) & 0x3f));
+			}
+		}
+	}
+
+	result.str[result.size] = 0;
+
+	return result;
+}
