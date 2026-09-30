@@ -40,6 +40,8 @@ sys_menu_ini(struct sys_menu *menu)
 b32
 sys_menu_inp(struct sys_menu *menu, i32 buttons)
 {
+	if(buttons & SYS_INP_B) return true;
+
 	b32 res = false;
 
 	if(menu->len > 0) {
@@ -78,10 +80,6 @@ sys_menu_inp(struct sys_menu *menu, i32 buttons)
 		if((buttons & SYS_INP_A)) {
 			res = true;
 		}
-	}
-
-	if((buttons & SYS_INP_B)) {
-		res = true;
 	}
 
 	if(res) {
