@@ -107,5 +107,5 @@ sys_pause_set_img(
 	if(tex.px1b == NULL) return;
 	struct gfx_ctx ctx = gfx_ctx_default(pause->menu_tex);
 	struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-	gfx_spr(ctx, src, 0, 0, 0, SPR_MODE_COPY);
+	gfx_spr(ctx, src, 0, pause->menu_tex.h - tex.h, 0, SPR_MODE_COPY);
 }
