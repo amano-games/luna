@@ -104,6 +104,8 @@ struct sokol_state {
 	f32 mouse_scroll_sensitivity;
 
 	struct sys_pause_state pause;
+	i32 menu_filter_id;
+	i32 menu_scaling_id;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
@@ -154,6 +156,10 @@ void sokol_pause_start(void);
 void sokol_pause_end(void);
 void sokol_resume(void);
 static inline void sokol_menu_quit(void *args);
+static void sokol_menu_ini(void);
+static void sokol_menu_filter(void *args);
+static void sokol_menu_scaling(void *args);
+static void sokol_opts_save(void);
 
 static void sokol_set_icon(void);
 static inline b32 sokol_touch_add(sapp_touchpoint point, sapp_mousebutton button);
@@ -259,7 +265,7 @@ sokol_main(i32 argc, char **argv)
 		sys_make_dir(dir_path);
 	}
 
-	sys_menu_add(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
+	sokol_menu_ini();
 
 	SOKOL_STATE.status = SOKOL_STATUS_INI;
 
@@ -963,6 +969,7 @@ sokol_pause_end(void)
 void
 sokol_resume(void)
 {
+	sokol_opts_save();
 	SOKOL_STATE.status = SOKOL_STATUS_INI;
 	sys_internal_resume();
 }
@@ -1238,8 +1245,7 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	}
 	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER) {
 		scale = floor_f32(scale);
-	} else if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_OVERSCALE) {
-		scale = ceil_f32(scale);
+
 	}
 	scale        = max_f32(scale, 1.0f);
 	res.scale.x  = scale;
@@ -1248,8 +1254,7 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	res.size.y   = res.app_size.y * res.scale.y;
 	res.offset.x = (res.win_size.x - res.size.x) * 0.5f;
 	res.offset.y = (res.win_size.y - res.size.y) * 0.5f;
-	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER ||
-		SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_OVERSCALE) {
+	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER) {
 		res.offset.x = floor_f32(res.offset.x);
 		res.offset.y = floor_f32(res.offset.y);
 	}
@@ -1321,4 +1326,46 @@ static inline void
 sokol_menu_quit(void *args)
 {
 	sys_quit();
+}
+
+static void
+sokol_opts_save(void)
+{
+	struct marena_tmp tmp = marena_tmp_start(&SOKOL_STATE.scratch_marena);
+	sys_opts_write(SOKOL_STATE.scratch, &SOKOL_STATE.opts, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
+	marena_tmp_end(tmp);
+}
+
+static void
+sokol_menu_filter(void *args)
+{
+	i32 value                     = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_filter_id);
+	SOKOL_STATE.opts.video.filter = (enum sys_video_filter)(value + 1);
+}
+
+static void
+sokol_menu_scaling(void *args)
+{
+	i32 value                      = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_scaling_id);
+	SOKOL_STATE.opts.video.scaling = (enum sys_video_scaling)(value + 1);
+}
+
+static void
+sokol_menu_ini(void)
+{
+	static const char *filters[SYS_VIDEO_FILTER_NUM_COUNT - 1] = {
+		[SYS_VIDEO_FILTER_NEAREST - 1]  = "Nearest",
+		[SYS_VIDEO_FILTER_BILINEAR - 1] = "Bilinear",
+		[SYS_VIDEO_FILTER_SHARP - 1]    = "Sharp",
+	};
+	static const char *scaling[SYS_VIDEO_SCALING_NUM_COUNT - 1] = {
+		[SYS_VIDEO_SCALING_INTEGER - 1]   = "Integer",
+		[SYS_VIDEO_SCALING_FIT - 1]       = "Fit",
+	};
+	struct sys_menu *menu      = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+	SOKOL_STATE.menu_filter_id = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
+	if(SOKOL_STATE.menu_filter_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.filter - 1;
+	SOKOL_STATE.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), sokol_menu_scaling, NULL);
+	if(SOKOL_STATE.menu_scaling_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.scaling - 1;
+	sys_menu_add(menu, "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
 }

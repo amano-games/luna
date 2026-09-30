@@ -144,6 +144,34 @@ json_parse_f32(str8 json, jsmntok_t *tok)
 	return res;
 }
 
+static str8
+json_scape_raw_str8(struct alloc alloc, str8 value)
+{
+	struct str8_list parts = {0};
+	usize start            = 0;
+	for(usize i = 0; i < value.size; ++i) {
+		str8 replacement = {0};
+		switch(value.str[i]) {
+		case '"': replacement = str8_lit("\\\""); break;
+		case '\\': replacement = str8_lit("\\\\"); break;
+		case '\b': replacement = str8_lit("\\b"); break;
+		case '\f': replacement = str8_lit("\\f"); break;
+		case '\n': replacement = str8_lit("\\n"); break;
+		case '\r': replacement = str8_lit("\\r"); break;
+		case '\t': replacement = str8_lit("\\t"); break;
+		default:
+			if(value.str[i] < 0x20) replacement = str8_fmt_push(alloc, "\\u%04x", (u32)value.str[i]);
+			break;
+		}
+		if(replacement.size == 0) continue;
+		if(i > start) str8_list_push(alloc, &parts, (str8){.str = value.str + start, .size = i - start});
+		str8_list_push(alloc, &parts, replacement);
+		start = i + 1;
+	}
+	if(start < value.size) str8_list_push(alloc, &parts, (str8){.str = value.str + start, .size = value.size - start});
+	return str8_list_join(alloc, &parts, NULL);
+}
+
 // Returns number of bytes required for unescaped string.
 // If out == NULL: only compute size.
 // If out != NULL: write into out->str and set out->size.
@@ -194,6 +222,17 @@ json_unescape_str8(str8 src, str8 *out)
 				break;
 
 			case 'u':
+				// Control-character escapes emitted by json_scape_raw_str8.
+				if(i + 4 < src.size && src.str[i + 1] == '0' && src.str[i + 2] == '0' &&
+					char_is_digit(src.str[i + 3], 16) && char_is_digit(src.str[i + 4], 16)) {
+					u32 value = (u32)str8_to_u64((str8){.str = src.str + i + 3, .size = 2}, 16);
+					if(value < 0x20) {
+						if(out) out->str[res] = (u8)value;
+						res++;
+						i += 4;
+						break;
+					}
+				}
 				dbg_not_implemeneted("json decoding \\uXXXX");
 				break;
 

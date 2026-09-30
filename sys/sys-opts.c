@@ -34,10 +34,9 @@
 #define APP_DEFAULT_BLACK 0x110B0DFF
 
 static const str8 SYS_VIDEO_SCALING_LABELS[SYS_VIDEO_SCALING_NUM_COUNT] = {
-	[SYS_VIDEO_SCALING_NONE]      = str8_lit_comp("none"),
-	[SYS_VIDEO_SCALING_INTEGER]   = str8_lit_comp("integer"),
-	[SYS_VIDEO_SCALING_OVERSCALE] = str8_lit_comp("overscale"),
-	[SYS_VIDEO_SCALING_FIT]       = str8_lit_comp("fit"),
+	[SYS_VIDEO_SCALING_NONE]    = str8_lit_comp("none"),
+	[SYS_VIDEO_SCALING_INTEGER] = str8_lit_comp("integer"),
+	[SYS_VIDEO_SCALING_FIT]     = str8_lit_comp("fit"),
 };
 
 static const str8 SYS_VIDEO_FILTER_LABELS[SYS_VIDEO_FILTER_NUM_COUNT] = {
@@ -148,6 +147,7 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 scaling_label = SYS_VIDEO_SCALING_LABELS[res.video.scaling];
 	str8 filter_label  = SYS_VIDEO_FILTER_LABELS[res.video.filter];
 	str8 display_label = SYS_VIDEO_DISPLAY_LABELS[res.video.display];
+
 	log_info(
 		"sys-opts",
 		"loaded video: resolution=%dx%d scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
@@ -209,6 +209,106 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 		res.screentshot.save_path.str);
 
 error:;
+	return res;
+}
+
+static str8
+sys_opts_palette_json(struct alloc alloc, const struct gfx_col_palette *palette)
+{
+	return str8_fmt_push(alloc,
+		"{\"" SYS_OPTS_COLOR_PALLETE_BLACK_KEY "\":\"%08x\","
+		"\"" SYS_OPTS_COLOR_PALLETE_WHITE_KEY "\":\"%08x\","
+		"\"" SYS_OPTS_COLOR_PALLETE_CLEAR_KEY "\":\"%08x\"}",
+		palette->colors[GFX_COL_BLACK],
+		palette->colors[GFX_COL_WHITE],
+		palette->colors[GFX_COL_CLEAR]);
+}
+
+b32
+sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8 name)
+{
+	b32 res       = false;
+	sys_file file = sys_file_zero();
+	str8 path     = sys_path_to_data_path(scratch, str8_lit("settings.json"), org, name);
+	str8 path_new = str8_fmt_push(scratch, "%.*s.new", str8_spread(path));
+
+	dbg_check_warn(opts->video.scaling > SYS_VIDEO_SCALING_NONE && opts->video.scaling < SYS_VIDEO_SCALING_NUM_COUNT,
+		"sys-opts",
+		"invalid scaling mode");
+
+	dbg_check_warn(opts->video.filter > SYS_VIDEO_FILTER_NONE && opts->video.filter < SYS_VIDEO_FILTER_NUM_COUNT,
+		"sys-opts",
+		"invalid filter mode");
+
+	dbg_check_warn(opts->video.display > SYS_VIDEO_DISPLAY_NONE && opts->video.display < SYS_VIDEO_DISPLAY_NUM_COUNT,
+		"sys-opts",
+		"invalid display mode");
+
+	str8 recording_path  = json_scape_raw_str8(scratch, opts->recording.save_path);
+	str8 screenshot_path = json_scape_raw_str8(scratch, opts->screentshot.save_path);
+
+	dbg_check_warn(recording_path.str && screenshot_path.str, "sys-opts", "cannot encode save paths");
+
+	str8 colors            = sys_opts_palette_json(scratch, &opts->colors);
+	str8 recording_colors  = sys_opts_palette_json(scratch, &opts->recording.colors);
+	str8 screenshot_colors = sys_opts_palette_json(scratch, &opts->screentshot.colors);
+
+	str8 json = str8_fmt_push(scratch,
+		"{\n"
+		"  \"" SYS_OPTS_VIDEO_KEY "\": {\n"
+		"    \"" SYS_OPTS_VIDEO_RESOLUTION_KEY "\": {\"width\": %d, \"height\": %d},\n"
+		"    \"" SYS_OPTS_VIDEO_SCALING_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_VIDEO_FILTER_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_VIDEO_DISPLAY_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY "\": %s\n"
+		"  },\n"
+		"  \"" SYS_OPTS_COLOR_PALLETE_KEY "\": %.*s,\n"
+		"  \"" SYS_OPTS_RECORDING_KEY "\": {\n"
+		"    \"" SYS_OPTS_RECORDING_SCALE_KEY "\": %d,\n"
+		"    \"" SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "\": %d,\n"
+		"    \"" SYS_OPTS_RECORDING_SAVE_PATH_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_RECORDING_COLOR_PALLETE_KEY "\": %.*s\n"
+		"  },\n"
+		"  \"" SYS_OPTS_SCREENSHOT_KEY "\": {\n"
+		"    \"" SYS_OPTS_SCREENSHOT_SAVE_PATH_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_SCREENSHOT_COLOR_PALLETE_KEY "\": %.*s\n"
+		"  }\n"
+		"}\n",
+		opts->video.resolution.x,
+		opts->video.resolution.y,
+		str8_spread(SYS_VIDEO_SCALING_LABELS[opts->video.scaling]),
+		str8_spread(SYS_VIDEO_FILTER_LABELS[opts->video.filter]),
+		str8_spread(SYS_VIDEO_DISPLAY_LABELS[opts->video.display]),
+		opts->video.mouse_capture ? "true" : "false",
+		str8_spread(colors),
+		opts->recording.scale,
+		opts->recording.seconds_count,
+		str8_spread(recording_path),
+		str8_spread(recording_colors),
+		str8_spread(screenshot_path),
+		str8_spread(screenshot_colors));
+
+	dbg_check_warn(json.str && json.size <= U32_MAX, "sys-opts", "failed to serialize, json too big");
+	str8 dir = sys_path_to_data_path(scratch, str8_lit(""), org, name);
+
+	dbg_check_warn(dir.size == 0 || sys_make_dir(dir), "sys-opts", "failed to create directory: %s", dir.str);
+	file = sys_file_open_w(path_new);
+
+	dbg_check_warn(sys_file_is_valid(file), "sys-opts", "failed to open for writing: %s", path_new.str);
+	dbg_check_warn(sys_file_w(file, json.str, (u32)json.size) == (ssize)json.size, "sys-opts", "failed to write: %s", path_new.str);
+	dbg_check_warn(sys_file_flush(file), "sys-opts", "failed to flush: %s", path_new.str);
+
+	b32 closed = sys_file_close(file);
+	file       = sys_file_zero();
+	dbg_check_warn(closed, "sys-opts", "failed to close: %s", path_new.str);
+
+	dbg_check_warn(sys_file_replace(path_new, path), "sys-opts", "failed to replace: %s", path.str);
+
+	log_info("sys-opts", "saved: %s", path.str);
+	res = true;
+
+error:;
+	if(sys_file_is_valid(file)) sys_file_close(file);
 	return res;
 }
 
@@ -279,7 +379,7 @@ recording_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, v
 	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_SECONDS_COUNT_KEY)) == 0) {
 		data->recording.seconds_count = json_parse_i32(json, value);
 	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_SAVE_PATH_KEY)) == 0) {
-		data->recording.save_path = json_str8_cpy_push(json, value, alloc, 0);
+		data->recording.save_path = json_str8_cpy_push(json, value, alloc, json_copy_unescape);
 	} else if(json_eq(json, key, str8_lit("colors")) == 0) {
 		if(value->type == JSMN_OBJECT) {
 			struct {
@@ -306,7 +406,7 @@ screenshot_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, 
 	struct alloc alloc         = ctx->alloc;
 
 	if(json_eq(json, key, str8_lit(SYS_OPTS_SCREENSHOT_SAVE_PATH_KEY)) == 0) {
-		data->screentshot.save_path = json_str8_cpy_push(json, value, alloc, 0);
+		data->screentshot.save_path = json_str8_cpy_push(json, value, alloc, json_copy_unescape);
 	} else if(json_eq(json, key, str8_lit(SYS_OPTS_SCREENSHOT_COLOR_PALLETE_KEY)) == 0) {
 		if(value->type == JSMN_OBJECT) {
 			struct {
@@ -352,7 +452,8 @@ video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void 
 		if(json_eq(json, value, str8_lit("integer")) == 0) {
 			data->video.scaling = SYS_VIDEO_SCALING_INTEGER;
 		} else if(json_eq(json, value, str8_lit("overscale")) == 0) {
-			data->video.scaling = SYS_VIDEO_SCALING_OVERSCALE;
+			// Older settings used overscale; use Fit now.
+			data->video.scaling = SYS_VIDEO_SCALING_FIT;
 		} else if(json_eq(json, value, str8_lit("fit")) == 0) {
 			data->video.scaling = SYS_VIDEO_SCALING_FIT;
 		}

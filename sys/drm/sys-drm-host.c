@@ -54,7 +54,7 @@ enum drm_status {
 	DRM_STATUS_ERR,
 };
 
-// HDMI scanout: RGB565 dumb buffers, atomic FIT plane.
+// HDMI scanout: RGB565 dumb buffers, atomic scaled plane.
 
 #define DRM_CARD_PATH_MAX     32
 #define DRM_CARD_INDEX_MAX    8
@@ -168,7 +168,7 @@ drm_fb_wh(u32 *w, u32 *h)
 }
 
 static void
-drm_dst_fit(struct drm_display *d)
+drm_dst_scale(struct drm_display *d, enum sys_video_scaling scaling)
 {
 	u32 vis_w  = d->fb_w;
 	u32 vis_h  = d->fb_h;
@@ -183,6 +183,15 @@ drm_dst_fit(struct drm_display *d)
 	} else {
 		dst_w = hdmi_w;
 		dst_h = vis_h * hdmi_w / vis_w;
+	}
+
+	if(scaling == SYS_VIDEO_SCALING_INTEGER) {
+		u32 scale = MIN(hdmi_w / vis_w, hdmi_h / vis_h);
+		// Keep Fit when even 1x exceeds the display dimensions.
+		if(scale > 0) {
+			dst_w = vis_w * scale;
+			dst_h = vis_h * scale;
+		}
 	}
 
 	d->dst_w = (i32)dst_w;
@@ -641,7 +650,7 @@ drm_blit(struct drm_display *d, const u8 *packed, u16 col0, u16 col1)
 static void drm_display_close(void);
 
 static enum drm_status
-drm_display_open(void)
+drm_display_open(enum sys_video_scaling scaling)
 {
 	struct drm_display *d = &DRM_DISP;
 	drmModeRes *res       = NULL;
@@ -690,7 +699,7 @@ drm_display_open(void)
 	}
 
 	drm_fb_wh(&d->fb_w, &d->fb_h);
-	drm_dst_fit(d);
+	drm_dst_scale(d, scaling);
 
 	for(i = 0; i < DRM_FB_COUNT; i++) {
 		if(drm_fb_create(d, &d->bufs[i]) != DRM_STATUS_OK) {
@@ -1129,6 +1138,7 @@ struct drm_host {
 	struct alloc scratch;
 	struct gfx_ctx frame_ctx;
 	struct sys_pause_state pause;
+	i32 menu_scaling_id;
 	b32 paused;
 	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
@@ -1150,7 +1160,7 @@ drm_host_on_signal(int sig)
 	DRM_HOST.running = 0;
 }
 
-// CPU unpack+rotate into RGB565; DRM plane FIT-scales to HDMI.
+// CPU unpack+rotate into RGB565; DRM plane scales to HDMI.
 static void
 drm_host_present(void)
 {
@@ -1314,8 +1324,17 @@ done:
 }
 
 static void
+drm_host_opts_save(void)
+{
+	struct marena_tmp tmp = marena_tmp_start(&DRM_HOST.scratch_arena);
+	sys_opts_write(DRM_HOST.scratch, &DRM_HOST.opts, str8_lit(DRM_HOST_ORG), str8_lit(DRM_HOST_NAME));
+	marena_tmp_end(tmp);
+}
+
+static void
 drm_host_resume(void)
 {
+	drm_host_opts_save();
 	DRM_HOST.paused = false;
 	sys_internal_resume();
 }
@@ -1346,6 +1365,20 @@ drm_host_pause_input(i32 buttons)
 	if(DRM_HOST.paused && sys_pause_inp(&DRM_HOST.pause, buttons)) {
 		drm_host_pause_end();
 	}
+}
+
+static void
+drm_host_menu_scaling(void *args)
+{
+	i32 value                   = sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], DRM_HOST.menu_scaling_id);
+	DRM_HOST.opts.video.scaling = (enum sys_video_scaling)(value + 1);
+	drm_dst_scale(&DRM_DISP, DRM_HOST.opts.video.scaling);
+}
+
+static void
+drm_host_menu_quit(void *args)
+{
+	sys_quit();
 }
 
 static void
@@ -1507,8 +1540,18 @@ main(int argc, char **argv)
 	DRM_HOST.pause.menu_tex = tex_create(DRM_HOST.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_MASK);
 	dbg_check(DRM_HOST.pause.menu_tex.px1b, "drm", "pause menu image");
 	sys_pause_ini(&DRM_HOST.pause);
+	{
+		static const char *scaling[SYS_VIDEO_SCALING_NUM_COUNT - 1] = {
+			[SYS_VIDEO_SCALING_INTEGER - 1] = "Integer",
+			[SYS_VIDEO_SCALING_FIT - 1]     = "Fit",
+		};
+		struct sys_menu *menu    = &DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+		DRM_HOST.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), drm_host_menu_scaling, NULL);
+		if(DRM_HOST.menu_scaling_id) menu->items[menu->len - 1].value = DRM_HOST.opts.video.scaling - 1;
+	}
+	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
 
-	st = drm_display_open();
+	st = drm_display_open(DRM_HOST.opts.video.scaling);
 	if(st != DRM_STATUS_OK) {
 		log_error("drm", "display open");
 		goto error;
