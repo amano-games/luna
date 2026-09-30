@@ -7,7 +7,7 @@
 #include "lib/easing-type.h"
 #include "lib/easing.h"
 #include "lib/tex/tex.h"
-#include "sys/sys-defs.h"
+#include "sys/sys.h"
 #include "sys/sys-menu.h"
 
 struct sys_pause_state {
@@ -47,6 +47,7 @@ sys_pause_drw(
 	struct gfx_ctx ctx,
 	f32 timestamp)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	tex_clr(ctx.dst, GFX_COL_BLACK);
 	i32 ani_direction        = pause->timestamp_end == 0 ? 1 : -1;
 	f32 ani_timestamp        = pause->timestamp_end == 0 ? pause->timestamp_start : pause->timestamp_end;
@@ -76,7 +77,7 @@ sys_pause_drw(
 		// Copy menu texture
 		struct tex tex     = pause->menu_tex;
 		struct tex_rec src = {.t = tex, .r = {.w = tex.w, .h = tex.h}};
-		i32 x0             = SYS_DISPLAY_W;
+		i32 x0             = sys_resolution.x;
 		i32 x1             = (f32)-pause->x_offset * t;
 		i32 x              = lerp(x0, x1, t);
 		gfx_spr(ctx, src, x, 0, 0, SPR_MODE_COPY);
@@ -84,10 +85,10 @@ sys_pause_drw(
 
 	{
 		// Draw menu
-		i32 x0       = SYS_DISPLAY_W;
-		i32 x1       = SYS_DISPLAY_W * 0.5f;
+		i32 x0       = sys_resolution.x;
+		i32 x1       = sys_resolution.x * 0.5f;
 		i32 x        = lerp(x0, x1, t);
-		rec_i32 root = {x, 0, SYS_DISPLAY_W * 0.5f, SYS_DISPLAY_H};
+		rec_i32 root = {x, 0, sys_resolution.x * 0.5f, sys_resolution.y};
 		sys_menu_drw(&pause->menu, ctx, root);
 	}
 	if(res) {

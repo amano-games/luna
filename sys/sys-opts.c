@@ -10,6 +10,7 @@
 
 #define SYS_OPTS_COLOR_PALLETE_KEY       "game-colors"
 #define SYS_OPTS_VIDEO_KEY               "video"
+#define SYS_OPTS_VIDEO_RESOLUTION_KEY    "resolution"
 #define SYS_OPTS_VIDEO_SCALING_KEY       "scaling"
 #define SYS_OPTS_VIDEO_FILTER_KEY        "filter"
 #define SYS_OPTS_VIDEO_DISPLAY_KEY       "display"
@@ -65,6 +66,7 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {
 		.video = {
+			.resolution    = {SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H},
 			.scaling       = SYS_VIDEO_SCALING_FIT,
 			.filter        = SYS_VIDEO_FILTER_SHARP,
 			.display       = SYS_VIDEO_DISPLAY_WINDOWED,
@@ -117,10 +119,11 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	jsmn_parser parser;
 	jsmn_init(&parser);
 	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
+	dbg_check_warn(token_count > 0, "sys-opts", "invalid settings JSON; using defaults");
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	dbg_assert(json_res == token_count);
+	dbg_check_warn(json_res == token_count, "sys-opts", "invalid settings JSON; using defaults");
 	dbg_check_warn(sys_opts_read(alloc, &parser, &res, json, tokens, token_count), "sys-opts", "failed to parse settings");
 
 	str8 recording_colors[GFX_COL_NUM_COUNT] = {
@@ -147,7 +150,9 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 display_label = SYS_VIDEO_DISPLAY_LABELS[res.video.display];
 	log_info(
 		"sys-opts",
-		"loaded video: scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
+		"loaded video: resolution=%dx%d scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
+		res.video.resolution.x,
+		res.video.resolution.y,
 		(int)scaling_label.size,
 		scaling_label.str,
 		(int)filter_label.size,
@@ -320,13 +325,30 @@ screenshot_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, 
 }
 
 static void
+sys_opts_resolution_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
+{
+	struct opts_parse_ctx *ctx = user;
+	if(json_eq(ctx->json, key, str8_lit("width")) == 0) {
+		ctx->data->video.resolution.x = json_parse_i32(ctx->json, value);
+	} else if(json_eq(ctx->json, key, str8_lit("height")) == 0) {
+		ctx->data->video.resolution.y = json_parse_i32(ctx->json, value);
+	}
+	dbg_assert(ctx->data->video.resolution.x > 0 && ctx->data->video.resolution.x <= I16_MAX);
+	dbg_assert(ctx->data->video.resolution.y > 0 && ctx->data->video.resolution.y <= I16_MAX);
+}
+
+static void
 video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
 {
 	struct opts_parse_ctx *ctx = user;
 	str8 json                  = ctx->json;
 	struct sys_opts *data      = ctx->data;
 
-	if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_SCALING_KEY)) == 0) {
+	if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_RESOLUTION_KEY)) == 0) {
+		if(value->type == JSMN_OBJECT) {
+			json_obj_foreach(ctx->tokens, ctx->token_count, value_idx, sys_opts_resolution_cb, ctx);
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_SCALING_KEY)) == 0) {
 		if(json_eq(json, value, str8_lit("integer")) == 0) {
 			data->video.scaling = SYS_VIDEO_SCALING_INTEGER;
 		} else if(json_eq(json, value, str8_lit("overscale")) == 0) {

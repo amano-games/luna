@@ -9,7 +9,7 @@
 #include "sys/sys.h"
 
 // 32-bit words per row, including padding and interlaced mask words.
-static inline u32
+u32
 tex_wword(i32 w, enum tex_fmt fmt)
 {
 	switch(fmt) {
@@ -22,7 +22,7 @@ tex_wword(i32 w, enum tex_fmt fmt)
 }
 
 // Pixel buffer bytes for w x h, including row padding.
-static inline ssize
+ssize
 tex_mem_size(i32 w, i32 h, enum tex_fmt fmt)
 {
 	return (ssize)sizeof(u32) * tex_wword(w, fmt) * (ssize)h;

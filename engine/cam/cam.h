@@ -4,11 +4,6 @@
 #include "engine/collisions/collisions.h"
 #include "base/types.h"
 
-#define CAM_W      SYS_DISPLAY_W
-#define CAM_H      SYS_DISPLAY_H
-#define CAM_HALF_W (SYS_DISPLAY_W >> 1)
-#define CAM_HALF_H (SYS_DISPLAY_H >> 1)
-
 struct cam_data {
 	u32 id;
 	f32 drag_vel;

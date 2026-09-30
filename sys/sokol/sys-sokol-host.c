@@ -106,6 +106,8 @@ struct sokol_state {
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
+	u8 *frame_upload;
+	u8 *dbg_upload;
 #if defined(SOKOL_RECORDING_ENABLED)
 	struct tex recording_frame;
 #endif
@@ -120,6 +122,7 @@ struct sokol_state {
 	b32 mouse_capture_applied;
 
 	struct sys_opts opts;
+	v2_i32 resolution;
 
 	struct touch_point_mouse_emu touches_mouse[SAPP_MAX_TOUCHPOINTS];
 };
@@ -166,14 +169,23 @@ sokol_main(i32 argc, char **argv)
 {
 	sys_os_init();
 	{
-		usize mem_size = MMEGABYTE(1 * SYS_DISPLAY_SCALE_H);
+		usize mem_size = MMEGABYTE(2);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
 		marena_init(&SOKOL_STATE.scratch_marena, mem, mem_size);
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
+
 	{
-		usize mem_size = MMEGABYTE(300 * SYS_DISPLAY_SCALE_H);
-		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
+		usize mem_size = MMEGABYTE(1);
+#if defined(SOKOL_RECORDING_ENABLED)
+		// Holds the default 120 seconds at 50 FPS with a 400x720 framebuffer.
+		mem_size += MMEGABYTE(256);
+#endif
+		void *mem = sys_alloc(NULL, mem_size, MEM_ALIGN_PD_CACHE);
+		if(!mem) {
+			log_error("sokol", "Failed to allocate host arena");
+			return (sapp_desc){0};
+		}
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
@@ -188,28 +200,37 @@ sokol_main(i32 argc, char **argv)
 		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
 	}
 
+	SOKOL_STATE.resolution = SOKOL_STATE.opts.video.resolution;
+	v2_i32 sys_resolution  = sys_resolution_get();
 	{
-		struct tex tex        = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		struct tex tex        = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.frame_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "sokol", "Failed to create frame buffer");
 	}
 
 	{
-		struct tex tex      = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		struct tex tex      = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.dbg_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.pxu8, "sokol", "Failed to create debug buffer");
 	}
 
 	{
-		struct tex tex              = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_8B_INDEX);
+		struct tex tex              = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.pause.frame_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create paused frame tex");
 	}
 
 	{
-		struct tex tex             = tex_create(SOKOL_STATE.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
+		struct tex tex             = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_MASK);
 		SOKOL_STATE.pause.menu_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
+	}
+
+	if(SOKOL_STATE.frame_ctx.dst.wword * (i32)sizeof(u32) != sys_resolution.x) {
+		ssize size               = (ssize)sys_resolution.x * sys_resolution.y;
+		SOKOL_STATE.frame_upload = mem_alloc_size(SOKOL_STATE.alloc, size);
+		SOKOL_STATE.dbg_upload   = mem_alloc_size(SOKOL_STATE.alloc, size);
+		dbg_check(SOKOL_STATE.frame_upload && SOKOL_STATE.dbg_upload, "sokol", "Failed to create upload buffers");
 	}
 
 	sys_pause_ini(&SOKOL_STATE.pause);
@@ -218,12 +239,12 @@ sokol_main(i32 argc, char **argv)
 	{
 		// TODO: use sys_ups_target_get and when fps is changed change recording
 		u32 ups                     = SYS_DEFAULT_UPS;
-		ssize frames                = ups * SOKOL_STATE.opts.recording.seconds_count;
+		ssize frames                = (ssize)ups * SOKOL_STATE.opts.recording.seconds_count;
 		struct alloc alloc          = SOKOL_STATE.alloc;
-		SOKOL_STATE.recording_frame = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		SOKOL_STATE.recording_frame = tex_create(alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_OPAQUE);
 		dbg_check(SOKOL_STATE.recording_frame.px1b, "sokol", "Failed to create recording frame");
-		recording_1b_ini(alloc, &SYS_RECORDING_STATE.gfx, ups * SOKOL_STATE.opts.recording.seconds_count);
-		recording_aud_ini(alloc, &SYS_RECORDING_STATE.aud, ups * SOKOL_STATE.opts.recording.seconds_count);
+		dbg_check(recording_1b_ini(alloc, &SYS_RECORDING_STATE.gfx, frames), "sokol", "Failed to create recording history");
+		dbg_check(recording_aud_ini(alloc, &SYS_RECORDING_STATE.aud, frames), "sokol", "Failed to create audio history");
 	}
 #endif
 
@@ -240,8 +261,8 @@ sokol_main(i32 argc, char **argv)
 
 error:;
 	sapp_desc res = {
-		.width              = SYS_DISPLAY_W * 2,
-		.height             = SYS_DISPLAY_H * 2,
+		.width              = sys_resolution.x * 2,
+		.height             = sys_resolution.y * 2,
 		.init_cb            = sokol_init,
 		.frame_cb           = sokol_frame,
 		.cleanup_cb         = sokol_cleanup,
@@ -258,6 +279,7 @@ error:;
 void
 sokol_init(void)
 {
+	v2_i32 sys_resolution                = sys_resolution_get();
 	SOKOL_STATE.crank_docked             = true;
 	SOKOL_STATE.mouse_scroll_sensitivity = 0.03f;
 
@@ -302,8 +324,8 @@ sokol_init(void)
 		: SOKOL_STATE.smp_linear;
 
 	sg_image_desc img_desc = {
-		.width        = SYS_DISPLAY_W,
-		.height       = SYS_DISPLAY_H,
+		.width        = sys_resolution.x,
+		.height       = sys_resolution.y,
 		.pixel_format = SG_PIXELFORMAT_R8,
 		.usage        = {.stream_update = true},
 	};
@@ -366,6 +388,7 @@ sokol_init(void)
 void
 sokol_event(const sapp_event *ev)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	switch(ev->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN: {
 		sys_os_keyboard_set(ev->key_code, true);
@@ -386,9 +409,9 @@ sokol_event(const sapp_event *ev)
 		case SAPP_KEYCODE_F12: {
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc scratch = SOKOL_STATE.scratch;
-			i32 w                = SYS_DISPLAY_W;
-			i32 h                = SYS_DISPLAY_H;
-			str8 dbgcmd          = str8_lit("ffmpeg -f rawvideo -pix_fmt rgba -s 400x240 -i frame.raw frame.png");
+			i32 w                = sys_resolution.x;
+			i32 h                = sys_resolution.y;
+			str8 dbgcmd          = str8_fmt_push(scratch, "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i frame.raw frame.png", w, h);
 			FILE *test           = fopen("/tmp/frame.raw", "wb");
 			ssize dst_size       = w * h * sizeof(u32);
 			u32 *dst             = alloc_arr(scratch, dst, w * h);
@@ -457,11 +480,11 @@ sokol_event(const sapp_event *ev)
 		f32 rel_x;
 		f32 rel_y;
 		if(sapp_mouse_locked()) {
-			rel_x = clamp_f32(SOKOL_STATE.mouse_x + ev->mouse_dx / params.scale.x, 0, SYS_DISPLAY_W);
-			rel_y = clamp_f32(SOKOL_STATE.mouse_y + ev->mouse_dy / params.scale.y, 0, SYS_DISPLAY_H);
+			rel_x = clamp_f32(SOKOL_STATE.mouse_x + ev->mouse_dx / params.scale.x, 0, sys_resolution.x);
+			rel_y = clamp_f32(SOKOL_STATE.mouse_y + ev->mouse_dy / params.scale.y, 0, sys_resolution.y);
 		} else {
-			rel_x = clamp_f32((ev->mouse_x - params.offset.x) / params.scale.x, 0, SYS_DISPLAY_W);
-			rel_y = clamp_f32((ev->mouse_y - params.offset.y) / params.scale.y, 0, SYS_DISPLAY_H);
+			rel_x = clamp_f32((ev->mouse_x - params.offset.x) / params.scale.x, 0, sys_resolution.x);
+			rel_y = clamp_f32((ev->mouse_y - params.offset.y) / params.scale.y, 0, sys_resolution.y);
 		}
 
 		SOKOL_STATE.mouse_x = rel_x;
@@ -615,9 +638,22 @@ sokol_record_frame(void)
 }
 #endif
 
+// Sokol R8 images require tightly packed rows; software textures are word-aligned.
+static const u8 *
+sokol_upload_pixels(struct tex tex, u8 *packed)
+{
+	if(!packed) { return tex.pxu8; }
+	ssize stride = (ssize)tex.wword * sizeof(u32);
+	for(i32 y = 0; y < tex.h; ++y) {
+		mcpy(packed + (ssize)y * tex.w, tex.pxu8 + (ssize)y * stride, tex.w);
+	}
+	return packed;
+}
+
 void
 sokol_frame(void)
 {
+	v2_i32 sys_resolution           = sys_resolution_get();
 	f32 time                        = sys_time_elapsed();
 	f32 win_w                       = sapp_widthf();
 	f32 win_h                       = sapp_heightf();
@@ -661,8 +697,8 @@ sokol_frame(void)
 		struct recording_aud *rec = &SYS_RECORDING_STATE.recording_aud;
 		struct gfx_ctx ctx        = SOKOL_STATE.dbg_ctx;
 		for(ssize i = 0; i < rec->len; ++i) {
-			i32 x = (f32)((f32)i / (f32)rec->cap) * SYS_DISPLAY_W;
-			i32 y = (SYS_DISPLAY_H * 0.5f) + (rec->frames[i] * 1000.0f);
+			i32 x = (f32)((f32)i / (f32)rec->cap) * sys_resolution.x;
+			i32 y = (sys_resolution.y * 0.5f) + (rec->frames[i] * 1000.0f);
 			gfx_cir(ctx, x, y, 1, PRIM_MODE_WHITE);
 		}
 #endif
@@ -673,15 +709,12 @@ sokol_frame(void)
 		}
 	}
 
-	// R8 uploads are tightly packed; the fixed display width has no row padding.
-	dbg_assert(SOKOL_STATE.frame_ctx.dst.wword * (i32)sizeof(u32) == SYS_DISPLAY_W);
-
 	sg_update_image(
 		SOKOL_STATE.bind.images[IMG_tex],
 		&(sg_image_data){
 			.subimage[0][0] = {
-				.ptr  = SOKOL_STATE.frame_ctx.dst.pxu8,
-				.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
+				.ptr  = sokol_upload_pixels(SOKOL_STATE.frame_ctx.dst, SOKOL_STATE.frame_upload),
+				.size = sys_resolution.x * sys_resolution.y,
 			},
 		});
 
@@ -691,8 +724,8 @@ sokol_frame(void)
 			SOKOL_STATE.bind.images[IMG_tex_debug],
 			&(sg_image_data){
 				.subimage[0][0] = {
-					.ptr  = SOKOL_STATE.dbg_ctx.dst.pxu8,
-					.size = SYS_DISPLAY_W * SYS_DISPLAY_H,
+					.ptr  = sokol_upload_pixels(SOKOL_STATE.dbg_ctx.dst, SOKOL_STATE.dbg_upload),
+					.size = sys_resolution.x * sys_resolution.y,
 				},
 			});
 	}
@@ -723,6 +756,7 @@ sokol_cleanup(void)
 	SOKOL_STATE.status = 0;
 	sys_internal_close();
 	sys_free(SOKOL_STATE.marena.buf);
+	sys_free(SOKOL_STATE.scratch_marena.buf);
 	sg_shutdown();
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_shutdown();
@@ -818,6 +852,12 @@ void
 sys_color_u32_set(enum gfx_col color, u32 value)
 {
 	SOKOL_STATE.opts.colors.colors[color] = value;
+}
+
+v2_i32
+sys_resolution_get(void)
+{
+	return SOKOL_STATE.resolution;
 }
 
 void *
@@ -1177,11 +1217,12 @@ sokol_path_to_res_path(struct str8 path)
 static inline s_buffer_params_t
 sokol_get_buffer_params(f32 win_w, f32 win_h)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	s_buffer_params_t res = {0};
 	res.win_size.x        = win_w;
 	res.win_size.y        = win_h;
-	res.app_size.x        = SYS_DISPLAY_W;
-	res.app_size.y        = SYS_DISPLAY_H;
+	res.app_size.x        = sys_resolution.x;
+	res.app_size.y        = sys_resolution.y;
 	f32 win_aspect        = res.win_size.x / res.win_size.y;
 	f32 app_aspect        = res.app_size.x / res.app_size.y;
 	f32 scale             = 1.0f;

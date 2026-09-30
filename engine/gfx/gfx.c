@@ -35,35 +35,36 @@ struct gfx_span_blit {
 struct tex
 tex_frame_buffer(void)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	struct tex t = {0};
 #if SYS_GFX_SOKOL
 	t.fmt   = TEX_FMT_8B_INDEX;
-	t.wword = (SYS_DISPLAY_W + 3) >> 2;
 #else
 	t.fmt   = TEX_FMT_1B_OPAQUE;
-	t.wword = SYS_DISPLAY_WWORDS;
 #endif
+	t.wword = tex_wword(sys_resolution.x, t.fmt);
 	t.px1b = (u32 *)sys_1bit_buffer();
-	t.w    = SYS_DISPLAY_W;
-	t.h    = SYS_DISPLAY_H;
+	t.w    = sys_resolution.x;
+	t.h    = sys_resolution.y;
 	return t;
 }
 
 struct tex
 tex_dbg_buffer(void)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	struct tex t = {0};
 #if SYS_GFX_SOKOL
 	t.fmt   = TEX_FMT_8B_INDEX;
 	t.pxu8  = (u8 *)sys_dbg_buffer();
-	t.wword = (SYS_DISPLAY_W + 3) >> 2;
+	t.wword = (sys_resolution.x + 3) >> 2;
 #else
 	t.fmt   = TEX_FMT_1B_OPAQUE;
 	t.px1b  = (u32 *)sys_dbg_buffer();
-	t.wword = SYS_DISPLAY_WWORDS;
+	t.wword = ((sys_resolution.x + 31) >> 5);
 #endif
-	t.w = SYS_DISPLAY_W;
-	t.h = SYS_DISPLAY_H;
+	t.w = sys_resolution.x;
+	t.h = sys_resolution.y;
 	return t;
 }
 
@@ -590,7 +591,7 @@ gfx_lin(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, enum prim_mode mode)
 void
 gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum prim_mode mode)
 {
-#define GFX_LIN_NUM_SPANS (SYS_DISPLAY_H + 64)
+#define GFX_LIN_NUM_SPANS 304
 #define GFX_LIN_NUM_CIRX  64
 
 	static u16 spans[GFX_LIN_NUM_SPANS][2];
@@ -630,68 +631,68 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 	i32 ymin = max_i32(min_i32(ay, by) - r, ctx.clip_y1);
 	i32 ymax = min_i32(max_i32(ay, by) + r, ctx.clip_y2);
 	if(ymin > ymax) return;
-	i32 y_dt = ymax - ymin;
-	if(y_dt >= GFX_LIN_NUM_SPANS) {
-		dbg_assert(y_dt < GFX_LIN_NUM_SPANS);
-		return;
-	}
+	// Emit each row once, keeping scratch storage independent of the framebuffer height.
+	for(i32 batch_min = ymin; batch_min <= ymax; batch_min += GFX_LIN_NUM_SPANS) {
+		i32 batch_max = min_i32(ymax, batch_min + GFX_LIN_NUM_SPANS - 1);
+		i32 y_dt      = batch_max - batch_min;
 
-	for(i32 n = 0; n <= y_dt; n++) {
-		spans[n][0] = U16_MAX;
-		spans[n][1] = 0;
-	}
-
-	i32 dx = +abs_i32(bx - ax);
-	i32 dy = -abs_i32(by - ay);
-	i32 sx = ax < bx ? +1 : -1;
-	i32 sy = ay < by ? +1 : -1;
-	i32 er = dx + dy;
-	i32 xi = ax;
-	i32 yi = ay;
-
-	while(1) {
-		for(i32 y = 0; y <= r; y++) {
-			i32 x1 = max_i32(xi - (i32)cirx[y], ctx.clip_x1);
-			i32 x2 = min_i32(xi + (i32)cirx[y], ctx.clip_x2);
-			if(x2 < x1) continue;
-			i32 y1 = yi - y - ymin;
-			i32 y2 = yi + y - ymin;
-			dbg_assert(0 <= x1 && x1 <= U16_MAX);
-			dbg_assert(0 <= x2 && x2 <= U16_MAX);
-			if(0 <= y1 && y1 <= y_dt) {
-
-				spans[y1][0] = min_i32(spans[y1][0], x1);
-				spans[y1][1] = max_i32(spans[y1][1], x2);
-			}
-			if(0 <= y2 && y2 <= y_dt) {
-				spans[y2][0] = min_i32(spans[y2][0], x1);
-				spans[y2][1] = max_i32(spans[y2][1], x2);
-			}
+		for(i32 n = 0; n <= y_dt; n++) {
+			spans[n][0] = U16_MAX;
+			spans[n][1] = 0;
 		}
 
-		if(xi == bx && yi == by) break;
-		i32 e2 = er * 2;
-		if(e2 >= dy) { er += dy, xi += sx; }
-		if(e2 <= dx) { er += dx, yi += sy; }
-	}
+		i32 dx = +abs_i32(bx - ax);
+		i32 dy = -abs_i32(by - ay);
+		i32 sx = ax < bx ? +1 : -1;
+		i32 sy = ay < by ? +1 : -1;
+		i32 er = dx + dy;
+		i32 xi = ax;
+		i32 yi = ay;
 
-	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
-		for(i32 y = ymin; y <= ymax; y++) {
-			i32 n  = y - ymin;
-			i32 x1 = spans[n][0];
-			i32 x2 = spans[n][1];
-			if(x2 < x1) continue;
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, mode);
-			gfx_prim_blit_span_8b(&info);
+		while(1) {
+			for(i32 y = 0; y <= r; y++) {
+				i32 x1 = max_i32(xi - (i32)cirx[y], ctx.clip_x1);
+				i32 x2 = min_i32(xi + (i32)cirx[y], ctx.clip_x2);
+				if(x2 < x1) continue;
+				i32 y1 = yi - y - batch_min;
+				i32 y2 = yi + y - batch_min;
+				dbg_assert(0 <= x1 && x1 <= U16_MAX);
+				dbg_assert(0 <= x2 && x2 <= U16_MAX);
+				if(0 <= y1 && y1 <= y_dt) {
+
+					spans[y1][0] = min_i32(spans[y1][0], x1);
+					spans[y1][1] = max_i32(spans[y1][1], x2);
+				}
+				if(0 <= y2 && y2 <= y_dt) {
+					spans[y2][0] = min_i32(spans[y2][0], x1);
+					spans[y2][1] = max_i32(spans[y2][1], x2);
+				}
+			}
+
+			if(xi == bx && yi == by) break;
+			i32 e2 = er * 2;
+			if(e2 >= dy) { er += dy, xi += sx; }
+			if(e2 <= dx) { er += dx, yi += sy; }
 		}
-	} else {
-		for(i32 y = ymin; y <= ymax; y++) {
-			i32 n  = y - ymin;
-			i32 x1 = spans[n][0];
-			i32 x2 = spans[n][1];
-			if(x2 < x1) continue;
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, mode);
-			gfx_prim_blit_span(&info);
+
+		if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
+			for(i32 y = batch_min; y <= batch_max; y++) {
+				i32 n  = y - batch_min;
+				i32 x1 = spans[n][0];
+				i32 x2 = spans[n][1];
+				if(x2 < x1) continue;
+				struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, mode);
+				gfx_prim_blit_span_8b(&info);
+			}
+		} else {
+			for(i32 y = batch_min; y <= batch_max; y++) {
+				i32 n  = y - batch_min;
+				i32 x1 = spans[n][0];
+				i32 x2 = spans[n][1];
+				if(x2 < x1) continue;
+				struct gfx_span_blit info = gfx_span_blit_gen(ctx, y, x1, x2, mode);
+				gfx_prim_blit_span(&info);
+			}
 		}
 	}
 }
