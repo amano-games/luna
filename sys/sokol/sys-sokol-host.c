@@ -106,6 +106,7 @@ struct sokol_state {
 	struct sys_pause_state pause;
 	i32 menu_filter_id;
 	i32 menu_scaling_id;
+	i32 menu_resolution_id;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
@@ -1352,6 +1353,16 @@ sokol_menu_scaling(void *args)
 }
 
 static void
+sokol_menu_resolution(void *args)
+{
+	i32 value                         = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_resolution_id);
+	SOKOL_STATE.opts.video.resolution = value == 1
+		? (v2_i32){SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H * 3}
+		: (v2_i32){SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H};
+	sokol_opts_save();
+}
+
+static void
 sokol_menu_ini(void)
 {
 	static const char *filters[SYS_VIDEO_FILTER_NUM_COUNT - 1] = {
@@ -1364,10 +1375,21 @@ sokol_menu_ini(void)
 		[SYS_VIDEO_SCALING_FIT - 1]       = "Fit",
 		[SYS_VIDEO_SCALING_OVERSCALE - 1] = "Overscale",
 	};
-	struct sys_menu *menu      = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
-	SOKOL_STATE.menu_filter_id = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
+
+	static const char *resolutions[] = {"Normal", "Tate"};
+	struct sys_menu *menu            = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+	SOKOL_STATE.menu_filter_id       = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
+
 	if(SOKOL_STATE.menu_filter_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.filter - 1;
+
 	SOKOL_STATE.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), sokol_menu_scaling, NULL);
 	if(SOKOL_STATE.menu_scaling_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.scaling - 1;
+
+	SOKOL_STATE.menu_resolution_id = sys_menu_add_options(menu, "Resolution", resolutions, ARRLEN(resolutions), sokol_menu_resolution, NULL);
+	if(SOKOL_STATE.menu_resolution_id) {
+		v2_i32 resolution                = SOKOL_STATE.opts.video.resolution;
+		menu->items[menu->len - 1].value = resolution.x == SYS_PD_DISPLAY_W && resolution.y == SYS_PD_DISPLAY_H * 3;
+	}
+
 	sys_menu_add(menu, "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
 }

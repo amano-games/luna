@@ -85,7 +85,6 @@ void sys_audio_unlock(void);
 #endif
 
 // @per_os_impl System menu / host chrome
-
 i32 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg);
 i32 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg);
 i32 sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg);

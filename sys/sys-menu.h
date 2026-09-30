@@ -32,6 +32,7 @@ struct sys_menu {
 	i32 next_id;
 	i32 idx;
 	i32 len;
+	i32 cap;
 	struct sys_menu_item items[6];
 };
 
@@ -39,6 +40,7 @@ static void
 sys_menu_ini(struct sys_menu *menu)
 {
 	menu->next_id = 1;
+	menu->cap     = ARRLEN(menu->items);
 }
 
 b32
@@ -200,7 +202,7 @@ sys_menu_add(
 	void (*callback)(void *),
 	void *arg)
 {
-	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
+	if(menu->len >= menu->cap) return 0;
 	struct sys_menu_item *item = &menu->items[menu->len++];
 	*item                      = (struct sys_menu_item){
 		.id       = menu->next_id++,
@@ -216,7 +218,7 @@ sys_menu_add(
 static i32
 sys_menu_add_options(struct sys_menu *menu, const char *title, const char **options, i32 count, void (*callback)(void *), void *arg)
 {
-	if(!options || count <= 0 || menu->len >= (i32)ARRLEN(menu->items)) return 0;
+	if(!options || count <= 0 || menu->len >= menu->cap) return 0;
 
 	for(i32 i = 0; i < count; ++i) {
 		if(!options[i]) return 0;

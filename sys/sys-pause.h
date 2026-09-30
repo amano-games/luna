@@ -34,7 +34,8 @@ sys_pause_ini(struct sys_pause_state *pause)
 	for(ssize i = 0; i < (ssize)ARRLEN(pause->menus); i++) {
 		sys_menu_ini(&pause->menus[i]);
 	}
-	pause->active_menu = SYS_PAUSE_MENU_TYPE_APP;
+	pause->menus[SYS_PAUSE_MENU_TYPE_APP].cap = 3;
+	pause->active_menu                       = SYS_PAUSE_MENU_TYPE_APP;
 }
 
 static struct sys_menu *
