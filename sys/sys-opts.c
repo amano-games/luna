@@ -34,9 +34,10 @@
 #define APP_DEFAULT_BLACK 0x110B0DFF
 
 static const str8 SYS_VIDEO_SCALING_LABELS[SYS_VIDEO_SCALING_NUM_COUNT] = {
-	[SYS_VIDEO_SCALING_NONE]    = str8_lit_comp("none"),
-	[SYS_VIDEO_SCALING_INTEGER] = str8_lit_comp("integer"),
-	[SYS_VIDEO_SCALING_FIT]     = str8_lit_comp("fit"),
+	[SYS_VIDEO_SCALING_NONE]      = str8_lit_comp("none"),
+	[SYS_VIDEO_SCALING_INTEGER]   = str8_lit_comp("integer"),
+	[SYS_VIDEO_SCALING_FIT]       = str8_lit_comp("fit"),
+	[SYS_VIDEO_SCALING_OVERSCALE] = str8_lit_comp("overscale"),
 };
 
 static const str8 SYS_VIDEO_FILTER_LABELS[SYS_VIDEO_FILTER_NUM_COUNT] = {
@@ -452,8 +453,7 @@ video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void 
 		if(json_eq(json, value, str8_lit("integer")) == 0) {
 			data->video.scaling = SYS_VIDEO_SCALING_INTEGER;
 		} else if(json_eq(json, value, str8_lit("overscale")) == 0) {
-			// Older settings used overscale; use Fit now.
-			data->video.scaling = SYS_VIDEO_SCALING_FIT;
+			data->video.scaling = SYS_VIDEO_SCALING_OVERSCALE;
 		} else if(json_eq(json, value, str8_lit("fit")) == 0) {
 			data->video.scaling = SYS_VIDEO_SCALING_FIT;
 		}

@@ -1245,7 +1245,8 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	}
 	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER) {
 		scale = floor_f32(scale);
-
+	} else if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_OVERSCALE) {
+		scale = ceil_f32(scale);
 	}
 	scale        = max_f32(scale, 1.0f);
 	res.scale.x  = scale;
@@ -1254,7 +1255,7 @@ sokol_get_buffer_params(f32 win_w, f32 win_h)
 	res.size.y   = res.app_size.y * res.scale.y;
 	res.offset.x = (res.win_size.x - res.size.x) * 0.5f;
 	res.offset.y = (res.win_size.y - res.size.y) * 0.5f;
-	if(SOKOL_STATE.opts.video.scaling == SYS_VIDEO_SCALING_INTEGER) {
+	if(scale == floor_f32(scale)) {
 		res.offset.x = floor_f32(res.offset.x);
 		res.offset.y = floor_f32(res.offset.y);
 	}
@@ -1361,6 +1362,7 @@ sokol_menu_ini(void)
 	static const char *scaling[SYS_VIDEO_SCALING_NUM_COUNT - 1] = {
 		[SYS_VIDEO_SCALING_INTEGER - 1]   = "Integer",
 		[SYS_VIDEO_SCALING_FIT - 1]       = "Fit",
+		[SYS_VIDEO_SCALING_OVERSCALE - 1] = "Overscale",
 	};
 	struct sys_menu *menu      = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
 	SOKOL_STATE.menu_filter_id = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);

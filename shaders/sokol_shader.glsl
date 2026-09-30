@@ -65,11 +65,29 @@ vec3 palette_color( ivec2 pos) {
   return app_colors[index].rgb;
 }
 
+bool integer_scale() {
+  return all(greaterThanEqual(scale, vec2(1.0))) && all(equal(scale, floor(scale)));
+}
+
 vec3 sample_palette(vec2 sample_uv) {
   vec2 tex_size = vec2(textureSize(sampler2D(tex, smp), 0));
 
-  if(filter_mode == 1) { // SYS_VIDEO_FILTER_NEAREST == 1
+  if(filter_mode == 1 || integer_scale()) { // Nearest, or an exact integer scale
     return palette_color(ivec2(floor(sample_uv * tex_size)));
+  }
+
+  // Bilinear on a virtual nearest-neighbor enlargement. Resolve palette
+  // colors before blending; no intermediate texture or index filtering.
+  if(filter_mode == 2) {
+    float factor = max(1.0, floor(scale.x + 0.5));
+    vec2 pixel = sample_uv * tex_size * factor - 0.5;
+    vec2 base = floor(pixel);
+    vec2 weight = fract(pixel);
+    ivec2 lo = ivec2(floor(base / factor));
+    ivec2 hi = ivec2(floor((base + 1.0) / factor));
+    vec3 top = mix(palette_color(lo), palette_color(ivec2(hi.x, lo.y)), weight.x);
+    vec3 bottom = mix(palette_color(ivec2(lo.x, hi.y)), palette_color(hi), weight.x);
+    return mix(top, bottom, weight.y);
   }
 
   // Blend colors, never palette indices.
@@ -104,7 +122,7 @@ void main() {
   vec4 debug_color = dbg_colors[debug_index];
 
   // SYS_VIDEO_FILTER_SHARP == 3
-  if(filter_mode == 3){
+  if(filter_mode == 3 && !integer_scale()){
     tex_uv = uv_iq(tex_uv, ivec2(app_size));
   }
   vec3 app_color = sample_palette(tex_uv);

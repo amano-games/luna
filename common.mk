@@ -31,11 +31,19 @@ ASSETS_PACK_BIN := bin/luna-asset-pack
 LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print)
 
 ifeq ($(DETECTED_OS), Linux)
-SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
+SHADER_BIN   ?= $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
 endif
 ifeq ($(DETECTED_OS), Darwin)
-SHADER_BIN   := $(LUNA_DIR)/external/sokol/shdc/osx_arm64/sokol-shdc
+SHADER_BIN   ?= $(LUNA_DIR)/external/sokol/shdc/osx_arm64/sokol-shdc
 endif
 
 SHADER_OBJS  := $(LUNA_DIR)/shaders/sokol_shader.h
 
+.PHONY: shaders
+shaders: $(SHADER_OBJS)
+
+$(SHADER_OBJS): $(LUNA_DIR)/shaders/sokol_shader.glsl $(SHADER_BIN) $(LUNA_DIR)/common.mk
+	"$(SHADER_BIN)" --input "$<" --output "$@" --slang glsl410:hlsl5:metal_macos:glsl300es
+
+# Let the including Makefile select its default target.
+.DEFAULT_GOAL :=
