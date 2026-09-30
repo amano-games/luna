@@ -1410,5 +1410,5 @@ sokol_menu_ini(void)
 		}
 	}
 
-	sys_menu_add(menu, "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
+	sys_menu_add(menu, "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
 }

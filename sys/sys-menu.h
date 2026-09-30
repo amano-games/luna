@@ -143,6 +143,8 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 	i32 value                    = item.value;
 	enum sys_menu_item_type type = item.type;
 	i32 margin                   = 4;
+	i32 txt_yo                   = 2;
+	i32 row_height               = min_i32(20, root.h);
 
 	rec_i32_cut_left(&root, 10);
 	rec_i32_cut_right(&root, 10);
@@ -150,7 +152,7 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 	if(fnt.t.px1b != 0) {
 		i32 x = root.x + margin;
 		i32 y = cntr.y - (fnt.cell_h * 0.5f);
-		fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
+		fnt_mono_draw_str(ctx, fnt, str, x, y + txt_yo, 0, 0, PRIM_MODE_BLACK);
 	}
 
 	switch(type) {
@@ -159,17 +161,21 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 			str8 option = str8_cstr((char *)item.options[value]);
 			i32 x       = root.x + root.w - margin - fnt_mono_size_x_px(fnt, option, 0);
 			i32 y       = cntr.y - (fnt.cell_h * 0.5f);
-			fnt_mono_draw_str(ctx, fnt, option, x, y, 0, 0, PRIM_MODE_BLACK);
+			fnt_mono_draw_str(ctx, fnt, option, x, y + txt_yo, 0, 0, PRIM_MODE_BLACK);
 		}
 	} break;
 	case SYS_MENU_ITEM_TYPE_BOOL: {
-		i32 checkbox_w  = 11;
+		i32 checkbox_w  = row_height - 6;
 		i32 checkbox_ww = checkbox_w * 0.5f;
+		i32 border      = 1;
 		i32 x           = root.x + root.w - checkbox_w - margin;
 		i32 y           = cntr.y - (checkbox_ww);
-		gfx_rec_fill(ctx, x, y, checkbox_w, checkbox_w, PRIM_MODE_BLACK);
+		gfx_rrec_fill(ctx, x, y, checkbox_w, checkbox_w, 2, PRIM_MODE_BLACK);
+		if(!value) {
+			gfx_rec_fill(ctx, x + border, y + border, checkbox_w - (border << 1), checkbox_w - (border << 1), PRIM_MODE_WHITE);
+		}
 		if(value) {
-			gfx_cir_fill(ctx, x + checkbox_ww, y + checkbox_ww, checkbox_w - 5, PRIM_MODE_WHITE);
+			gfx_cir_fill(ctx, x + checkbox_ww, y + checkbox_ww, checkbox_ww, PRIM_MODE_WHITE);
 		}
 	} break;
 	default: {
@@ -177,8 +183,7 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 	}
 
 	if(is_active) {
-		i32 height = min_i32(20, root.h);
-		gfx_rec_fill(ctx, root.x, cntr.y - height / 2, root.w, height, PRIM_MODE_INV);
+		gfx_rrec_fill(ctx, root.x, cntr.y - row_height / 2, root.w, row_height, 3, PRIM_MODE_INV);
 	}
 }
 
