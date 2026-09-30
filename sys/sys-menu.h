@@ -3,7 +3,7 @@
 #include "base/types.h"
 #include "engine/gfx/gfx-txt.h"
 #include "engine/gfx/gfx.h"
-#include "sys/sys-input.h"
+#include "lib/fnt/fnt.h"
 #include "sys/sys.h"
 
 enum sys_menu_item_type {
@@ -11,15 +11,19 @@ enum sys_menu_item_type {
 
 	SYS_MENU_ITEM_TYPE_ACTION,
 	SYS_MENU_ITEM_TYPE_BOOL,
+	SYS_MENU_ITEM_TYPE_OPTIONS,
 
 	SYS_MENU_ITEM_TYPE_NUM_COUNT,
 };
 
 struct sys_menu_item {
 	i32 id;
+	b32 callback_pending;
 	enum sys_menu_item_type type;
 	str8 title;
 	i32 value;
+	const char **options;
+	i32 options_count;
 	void (*callback)(void *arg);
 	void *arg;
 };
@@ -38,60 +42,87 @@ sys_menu_ini(struct sys_menu *menu)
 }
 
 b32
-sys_menu_inp(struct sys_menu *menu, i32 buttons)
+sys_menu_item_next(struct sys_menu *menu)
 {
-	if(buttons & SYS_INP_B) return true;
+	if(menu->idx + 1 >= menu->len) return false;
+	++menu->idx;
+	return true;
+}
 
-	b32 res = false;
+b32
+sys_menu_item_prev(struct sys_menu *menu)
+{
+	if(menu->len == 0 || menu->idx == 0) return false;
+	--menu->idx;
+	return true;
+}
 
-	if(menu->len > 0) {
-		struct sys_menu_item *item = menu->items + menu->idx;
-		if(buttons & SYS_INP_A) {
-			switch(item->type) {
-			case SYS_MENU_ITEM_TYPE_ACTION: {
-				res = true;
-			} break;
-			case SYS_MENU_ITEM_TYPE_BOOL: {
-				if(item->type == SYS_MENU_ITEM_TYPE_BOOL) {
-					item->value = !item->value;
-				}
-			} break;
-			default: {
-			} break;
-			}
-		}
-		if(buttons & SYS_INP_DPAD_U) {
-			menu->idx = max_i32(menu->idx - 1, 0);
-		}
-		if(buttons & SYS_INP_DPAD_D) {
-			menu->idx = min_i32(menu->idx + 1, menu->len - 1);
-		}
-		if(buttons & SYS_INP_DPAD_R) {
-			if(item->type == SYS_MENU_ITEM_TYPE_BOOL) {
-				item->value = true;
-			}
-		}
-		if(buttons & SYS_INP_DPAD_L) {
-			if(item->type == SYS_MENU_ITEM_TYPE_BOOL) {
-				item->value = false;
-			}
-		}
-	} else {
-		if((buttons & SYS_INP_A)) {
-			res = true;
-		}
+void
+sys_menu_item_increment(struct sys_menu *menu)
+{
+	if(menu->len == 0) return;
+	struct sys_menu_item *item = &menu->items[menu->idx];
+	if(item->type == SYS_MENU_ITEM_TYPE_BOOL) item->value = true;
+	if(item->type == SYS_MENU_ITEM_TYPE_OPTIONS) {
+		item->value            = (item->value + 1) % item->options_count;
+		item->callback_pending = true;
+	}
+}
+
+void
+sys_menu_item_decrement(struct sys_menu *menu)
+{
+	if(menu->len == 0) return;
+	struct sys_menu_item *item = &menu->items[menu->idx];
+	if(item->type == SYS_MENU_ITEM_TYPE_BOOL) item->value = false;
+	if(item->type == SYS_MENU_ITEM_TYPE_OPTIONS) {
+		item->value            = item->value == 0 ? item->options_count - 1 : item->value - 1;
+		item->callback_pending = true;
+	}
+}
+
+b32
+sys_menu_item_confirm(struct sys_menu *menu)
+{
+	if(menu->len == 0) return true;
+
+	struct sys_menu_item *item = &menu->items[menu->idx];
+	switch(item->type) {
+	case SYS_MENU_ITEM_TYPE_ACTION: {
+		if(item->callback) item->callback(item->arg);
+		return true;
+	} break;
+	case SYS_MENU_ITEM_TYPE_BOOL: {
+		item->value = !item->value;
+	} break;
+	case SYS_MENU_ITEM_TYPE_OPTIONS: {
+		sys_menu_item_increment(menu);
+	} break;
+	default: {
+	} break;
+	}
+	return false;
+}
+
+static void
+sys_menu_callbacks(struct sys_menu *menu)
+{
+	i32 ids[ARRLEN(menu->items)];
+	i32 len = 0;
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(!menu->items[i].callback_pending) continue;
+		menu->items[i].callback_pending = false;
+		ids[len++]                      = menu->items[i].id;
 	}
 
-	if(res) {
-		if(menu->len > 0) {
-			struct sys_menu_item *item = menu->items + menu->idx;
-			if(item->callback) {
-				item->callback(item->arg);
-			}
+	for(i32 i = 0; i < len; ++i) {
+		for(i32 j = 0; j < menu->len; ++j) {
+			struct sys_menu_item item = menu->items[j];
+			if(item.id != ids[i]) continue;
+			if(item.callback) item.callback(item.arg);
+			break;
 		}
 	}
-
-	return res;
 }
 
 void
@@ -103,14 +134,25 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 	i32 value                    = item.value;
 	enum sys_menu_item_type type = item.type;
 	i32 margin                   = 4;
+
 	rec_i32_cut_left(&root, 10);
 	rec_i32_cut_right(&root, 10);
+
 	if(fnt.t.px1b != 0) {
 		i32 x = root.x + margin;
 		i32 y = cntr.y - (fnt.cell_h * 0.5f);
 		fnt_mono_draw_str(ctx, fnt, str, x, y, 0, 0, PRIM_MODE_BLACK);
 	}
+
 	switch(type) {
+	case SYS_MENU_ITEM_TYPE_OPTIONS: {
+		if(fnt.t.px1b != 0) {
+			str8 option = str8_cstr((char *)item.options[value]);
+			i32 x       = root.x + root.w - margin - fnt_mono_size_x_px(fnt, option, 0);
+			i32 y       = cntr.y - (fnt.cell_h * 0.5f);
+			fnt_mono_draw_str(ctx, fnt, option, x, y, 0, 0, PRIM_MODE_BLACK);
+		}
+	} break;
 	case SYS_MENU_ITEM_TYPE_BOOL: {
 		i32 checkbox_w  = 11;
 		i32 checkbox_ww = checkbox_w * 0.5f;
@@ -124,44 +166,33 @@ sys_menu_item_drw(struct sys_menu_item item, struct gfx_ctx ctx, rec_i32 root, b
 	default: {
 	} break;
 	}
+
 	if(is_active) {
-		gfx_rec_fill(ctx, root.x, cntr.y - 10, root.w, 20, PRIM_MODE_INV);
+		i32 height = min_i32(20, root.h);
+		gfx_rec_fill(ctx, root.x, cntr.y - height / 2, root.w, height, PRIM_MODE_INV);
 	}
 }
 
 void
-sys_menu_drw(const struct sys_menu *menu, struct gfx_ctx ctx, rec_i32 root)
+sys_menu_drw(const struct sys_menu *menu, struct gfx_ctx ctx, rec_i32 root, b32 is_active)
 {
-	struct fnt fnt = sys_fnt_mono_get();
-	gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
-	rec_i32_cut_left(&root, 3);
-	gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
-	root = rec_i32_cut_bottom(&root, SYS_PD_DISPLAY_H);
-
-	{
-		i32 menu_height = 99;
-		rec_i32 layout  = rec_i32_cut_top(&root, menu_height);
-		i32 row_height  = menu_height / 3;
-
-		for(ssize i = 0; i < menu->len; ++i) {
-			rec_i32 row_layout        = rec_i32_cut_top(&layout, row_height);
-			struct sys_menu_item item = menu->items[i];
-			sys_menu_item_drw(item, ctx, row_layout, menu->idx == i);
-		}
-	}
-	{
-		rec_i32 layout = rec_i32_cut_top(&root, 2);
-		rec_i32_cut_left(&layout, 10);
-		rec_i32_cut_right(&layout, 10);
-		gfx_lin(ctx, layout.x, layout.y, layout.x + layout.w, layout.y, PRIM_MODE_BLACK);
-		gfx_lin(ctx, layout.x, layout.y + 1, layout.x + layout.w, layout.y + 1, PRIM_MODE_BLACK);
+	if(menu->len == 0) return;
+	i32 row_height = root.h / menu->len;
+	for(i32 i = 0; i < menu->len; ++i) {
+		rec_i32 row_layout = rec_i32_cut_top(&root, row_height);
+		sys_menu_item_drw(menu->items[i], ctx, row_layout, is_active && menu->idx == i);
 	}
 }
 
 static i32
-sys_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type type, i32 value, void (*callback)(void *), void *arg)
+sys_menu_add(
+	struct sys_menu *menu,
+	const char *title,
+	enum sys_menu_item_type type,
+	i32 value,
+	void (*callback)(void *),
+	void *arg)
 {
-	dbg_assert(menu->len < (i32)ARRLEN(menu->items));
 	if(menu->len >= (i32)ARRLEN(menu->items)) return 0;
 	struct sys_menu_item *item = &menu->items[menu->len++];
 	*item                      = (struct sys_menu_item){
@@ -173,6 +204,22 @@ sys_menu_add(struct sys_menu *menu, const char *title, enum sys_menu_item_type t
 		.arg      = arg,
 	};
 	return item->id;
+}
+
+static i32
+sys_menu_add_options(struct sys_menu *menu, const char *title, const char **options, i32 count, void (*callback)(void *), void *arg)
+{
+	if(!options || count <= 0 || menu->len >= (i32)ARRLEN(menu->items)) return 0;
+
+	for(i32 i = 0; i < count; ++i) {
+		if(!options[i]) return 0;
+	}
+
+	i32 id                     = sys_menu_add(menu, title, SYS_MENU_ITEM_TYPE_OPTIONS, 0, callback, arg);
+	struct sys_menu_item *item = &menu->items[menu->len - 1];
+	item->options              = options;
+	item->options_count        = count;
+	return id;
 }
 
 static i32
