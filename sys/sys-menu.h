@@ -138,6 +138,7 @@ sys_menu_drw(const struct sys_menu *menu, struct gfx_ctx ctx, rec_i32 root)
 	gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_BLACK);
 	rec_i32_cut_left(&root, 3);
 	gfx_rec_fill(ctx, REC_UNPACK(root), PRIM_MODE_WHITE);
+	root = rec_i32_cut_bottom(&root, SYS_PD_DISPLAY_H);
 
 	{
 		i32 menu_height = 99;
