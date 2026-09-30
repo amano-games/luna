@@ -114,7 +114,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 
 		PD->display->setRefreshRate(0.f);
 		PD->system->resetElapsedTime();
-		PD_STATE.menu_bitmap  = PD->graphics->newBitmap(SYS_DISPLAY_W, SYS_DISPLAY_H, kColorClear);
+		PD_STATE.menu_bitmap  = PD->graphics->newBitmap(SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H, kColorClear);
 		PD_STATE.menu.next_id = 1;
 
 		PD_STATE.process_info = (struct sys_process_info){
@@ -305,6 +305,12 @@ void
 sys_1bit_invert(b32 value)
 {
 	PD->display->setInverted(value);
+}
+
+v2_i32
+sys_resolution_get(void)
+{
+	return (v2_i32){SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H};
 }
 
 void *

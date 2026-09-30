@@ -55,6 +55,7 @@ enum sys_video_display {
 };
 
 struct sys_video_opts {
+	v2_i32 resolution;
 	enum sys_video_scaling scaling;
 	enum sys_video_filter filter;
 	enum sys_video_display display;

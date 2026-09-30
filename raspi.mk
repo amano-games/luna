@@ -12,7 +12,6 @@ TARGET       := $(GAME_NAME).bin
 CC ?= armv6-rpi-linux-gnueabihf-gcc
 
 RASPI_ARCH := -march=armv6zk -mtune=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -marm
-RASPI_DISPLAY_SCALE_H := 3
 RASPI_PLANE_ROT_DEG := 270
 
 RELEASE_BINDIR := ${PREFIX}raspi-release
@@ -52,7 +51,7 @@ EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 INC_DIRS  := src $(LUNA_DIR)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS) $(SYSROOT_INC)
 
-override CDEFS := $(CDEFS) -DSYS_GFX_DRM -D_GNU_SOURCE -DSYS_DISPLAY_SCALE_H=$(RASPI_DISPLAY_SCALE_H) -DDRM_PLANE_ROT_DEG=$(RASPI_PLANE_ROT_DEG)
+override CDEFS := $(CDEFS) -DSYS_GFX_DRM -D_GNU_SOURCE -DDRM_PLANE_ROT_DEG=$(RASPI_PLANE_ROT_DEG)
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g

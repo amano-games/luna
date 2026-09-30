@@ -42,6 +42,8 @@ struct tex {
 	int h;
 };
 
+u32 tex_wword(i32 w, enum tex_fmt fmt);
+ssize tex_mem_size(i32 w, i32 h, enum tex_fmt fmt);
 struct tex tex_create(struct alloc alloc, i32 w, i32 h, enum tex_fmt fmt);
 struct tex tex_load(struct alloc alloc, struct alloc scratch, str8 path);
 struct tex tex_load_from_mem(struct alloc alloc, void *data, ssize size);

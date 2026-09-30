@@ -1,3 +1,4 @@
+#include "sys/sys.h"
 #include "cam-brain.h"
 #include "base/dbg.h"
 #include "cam.h"
@@ -55,6 +56,8 @@ cam_brain_upd(struct cam_brain *brain, f32 tx, f32 ty, f32 dt)
 void
 cam_brain_data_set(struct cam_brain *brain, struct cam_data value, b32 do_lerp)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
+	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
 	dbg_assert(brain->cam != NULL);
 	struct cam *cam       = brain->cam;
 	cam->data.hard_limits = value.hard_limits;
@@ -70,8 +73,8 @@ cam_brain_data_set(struct cam_brain *brain, struct cam_data value, b32 do_lerp)
 		if(brain->data_id_prev != brain->data_id) {
 			// Set the limits or "snapping" to the current camera viewport
 			brain->cam->data.soft_limits = (struct col_aabb){
-				.min = {cam->p.x - CAM_HALF_W, cam->p.y - CAM_HALF_H},
-				.max = {cam->p.x + CAM_HALF_W, cam->p.y + CAM_HALF_H},
+				.min = {cam->p.x - sys_resolution_half.x, cam->p.y - sys_resolution_half.y},
+				.max = {cam->p.x + sys_resolution_half.x, cam->p.y + sys_resolution_half.y},
 			};
 
 			{

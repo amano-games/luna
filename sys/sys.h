@@ -56,6 +56,8 @@ u32 sys_time_ms(void);
 u32 sys_time_us(void);
 u32 sys_epoch_2000(u32 *milliseconds);
 
+v2_i32 sys_resolution_get(void);
+
 // @per_os_impl Display (1-bit framebuffer)
 void sys_1bit_invert(b32 i);
 void *sys_1bit_buffer(void);

@@ -3,16 +3,8 @@
 #include "base/base-inc.h"
 #include "lib/fnt/fnt-defs.h"
 
-#if !defined(SYS_DISPLAY_SCALE_H)
-#define SYS_DISPLAY_SCALE_H 1
-#endif
-
-#define SYS_PD_DISPLAY_W   400
-#define SYS_PD_DISPLAY_H   240
-#define SYS_DISPLAY_W      400
-#define SYS_DISPLAY_H      (240 * SYS_DISPLAY_SCALE_H)
-#define SYS_DISPLAY_WBYTES 52
-#define SYS_DISPLAY_WWORDS 13
+#define SYS_PD_DISPLAY_W 400
+#define SYS_PD_DISPLAY_H 240
 
 #define SYS_SHOW_FPS_NONE 0 // compile overlay out
 #define SYS_SHOW_FPS_FPS  1 // two-digit FPS

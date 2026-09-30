@@ -422,8 +422,9 @@ sys_internal_stream_end(void)
 void
 sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 {
-	u8 *fb = (u8 *)sys->frame_buffer;
-	i32 x  = tile_x;
+	v2_i32 sys_resolution = sys_resolution_get();
+	u8 *fb                = (u8 *)sys->frame_buffer;
+	i32 x                 = tile_x;
 	for(char *c = str; *c != '\0'; c++) {
 		i32 cx = ((i32)*c & 31);
 		i32 cy = ((i32)*c >> 5) << 3;
@@ -433,12 +434,15 @@ sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 			i32 yy = (tile_y << 3) + n;
 			for(i32 bit = 0; bit < 8; ++bit) {
 				i32 xx = x * 8 + bit;
-				if(0 <= xx && xx < SYS_DISPLAY_W && 0 <= yy && yy < SYS_DISPLAY_H) {
-					fb[xx + yy * ((SYS_DISPLAY_W + 3) & ~3)] = (bits >> (7 - bit)) & 1;
+				if(0 <= xx && xx < sys_resolution.x && 0 <= yy && yy < sys_resolution.y) {
+					fb[xx + yy * ((sys_resolution.x + 3) & ~3)] = (bits >> (7 - bit)) & 1;
 				}
 			}
 #else
-			fb[x + ((tile_y << 3) + n) * SYS_DISPLAY_WBYTES] = bits;
+			i32 yy = (tile_y << 3) + n;
+			if(x >= 0 && x < ((sys_resolution.x + 7) >> 3) && yy >= 0 && yy < sys_resolution.y) {
+				fb[x + yy * (((sys_resolution.x + 31) >> 5) * (i32)sizeof(u32))] = bits;
+			}
 #endif
 		}
 		x++;

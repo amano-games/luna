@@ -158,11 +158,12 @@ static struct drm_display DRM_DISP;
 static void
 drm_fb_wh(u32 *w, u32 *h)
 {
-	*w = (u32)SYS_DISPLAY_W;
-	*h = (u32)SYS_DISPLAY_H;
+	v2_i32 sys_resolution = sys_resolution_get();
+	*w                    = (u32)sys_resolution.x;
+	*h                    = (u32)sys_resolution.y;
 	if(DRM_PLANE_ROT_DEG == 90 || DRM_PLANE_ROT_DEG == 270) {
-		*w = (u32)SYS_DISPLAY_H;
-		*h = (u32)SYS_DISPLAY_W;
+		*w = (u32)sys_resolution.y;
+		*h = (u32)sys_resolution.x;
 	}
 }
 
@@ -591,7 +592,7 @@ drm_rgb565(u32 rgba)
 	return (u16)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
 }
 
-// Packed 1-bit (MSB-first per byte, 52-byte rows) -> oriented RGB565.
+// Packed 1-bit (MSB-first per byte, word-aligned rows) -> oriented RGB565.
 //
 //   270: dest(dx, dy) <- game(W-1-dy, dx)   400x720 -> 720x400
 //     game x→            dest x→
@@ -600,10 +601,12 @@ drm_rgb565(u32 rgba)
 static void
 drm_blit(struct drm_display *d, const u8 *packed, u16 col0, u16 col1)
 {
-	struct drm_fb *fb = &d->bufs[d->back];
-	u8 *base          = fb->map;
-	u32 pitch         = fb->pitch;
-	u32 dy            = 0;
+	v2_i32 sys_resolution = sys_resolution_get();
+	i32 stride            = ((sys_resolution.x + 31) >> 5) * (i32)sizeof(u32);
+	struct drm_fb *fb     = &d->bufs[d->back];
+	u8 *base              = fb->map;
+	u32 pitch             = fb->pitch;
+	u32 dy                = 0;
 
 	for(dy = 0; dy < d->fb_h; dy++) {
 		u16 *row = (u16 *)(base + (usize)dy * (usize)pitch);
@@ -617,18 +620,18 @@ drm_blit(struct drm_display *d, const u8 *packed, u16 col0, u16 col1)
 
 #if DRM_PLANE_ROT_DEG == 90
 			gx = (i32)dy;
-			gy = (i32)SYS_DISPLAY_H - 1 - (i32)dx;
+			gy = (i32)sys_resolution.y - 1 - (i32)dx;
 #elif DRM_PLANE_ROT_DEG == 180
-			gx = (i32)SYS_DISPLAY_W - 1 - (i32)dx;
-			gy = (i32)SYS_DISPLAY_H - 1 - (i32)dy;
+			gx = (i32)sys_resolution.x - 1 - (i32)dx;
+			gy = (i32)sys_resolution.y - 1 - (i32)dy;
 #elif DRM_PLANE_ROT_DEG == 270
-			gx = (i32)SYS_DISPLAY_W - 1 - (i32)dy;
+			gx = (i32)sys_resolution.x - 1 - (i32)dy;
 			gy = (i32)dx;
 #else
 			gx = (i32)dx;
 			gy = (i32)dy;
 #endif
-			byt     = packed[(usize)gy * (usize)SYS_DISPLAY_WBYTES + (usize)(gx >> 3)];
+			byt     = packed[(usize)gy * (usize)stride + (usize)(gx >> 3)];
 			bit     = (u8)(byt & (u8)(0x80u >> (gx & 7)));
 			row[dx] = bit != 0 ? col1 : col0;
 		}
@@ -1106,7 +1109,6 @@ drm_alsa_unlock(void)
 
 #define DRM_HOST_ORG          "amano"
 #define DRM_HOST_NAME         "luna"
-#define DRM_HOST_ARENA_SIZE   MMEGABYTE(2)
 #define DRM_HOST_SCRATCH_SIZE MKILOBYTE(256)
 #define DRM_IDLE_WAIT_NS      1000000L
 #define DRM_EVDEV_MAX         32
@@ -1130,6 +1132,7 @@ struct drm_host {
 	b32 paused;
 	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
+	v2_i32 resolution;
 	volatile sig_atomic_t running;
 	i32 evdev_fds[DRM_EVDEV_MAX];
 	i32 evdev_fd_count;
@@ -1269,14 +1272,15 @@ drm_host_evdev_add_fd(i32 fd)
 static enum drm_status
 drm_host_evdev_open(void)
 {
-	DIR *dir           = opendir(DRM_EVDEV_DIR);
-	enum drm_status st = DRM_STATUS_OK;
-	struct dirent *ent = NULL;
+	v2_i32 sys_resolution = sys_resolution_get();
+	DIR *dir              = opendir(DRM_EVDEV_DIR);
+	enum drm_status st    = DRM_STATUS_OK;
+	struct dirent *ent    = NULL;
 
 	DRM_HOST.evdev_fd_count = 0;
 	DRM_HOST.mouse_btns     = 0;
-	DRM_HOST.mouse_x        = (f32)(SYS_DISPLAY_W / 2);
-	DRM_HOST.mouse_y        = (f32)(SYS_DISPLAY_H / 2);
+	DRM_HOST.mouse_x        = (f32)(sys_resolution.x / 2);
+	DRM_HOST.mouse_y        = (f32)(sys_resolution.y / 2);
 	DRM_HOST.want_quit      = false;
 
 	if(dir == NULL) {
@@ -1380,6 +1384,7 @@ drm_host_on_key(u16 code, i32 value)
 static void
 drm_host_on_rel(u16 code, i32 value)
 {
+	v2_i32 sys_resolution = sys_resolution_get();
 	if(code == REL_X) {
 		DRM_HOST.mouse_x += (f32)value;
 	} else if(code == REL_Y) {
@@ -1392,11 +1397,11 @@ drm_host_on_rel(u16 code, i32 value)
 	if(DRM_HOST.mouse_y < 0.f) {
 		DRM_HOST.mouse_y = 0.f;
 	}
-	if(DRM_HOST.mouse_x > (f32)(SYS_DISPLAY_W - 1)) {
-		DRM_HOST.mouse_x = (f32)(SYS_DISPLAY_W - 1);
+	if(DRM_HOST.mouse_x > (f32)(sys_resolution.x - 1)) {
+		DRM_HOST.mouse_x = (f32)(sys_resolution.x - 1);
 	}
-	if(DRM_HOST.mouse_y > (f32)(SYS_DISPLAY_H - 1)) {
-		DRM_HOST.mouse_y = (f32)(SYS_DISPLAY_H - 1);
+	if(DRM_HOST.mouse_y > (f32)(sys_resolution.y - 1)) {
+		DRM_HOST.mouse_y = (f32)(sys_resolution.y - 1);
 	}
 }
 
@@ -1458,37 +1463,48 @@ main(int argc, char **argv)
 	signal(SIGINT, drm_host_on_signal);
 	signal(SIGTERM, drm_host_on_signal);
 
-	mem = sys_alloc(NULL, DRM_HOST_ARENA_SIZE, MEM_ALIGN_DEFAULT);
-	dbg_check(mem, "drm", "host arena");
-	marena_init(&DRM_HOST.arena, mem, DRM_HOST_ARENA_SIZE);
-	DRM_HOST.alloc = marena_allocator(&DRM_HOST.arena);
-
 	mem = sys_alloc(NULL, DRM_HOST_SCRATCH_SIZE, MEM_ALIGN_DEFAULT);
 	dbg_check(mem, "drm", "host scratch");
 	marena_init(&DRM_HOST.scratch_arena, mem, DRM_HOST_SCRATCH_SIZE);
 	DRM_HOST.scratch = marena_allocator(&DRM_HOST.scratch_arena);
 
 	DRM_HOST.opts = sys_opts_load(
-		DRM_HOST.alloc,
+		DRM_HOST.scratch,
 		DRM_HOST.scratch,
 		str8_lit(DRM_HOST_ORG),
 		str8_lit(DRM_HOST_NAME));
 
+	DRM_HOST.resolution   = DRM_HOST.opts.video.resolution;
+	v2_i32 sys_resolution = sys_resolution_get();
 	{
-		struct tex tex     = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		ssize mono_bytes  = (((ssize)sys_resolution.x + 31) >> 5) * sizeof(u32) * sys_resolution.y;
+		ssize frame_bytes = 3 * ALIGN_POW2(mono_bytes, MEM_ALIGN_PD_CACHE) +
+			ALIGN_POW2(2 * mono_bytes, MEM_ALIGN_PD_CACHE);
+		ssize mem_size = MAX((ssize)MMEGABYTE(1), frame_bytes + MKILOBYTE(64));
+		mem            = sys_alloc(NULL, mem_size, MEM_ALIGN_PD_CACHE);
+		dbg_check(mem, "drm", "host arena");
+		marena_init(&DRM_HOST.arena, mem, mem_size);
+		DRM_HOST.alloc                      = marena_allocator(&DRM_HOST.arena);
+		DRM_HOST.opts.recording.save_path   = str8_cpy_push(DRM_HOST.alloc, DRM_HOST.opts.recording.save_path);
+		DRM_HOST.opts.screentshot.save_path = str8_cpy_push(DRM_HOST.alloc, DRM_HOST.opts.screentshot.save_path);
+		marena_reset(&DRM_HOST.scratch_arena);
+	}
+
+	{
+		struct tex tex     = tex_create(DRM_HOST.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.frame_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "drm", "1-bit framebuffer");
 	}
 
 	{
-		struct tex tex   = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		struct tex tex   = tex_create(DRM_HOST.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_OPAQUE);
 		DRM_HOST.dbg_ctx = gfx_ctx_default(tex);
 		dbg_check(tex.px1b, "drm", "dbg framebuffer");
 	}
 
-	DRM_HOST.pause.frame_tex = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+	DRM_HOST.pause.frame_tex = tex_create(DRM_HOST.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_OPAQUE);
 	dbg_check(DRM_HOST.pause.frame_tex.px1b, "drm", "paused framebuffer");
-	DRM_HOST.pause.menu_tex = tex_create(DRM_HOST.alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_MASK);
+	DRM_HOST.pause.menu_tex = tex_create(DRM_HOST.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_MASK);
 	dbg_check(DRM_HOST.pause.menu_tex.px1b, "drm", "pause menu image");
 	sys_pause_ini(&DRM_HOST.pause);
 
@@ -1634,6 +1650,12 @@ void
 sys_color_u32_set(enum gfx_col color, u32 value)
 {
 	DRM_HOST.opts.colors.colors[color] = value;
+}
+
+v2_i32
+sys_resolution_get(void)
+{
+	return DRM_HOST.resolution;
 }
 
 void *

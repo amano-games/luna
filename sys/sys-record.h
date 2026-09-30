@@ -31,14 +31,16 @@ recording_1b_ini(
 	struct recording_1b *gfx,
 	ssize count)
 {
-	b32 res     = false;
-	gfx->cap    = count;
-	gfx->len    = 0;
-	gfx->idx    = 0;
-	gfx->frames = alloc_arr(alloc, gfx->frames, gfx->cap);
+	v2_i32 sys_resolution = sys_resolution_get();
+	b32 res               = false;
+	gfx->cap              = count;
+	gfx->len              = 0;
+	gfx->idx              = 0;
+	gfx->frames           = alloc_arr(alloc, gfx->frames, gfx->cap);
 	dbg_check_mem(gfx->frames, "sys-recording");
 	for(ssize i = 0; i < gfx->cap; ++i) {
-		gfx->frames[i] = tex_create(alloc, SYS_DISPLAY_W, SYS_DISPLAY_H, TEX_FMT_1B_OPAQUE);
+		gfx->frames[i] = tex_create(alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_OPAQUE);
+		dbg_check_mem(gfx->frames[i].px1b, "sys-recording");
 	}
 	res = true;
 error:;
