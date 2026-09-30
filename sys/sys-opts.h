@@ -29,7 +29,6 @@ enum sys_video_scaling {
 	SYS_VIDEO_SCALING_NONE,
 
 	SYS_VIDEO_SCALING_INTEGER,
-	SYS_VIDEO_SCALING_OVERSCALE,
 	SYS_VIDEO_SCALING_FIT,
 
 	SYS_VIDEO_SCALING_NUM_COUNT,
@@ -71,4 +70,5 @@ struct sys_opts {
 };
 
 b32 sys_opts_read(struct alloc alloc, jsmn_parser *r, struct sys_opts *data, str8 json, jsmntok_t *tokens, ssize token_count);
+b32 sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8 name);
 struct sys_opts sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name);
