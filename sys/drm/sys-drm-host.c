@@ -6,6 +6,7 @@
 #include "base/mem.h"
 #include "base/str.h"
 #include "engine/gfx/gfx-defs.h"
+#include "engine/gfx/gfx-colors.h"
 #include "engine/gfx/gfx.h"
 #include "lib/color.h"
 #include "lib/tex/tex.h"
@@ -1236,6 +1237,7 @@ struct drm_host {
 	struct sys_pause_state pause;
 	i32 menu_scaling_id;
 	i32 menu_filter_id;
+	i32 menu_palette_id;
 	b32 paused;
 	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
@@ -1523,6 +1525,16 @@ drm_host_menu_video_apply(void *args)
 }
 
 static void
+drm_host_menu_palette(void *args)
+{
+	i32 value = sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], DRM_HOST.menu_palette_id);
+	if(value < 0 || value >= (i32)ARRLEN(GFX_1B_PALETTES)) return;
+	DRM_HOST.opts.colors.colors[GFX_COL_BLACK] = GFX_1B_PALETTES[value][GFX_COL_BLACK];
+	DRM_HOST.opts.colors.colors[GFX_COL_WHITE] = GFX_1B_PALETTES[value][GFX_COL_WHITE];
+	drm_host_opts_save();
+}
+
+static void
 drm_host_menu_quit(void *args)
 {
 	sys_quit();
@@ -1716,6 +1728,18 @@ main(int argc, char **argv)
 		}
 		DRM_HOST.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), drm_host_menu_video_apply, NULL);
 		if(DRM_HOST.menu_scaling_id) menu->items[menu->len - 1].value = DRM_HOST.opts.video.scaling - 1;
+
+		static const char *palettes[] = {"Default", "Black & White", "Game Boy", "Sunset"};
+		DRM_HOST.menu_palette_id = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), drm_host_menu_palette, NULL);
+		if(DRM_HOST.menu_palette_id) {
+			for(i32 i = 0; i < (i32)ARRLEN(GFX_1B_PALETTES); ++i) {
+				if(DRM_HOST.opts.colors.colors[GFX_COL_BLACK] == GFX_1B_PALETTES[i][GFX_COL_BLACK] &&
+				   DRM_HOST.opts.colors.colors[GFX_COL_WHITE] == GFX_1B_PALETTES[i][GFX_COL_WHITE]) {
+					menu->items[menu->len - 1].value = i;
+					break;
+				}
+			}
+		}
 	}
 	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
 

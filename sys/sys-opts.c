@@ -2,6 +2,7 @@
 
 #include "base/arr.h"
 #include "base/mathfunc.h"
+#include "engine/gfx/gfx-colors.h"
 #include "lib/color.h"
 #include "lib/json.h"
 
@@ -29,9 +30,6 @@
 #define SYS_OPTS_COLOR_PALLETE_BLACK_KEY "black"
 #define SYS_OPTS_COLOR_PALLETE_WHITE_KEY "white"
 #define SYS_OPTS_COLOR_PALLETE_CLEAR_KEY "clear"
-
-#define APP_DEFAULT_WHITE 0xA5A5A2FF
-#define APP_DEFAULT_BLACK 0x110B0DFF
 
 static const str8 SYS_VIDEO_SCALING_LABELS[SYS_VIDEO_SCALING_NUM_COUNT] = {
 	[SYS_VIDEO_SCALING_NONE]      = str8_lit_comp("none"),
@@ -98,16 +96,16 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 			.scale         = SYS_RECORDING_SCALE_DEFAULT,
 			.seconds_count = SYS_RECORDING_SECONDS_DEFAULT,
 			.colors.colors = {
-				[GFX_COL_BLACK] = 0x000000ff,
-				[GFX_COL_WHITE] = 0xffffffff,
+				[GFX_COL_BLACK] = COL_U32_BLACK,
+				[GFX_COL_WHITE] = COL_U32_WHITE,
 			},
 		},
 
 		.screentshot = {
 			.save_path     = default_save_path,
 			.colors.colors = {
-				[GFX_COL_BLACK] = 0x000000ff,
-				[GFX_COL_WHITE] = 0xffffffff,
+				[GFX_COL_BLACK] = COL_U32_BLACK,
+				[GFX_COL_WHITE] = COL_U32_WHITE,
 			},
 		},
 	};

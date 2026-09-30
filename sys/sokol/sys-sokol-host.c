@@ -1,3 +1,4 @@
+#include "engine/gfx/gfx-colors.h"
 #include "sys/sokol/sys-sokol.h"
 #include "sys/sys-gamepad.h"
 #include "sys/sys-keyboard.h"
@@ -107,6 +108,7 @@ struct sokol_state {
 	i32 menu_filter_id;
 	i32 menu_scaling_id;
 	i32 menu_resolution_id;
+	i32 menu_palette_id;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
@@ -137,12 +139,6 @@ static struct sokol_state SOKOL_STATE;
 
 #define SOKOL_ORG  "amano"
 #define SOKOL_NAME "luna"
-
-const f32 COL_WHITE[3]  = {0.64f, 0.64f, 0.64f};
-const f32 COL_BLACK[3]  = {0.05f, 0.04f, 0.06f};
-const f32 COL_RED[3]    = {1.0f, 0.0f, 0.0f};
-const f32 COL_YELLOW[3] = {1.0f, 0.784f, 0.2f};
-const f32 COL_PURPLE[3] = {0.424f, 0.0f, 1.0f};
 
 void sokol_init(void);
 void sokol_frame(void);
@@ -1363,6 +1359,16 @@ sokol_menu_resolution(void *args)
 }
 
 static void
+sokol_menu_palette(void *args)
+{
+	i32 value = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_palette_id);
+	if(value < 0 || value >= (i32)ARRLEN(GFX_1B_PALETTES)) return;
+	SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK] = GFX_1B_PALETTES[value][GFX_COL_BLACK];
+	SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE] = GFX_1B_PALETTES[value][GFX_COL_WHITE];
+	sokol_opts_save();
+}
+
+static void
 sokol_menu_ini(void)
 {
 	static const char *filters[SYS_VIDEO_FILTER_NUM_COUNT - 1] = {
@@ -1377,6 +1383,7 @@ sokol_menu_ini(void)
 	};
 
 	static const char *resolutions[] = {"Normal", "Tate"};
+	static const char *palettes[]    = {"Default", "Black & White", "Game Boy", "Sunset"};
 	struct sys_menu *menu            = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
 	SOKOL_STATE.menu_filter_id       = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
 
@@ -1389,6 +1396,18 @@ sokol_menu_ini(void)
 	if(SOKOL_STATE.menu_resolution_id) {
 		v2_i32 resolution                = SOKOL_STATE.opts.video.resolution;
 		menu->items[menu->len - 1].value = resolution.x == SYS_PD_DISPLAY_W && resolution.y == SYS_PD_DISPLAY_H * 3;
+	}
+
+	SOKOL_STATE.menu_palette_id = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), sokol_menu_palette, NULL);
+	if(SOKOL_STATE.menu_palette_id) {
+		menu->items[menu->len - 1].value = 1;
+		for(i32 i = 0; i < (i32)ARRLEN(GFX_1B_PALETTES); ++i) {
+			if(SOKOL_STATE.opts.colors.colors[GFX_COL_BLACK] == GFX_1B_PALETTES[i][GFX_COL_BLACK] &&
+				SOKOL_STATE.opts.colors.colors[GFX_COL_WHITE] == GFX_1B_PALETTES[i][GFX_COL_WHITE]) {
+				menu->items[menu->len - 1].value = i;
+				break;
+			}
+		}
 	}
 
 	sys_menu_add(menu, "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
