@@ -2,10 +2,6 @@
 
 #include "base/types.h"
 
-// Host-private OS gamepad. Not the game-facing sys_inp contract.
-// Linux/Windows: minigamepad in sys-gamepad.c.
-// macOS/WASM: sys-gamepad-stub.c.
-
 enum sys_os_gamepad_ev {
 	SYS_OS_PAD_EV_NONE,
 
@@ -24,6 +20,4 @@ enum sys_os_gamepad_ev {
 void sys_os_gamepad_ini(void);
 void sys_os_gamepad_poll(void);
 i32 sys_os_gamepad_buttons(void);
-b32 sys_os_gamepad_menu(void);
-b32 sys_os_gamepad_select(void);
 b32 sys_os_gamepad_event(enum sys_os_gamepad_ev *ev);

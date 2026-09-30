@@ -23,8 +23,6 @@ static struct {
 	mg_gamepads pads;
 	i32 buttons;
 	i32 direction_presses;
-	b32 menu;
-	b32 select;
 } SYS_GAMEPAD;
 
 // First connected pad → Playdate-style SYS_INP_* bits.
@@ -139,28 +137,6 @@ sys_gamepad_map_pad(const mg_gamepad *pad)
 	return res;
 }
 
-static b32
-sys_gamepad_map_menu(const mg_gamepad *pad)
-{
-	mg_button btn[] = {
-		MG_BUTTON_START,
-		MG_BUTTON_BACK,
-		MG_BUTTON_GUIDE,
-		MG_BUTTON_MISC1,
-	};
-	b32 held = false;
-	i32 n    = 0;
-
-	for(n = 0; n < (i32)ARRLEN(btn); n++) {
-		mg_button_state s = pad->buttons[btn[n]];
-		if(s.supported == MG_TRUE && s.current == MG_TRUE) {
-			held = true;
-		}
-	}
-
-	return held;
-}
-
 void
 sys_os_gamepad_ini(void)
 {
@@ -169,14 +145,12 @@ sys_os_gamepad_ini(void)
 	SYS_GAMEPAD.pads.queue_events = MG_TRUE;
 	SYS_GAMEPAD.buttons           = 0;
 	SYS_GAMEPAD.direction_presses = 0;
-	SYS_GAMEPAD.menu              = false;
-	SYS_GAMEPAD.select            = false;
 }
 
 void
 sys_os_gamepad_poll(void)
 {
-	mg_gamepad *pad = NULL;
+	mg_gamepad *pad  = NULL;
 	i32 prev_buttons = SYS_GAMEPAD.buttons;
 
 	SYS_GAMEPAD.pads.queue_events = MG_TRUE;
@@ -184,13 +158,8 @@ sys_os_gamepad_poll(void)
 
 	pad                 = SYS_GAMEPAD.pads.list.head;
 	SYS_GAMEPAD.buttons = 0;
-	SYS_GAMEPAD.menu    = false;
-	SYS_GAMEPAD.select  = false;
 	if(pad != NULL) {
 		SYS_GAMEPAD.buttons = sys_gamepad_map_pad(pad);
-		SYS_GAMEPAD.menu    = sys_gamepad_map_menu(pad);
-		mg_button_state select = pad->buttons[MG_BUTTON_BACK];
-		SYS_GAMEPAD.select = select.supported == MG_TRUE && select.current == MG_TRUE;
 	}
 	// Use gameplay's D-pad/stick mapping, including the DRM display rotation.
 	SYS_GAMEPAD.direction_presses = SYS_GAMEPAD.buttons & ~prev_buttons &
@@ -203,19 +172,6 @@ sys_os_gamepad_buttons(void)
 	return SYS_GAMEPAD.buttons;
 }
 
-b32
-sys_os_gamepad_select(void)
-{
-	return SYS_GAMEPAD.select;
-}
-
-b32
-sys_os_gamepad_menu(void)
-{
-	return SYS_GAMEPAD.menu;
-}
-
-// Drain one interesting press. Uses the queued snapshot from poll, not another poll.
 b32
 sys_os_gamepad_event(enum sys_os_gamepad_ev *ev)
 {
@@ -254,9 +210,12 @@ sys_os_gamepad_event(enum sys_os_gamepad_ev *ev)
 	}
 
 	if(!got) {
-		const i32 buttons[] = {SYS_INP_DPAD_U, SYS_INP_DPAD_D, SYS_INP_DPAD_L, SYS_INP_DPAD_R};
+		const i32 buttons[]                   = {SYS_INP_DPAD_U, SYS_INP_DPAD_D, SYS_INP_DPAD_L, SYS_INP_DPAD_R};
 		const enum sys_os_gamepad_ev events[] = {
-			SYS_OS_PAD_EV_DPAD_U, SYS_OS_PAD_EV_DPAD_D, SYS_OS_PAD_EV_DPAD_L, SYS_OS_PAD_EV_DPAD_R,
+			SYS_OS_PAD_EV_DPAD_U,
+			SYS_OS_PAD_EV_DPAD_D,
+			SYS_OS_PAD_EV_DPAD_L,
+			SYS_OS_PAD_EV_DPAD_R,
 		};
 		for(usize i = 0; i < ARRLEN(buttons); i++) {
 			if(SYS_GAMEPAD.direction_presses & buttons[i]) {

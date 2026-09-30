@@ -17,18 +17,6 @@ sys_os_gamepad_buttons(void)
 }
 
 b32
-sys_os_gamepad_select(void)
-{
-	return false;
-}
-
-b32
-sys_os_gamepad_menu(void)
-{
-	return false;
-}
-
-b32
 sys_os_gamepad_event(enum sys_os_gamepad_ev *ev)
 {
 	*ev = SYS_OS_PAD_EV_NONE;

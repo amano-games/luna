@@ -1574,17 +1574,13 @@ sys_inp(void)
 int
 sys_key(int k)
 {
-	int res = sys_os_keyboard_get(k);
-	if(k == 'P') res |= sys_os_gamepad_select();
-
-	return res;
+	return sys_os_keyboard_get(k);
 }
 
 void
 sys_keys(u8 *dest, usize count)
 {
 	sys_os_keyboard_keys(dest, count);
-	if(count > 'P') dest['P'] |= sys_os_gamepad_select();
 }
 
 f32
