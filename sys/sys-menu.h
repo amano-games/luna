@@ -62,7 +62,10 @@ sys_menu_item_increment(struct sys_menu *menu)
 {
 	if(menu->len == 0) return;
 	struct sys_menu_item *item = &menu->items[menu->idx];
-	if(item->type == SYS_MENU_ITEM_TYPE_BOOL) item->value = true;
+	if(item->type == SYS_MENU_ITEM_TYPE_BOOL && !item->value) {
+		item->value            = true;
+		item->callback_pending = true;
+	}
 	if(item->type == SYS_MENU_ITEM_TYPE_OPTIONS) {
 		item->value            = (item->value + 1) % item->options_count;
 		item->callback_pending = true;
@@ -74,7 +77,10 @@ sys_menu_item_decrement(struct sys_menu *menu)
 {
 	if(menu->len == 0) return;
 	struct sys_menu_item *item = &menu->items[menu->idx];
-	if(item->type == SYS_MENU_ITEM_TYPE_BOOL) item->value = false;
+	if(item->type == SYS_MENU_ITEM_TYPE_BOOL && item->value) {
+		item->value            = false;
+		item->callback_pending = true;
+	}
 	if(item->type == SYS_MENU_ITEM_TYPE_OPTIONS) {
 		item->value            = item->value == 0 ? item->options_count - 1 : item->value - 1;
 		item->callback_pending = true;
@@ -93,7 +99,8 @@ sys_menu_item_confirm(struct sys_menu *menu)
 		return true;
 	} break;
 	case SYS_MENU_ITEM_TYPE_BOOL: {
-		item->value = !item->value;
+		item->value            = !item->value;
+		item->callback_pending = true;
 	} break;
 	case SYS_MENU_ITEM_TYPE_OPTIONS: {
 		sys_menu_item_increment(menu);

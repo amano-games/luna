@@ -10,10 +10,14 @@ LUNA_OBJ ?= $(OBJ_DIR)/luna.o
 GAME_OBJ ?= $(OBJ_DIR)/game.o
 UNITY_OBJS ?= $(LUNA_OBJ) $(GAME_OBJ)
 
+ifneq ($(filter -DSYS_GFX_SOKOL,$(CDEFS)),)
+$(LUNA_OBJ): $(SHADER_OBJS)
+endif
+
 $(OBJ_DIR):
 	mkdir -p "$(OBJ_DIR)"
 
-$(LUNA_OBJ): $(LUNA_SRC) $(SHADER_OBJS) | $(OBJ_DIR)
+$(LUNA_OBJ): $(LUNA_SRC) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(GAME_OBJ): $(GAME_SRC) | $(OBJ_DIR)

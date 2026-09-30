@@ -63,6 +63,7 @@ cleanup:;
 b32
 sys_pause_inp(struct sys_pause_state *pause, i32 buttons)
 {
+	if(pause->timestamp_end != 0) return false;
 	if(buttons & SYS_INP_B) return true;
 	struct sys_menu *menu = sys_pause_active_menu(pause);
 	i32 step              = 0;
@@ -100,6 +101,7 @@ sys_pause_start(
 	f32 timestamp)
 {
 	pause->timestamp_start = timestamp;
+	pause->timestamp_end   = 0;
 	tex_cpy(&pause->frame_tex, &tex);
 }
 
