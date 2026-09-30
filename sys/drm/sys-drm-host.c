@@ -1343,7 +1343,7 @@ drm_host_toggle_pause(void)
 static void
 drm_host_pause_input(i32 buttons)
 {
-	if(DRM_HOST.paused && sys_menu_inp(&DRM_HOST.pause.menu, buttons)) {
+	if(DRM_HOST.paused && sys_pause_inp(&DRM_HOST.pause, buttons)) {
 		drm_host_pause_end();
 	}
 }
@@ -1673,37 +1673,37 @@ sys_dbg_buffer(void)
 i32
 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg)
 {
-	return sys_menu_add(&DRM_HOST.pause.menu, title, SYS_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
+	return sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], title, SYS_MENU_ITEM_TYPE_ACTION, 0, callback, arg);
 }
 
 i32
 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg)
 {
-	return sys_menu_add(&DRM_HOST.pause.menu, title, SYS_MENU_ITEM_TYPE_BOOL, val, callback, arg);
+	return sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], title, SYS_MENU_ITEM_TYPE_BOOL, val, callback, arg);
 }
 
 i32
 sys_menu_options_add(const char *title, const char **options, int count, void (*callback)(void *arg), void *arg)
 {
-	return 0;
+	return sys_menu_add_options(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], title, options, count, callback, arg);
 }
 
 int
 sys_menu_value(int id)
 {
-	return sys_menu_get_value(&DRM_HOST.pause.menu, id);
+	return sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], id);
 }
 
 void
 sys_menu_item_remove(int id)
 {
-	sys_menu_remove(&DRM_HOST.pause.menu, id);
+	sys_menu_remove(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], id);
 }
 
 void
 sys_menu_clr(void)
 {
-	sys_menu_clear(&DRM_HOST.pause.menu);
+	sys_menu_clear(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP]);
 }
 
 void
