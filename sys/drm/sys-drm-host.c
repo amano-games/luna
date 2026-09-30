@@ -1730,18 +1730,18 @@ main(int argc, char **argv)
 		if(DRM_HOST.menu_scaling_id) menu->items[menu->len - 1].value = DRM_HOST.opts.video.scaling - 1;
 
 		static const char *palettes[] = {"Default", "Black & White", "Game Boy", "Sunset"};
-		DRM_HOST.menu_palette_id = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), drm_host_menu_palette, NULL);
+		DRM_HOST.menu_palette_id      = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), drm_host_menu_palette, NULL);
 		if(DRM_HOST.menu_palette_id) {
 			for(i32 i = 0; i < (i32)ARRLEN(GFX_1B_PALETTES); ++i) {
 				if(DRM_HOST.opts.colors.colors[GFX_COL_BLACK] == GFX_1B_PALETTES[i][GFX_COL_BLACK] &&
-				   DRM_HOST.opts.colors.colors[GFX_COL_WHITE] == GFX_1B_PALETTES[i][GFX_COL_WHITE]) {
+					DRM_HOST.opts.colors.colors[GFX_COL_WHITE] == GFX_1B_PALETTES[i][GFX_COL_WHITE]) {
 					menu->items[menu->len - 1].value = i;
 					break;
 				}
 			}
 		}
 	}
-	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "QUIT", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
+	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
 
 	drm_host_evdev_open();
 
