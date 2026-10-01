@@ -808,6 +808,16 @@ sys_pd_serial_msg(const char *data)
 }
 
 void
+sys_audio_lock(void)
+{
+}
+
+void
+sys_audio_unlock(void)
+{
+}
+
+void
 sys_audio_set_volume(f32 vol)
 {
 }

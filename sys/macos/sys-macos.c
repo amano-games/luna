@@ -17,6 +17,7 @@
 #endif
 
 #include <mach-o/dyld.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -54,6 +55,20 @@ sys_get_current_path(struct alloc alloc)
 		free(cwdir);
 	}
 	return res;
+}
+
+static pthread_mutex_t OS_AUDIO_LOCK = PTHREAD_MUTEX_INITIALIZER;
+
+void
+sys_audio_lock(void)
+{
+	pthread_mutex_lock(&OS_AUDIO_LOCK);
+}
+
+void
+sys_audio_unlock(void)
+{
+	pthread_mutex_unlock(&OS_AUDIO_LOCK);
 }
 
 void

@@ -914,7 +914,6 @@ done:
 struct drm_alsa {
 	snd_pcm_t *pcm;
 	pthread_t thread;
-	pthread_mutex_t lock;
 	b32 running;
 	b32 thread_ok;
 	b32 inited;
@@ -1077,8 +1076,7 @@ drm_alsa_open(void)
 	mclr_struct(a);
 	a->running = false;
 	a->period  = DRM_ALSA_PERIOD;
-	pthread_mutex_init(&a->lock, NULL);
-	a->inited = true;
+	a->inited  = true;
 
 	setenv("PULSE_LATENCY_MSEC", DRM_ALSA_PULSE_MSEC, 0);
 
@@ -1153,24 +1151,7 @@ drm_alsa_close(void)
 		snd_pcm_close(a->pcm);
 		a->pcm = NULL;
 	}
-	pthread_mutex_destroy(&a->lock);
 	a->inited = false;
-}
-
-static void
-drm_alsa_lock(void)
-{
-	if(DRM_ALSA.inited) {
-		pthread_mutex_lock(&DRM_ALSA.lock);
-	}
-}
-
-static void
-drm_alsa_unlock(void)
-{
-	if(DRM_ALSA.inited) {
-		pthread_mutex_unlock(&DRM_ALSA.lock);
-	}
 }
 
 // Host: evdev, main loop, sys_* contract.
@@ -1216,8 +1197,7 @@ struct drm_host {
 
 static struct drm_host DRM_HOST;
 
-static f32 DRM_AUDIO_VOLUME            = SYS_AUDIO_VOLUME_DEFAULT;
-static pthread_mutex_t DRM_VOLUME_LOCK = PTHREAD_MUTEX_INITIALIZER;
+static f32 DRM_AUDIO_VOLUME = SYS_AUDIO_VOLUME_DEFAULT;
 
 static void
 drm_host_on_signal(int sig)
@@ -1936,30 +1916,18 @@ void
 sys_audio_set_volume(f32 vol)
 {
 	if(!isfinite(vol)) return;
-	pthread_mutex_lock(&DRM_VOLUME_LOCK);
+	sys_audio_lock();
 	DRM_AUDIO_VOLUME = CLAMP(vol, 0.f, 1.f);
-	pthread_mutex_unlock(&DRM_VOLUME_LOCK);
+	sys_audio_unlock();
 }
 
 f32
 sys_audio_get_volume(void)
 {
-	pthread_mutex_lock(&DRM_VOLUME_LOCK);
+	sys_audio_lock();
 	f32 volume = DRM_AUDIO_VOLUME;
-	pthread_mutex_unlock(&DRM_VOLUME_LOCK);
+	sys_audio_unlock();
 	return volume;
-}
-
-void
-sys_audio_lock(void)
-{
-	drm_alsa_lock();
-}
-
-void
-sys_audio_unlock(void)
-{
-	drm_alsa_unlock();
 }
 
 int
