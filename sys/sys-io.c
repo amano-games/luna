@@ -18,7 +18,7 @@ sys_file_open(str8 path, i32 sys_file_mode)
 b32
 sys_file_exists(str8 path, i32 sys_file_mode)
 {
-	b32 res   = false;
+	b32 res    = false;
 	sys_file f = sys_file_open(path, sys_file_mode);
 	if(sys_file_is_valid(f)) {
 		res = true;

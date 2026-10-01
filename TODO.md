@@ -2,9 +2,7 @@
 
 - [ ] Make it easier to start a new project
 - [~] Allow to set up FPS at runtime
-  - [ ] Review FPS specially on desktop macos is showing wierd things
-  - [ ] Improve sys-font
-- [ ] Allow to set up resolution at runtime
+- [~] Allow to set up resolution at runtime
 
 # Base
 
@@ -57,6 +55,10 @@
 # Audio
 
 - [ ] Support [QOA audio format](https://qoaformat.org/)
+
+# Macos
+
+- [] Review sys data path
 
 # WWW
 
