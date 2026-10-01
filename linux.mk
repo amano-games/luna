@@ -19,8 +19,7 @@ BUILD_DIR := ${DESTDIR}${BINDIR}
 PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -ldl -lrt -lGL -lX11 -lasound -lXi -lXcursor -lpthread
-RPATH  := '-Wl,-z,origin -Wl,-rpath,$$ORIGIN/steam-runtime/amd64/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/lib:$$ORIGIN/steam-runtime/amd64/usr/lib/x86_64-linux-gnu:$$ORIGIN/steam-runtime/amd64/usr/lib'
-LDFLAGS := $(RPATH)
+LDFLAGS :=
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
@@ -65,7 +64,7 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam run release publish_release
+.PHONY: all clean build run release publish_release
 .DEFAULT_GOAL := all
 
 all: build
@@ -78,18 +77,10 @@ $(BUILD_DIR):
 $(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) assets
 	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
 
-$(BUILD_DIR)/steam-runtime:
-	$(LUNA_DIR)/update_runtime.sh
-	$(LUNA_DIR)/extract_runtime.sh $(ROOT_DIR)/steam-runtime-release_latest.tar.xz amd64 $(BUILD_DIR)/steam-runtime
-
-$(PUBLISH_OBJS): $(BINARY) steam
+$(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/gen-assets
 	rm -rf $(BUILD_DIR)/obj
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
-
-steam: $(BUILD_DIR)/steam-runtime
-	rm -rf $(BUILD_DIR)/gen-assets
-	rm -rf $(BUILD_DIR)/obj
 
 clean:
 	rm -rf $(BUILD_DIR)

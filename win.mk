@@ -66,7 +66,7 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam run release publish_release
+.PHONY: all clean build run release publish_release
 .DEFAULT_GOAL := all
 
 all: build
