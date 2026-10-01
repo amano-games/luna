@@ -126,6 +126,9 @@ PD_UNITY_OBJS := $(PD_LUNA_OBJ) $(PD_GAME_OBJ) $(PD_SETUP_OBJ)
 
 TMP_DIR := $(BUILD_DIR)/tmp
 
+$(BUILD_DIR):
+	mkdir -p "$(BUILD_DIR)"
+
 $(TMP_DIR):
 	mkdir -p "$@"
 

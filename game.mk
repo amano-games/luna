@@ -14,7 +14,7 @@ ifneq ($(filter -DSYS_GFX_SOKOL,$(CDEFS)),)
 $(LUNA_OBJ): $(SHADER_OBJS)
 endif
 
-$(OBJ_DIR):
+$(OBJ_DIR): | $(BUILD_DIR)
 	mkdir -p "$(OBJ_DIR)"
 
 $(LUNA_OBJ): $(LUNA_SRC) | $(OBJ_DIR)
