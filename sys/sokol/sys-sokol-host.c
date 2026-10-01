@@ -414,19 +414,6 @@ sokol_event(const sapp_event *ev)
 		case SAPP_KEYCODE_F7: {
 			sokol_prof_csv_save();
 		} break;
-		case SAPP_KEYCODE_F12: {
-			marena_reset(&SOKOL_STATE.scratch_marena);
-			struct alloc scratch = SOKOL_STATE.scratch;
-			i32 w                = sys_resolution.x;
-			i32 h                = sys_resolution.y;
-			str8 dbgcmd          = str8_fmt_push(scratch, "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i frame.raw frame.png", w, h);
-			FILE *test           = fopen("/tmp/frame.raw", "wb");
-			ssize dst_size       = w * h * sizeof(u32);
-			u32 *dst             = alloc_arr(scratch, dst, w * h);
-			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
-			fwrite(dst, sizeof(u32), w * h, test);
-			fclose(test);
-		} break;
 		case SAPP_KEYCODE_F8: {
 #if defined(SOKOL_RECORDING_ENABLED)
 			struct recording_1b *rec = &SYS_RECORDING_STATE.gfx;
@@ -452,6 +439,19 @@ sokol_event(const sapp_event *ev)
 				SOKOL_STATE.opts.recording.colors,
 				path);
 #endif
+		} break;
+		case SAPP_KEYCODE_F12: {
+			marena_reset(&SOKOL_STATE.scratch_marena);
+			struct alloc scratch = SOKOL_STATE.scratch;
+			i32 w                = sys_resolution.x;
+			i32 h                = sys_resolution.y;
+			str8 dbgcmd          = str8_fmt_push(scratch, "ffmpeg -f rawvideo -pix_fmt rgba -s %dx%d -i frame.raw frame.png", w, h);
+			FILE *test           = fopen("/tmp/frame.raw", "wb");
+			ssize dst_size       = w * h * sizeof(u32);
+			u32 *dst             = alloc_arr(scratch, dst, w * h);
+			tex_opaque_to_rgba(SOKOL_STATE.frame_ctx.dst, dst, dst_size, SOKOL_STATE.opts.colors);
+			fwrite(dst, sizeof(u32), w * h, test);
+			fclose(test);
 		} break;
 		case SAPP_KEYCODE_R: {
 #if OS_MACOS
