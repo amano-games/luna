@@ -318,15 +318,15 @@ sokol_init(void)
 	};
 
 	SOKOL_STATE.smp_nearest      = sg_make_sampler(&(sg_sampler_desc){
-			 .label      = "sampler-nearest",
-			 .min_filter = SG_FILTER_NEAREST,
-			 .mag_filter = SG_FILTER_NEAREST,
-    });
+		.label      = "sampler-nearest",
+		.min_filter = SG_FILTER_NEAREST,
+		.mag_filter = SG_FILTER_NEAREST,
+	});
 	SOKOL_STATE.smp_linear       = sg_make_sampler(&(sg_sampler_desc){
-			  .label      = "sampler-linear",
-			  .min_filter = SG_FILTER_LINEAR,
-			  .mag_filter = SG_FILTER_LINEAR,
-    });
+		.label      = "sampler-linear",
+		.min_filter = SG_FILTER_LINEAR,
+		.mag_filter = SG_FILTER_LINEAR,
+	});
 	SOKOL_STATE.bind.samplers[0] = SOKOL_STATE.opts.video.filter == SYS_VIDEO_FILTER_NEAREST
 		? SOKOL_STATE.smp_nearest
 		: SOKOL_STATE.smp_linear;
@@ -426,12 +426,12 @@ sokol_event(const sapp_event *ev)
 			marena_reset(&SOKOL_STATE.scratch_marena);
 			struct alloc scratch = SOKOL_STATE.scratch;
 			str8 path            = str8_fmt_push(
-                scratch,
-                "%.*s/%s-%s.mp4",
-                (int)SOKOL_STATE.opts.recording.save_path.size,
-                SOKOL_STATE.opts.recording.save_path.str,
-                SOKOL_NAME,
-                sys_path_timestamp(scratch).str);
+				scratch,
+				"%.*s/%s-%s.mp4",
+				(int)SOKOL_STATE.opts.recording.save_path.size,
+				SOKOL_STATE.opts.recording.save_path.str,
+				SOKOL_NAME,
+				sys_path_timestamp(scratch).str);
 			sys_recording_write(
 				scratch,
 				&SYS_RECORDING_STATE.gfx,
@@ -1023,10 +1023,10 @@ sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, 
 		struct sys_scores_res score_res = {
 			.type = SYS_SCORE_RES_SCORES_GET,
 			.get  = {
-				 .board_id        = board_id,
-				 .last_updated    = last_updated,
-				 .player_included = true,
-            },
+				.board_id        = board_id,
+				.last_updated    = last_updated,
+				.player_included = true,
+			},
 		};
 		struct sys_score_arr *entries = &score_res.get.entries;
 		if(alloc.allocf != NULL) {
@@ -1381,9 +1381,26 @@ sokol_menu_ini(void)
 	};
 
 	static const char *resolutions[] = {"Normal", "Tate"};
-	static const char *palettes[]    = {"Default", "Black & White", "Game Boy", "Sunset"};
-	struct sys_menu *menu            = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
-	SOKOL_STATE.menu_filter_id       = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
+	static const char *palettes[]    = {
+		"Default",
+		"Black & White",
+		"Game Boy",
+		"Sunset",
+		"Purple Night",
+		"Parchment",
+		"TMNT",
+		"Aqua",
+		"VB",
+		"Low Contrast",
+		"MBorg",
+		"Aurus",
+		"Pinky",
+		"Orengi",
+		"Merv",
+		"Tensie",
+	};
+	struct sys_menu *menu      = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+	SOKOL_STATE.menu_filter_id = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
 
 	if(SOKOL_STATE.menu_filter_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.filter - 1;
 
