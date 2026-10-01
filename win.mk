@@ -60,6 +60,9 @@ OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
 
+# Platform files must land before obj/assets mkdir -p creates BUILD_DIR.
+ASSETS_EXTRA := $(BUILD_DIR)
+
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 

@@ -76,6 +76,9 @@ all: build
 # Directory existence is not enough: obj may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
 
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
 $(PLATFORM_READY):
 	mkdir -p $(BUILD_DIR)
 	cp -r $(PLATFORM_DIR)/. $(BUILD_DIR)/
