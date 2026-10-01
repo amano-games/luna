@@ -3,7 +3,6 @@
 #include "base/log.h"
 #include "base/marena.h"
 #include "base/mem.h"
-#include "base/path.h"
 #include "base/str.h"
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
@@ -33,8 +32,6 @@
 #define OS_ARENA_SIZE                 MMEGABYTE(1)
 #define OS_SCRATCH_SIZE               MKILOBYTE(64)
 
-static const str8 STEAM_RUNTIME_RELATIVE_PATH = str8_lit_comp("steam-runtime");
-
 static struct {
 	struct marena arena;
 	struct alloc alloc;
@@ -47,27 +44,6 @@ static struct {
 
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern char **environ;
-
-static void
-sys_linux_boot_env(void)
-{
-	if(getenv("STEAM_RUNTIME")) {
-		return;
-	}
-	str8 binary_path = OS_STATE.process_info.binary_path;
-	if(binary_path.size == 0) {
-		return;
-	}
-
-	marena_reset(&OS_STATE.scratch_arena);
-	struct alloc scratch       = OS_STATE.scratch;
-	struct str8_list path_list = {0};
-	str8_list_push(scratch, &path_list, binary_path);
-	str8_list_push(scratch, &path_list, STEAM_RUNTIME_RELATIVE_PATH);
-	str8 runtime_path = path_join_by_style(scratch, &path_list, path_style_absolute_unix);
-	log_info("SYS", "STEAM_RUNTIME %s", runtime_path.str);
-	setenv("STEAM_RUNTIME", (char *)runtime_path.str, 1);
-}
 
 str8
 sys_get_current_path(struct alloc alloc)
@@ -165,8 +141,6 @@ sys_os_init(void)
 			str8_list_push(alloc, &info->environment, str8_cpy_push(alloc, str8_cstr(*e)));
 		}
 	}
-
-	sys_linux_boot_env();
 
 	stm_setup();
 	OS_STATE.tick_start   = stm_now();
