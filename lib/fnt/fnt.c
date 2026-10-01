@@ -253,7 +253,11 @@ fnt_wrap_lines_from_str(
 	i32 tracking,
 	i32 leading)
 {
-	struct str8_list list  = {0};
+	struct str8_list list = {0};
+	if(str.str == NULL || str.size == 0) {
+		return list;
+	}
+
 	union rng_u64 line_rng = rng_u64(0, 0);
 	i32 line_w             = 0;
 	i32 last_break         = -1;
@@ -261,7 +265,7 @@ fnt_wrap_lines_from_str(
 
 	for(usize i = 0; i <= str.size; i++) {
 		u8 c           = (i < str.size) ? str.str[i] : 0;
-		u8 next        = (i + 1 < str.size) ? str.str[i + 1] : -1;
+		i32 next       = (i + 1 < str.size) ? str.str[i + 1] : -1;
 		i32 is_newline = (c == '\n');
 		i32 is_end     = (i == str.size);
 
@@ -281,19 +285,19 @@ fnt_wrap_lines_from_str(
 		line_w += cw;
 
 		if(char_is_space(c)) {
-			last_break   = i;
+			last_break   = (i32)i;
 			last_break_w = line_w;
 		}
 
-		if(line_w > max_width && last_break > 0) {
+		if(line_w > max_width && last_break >= 0) {
 			// wrap at last break
-			union rng_u64 rng = rng_u64(line_rng.min, last_break);
+			union rng_u64 rng = rng_u64(line_rng.min, (u64)last_break);
 			str8 line         = str8_substr(str, rng);
 			str8_list_push(alloc, &list, line);
 
 			// reset to after last break
-			line_rng     = rng_u64(last_break + 1, last_break + 1);
-			i            = last_break;
+			line_rng     = rng_u64((u64)last_break + 1, (u64)last_break + 1);
+			i            = (usize)last_break;
 			line_w       = line_w - last_break_w;
 			last_break   = -1;
 			last_break_w = 0;

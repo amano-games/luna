@@ -248,6 +248,10 @@ str8_fmt_push(struct alloc alloc, char *fmt, ...)
 str8
 str8_substr(str8 str, union rng_u64 range)
 {
+	if(str.str == NULL) {
+		str.size = 0;
+		return str;
+	}
 	range.min = MIN(range.min, str.size);
 	range.max = MIN(range.max, str.size);
 	str.str += range.min;
