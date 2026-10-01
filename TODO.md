@@ -13,6 +13,10 @@
 - [ ] remove arr_push_pack
 - [ ] remove cir buffer
 
+# Recording
+
+- [ ] Check what's happening with output video compression?
+
 # CLI
 
 - [ ] use cmd_line.h
