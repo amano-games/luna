@@ -11,7 +11,7 @@ static const u32 GFX_1B_PALETTES[][GFX_COL_NUM_COUNT] = {
 	{0x000000FF, 0xFFFFFFFF},               // Black & White
 	{0x0F380FFF, 0x9BBC0FFF},               // Game Boy
 	{0x1D0F44FF, 0xF44E38FF},               // Sunset
-	{0x12101FFF, 0x8672FFFF},                // Purple Night
+	{0x12101FFF, 0x8672FFFF},               // Purple Night
 	{0x4C3118FF, 0xD7A564FF},               // Parchment
 	{0x6F09B7FF, 0x83DD47FF},               // TMNT
 	{0x004D58FF, 0x99D7FFFF},               // Aqua
