@@ -1700,7 +1700,7 @@ main(int argc, char **argv)
 	}
 	struct sys_menu *volume_menu = &DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
 	DRM_HOST.menu_volume_id      = sys_menu_add_options(volume_menu, "Volume", SYS_MENU_VOLUME_LABELS, ARRLEN(SYS_MENU_VOLUME_LABELS), drm_host_menu_volume, NULL);
-	if(DRM_HOST.menu_volume_id) volume_menu->items[volume_menu->len - 1].value = sys_menu_volume_index(DRM_HOST.opts.audio.volume);
+	if(DRM_HOST.menu_volume_id) volume_menu->items[volume_menu->len - 1].value = sys_menu_volume_idx_get(DRM_HOST.opts.audio.volume);
 
 	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
 

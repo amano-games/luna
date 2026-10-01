@@ -1409,7 +1409,7 @@ sokol_menu_ini(void)
 	}
 
 	SOKOL_STATE.menu_volume_id = sys_menu_add_options(menu, "Volume", SYS_MENU_VOLUME_LABELS, ARRLEN(SYS_MENU_VOLUME_LABELS), sokol_menu_volume, NULL);
-	if(SOKOL_STATE.menu_volume_id) menu->items[menu->len - 1].value = sys_menu_volume_index(SOKOL_STATE.opts.audio.volume);
+	if(SOKOL_STATE.menu_volume_id) menu->items[menu->len - 1].value = sys_menu_volume_idx_get(SOKOL_STATE.opts.audio.volume);
 
 	sys_menu_add(menu, "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
 }
