@@ -35,6 +35,7 @@ sys_pause_ini(struct sys_pause_state *pause)
 		sys_menu_ini(&pause->menus[i]);
 	}
 	pause->menus[SYS_PAUSE_MENU_TYPE_APP].cap = 3;
+	pause->menus[SYS_PAUSE_MENU_TYPE_SYS].sys = true;
 	pause->active_menu                        = SYS_PAUSE_MENU_TYPE_APP;
 }
 

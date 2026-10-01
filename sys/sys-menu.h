@@ -36,6 +36,7 @@ struct sys_menu {
 	i32 idx;
 	i32 len;
 	i32 cap;
+	b32 sys;
 	struct sys_menu_item items[6];
 };
 
@@ -44,6 +45,34 @@ sys_menu_ini(struct sys_menu *menu)
 {
 	menu->next_id = 1;
 	menu->cap     = ARRLEN(menu->items);
+}
+
+static void
+sys_menu_callbacks(struct sys_menu *menu)
+{
+	i32 ids[ARRLEN(menu->items)];
+	i32 len = 0;
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(!menu->items[i].callback_pending) continue;
+		menu->items[i].callback_pending = false;
+		ids[len++]                      = menu->items[i].id;
+	}
+
+	for(i32 i = 0; i < len; ++i) {
+		for(i32 j = 0; j < menu->len; ++j) {
+			struct sys_menu_item item = menu->items[j];
+			if(item.id != ids[i]) continue;
+			if(item.callback) item.callback(item.arg);
+			break;
+		}
+	}
+}
+
+static void
+sys_menu_on_callback(struct sys_menu *menu)
+{
+	if(!menu->sys) { return; }
+	sys_menu_callbacks(menu);
 }
 
 b32
@@ -75,6 +104,7 @@ sys_menu_item_increment(struct sys_menu *menu)
 		item->value            = (item->value + 1) % item->options_count;
 		item->callback_pending = true;
 	}
+	sys_menu_on_callback(menu);
 }
 
 void
@@ -90,6 +120,7 @@ sys_menu_item_decrement(struct sys_menu *menu)
 		item->value            = item->value == 0 ? item->options_count - 1 : item->value - 1;
 		item->callback_pending = true;
 	}
+	sys_menu_on_callback(menu);
 }
 
 b32
@@ -113,28 +144,8 @@ sys_menu_item_confirm(struct sys_menu *menu)
 	default: {
 	} break;
 	}
+	sys_menu_on_callback(menu);
 	return false;
-}
-
-static void
-sys_menu_callbacks(struct sys_menu *menu)
-{
-	i32 ids[ARRLEN(menu->items)];
-	i32 len = 0;
-	for(i32 i = 0; i < menu->len; ++i) {
-		if(!menu->items[i].callback_pending) continue;
-		menu->items[i].callback_pending = false;
-		ids[len++]                      = menu->items[i].id;
-	}
-
-	for(i32 i = 0; i < len; ++i) {
-		for(i32 j = 0; j < menu->len; ++j) {
-			struct sys_menu_item item = menu->items[j];
-			if(item.id != ids[i]) continue;
-			if(item.callback) item.callback(item.arg);
-			break;
-		}
-	}
 }
 
 void
