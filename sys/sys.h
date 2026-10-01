@@ -71,13 +71,9 @@ void sys_color_u32_set(enum gfx_col color, u32 value);
 void sys_audio_set_volume(f32 vol);
 f32 sys_audio_get_volume(void);
 
-#if OS_PLAYDATE
-#define sys_audio_lock()   ((void)0)
-#define sys_audio_unlock() ((void)0)
-#else
+// Nonrecursive exclusion with app_audio; do not acquire from the mixer.
 void sys_audio_lock(void);
 void sys_audio_unlock(void);
-#endif
 
 // @per_os_impl System menu / host chrome
 i32 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg);

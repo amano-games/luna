@@ -53,6 +53,16 @@ sys_get_current_path(struct alloc alloc)
 }
 
 void
+sys_audio_lock(void)
+{
+}
+
+void
+sys_audio_unlock(void)
+{
+}
+
+void
 sys_os_init(void)
 {
 	struct alloc alloc_sys = sys_allocator();

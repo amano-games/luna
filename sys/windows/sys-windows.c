@@ -58,6 +58,20 @@ sys_get_current_path(struct alloc alloc)
 	return res;
 }
 
+static SRWLOCK OS_AUDIO_LOCK = SRWLOCK_INIT;
+
+void
+sys_audio_lock(void)
+{
+	AcquireSRWLockExclusive(&OS_AUDIO_LOCK);
+}
+
+void
+sys_audio_unlock(void)
+{
+	ReleaseSRWLockExclusive(&OS_AUDIO_LOCK);
+}
+
 void
 sys_os_init(void)
 {

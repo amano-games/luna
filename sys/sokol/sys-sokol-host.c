@@ -23,9 +23,6 @@
 #include <jsmn.h>
 #include <stdio.h>
 #include <math.h>
-#if !OS_WINDOWS && !OS_WASM
-#include <pthread.h>
-#endif
 #include <tinydir.h>
 
 #include "engine/gfx/gfx.h"
@@ -140,12 +137,6 @@ static struct sys_recording SYS_RECORDING_STATE;
 static struct sokol_state SOKOL_STATE = {
 	.opts.audio.volume = SYS_AUDIO_VOLUME_DEFAULT,
 };
-
-#if OS_WINDOWS
-static SRWLOCK SOKOL_VOLUME_LOCK = SRWLOCK_INIT;
-#elif !OS_WASM
-static pthread_mutex_t SOKOL_VOLUME_LOCK = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 #define SOKOL_ORG  "amano"
 #define SOKOL_NAME "luna"
@@ -930,48 +921,18 @@ void
 sys_audio_set_volume(f32 vol)
 {
 	if(!isfinite(vol)) return;
-#if OS_WINDOWS
-	AcquireSRWLockExclusive(&SOKOL_VOLUME_LOCK);
-#elif !OS_WASM
-	pthread_mutex_lock(&SOKOL_VOLUME_LOCK);
-#endif
+	sys_audio_lock();
 	SOKOL_STATE.opts.audio.volume = CLAMP(vol, 0.f, 1.f);
-#if OS_WINDOWS
-	ReleaseSRWLockExclusive(&SOKOL_VOLUME_LOCK);
-#elif !OS_WASM
-	pthread_mutex_unlock(&SOKOL_VOLUME_LOCK);
-#endif
+	sys_audio_unlock();
 }
 
 f32
 sys_audio_get_volume(void)
 {
-#if OS_WINDOWS
-	AcquireSRWLockShared(&SOKOL_VOLUME_LOCK);
-#elif !OS_WASM
-	pthread_mutex_lock(&SOKOL_VOLUME_LOCK);
-#endif
+	sys_audio_lock();
 	f32 volume = SOKOL_STATE.opts.audio.volume;
-#if OS_WINDOWS
-	ReleaseSRWLockShared(&SOKOL_VOLUME_LOCK);
-#elif !OS_WASM
-	pthread_mutex_unlock(&SOKOL_VOLUME_LOCK);
-#endif
+	sys_audio_unlock();
 	return volume;
-}
-
-void
-sys_audio_lock(void)
-{
-	// SDL_LockAudioDevice(g_SDL.audiodevID);
-	return;
-}
-
-void
-sys_audio_unlock(void)
-{
-	// SDL_UnlockAudioDevice(g_SDL.audiodevID);
-	return;
 }
 
 void

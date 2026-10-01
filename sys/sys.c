@@ -372,7 +372,9 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 #if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu1 = sys_time_us();
 #endif
+	sys_audio_lock();
 	app_audio(lbuf, rbuf, len);
+	sys_audio_unlock();
 
 #if !OS_PLAYDATE
 	f32 volume = sys_audio_get_volume();
