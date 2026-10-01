@@ -62,7 +62,14 @@ struct sys_video_opts {
 	b32 mouse_capture;
 };
 
+#define SYS_AUDIO_VOLUME_DEFAULT 0.31622777f
+
+struct sys_audio_opts {
+	f32 volume;
+};
+
 struct sys_opts {
+	struct sys_audio_opts audio;
 	struct sys_video_opts video;
 	struct gfx_col_palette colors;
 	struct gfx_col_palette colors_dbg;

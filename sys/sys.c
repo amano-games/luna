@@ -373,6 +373,17 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 	u32 tu1 = sys_time_us();
 #endif
 	app_audio(lbuf, rbuf, len);
+
+#if !OS_PLAYDATE
+	f32 volume = sys_audio_get_volume();
+	if(volume != 1.f) {
+		for(i32 i = 0; i < len; ++i) {
+			lbuf[i] = (i16)(lbuf[i] * volume);
+			rbuf[i] = (i16)(rbuf[i] * volume);
+		}
+	}
+#endif
+
 #if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu2 = sys_time_us();
 	u32 dt  = tu2 - tu1;

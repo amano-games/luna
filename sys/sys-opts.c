@@ -63,7 +63,8 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 	str8 full_path         = sys_path_to_data_path(scratch, path, org, name);
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {
-		.video = {
+		.audio.volume = SYS_AUDIO_VOLUME_DEFAULT,
+		.video        = {
 			.resolution    = {SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H},
 			.scaling       = SYS_VIDEO_SCALING_FIT,
 			.filter        = SYS_VIDEO_FILTER_SHARP,
@@ -254,6 +255,7 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 
 	str8 json = str8_fmt_push(scratch,
 		"{\n"
+		"  \"audio\": {\"volume\": %.9f},\n"
 		"  \"" SYS_OPTS_VIDEO_KEY "\": {\n"
 		"    \"" SYS_OPTS_VIDEO_RESOLUTION_KEY "\": {\"width\": %d, \"height\": %d},\n"
 		"    \"" SYS_OPTS_VIDEO_SCALING_KEY "\": \"%.*s\",\n"
@@ -273,6 +275,7 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 		"    \"" SYS_OPTS_SCREENSHOT_COLOR_PALLETE_KEY "\": %.*s\n"
 		"  }\n"
 		"}\n",
+		(f64)opts->audio.volume,
 		opts->video.resolution.x,
 		opts->video.resolution.y,
 		str8_spread(SYS_VIDEO_SCALING_LABELS[opts->video.scaling]),
@@ -475,6 +478,19 @@ video_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void 
 }
 
 static void
+sys_opts_audio_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
+{
+	struct opts_parse_ctx *ctx = user;
+	if(json_eq(ctx->json, key, str8_lit("volume")) == 0) {
+		if(value->type == JSMN_PRIMITIVE &&
+			((ctx->json.str[value->start] >= '0' && ctx->json.str[value->start] <= '9') || ctx->json.str[value->start] == '-')) {
+			f32 volume              = json_parse_f32(ctx->json, value);
+			ctx->data->audio.volume = CLAMP(volume, 0.f, 1.f);
+		}
+	}
+}
+
+static void
 sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user)
 {
 	struct opts_parse_ctx *ctx = user;
@@ -482,7 +498,11 @@ sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, vo
 
 	str8 json = ctx->json;
 
-	if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_KEY)) == 0) {
+	if(json_eq(json, key, str8_lit("audio")) == 0) {
+		if(value->type == JSMN_OBJECT) {
+			json_obj_foreach(ctx->tokens, ctx->token_count, value_idx, sys_opts_audio_cb, ctx);
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_VIDEO_KEY)) == 0) {
 		if(value->type == JSMN_OBJECT) {
 			json_obj_foreach(
 				ctx->tokens,

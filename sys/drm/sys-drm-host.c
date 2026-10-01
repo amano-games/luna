@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <math.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -909,14 +910,11 @@ done:
 #define DRM_ALSA_BUF_CAP    2048
 #define DRM_ALSA_DEVICE     "default"
 #define DRM_ALSA_PULSE_MSEC "20"
-#define DRM_ALSA_VOL_MIN    0.f
-#define DRM_ALSA_VOL_MAX    1.f
 
 struct drm_alsa {
 	snd_pcm_t *pcm;
 	pthread_t thread;
 	pthread_mutex_t lock;
-	f32 volume;
 	b32 running;
 	b32 thread_ok;
 	b32 inited;
@@ -1015,7 +1013,6 @@ drm_alsa_thread(void *arg)
 		i32 maxq   = 0;
 		i32 usec   = 0;
 		i32 rc     = 0;
-		f32 vol    = 0.f;
 		snd_pcm_sframes_t wrote;
 		snd_pcm_sframes_t delay = 0;
 
@@ -1044,20 +1041,16 @@ drm_alsa_thread(void *arg)
 		mclr_array(lbuf);
 		mclr_array(rbuf);
 
-		pthread_mutex_lock(&a->lock);
-		vol = a->volume;
-		pthread_mutex_unlock(&a->lock);
-
 		sys_internal_audio(lbuf, rbuf, period);
 
 		if(ch == 1) {
 			for(n = 0; n < period; n++) {
-				out[n] = (i16)((f32)lbuf[n] * vol);
+				out[n] = lbuf[n];
 			}
 		} else {
 			for(n = 0; n < period; n++) {
-				out[n * 2]     = (i16)((f32)lbuf[n] * vol);
-				out[n * 2 + 1] = (i16)((f32)lbuf[n] * vol);
+				out[n * 2]     = lbuf[n];
+				out[n * 2 + 1] = lbuf[n];
 			}
 		}
 
@@ -1082,7 +1075,6 @@ drm_alsa_open(void)
 	i32 rc                   = 0;
 
 	mclr_struct(a);
-	a->volume  = DRM_ALSA_VOL_MAX;
 	a->running = false;
 	a->period  = DRM_ALSA_PERIOD;
 	pthread_mutex_init(&a->lock, NULL);
@@ -1166,36 +1158,6 @@ drm_alsa_close(void)
 }
 
 static void
-drm_alsa_set_vol(f32 vol)
-{
-	if(!DRM_ALSA.inited) {
-		return;
-	}
-	if(vol < DRM_ALSA_VOL_MIN) {
-		vol = DRM_ALSA_VOL_MIN;
-	}
-	if(vol > DRM_ALSA_VOL_MAX) {
-		vol = DRM_ALSA_VOL_MAX;
-	}
-	pthread_mutex_lock(&DRM_ALSA.lock);
-	DRM_ALSA.volume = vol;
-	pthread_mutex_unlock(&DRM_ALSA.lock);
-}
-
-static f32
-drm_alsa_get_vol(void)
-{
-	f32 vol = DRM_ALSA_VOL_MAX;
-	if(!DRM_ALSA.inited) {
-		return vol;
-	}
-	pthread_mutex_lock(&DRM_ALSA.lock);
-	vol = DRM_ALSA.volume;
-	pthread_mutex_unlock(&DRM_ALSA.lock);
-	return vol;
-}
-
-static void
 drm_alsa_lock(void)
 {
 	if(DRM_ALSA.inited) {
@@ -1238,6 +1200,7 @@ struct drm_host {
 	i32 menu_scaling_id;
 	i32 menu_filter_id;
 	i32 menu_palette_id;
+	i32 menu_volume_id;
 	b32 paused;
 	struct gfx_ctx dbg_ctx;
 	struct sys_opts opts;
@@ -1252,6 +1215,9 @@ struct drm_host {
 };
 
 static struct drm_host DRM_HOST;
+
+static f32 DRM_AUDIO_VOLUME            = SYS_AUDIO_VOLUME_DEFAULT;
+static pthread_mutex_t DRM_VOLUME_LOCK = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 drm_host_on_signal(int sig)
@@ -1525,6 +1491,15 @@ drm_host_menu_video_apply(void *args)
 }
 
 static void
+drm_host_menu_volume(void *args)
+{
+	i32 value                  = sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], DRM_HOST.menu_volume_id);
+	DRM_HOST.opts.audio.volume = SYS_MENU_VOLUME_GAINS[value];
+	sys_audio_set_volume(DRM_HOST.opts.audio.volume);
+	drm_host_opts_save();
+}
+
+static void
 drm_host_menu_palette(void *args)
 {
 	i32 value = sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], DRM_HOST.menu_palette_id);
@@ -1672,6 +1647,8 @@ main(int argc, char **argv)
 		str8_lit(DRM_HOST_ORG),
 		str8_lit(DRM_HOST_NAME));
 
+	sys_audio_set_volume(DRM_HOST.opts.audio.volume);
+
 	DRM_HOST.resolution   = DRM_HOST.opts.video.resolution;
 	v2_i32 sys_resolution = sys_resolution_get();
 	{
@@ -1741,6 +1718,10 @@ main(int argc, char **argv)
 			}
 		}
 	}
+	struct sys_menu *volume_menu = &DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+	DRM_HOST.menu_volume_id      = sys_menu_add_options(volume_menu, "Volume", SYS_MENU_VOLUME_LABELS, ARRLEN(SYS_MENU_VOLUME_LABELS), drm_host_menu_volume, NULL);
+	if(DRM_HOST.menu_volume_id) volume_menu->items[volume_menu->len - 1].value = sys_menu_volume_index(DRM_HOST.opts.audio.volume);
+
 	sys_menu_add(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, drm_host_menu_quit, NULL);
 
 	drm_host_evdev_open();
@@ -1954,13 +1935,19 @@ sys_quit(void)
 void
 sys_audio_set_volume(f32 vol)
 {
-	drm_alsa_set_vol(vol);
+	if(!isfinite(vol)) return;
+	pthread_mutex_lock(&DRM_VOLUME_LOCK);
+	DRM_AUDIO_VOLUME = CLAMP(vol, 0.f, 1.f);
+	pthread_mutex_unlock(&DRM_VOLUME_LOCK);
 }
 
 f32
 sys_audio_get_volume(void)
 {
-	return drm_alsa_get_vol();
+	pthread_mutex_lock(&DRM_VOLUME_LOCK);
+	f32 volume = DRM_AUDIO_VOLUME;
+	pthread_mutex_unlock(&DRM_VOLUME_LOCK);
+	return volume;
 }
 
 void

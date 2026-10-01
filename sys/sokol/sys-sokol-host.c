@@ -22,6 +22,10 @@
 
 #include <jsmn.h>
 #include <stdio.h>
+#include <math.h>
+#if !OS_WINDOWS && !OS_WASM
+#include <pthread.h>
+#endif
 #include <tinydir.h>
 
 #include "engine/gfx/gfx.h"
@@ -60,7 +64,6 @@
 // #define SOKOL_DBG_AUDIO
 // #define SOKOL_AUDIO_FRAMES        256
 #define SOKOL_AUDIO_CHANNEL_COUNT 1
-#define SOKOL_AUDIO_VOLUME        0.1f
 #define SOKOL_AUDIO_BUFFER_CAP    0x1000
 
 #define SOKOL_MOCK_PLAYER_NAME "afk"
@@ -109,6 +112,7 @@ struct sokol_state {
 	i32 menu_scaling_id;
 	i32 menu_resolution_id;
 	i32 menu_palette_id;
+	i32 menu_volume_id;
 
 	struct gfx_ctx frame_ctx;
 	struct gfx_ctx dbg_ctx;
@@ -120,7 +124,6 @@ struct sokol_state {
 
 	b32 crank_docked;
 	f32 crank;
-	f32 volume;
 
 	f32 mouse_x;
 	f32 mouse_y;
@@ -134,8 +137,15 @@ struct sokol_state {
 };
 
 static struct sys_recording SYS_RECORDING_STATE;
+static struct sokol_state SOKOL_STATE = {
+	.opts.audio.volume = SYS_AUDIO_VOLUME_DEFAULT,
+};
 
-static struct sokol_state SOKOL_STATE;
+#if OS_WINDOWS
+static SRWLOCK SOKOL_VOLUME_LOCK = SRWLOCK_INIT;
+#elif !OS_WASM
+static pthread_mutex_t SOKOL_VOLUME_LOCK = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 #define SOKOL_ORG  "amano"
 #define SOKOL_NAME "luna"
@@ -599,17 +609,15 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 
 		sys_internal_audio(lbuf, rbuf, num_frames);
 
-		f32 *s     = buffer;
-		i16 *l     = lbuf;
-		i16 *r     = rbuf;
-		f32 volume = SOKOL_AUDIO_VOLUME;
+		f32 *s = buffer;
+		i16 *l = lbuf;
+		i16 *r = rbuf;
 
 		for(i32 n = 0; n < num_frames; n++) {
-			// Convert and apply volume for left channel
-			f32 vl = (*l++ * F32_SCALE) * volume;
+			f32 vl = (*l++ * F32_SCALE);
 			f32 vr = vl;
 			if(num_channels == 2) {
-				vr = (*r++ * F32_SCALE) * volume;
+				vr = (*r++ * F32_SCALE);
 			}
 
 			// Store the f32 values in the output stream buffer
@@ -921,14 +929,35 @@ sys_menu_clr(void)
 void
 sys_audio_set_volume(f32 vol)
 {
-	sys_audio_lock();
-	sys_audio_unlock();
+	if(!isfinite(vol)) return;
+#if OS_WINDOWS
+	AcquireSRWLockExclusive(&SOKOL_VOLUME_LOCK);
+#elif !OS_WASM
+	pthread_mutex_lock(&SOKOL_VOLUME_LOCK);
+#endif
+	SOKOL_STATE.opts.audio.volume = CLAMP(vol, 0.f, 1.f);
+#if OS_WINDOWS
+	ReleaseSRWLockExclusive(&SOKOL_VOLUME_LOCK);
+#elif !OS_WASM
+	pthread_mutex_unlock(&SOKOL_VOLUME_LOCK);
+#endif
 }
 
 f32
 sys_audio_get_volume(void)
 {
-	return SOKOL_STATE.volume;
+#if OS_WINDOWS
+	AcquireSRWLockShared(&SOKOL_VOLUME_LOCK);
+#elif !OS_WASM
+	pthread_mutex_lock(&SOKOL_VOLUME_LOCK);
+#endif
+	f32 volume = SOKOL_STATE.opts.audio.volume;
+#if OS_WINDOWS
+	ReleaseSRWLockShared(&SOKOL_VOLUME_LOCK);
+#elif !OS_WASM
+	pthread_mutex_unlock(&SOKOL_VOLUME_LOCK);
+#endif
+	return volume;
 }
 
 void
@@ -1359,6 +1388,14 @@ sokol_menu_resolution(void *args)
 }
 
 static void
+sokol_menu_volume(void *args)
+{
+	i32 value = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_volume_id);
+	sys_audio_set_volume(SYS_MENU_VOLUME_GAINS[value]);
+	sokol_opts_save();
+}
+
+static void
 sokol_menu_palette(void *args)
 {
 	i32 value = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_palette_id);
@@ -1409,6 +1446,9 @@ sokol_menu_ini(void)
 			}
 		}
 	}
+
+	SOKOL_STATE.menu_volume_id = sys_menu_add_options(menu, "Volume", SYS_MENU_VOLUME_LABELS, ARRLEN(SYS_MENU_VOLUME_LABELS), sokol_menu_volume, NULL);
+	if(SOKOL_STATE.menu_volume_id) menu->items[menu->len - 1].value = sys_menu_volume_index(SOKOL_STATE.opts.audio.volume);
 
 	sys_menu_add(menu, "Quit", SYS_MENU_ITEM_TYPE_ACTION, 0, sokol_menu_quit, NULL);
 }

@@ -6,6 +6,25 @@
 #include "lib/fnt/fnt.h"
 #include "sys/sys.h"
 
+static const char *SYS_MENU_VOLUME_LABELS[] = {"Mute", "Low", "Medium", "Max"};
+static const f32 SYS_MENU_VOLUME_GAINS[] = {0.f, 0.1f, 0.31622777f, 1.f};
+
+static i32
+sys_menu_volume_index(f32 volume)
+{
+	i32 index    = 0;
+	f64 distance = 2.0;
+	for(i32 i = 0; i < (i32)ARRLEN(SYS_MENU_VOLUME_GAINS); ++i) {
+		f64 delta = (f64)volume - (f64)SYS_MENU_VOLUME_GAINS[i];
+		if(delta < 0) delta = -delta;
+		if(delta < distance) {
+			distance = delta;
+			index = i;
+		}
+	}
+	return index;
+}
+
 enum sys_menu_item_type {
 	SYS_MENU_ITEM_TYPE_NONE,
 
