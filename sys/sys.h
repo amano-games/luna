@@ -68,18 +68,13 @@ u32 sys_color_u32_get(enum gfx_col color);
 void sys_color_u32_set(enum gfx_col color, u32 value);
 
 // @per_os_impl Audio
-// TODO: Playdate use one of the options to get volume
-// float playdate->system->getVolume(void)
-// float playdate->system->getSystemVolume(void)
-
-#if OS_PLAYDATE
-#define sys_audio_set_volume(V) ((void)0)
-#define sys_audio_get_volume()  (1.f)
-#define sys_audio_lock()        ((void)0)
-#define sys_audio_unlock()      ((void)0)
-#else
 void sys_audio_set_volume(f32 vol);
 f32 sys_audio_get_volume(void);
+
+#if OS_PLAYDATE
+#define sys_audio_lock()   ((void)0)
+#define sys_audio_unlock() ((void)0)
+#else
 void sys_audio_lock(void);
 void sys_audio_unlock(void);
 #endif

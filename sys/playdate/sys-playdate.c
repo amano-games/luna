@@ -807,6 +807,17 @@ sys_pd_serial_msg(const char *data)
 	}
 }
 
+void
+sys_audio_set_volume(f32 vol)
+{
+}
+
+f32
+sys_audio_get_volume(void)
+{
+	return PD->system->getVolume();
+}
+
 // NOLINTBEGIN(readability-identifier-naming)
 // make ARM linker shut up about things we aren't using (nosys lib issues):
 void
