@@ -25,7 +25,7 @@ BUILD_DIR := ${DESTDIR}${BINDIR}
 PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -lkernel32 -luser32 -lshell32 -ldxgi -ld3d11 -lole32 -lgdi32
-LDFLAGS :=
+LDFLAGS := -mwindows
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
