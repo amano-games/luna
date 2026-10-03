@@ -37,7 +37,7 @@ struct sys_menu {
 	i32 len;
 	i32 cap;
 	b32 sys;
-	struct sys_menu_item items[6];
+	struct sys_menu_item items[7];
 };
 
 static void
