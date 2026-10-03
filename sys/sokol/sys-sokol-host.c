@@ -1259,6 +1259,21 @@ sys_set_app_name(str8 value)
 }
 
 void
+sys_fullscreen_set(b32 enabled)
+{
+	if((b32)sapp_is_fullscreen() != enabled) {
+		sapp_toggle_fullscreen();
+	}
+	SOKOL_STATE.opts.video.display = enabled ? SYS_VIDEO_DISPLAY_FULLSCREEN : SYS_VIDEO_DISPLAY_WINDOWED;
+}
+
+b32
+sys_fullscreen_get(void)
+{
+	return (b32)sapp_is_fullscreen();
+}
+
+void
 sys_quit(void)
 {
 	sapp_request_quit();

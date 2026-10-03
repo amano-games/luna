@@ -1924,6 +1924,17 @@ sys_set_app_name(str8 value)
 }
 
 void
+sys_fullscreen_set(b32 enabled)
+{
+}
+
+b32
+sys_fullscreen_get(void)
+{
+	return true;
+}
+
+void
 sys_quit(void)
 {
 	DRM_HOST.want_quit = true;
