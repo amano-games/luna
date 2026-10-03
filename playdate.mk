@@ -213,6 +213,8 @@ assets_clean:
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS="$(CDEFS)"
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 clean:
 	rm -rf "$(BUILD_DIR)"

@@ -99,10 +99,13 @@ build:
 $(PUBLISH_OBJS): $(BINARY)
 	rm -f $(BUILD_DIR)/assets.pck
 	rm -rf $(BUILD_DIR)/gen-assets
+	rm -rf $(BUILD_DIR)/obj
 	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/www.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 publish_release:
 	$(MAKE) -f $(ROOT_DIR)/www.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"

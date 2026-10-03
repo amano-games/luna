@@ -109,3 +109,5 @@ build:
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/raspi.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)" SYSROOT=$(SYSROOT) CC=$(CC)
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
