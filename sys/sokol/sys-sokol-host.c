@@ -107,6 +107,7 @@ struct sokol_state {
 	struct sys_pause_state pause;
 	i32 menu_filter_id;
 	i32 menu_scaling_id;
+	i32 menu_display_id;
 	i32 menu_resolution_id;
 	i32 menu_palette_id;
 	i32 menu_volume_id;
@@ -157,6 +158,7 @@ static inline void sokol_menu_quit(void *args);
 static void sokol_menu_ini(void);
 static void sokol_menu_filter(void *args);
 static void sokol_menu_scaling(void *args);
+static void sokol_menu_display(void *args);
 static void sokol_opts_save(void);
 
 static void sokol_set_icon(void);
@@ -1354,6 +1356,13 @@ sokol_menu_scaling(void *args)
 }
 
 static void
+sokol_menu_display(void *args)
+{
+	i32 value = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_display_id);
+	sys_fullscreen_set((enum sys_video_display)(value + 1) == SYS_VIDEO_DISPLAY_FULLSCREEN);
+}
+
+static void
 sokol_menu_resolution(void *args)
 {
 	i32 value                         = sys_menu_get_value(&SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], SOKOL_STATE.menu_resolution_id);
@@ -1394,6 +1403,10 @@ sokol_menu_ini(void)
 		[SYS_VIDEO_SCALING_FIT - 1]       = "Fit",
 		[SYS_VIDEO_SCALING_OVERSCALE - 1] = "Overscale",
 	};
+	static const char *displays[SYS_VIDEO_DISPLAY_NUM_COUNT - 1] = {
+		[SYS_VIDEO_DISPLAY_WINDOWED - 1]   = "Windowed",
+		[SYS_VIDEO_DISPLAY_FULLSCREEN - 1] = "Fullscreen",
+	};
 
 	static const char *resolutions[] = {"Normal", "Tate"};
 	static const char *palettes[]    = {
@@ -1421,6 +1434,9 @@ sokol_menu_ini(void)
 
 	SOKOL_STATE.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), sokol_menu_scaling, NULL);
 	if(SOKOL_STATE.menu_scaling_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.scaling - 1;
+
+	SOKOL_STATE.menu_display_id = sys_menu_add_options(menu, "Display", displays, ARRLEN(displays), sokol_menu_display, NULL);
+	if(SOKOL_STATE.menu_display_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.display - 1;
 
 	SOKOL_STATE.menu_resolution_id = sys_menu_add_options(menu, "Resolution", resolutions, ARRLEN(resolutions), sokol_menu_resolution, NULL);
 	if(SOKOL_STATE.menu_resolution_id) {
