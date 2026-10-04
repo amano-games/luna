@@ -2765,11 +2765,17 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
 
     len = (sizeof(fields) / sizeof(mg_field));
 
-    for (i = 1; i < len - 8; i++) {
+    /* Last 6 fields are axes; rest after platform are buttons.
+       Skip platform (i=0) so its element stays NULL for the
+       platform-name check below. */
+    size_t axes_len = 6;
+    size_t buttons_len = len - axes_len;
+
+    for (i = 1; i < buttons_len; i++) {
         fields[i].element = &mapping->buttons[fields[i].val];
     }
 
-    for (i = len - 8; i < len; i++) {
+    for (i = buttons_len; i < len; i++) {
         fields[i].element = &mapping->axes[fields[i].val];
     }
 
@@ -2791,13 +2797,13 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
 
     while (substr[0]) {
         /* TODO: Implement output modifiers */
-        char mod = 0;;
+        char mod = 0;
         if (substr[0] == '+' || substr[0] == '-') {
             mod = substr[0];
             substr++;
         }
 
-        for (i = 0;  i < sizeof(fields) / sizeof(fields[0]);  i++) {
+        for (i = 0; i < len; i++) {
             int8_t minimum = -1;
             int8_t maximum = 1;
             mg_element* e;
@@ -2888,15 +2894,15 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
         substr += MG_STRSPN(substr, ",");
     }
 
-    for (i = 0;  i < 32;  i++) {
+    for (i = 0; i < (sizeof(mapping->guid) / sizeof(mapping->guid[0])) - 1; i++) {
         if (mapping->guid[i] >= 'A' && mapping->guid[i] <= 'F')
             mapping->guid[i] += 'a' - 'A';
     }
 
-    for (i = 0; i < 255; i++) {
+    for (i = 0; i < (sizeof(mapping->rButtons) / sizeof(mapping->rButtons[0])); i++) {
         mg_size_t y;
         mapping->rButtons[i] = MG_BUTTON_UNKNOWN;
-        for (y = 0; y < 16; y++) {
+        for (y = 0; y < (sizeof(mapping->buttons) / sizeof(mapping->buttons[0])); y++) {
             mg_element e = mapping->buttons[y];
             if (e.index == i) {
                 mapping->rButtons[i] = (mg_button)y;
@@ -2908,7 +2914,7 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
     for (i = 0; i < MG_AXIS_COUNT; i++) {
         mg_size_t y;
         mapping->rAxes[i] = MG_AXIS_UNKNOWN;
-        for (y = 0; y < 6; y++) {
+        for (y = 0; y < (sizeof(mapping->axes) / sizeof(mapping->axes[0])); y++) {
             mg_element e = mapping->axes[y];
             if (e.index == i) {
                 mapping->rAxes[i] = (mg_axis)y;
