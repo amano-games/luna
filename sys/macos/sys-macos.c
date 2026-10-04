@@ -409,7 +409,7 @@ sys_set_auto_lock_disabled(int disable)
 #include "sys/sys-log.c"
 
 #if SYS_GFX
-#include "sys/sys-gamepad-stub.c"
+#include "sys/sys-gamepad.c"
 #include "sys/sys-keyboard.c"
 #endif
 #if SYS_GFX_SOKOL

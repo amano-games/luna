@@ -579,6 +579,7 @@ struct mg_gamepad_src {
 struct mg_gamepad_src {
 	void* device;
 	void* events;
+	u8 absMap[64];
 };
 
 #elif defined(MG_WASM)
@@ -2216,10 +2217,10 @@ void mg_osx_input_value_changed_callback(void *context, IOReturn result, void *s
 
     switch (usagePage) {
 		case kHIDPage_Button: {
-			mg_button btn = mg_get_gamepad_button(gamepad, (u8)usage);
-            if (btn == 0)
+			mg_button btn = mg_get_gamepad_button(gamepad, (u8)usage - 1);
+            if (btn == MG_BUTTON_UNKNOWN)
 			    btn = mg_get_gamepad_button_platform(usage);
-            if (btn == 0)
+            if (btn == MG_BUTTON_UNKNOWN)
                 break;
 
 			mg_handle_button_event((mg_events*)gamepad->src.events, btn, MG_BOOL(intValue), gamepad);
@@ -2228,10 +2229,15 @@ void mg_osx_input_value_changed_callback(void *context, IOReturn result, void *s
 		case kHIDPage_GenericDesktop: {
 			CFIndex logicalMin = IOHIDElementGetLogicalMin(element);
 			CFIndex logicalMax = IOHIDElementGetLogicalMax(element);
-			mg_axis btn = mg_get_gamepad_axis(gamepad, (u8)usage);
-            if (btn == 0)
+			mg_axis btn = MG_AXIS_UNKNOWN;
+
+			if (usage < 64 && gamepad->src.absMap[usage] != 0xFF) {
+				btn = mg_get_gamepad_axis(gamepad, gamepad->src.absMap[usage]);
+			}
+
+            if (btn == MG_AXIS_UNKNOWN)
 			    btn = mg_get_gamepad_axis_platform(usage);
-            if (btn == 0)
+            if (btn == MG_AXIS_UNKNOWN)
                 break;
 
 			if (logicalMax <= logicalMin) return;
@@ -2272,6 +2278,8 @@ void mg_osx_device_added_callback(void* context, IOReturn result, void *sender, 
         return;
     }
 
+    gamepad->src.device = (void*)device;
+
     IOHIDDeviceRegisterInputValueCallback(device, mg_osx_input_value_changed_callback, gamepad);
 
     deviceName = (CFStringRef)IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductKey));
@@ -2309,6 +2317,8 @@ void mg_osx_device_added_callback(void* context, IOReturn result, void *sender, 
     gamepad->mapping = mg_gamepad_find_valid_mapping(gamepad);
     gamepad->connected = MG_TRUE;
 
+    MG_MEMSET(gamepad->src.absMap, 0xFF, sizeof(gamepad->src.absMap));
+
     for (i = 0;  i < CFArrayGetCount(elements);  i++) {
         u32 elm_usage = 0, page = 0;
         IOHIDElementType type;
@@ -2331,10 +2341,10 @@ void mg_osx_device_added_callback(void* context, IOReturn result, void *sender, 
 
         switch (page) {
             case kHIDPage_Button: {
-                mg_button btn = mg_get_gamepad_button(gamepad, (u8)elm_usage);
-                if (btn == 0)
+                mg_button btn = mg_get_gamepad_button(gamepad, (u8)elm_usage - 1);
+                if (btn == MG_BUTTON_UNKNOWN)
                     btn = mg_get_gamepad_button_platform(elm_usage);
-                if (btn == 0)
+                if (btn == MG_BUTTON_UNKNOWN)
                     break;
 
                 gamepad->buttons[btn].prev = 0;
@@ -2342,16 +2352,43 @@ void mg_osx_device_added_callback(void* context, IOReturn result, void *sender, 
                 gamepad->buttons[btn].supported = MG_TRUE;
                 break;
             }
-            case kHIDPage_GenericDesktop: {
-                mg_axis btn = mg_get_gamepad_axis(gamepad, (u8)elm_usage);
-                if (btn == 0)
-                    btn = mg_get_gamepad_axis_platform(elm_usage);
-                if (btn == 0)
-                    break;
+        }
+    }
 
-                gamepad->axes[btn].value = 0.0f;
-                gamepad->axes[btn].supported = MG_TRUE;
-                break;
+    /* process axes (sorted by usage for SDL compatibility) */
+    {
+        u32 u;
+        u8 axisCount = 0;
+        for (u = 0; u < 64; u++) {
+            for (i = 0; i < CFArrayGetCount(elements); i++) {
+                u32 elm_usage = 0, page = 0;
+                IOHIDElementType type;
+                IOHIDElementRef native = (IOHIDElementRef)
+                    CFArrayGetValueAtIndex(elements, i);
+
+                if (CFGetTypeID(native) != IOHIDElementGetTypeID()) continue;
+
+                type = IOHIDElementGetType(native);
+                if ((type != kIOHIDElementTypeInput_Axis) &&
+                    (type != kIOHIDElementTypeInput_Button) &&
+                    (type != kIOHIDElementTypeInput_Misc)) continue;
+
+                elm_usage = IOHIDElementGetUsage(native);
+                page = IOHIDElementGetUsagePage(native);
+
+                if (page == kHIDPage_GenericDesktop && elm_usage == u) {
+                    mg_axis btn = mg_get_gamepad_axis(gamepad, axisCount);
+                    if (btn == MG_AXIS_UNKNOWN)
+                        btn = mg_get_gamepad_axis_platform(elm_usage);
+
+                    if (btn != MG_AXIS_UNKNOWN) {
+                        gamepad->src.absMap[u] = axisCount;
+                        gamepad->axes[btn].value = 0.0f;
+                        gamepad->axes[btn].supported = MG_TRUE;
+                    }
+
+                    axisCount++;
+                }
             }
         }
     }
@@ -2627,7 +2664,9 @@ typedef struct mg_element {
 typedef struct mg_mapping {
     char            name[128];
     char            guid[33];
-    mg_element buttons[16];
+    /* Must cover MG_BUTTON_RIGHT_TRIGGER (16) and dpad; 16 was too small and
+       righttrigger:aN overflowed into axes[0], remapping R2 onto left stick X. */
+    mg_element buttons[MG_BUTTON_COUNT];
     mg_element axes[6];
 
     mg_button rButtons[256];
@@ -2821,6 +2860,24 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
             length = fields[i].len;
             if (strncmp(substr, fields[i].name, length) != 0 || substr[length] != ':')
                 continue;
+
+            {
+                /* Peek binding kind before consuming the key, so we can skip the
+                   wrong lefttrigger/righttrigger slot (button vs axis) cleanly. */
+                const char* value = substr + length + 1;
+                char bind = value[0];
+                if (bind == '+' || bind == '-')
+                    bind = value[1];
+
+                e = fields[i].element;
+                if (e >= mapping->axes && e < mapping->axes + 6 && bind == 'b')
+                    continue;
+                if (e >= mapping->buttons &&
+                    e < mapping->buttons + (sizeof(mapping->buttons) / sizeof(mapping->buttons[0])) &&
+                    bind == 'a')
+                    continue;
+            }
+
             substr += length + 1;
 
             if (fields[i].element == NULL) {
@@ -2842,9 +2899,6 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
             }
 
             e = fields[i].element;
-            if (e >= mapping->axes && e <= &mapping->axes[6] && substr[0] == 'b') {
-                continue;
-            }
 
             switch (substr[0]) {
                 case '+':
@@ -2904,7 +2958,7 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
         mapping->rButtons[i] = MG_BUTTON_UNKNOWN;
         for (y = 0; y < (sizeof(mapping->buttons) / sizeof(mapping->buttons[0])); y++) {
             mg_element e = mapping->buttons[y];
-            if (e.index == i) {
+            if (e.type == MG_JOYSTICK_BUTTON && e.index == i) {
                 mapping->rButtons[i] = (mg_button)y;
                 break;
             }
@@ -2916,7 +2970,7 @@ mg_bool parseMapping(mg_mapping* mapping, const char* string) {
         mapping->rAxes[i] = MG_AXIS_UNKNOWN;
         for (y = 0; y < (sizeof(mapping->axes) / sizeof(mapping->axes[0])); y++) {
             mg_element e = mapping->axes[y];
-            if (e.index == i) {
+            if (e.type == MG_JOYSTICK_AXIS && e.index == i) {
                 mapping->rAxes[i] = (mg_axis)y;
                 break;
             }

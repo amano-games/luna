@@ -44,11 +44,13 @@ sys_gamepad_map_pad(const mg_gamepad *pad)
 		case MG_BUTTON_SOUTH:
 		case MG_BUTTON_WEST:
 		case MG_BUTTON_RIGHT_SHOULDER:
+		case MG_BUTTON_RIGHT_TRIGGER:
 			res |= SYS_INP_A;
 			break;
 		case MG_BUTTON_EAST:
 		case MG_BUTTON_NORTH:
 		case MG_BUTTON_LEFT_SHOULDER:
+		case MG_BUTTON_LEFT_TRIGGER:
 			res |= SYS_INP_B;
 			break;
 		case MG_BUTTON_DPAD_LEFT:
