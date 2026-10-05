@@ -40,7 +40,7 @@ sys_steam_ini(void)
 	b32 should_quit = false;
 
 	if(SteamAPI_RestartAppIfNecessary((u32)STEAM_APP_ID)) {
-		log_info("steam", "restart via steam");
+		log_info("steam", "restart via steam (app_id=%u)", (u32)STEAM_APP_ID);
 		should_quit = true;
 	} else {
 		sys_steam_errmsg err_msg          = {0};
@@ -48,9 +48,9 @@ sys_steam_ini(void)
 
 		G_SYS_STEAM_OK = (result == SYS_STEAM_INIT_OK);
 		if(G_SYS_STEAM_OK) {
-			log_info("steam", "init ok");
+			log_info("steam", "init ok (app_id=%u)", (u32)STEAM_APP_ID);
 		} else {
-			log_warn("steam", "init failed (%d): %s", (i32)result, err_msg);
+			log_warn("steam", "init failed (app_id=%u, %d): %s", (u32)STEAM_APP_ID, (i32)result, err_msg);
 		}
 	}
 
