@@ -204,8 +204,25 @@
 #if !defined(PROF_HISTORY)
 #define PROF_HISTORY PROF_HISTORY_NONE
 #endif
+#if !defined(STEAM_APP_ID)
+#define STEAM_APP_ID 0
+#endif
+#if !defined(USE_STEAM)
+#if STEAM_APP_ID
+#define USE_STEAM 1
+#else
+#define USE_STEAM 0
+#endif
+#endif
 
 // Pairing / sanity checks
+
+#if USE_STEAM && !STEAM_APP_ID
+#error USE_STEAM requires a non-zero STEAM_APP_ID (add -DSTEAM_APP_ID=<id> to CDEFS)
+#endif
+#if USE_STEAM && OS_PLAYDATE
+#error USE_STEAM is not supported on Playdate builds.
+#endif
 
 #if OS_PLAYDATE && SYS_GFX_SOKOL
 #error Playdate platform cannot use Sokol backend.

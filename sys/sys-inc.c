@@ -26,3 +26,4 @@
 #endif
 
 #include "sys/sys-img.c"
+#include "sys/sys-steam.c"
