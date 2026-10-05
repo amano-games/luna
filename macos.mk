@@ -28,9 +28,13 @@ EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
 INC_DIRS  := src $(LUNA_DIR)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DSOKOL_DEBUG=1 -DSOKOL_METAL -DSYS_GFX_SOKOL
+
+STEAM_PLATFORM := osx
+include $(ROOT_DIR)/steamworks.mk
+
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 ARCH_FLAGS := -arch x86_64 -arch arm64
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
@@ -78,7 +82,7 @@ $(OBJS): $(BUILD_DIR)
 ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build run publish_release release sign
+.PHONY: all clean build steam_build steam_release run publish_release release sign
 .DEFAULT_GOAL := all
 
 all: build
@@ -111,8 +115,21 @@ build:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
+steam_build:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	cp -f "$(STEAM_LIB)" "$(dir $(EXE_OUT))"
+ifeq ($(BUILD_DEBUG),1)
+	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(EXE_OUT))steam_appid.txt"
+endif
+
 release:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
+
+steam_release:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 

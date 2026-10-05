@@ -25,9 +25,13 @@ EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
 
 INC_DIRS  := src $(LUNA_DIR)
-INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 override CDEFS := $(CDEFS) -DSOKOL_GLCORE -DSYS_GFX_SOKOL
+
+STEAM_PLATFORM := linux64
+include $(ROOT_DIR)/steamworks.mk
+
+INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
 
@@ -64,7 +68,7 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build run release publish_release
+.PHONY: all clean build steam_build steam_release run release publish_release
 .DEFAULT_GOAL := all
 
 all: build
@@ -89,11 +93,24 @@ build:
 	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 
+steam_build:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
+ifeq ($(BUILD_DEBUG),1)
+	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
+endif
+
 run:
 	cd $(BUILD_DIR) && ./$(TARGET)
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/linux.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
+
+steam_release:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 

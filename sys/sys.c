@@ -10,6 +10,7 @@
 #include "base/log.h"
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
+#include "sys/sys-steam.h"
 
 #if !defined(SYS_SHOW_FPS)
 #if BUILD_DEBUG
@@ -171,6 +172,7 @@ sys_timing_reset(void)
 void
 sys_internal_init(void)
 {
+	SYS.initialized = false;
 	sys_fnt_mono_set((struct fnt){
 		.cell_h             = 9,
 		.cell_w             = 6,
@@ -194,7 +196,14 @@ sys_internal_init(void)
 	SYS.frame_buffer = sys_1bit_buffer();
 	prof_ini();
 	dbg_drw_ctx_set(gfx_ctx_dbg());
+
+	if(sys_steam_ini()) {
+		sys_quit();
+		return;
+	}
+
 	app_init(SYS_MAX_MEM);
+	SYS.initialized = true;
 	sys_timing_reset();
 }
 
@@ -228,6 +237,7 @@ sys_internal_update(void)
 		sys->timing.ups_counter++;
 
 		prof_block_start("upd", PROF_ANCHOR_SYS_UPD);
+		sys_steam_tick();
 		app_tick((f32)sys->timing.dt_us * 1e-6f);
 		prof_block_end();
 
@@ -403,8 +413,11 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 void
 sys_internal_close(void)
 {
-	app_close();
-	sys_free(SYS.mem.app_mem.buffer);
+	if(SYS.initialized) {
+		app_close();
+		sys_free(SYS.mem.app_mem.buffer);
+	}
+	sys_steam_close();
 }
 
 void

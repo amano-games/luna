@@ -76,6 +76,7 @@ struct sys_timing {
 };
 
 struct sys_data {
+	b32 initialized;
 	struct fnt fnt_mono;
 	void *frame_buffer;
 
