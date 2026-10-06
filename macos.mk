@@ -23,6 +23,7 @@ PUBLISH_BUILD_DIR := ${DESTDIR}$(RELEASE_BINDIR)
 
 LDLIBS := -lm -framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit -framework AudioToolbox
 LDLIBS += -framework IOKit -framework CoreFoundation
+LDFLAGS :=
 
 EXTERNAL_DIRS  := $(LUNA_DIR)/external
 EXTERNAL_FLAGS := $(EXTERNAL_DIRS:%=-isystem %)
@@ -54,10 +55,9 @@ DEBUG_CFLAGS += $(SANITIZE_FLAGS)
 
 ifeq ($(BUILD_DEBUG), 1)
 CFLAGS := $(DEBUG_CFLAGS)
-LDFLAGS := $(SANITIZE_FLAGS)
+LDFLAGS += $(SANITIZE_FLAGS)
 else
 CFLAGS := $(RELEASE_CFLAGS)
-LDFLAGS :=
 endif
 
 # -x objective-c is compile-only; arch/sanitize also go on the link line via LDFLAGS.
