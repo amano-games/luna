@@ -257,7 +257,7 @@ sokol_main(i32 argc, char **argv)
 #endif
 
 	{
-		str8 dir_path = sys_path_to_data_path(
+		str8 dir_path = sys_path_to_config_path(
 			SOKOL_STATE.scratch,
 			str8_lit(""),
 			str8_lit(SOKOL_ORG),

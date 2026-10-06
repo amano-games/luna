@@ -60,7 +60,7 @@ struct sys_opts
 sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
 {
 	str8 path              = str8_lit("settings.json");
-	str8 full_path         = sys_path_to_data_path(scratch, path, org, name);
+	str8 full_path         = sys_path_to_config_path(scratch, path, org, name);
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {
 		.audio.volume = SYS_AUDIO_VOLUME_DEFAULT,
@@ -229,7 +229,7 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 {
 	b32 res       = false;
 	sys_file file = sys_file_zero();
-	str8 path     = sys_path_to_data_path(scratch, str8_lit("settings.json"), org, name);
+	str8 path     = sys_path_to_config_path(scratch, str8_lit("settings.json"), org, name);
 	str8 path_new = str8_fmt_push(scratch, "%.*s.new", str8_spread(path));
 
 	dbg_check_warn(opts->video.scaling > SYS_VIDEO_SCALING_NONE && opts->video.scaling < SYS_VIDEO_SCALING_NUM_COUNT,
@@ -291,7 +291,7 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 		str8_spread(screenshot_colors));
 
 	dbg_check_warn(json.str && json.size <= U32_MAX, "sys-opts", "failed to serialize, json too big");
-	str8 dir = sys_path_to_data_path(scratch, str8_lit(""), org, name);
+	str8 dir = sys_path_to_config_path(scratch, str8_lit(""), org, name);
 
 	dbg_check_warn(dir.size == 0 || sys_make_dir(dir), "sys-opts", "failed to create directory: %s", dir.str);
 	file = sys_file_open_w(path_new);

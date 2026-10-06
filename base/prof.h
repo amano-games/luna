@@ -1175,7 +1175,11 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 		"%.*s-%s-prof.csv",
 		str8_spread(app_name),
 		sys_path_timestamp(alloc).str);
-	str8 full_path = sys_path_to_data_path(alloc, path, app_org, app_name);
+	str8 dir = sys_path_to_cache_path(alloc, str8_lit(""), app_org, app_name);
+	if(dir.size > 0) {
+		sys_make_dir(dir);
+	}
+	str8 full_path = sys_path_to_cache_path(alloc, path, app_org, app_name);
 	sys_file f     = sys_file_open_w(full_path);
 
 	if(!sys_file_is_valid(f)) {

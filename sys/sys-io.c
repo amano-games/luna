@@ -128,3 +128,9 @@ sys_path_to_data_path(struct alloc alloc, str8 path, str8 org_name, str8 app_nam
 {
 	return sys_path_to_root(alloc, sys_data_path(), path, org_name, app_name);
 }
+
+str8
+sys_path_to_cache_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name)
+{
+	return sys_path_to_root(alloc, sys_cache_path(), path, org_name, app_name);
+}
