@@ -111,12 +111,6 @@ sys_exe_path(void)
 	return OS_STATE.process_info.binary_file_path;
 }
 
-str8
-sys_data_path(void)
-{
-	return OS_STATE.process_info.user_program_config_data_path;
-}
-
 b32
 sys_make_dir(str8 path)
 {

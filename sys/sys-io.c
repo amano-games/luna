@@ -78,18 +78,53 @@ sys_file_modified(str8 path)
 }
 
 str8
-sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name)
+sys_config_path(void)
 {
-	str8 res       = path;
-	str8 data_path = sys_data_path();
-	if(data_path.size == 0) { return str8_cpy_push(alloc, res); }
+	return sys_process_info()->user_program_config_data_path;
+}
+
+str8
+sys_data_path(void)
+{
+	return sys_process_info()->user_program_data_path;
+}
+
+str8
+sys_cache_path(void)
+{
+	return sys_process_info()->user_program_cache_data_path;
+}
+
+str8
+sys_logs_path(void)
+{
+	return sys_process_info()->user_program_logs_data_path;
+}
+
+// {root}/{app_name}/{path}; empty root → copy of path only.
+static str8
+sys_path_to_root(struct alloc alloc, str8 root, str8 path, str8 org_name, str8 app_name)
+{
+	if(root.size == 0) {
+		return str8_cpy_push(alloc, path);
+	}
 
 	enum path_style path_style = path_style_from_str8(path);
 	struct str8_list path_list = {0};
-	str8_list_push(alloc, &path_list, data_path);
+	str8_list_push(alloc, &path_list, root);
 	str8_list_push(alloc, &path_list, app_name);
 	str8_list_push(alloc, &path_list, path);
-	res = path_join_by_style(alloc, &path_list, path_style);
+	return path_join_by_style(alloc, &path_list, path_style);
+}
 
-	return res;
+str8
+sys_path_to_config_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name)
+{
+	return sys_path_to_root(alloc, sys_config_path(), path, org_name, app_name);
+}
+
+str8
+sys_path_to_data_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name)
+{
+	return sys_path_to_root(alloc, sys_data_path(), path, org_name, app_name);
 }

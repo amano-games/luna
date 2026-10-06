@@ -89,10 +89,14 @@ b32 sys_make_dir(str8 path);
 // @per_os_impl Paths
 str8 sys_exe_path(void);
 str8 sys_base_path(void);
-str8 sys_data_path(void);
 
-// Shared helper over sys_data_path()
-str8 sys_path_to_data_path(struct alloc alloc, struct str8 path, str8 org_name, str8 app_name);
+str8 sys_config_path(void);
+str8 sys_data_path(void);
+str8 sys_cache_path(void);
+str8 sys_logs_path(void);
+
+str8 sys_path_to_config_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
+str8 sys_path_to_data_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
 
 static inline str8
 sys_path_timestamp(struct alloc alloc)

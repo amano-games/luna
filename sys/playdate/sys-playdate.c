@@ -685,13 +685,6 @@ sys_exe_path(void)
 	return res;
 }
 
-str8
-sys_data_path(void)
-{
-	str8 res = str8_lit("");
-	return res;
-}
-
 void
 sys_set_menu_image(struct tex tex, i32 x_offset)
 {
