@@ -123,6 +123,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 			.binary_path                   = str8_lit(""),
 			.base_path                     = str8_lit(""),
 			.user_program_config_data_path = str8_lit(""),
+			.user_program_data_path        = str8_lit(""),
 			.user_program_cache_data_path  = str8_lit(""),
 			.user_program_logs_data_path   = str8_lit(""),
 		};

@@ -43,6 +43,7 @@ struct sys_process_info {
 	str8 base_path;
 	str8 initial_path;
 	str8 user_program_config_data_path;
+	str8 user_program_data_path;
 	str8 user_program_cache_data_path;
 	str8 user_program_logs_data_path;
 	struct str8_list environment;

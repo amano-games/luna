@@ -39,38 +39,9 @@ static struct {
 	u64 tick_elapsed;
 } OS_STATE;
 
-str8
-sys_get_current_path(struct alloc alloc)
-{
-	DWORD needed = GetCurrentDirectoryW(0, NULL);
-	if(needed == 0) {
-		return (str8){0};
-	}
-	marena_reset(&OS_STATE.scratch_arena);
-	WCHAR *wide  = alloc_arr(OS_STATE.scratch, wide, needed);
-	DWORD length = GetCurrentDirectoryW(needed, wide);
-	if(length == 0 || length >= needed) {
-		marena_reset(&OS_STATE.scratch_arena);
-		return (str8){0};
-	}
-	str8 res = str8_from_16(alloc, (str16){(u16 *)wide, length});
-	marena_reset(&OS_STATE.scratch_arena);
-	return res;
-}
-
 static SRWLOCK OS_AUDIO_LOCK = SRWLOCK_INIT;
 
-void
-sys_audio_lock(void)
-{
-	AcquireSRWLockExclusive(&OS_AUDIO_LOCK);
-}
-
-void
-sys_audio_unlock(void)
-{
-	ReleaseSRWLockExclusive(&OS_AUDIO_LOCK);
-}
+str8 sys_get_current_path(struct alloc alloc);
 
 void
 sys_os_init(void)
@@ -111,12 +82,26 @@ sys_os_init(void)
 	{
 		marena_reset(&OS_STATE.scratch_arena);
 		WCHAR *buffer = alloc_arr(scratch, buffer, MAX_PATH);
+
 		if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_APPDATA, 0, 0, buffer))) {
 			str8 appdata                        = str8_from_16(alloc, str16_cstr((u16 *)buffer));
 			info->user_program_config_data_path = appdata;
-			info->user_program_cache_data_path  = appdata;
-			info->user_program_logs_data_path   = appdata;
+			info->user_program_data_path        = appdata;
+		} else {
+			log_warn("os", "SHGetFolderPathW(CSIDL_APPDATA) failed");
 		}
+
+		marena_reset(&OS_STATE.scratch_arena);
+		buffer = alloc_arr(scratch, buffer, MAX_PATH);
+
+		if(SUCCEEDED(SHGetFolderPathW(0, CSIDL_LOCAL_APPDATA, 0, 0, buffer))) {
+			str8 local                         = str8_from_16(alloc, str16_cstr((u16 *)buffer));
+			info->user_program_cache_data_path = local;
+			info->user_program_logs_data_path  = local;
+		} else {
+			log_warn("os", "SHGetFolderPathW(CSIDL_LOCAL_APPDATA) failed");
+		}
+
 		marena_reset(&OS_STATE.scratch_arena);
 	}
 
@@ -413,6 +398,37 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+void
+sys_audio_lock(void)
+{
+	AcquireSRWLockExclusive(&OS_AUDIO_LOCK);
+}
+
+void
+sys_audio_unlock(void)
+{
+	ReleaseSRWLockExclusive(&OS_AUDIO_LOCK);
+}
+
+str8
+sys_get_current_path(struct alloc alloc)
+{
+	DWORD needed = GetCurrentDirectoryW(0, NULL);
+	if(needed == 0) {
+		return (str8){0};
+	}
+	marena_reset(&OS_STATE.scratch_arena);
+	WCHAR *wide  = alloc_arr(OS_STATE.scratch, wide, needed);
+	DWORD length = GetCurrentDirectoryW(needed, wide);
+	if(length == 0 || length >= needed) {
+		marena_reset(&OS_STATE.scratch_arena);
+		return (str8){0};
+	}
+	str8 res = str8_from_16(alloc, (str16){(u16 *)wide, length});
+	marena_reset(&OS_STATE.scratch_arena);
+	return res;
 }
 
 #include "sys/sys-log.c"

@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -58,6 +59,9 @@ sys_get_current_path(struct alloc alloc)
 }
 
 static pthread_mutex_t OS_AUDIO_LOCK = PTHREAD_MUTEX_INITIALIZER;
+
+static str8 sys_os_home_dir(void);
+static str8 sys_os_xdg_root(struct alloc alloc, char *env_val, str8 home, char *fallback_rel);
 
 void
 sys_audio_lock(void)
@@ -115,25 +119,15 @@ sys_os_init(void)
 	info->initial_path = sys_get_current_path(alloc);
 
 	{
-		char *home            = getenv("HOME");
-		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
-		char *xdg_cache_home  = getenv("XDG_CACHE_HOME");
-		char *xdg_state_home  = getenv("XDG_STATE_HOME");
-		if(xdg_config_home != NULL) {
-			info->user_program_config_data_path = str8_cpy_push(alloc, str8_cstr(xdg_config_home));
-		} else if(home != NULL) {
-			info->user_program_config_data_path = str8_fmt_push(alloc, "%s/.config", home);
+		str8 home = sys_os_home_dir();
+		if(home.size == 0) {
+			log_warn("os", "no HOME or passwd dir; user path roots empty");
 		}
-		if(xdg_cache_home != NULL) {
-			info->user_program_cache_data_path = str8_cpy_push(alloc, str8_cstr(xdg_cache_home));
-		} else if(home != NULL) {
-			info->user_program_cache_data_path = str8_fmt_push(alloc, "%s/.cache", home);
-		}
-		if(xdg_state_home != NULL) {
-			info->user_program_logs_data_path = str8_cpy_push(alloc, str8_cstr(xdg_state_home));
-		} else if(home != NULL) {
-			info->user_program_logs_data_path = str8_fmt_push(alloc, "%s/.local/state", home);
-		}
+
+		info->user_program_config_data_path = sys_os_xdg_root(alloc, getenv("XDG_CONFIG_HOME"), home, ".config");
+		info->user_program_data_path        = sys_os_xdg_root(alloc, getenv("XDG_DATA_HOME"), home, ".local/share");
+		info->user_program_cache_data_path  = sys_os_xdg_root(alloc, getenv("XDG_CACHE_HOME"), home, ".cache");
+		info->user_program_logs_data_path   = sys_os_xdg_root(alloc, getenv("XDG_STATE_HOME"), home, ".local/state");
 	}
 
 	{
@@ -417,6 +411,36 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+// HOME, else passwd pw_dir. Empty string counts as missing.
+static str8
+sys_os_home_dir(void)
+{
+	char *home = getenv("HOME");
+	if(home != NULL && home[0] != '\0') {
+		return str8_cstr(home);
+	}
+
+	struct passwd *pw = getpwuid(getuid());
+	if(pw != NULL && pw->pw_dir != NULL && pw->pw_dir[0] != '\0') {
+		return str8_cstr(pw->pw_dir);
+	}
+
+	return (str8){0};
+}
+
+// XDG env if non-empty, else {home}/{fallback_rel} (e.g. ".config").
+static str8
+sys_os_xdg_root(struct alloc alloc, char *env_val, str8 home, char *fallback_rel)
+{
+	if(env_val != NULL && env_val[0] != '\0') {
+		return str8_cpy_push(alloc, str8_cstr(env_val));
+	}
+	if(home.size > 0) {
+		return str8_fmt_push(alloc, "%.*s/%s", str8_spread(home), fallback_rel);
+	}
+	return (str8){0};
 }
 
 #include "sys/sys-log.c"

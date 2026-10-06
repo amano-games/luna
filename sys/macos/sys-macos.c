@@ -18,6 +18,7 @@
 
 #include <mach-o/dyld.h>
 #include <pthread.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -45,31 +46,10 @@ static struct {
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern char **environ;
 
-str8
-sys_get_current_path(struct alloc alloc)
-{
-	str8 res    = {0};
-	char *cwdir = getcwd(0, 0);
-	if(cwdir) {
-		res = str8_cpy_push(alloc, str8_cstr(cwdir));
-		free(cwdir);
-	}
-	return res;
-}
-
 static pthread_mutex_t OS_AUDIO_LOCK = PTHREAD_MUTEX_INITIALIZER;
 
-void
-sys_audio_lock(void)
-{
-	pthread_mutex_lock(&OS_AUDIO_LOCK);
-}
-
-void
-sys_audio_unlock(void)
-{
-	pthread_mutex_unlock(&OS_AUDIO_LOCK);
-}
+static str8 sys_os_home_dir(void);
+str8 sys_get_current_path(struct alloc alloc);
 
 void
 sys_os_init(void)
@@ -109,12 +89,14 @@ sys_os_init(void)
 	info->initial_path = sys_get_current_path(alloc);
 
 	{
-		char *home = getenv("HOME");
-		if(home != NULL) {
-			str8 home_s                         = str8_cstr(home);
-			info->user_program_config_data_path = str8_cat_push(alloc, home_s, str8_lit("/Library/Application Support"));
-			info->user_program_cache_data_path  = str8_cat_push(alloc, home_s, str8_lit("/Library/Caches"));
-			info->user_program_logs_data_path   = str8_cat_push(alloc, home_s, str8_lit("/Library/Logs"));
+		str8 home = sys_os_home_dir();
+		if(home.size == 0) {
+			log_warn("os", "no HOME or passwd dir; user path roots empty");
+		} else {
+			info->user_program_config_data_path = str8_cat_push(alloc, home, str8_lit("/Library/Application Support"));
+			info->user_program_data_path        = info->user_program_config_data_path;
+			info->user_program_cache_data_path  = str8_cat_push(alloc, home, str8_lit("/Library/Caches"));
+			info->user_program_logs_data_path   = str8_cat_push(alloc, home, str8_lit("/Library/Logs"));
 		}
 	}
 
@@ -404,6 +386,46 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+void
+sys_audio_lock(void)
+{
+	pthread_mutex_lock(&OS_AUDIO_LOCK);
+}
+
+void
+sys_audio_unlock(void)
+{
+	pthread_mutex_unlock(&OS_AUDIO_LOCK);
+}
+
+str8
+sys_get_current_path(struct alloc alloc)
+{
+	str8 res    = {0};
+	char *cwdir = getcwd(0, 0);
+	if(cwdir) {
+		res = str8_cpy_push(alloc, str8_cstr(cwdir));
+		free(cwdir);
+	}
+	return res;
+}
+
+static str8
+sys_os_home_dir(void)
+{
+	char *home = getenv("HOME");
+	if(home != NULL && home[0] != '\0') {
+		return str8_cstr(home);
+	}
+
+	struct passwd *pw = getpwuid(getuid());
+	if(pw != NULL && pw->pw_dir != NULL && pw->pw_dir[0] != '\0') {
+		return str8_cstr(pw->pw_dir);
+	}
+
+	return (str8){0};
 }
 
 #include "sys/sys-log.c"
