@@ -82,7 +82,7 @@ $(OBJS): $(BUILD_DIR)
 ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam_build steam_release run publish_release release sign
+.PHONY: all clean build steam_build steam_release_build run publish_release release sign
 .DEFAULT_GOAL := all
 
 all: build
@@ -128,7 +128,7 @@ release:
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
-steam_release:
+steam_release_build:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj

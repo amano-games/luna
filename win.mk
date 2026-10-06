@@ -70,7 +70,7 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam_build steam_release run release publish_release
+.PHONY: all clean build steam_build steam_release_build run release publish_release
 .DEFAULT_GOAL := all
 
 all: build
@@ -111,7 +111,7 @@ release:
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
-steam_release:
+steam_release_build:
 	$(MAKE) -f $(ROOT_DIR)/win.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
