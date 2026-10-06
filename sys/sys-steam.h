@@ -7,6 +7,12 @@ void sys_steam_tick(void);
 void sys_steam_close(void);
 b32 sys_steam_ok(void);
 
+enum sys_steam_reset_achievements {
+	SYS_STEAM_RESET_STATS_ONLY,
+	SYS_STEAM_RESET_WITH_ACHIEVEMENTS,
+};
+
 void sys_steam_achievement_unlock(str8 api_name);
 void sys_steam_stat_set(str8 api_name, i32 value);
 void sys_steam_stats_store(void);
+void sys_steam_stats_reset(enum sys_steam_reset_achievements achievements);

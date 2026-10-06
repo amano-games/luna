@@ -43,6 +43,7 @@ ISteamUserStats *SYS_STEAM_CALL SteamAPI_SteamUserStats_v013(void);
 b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *pch_name);
 b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_SetStatInt32(ISteamUserStats *self, const char *pch_name, i32 n_data);
 b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_StoreStats(ISteamUserStats *self);
+b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_ResetAllStats(ISteamUserStats *self, b32 achievements_too);
 // NOLINTEND(readability-identifier-naming)
 
 b32
@@ -128,6 +129,18 @@ sys_steam_stats_store(void)
 	}
 }
 
+void
+sys_steam_stats_reset(enum sys_steam_reset_achievements achievements)
+{
+	ISteamUserStats *user_stats = sys_steam_user_stats();
+	if(user_stats) {
+		b32 achievements_too = (achievements == SYS_STEAM_RESET_WITH_ACHIEVEMENTS);
+		if(!SteamAPI_ISteamUserStats_ResetAllStats(user_stats, achievements_too)) {
+			log_warn("steam", "ResetAllStats failed");
+		}
+	}
+}
+
 #else
 
 b32
@@ -158,6 +171,11 @@ sys_steam_stat_set(str8 api_name, i32 value)
 
 void
 sys_steam_stats_store(void)
+{
+}
+
+void
+sys_steam_stats_reset(enum sys_steam_reset_achievements achievements)
 {
 }
 
