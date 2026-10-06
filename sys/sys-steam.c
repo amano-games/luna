@@ -2,6 +2,9 @@
 
 #include "base/log.h"
 
+// #undef USE_STEAM
+// #define USE_STEAM 1
+
 static b32 G_SYS_STEAM_OK;
 
 #if USE_STEAM
@@ -20,6 +23,8 @@ enum sys_steam_init_result {
 
 typedef char sys_steam_errmsg[SYS_STEAM_ERRMSG_MAX];
 
+typedef struct ISteamUserStats ISteamUserStats;
+
 #if OS_WINDOWS
 #define SYS_STEAM_CALL __cdecl
 #else
@@ -32,6 +37,11 @@ b32 SYS_STEAM_CALL SteamAPI_RestartAppIfNecessary(u32 app_id);
 enum sys_steam_init_result SYS_STEAM_CALL SteamAPI_InitFlat(sys_steam_errmsg *err_msg);
 void SYS_STEAM_CALL SteamAPI_Shutdown(void);
 void SYS_STEAM_CALL SteamAPI_RunCallbacks(void);
+
+ISteamUserStats *SYS_STEAM_CALL SteamAPI_SteamUserStats_v013(void);
+b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_SetAchievement(ISteamUserStats *self, const char *pch_name);
+b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_SetStatInt32(ISteamUserStats *self, const char *pch_name, i32 n_data);
+b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_StoreStats(ISteamUserStats *self);
 // NOLINTEND(readability-identifier-naming)
 
 b32
@@ -74,6 +84,49 @@ sys_steam_close(void)
 	}
 }
 
+static ISteamUserStats *
+sys_steam_user_stats(void)
+{
+	ISteamUserStats *user_stats = NULL;
+	if(G_SYS_STEAM_OK) {
+		user_stats = SteamAPI_SteamUserStats_v013();
+	}
+	return user_stats;
+}
+
+void
+sys_steam_achievement_unlock(const char *api_name)
+{
+	ISteamUserStats *user_stats = sys_steam_user_stats();
+	if(user_stats && api_name && api_name[0] != '\0') {
+		if(!SteamAPI_ISteamUserStats_SetAchievement(user_stats, api_name)) {
+			log_warn("steam", "SetAchievement failed: %s", api_name);
+		}
+	}
+}
+
+void
+sys_steam_stat_set(const char *api_name, i32 value)
+{
+	ISteamUserStats *user_stats = sys_steam_user_stats();
+	if(user_stats && api_name && api_name[0] != '\0') {
+		if(!SteamAPI_ISteamUserStats_SetStatInt32(user_stats, api_name, value)) {
+			log_warn("steam", "SetStatInt32 failed: %s=%d", api_name, value);
+		}
+	}
+}
+
+void
+sys_steam_stats_store(void)
+{
+	ISteamUserStats *user_stats = sys_steam_user_stats();
+	if(user_stats) {
+		if(!SteamAPI_ISteamUserStats_StoreStats(user_stats)) {
+			log_warn("steam", "StoreStats failed");
+		}
+	}
+}
+
 #else
 
 b32
@@ -89,6 +142,24 @@ sys_steam_tick(void)
 
 void
 sys_steam_close(void)
+{
+}
+
+void
+sys_steam_achievement_unlock(const char *api_name)
+{
+	(void)api_name;
+}
+
+void
+sys_steam_stat_set(const char *api_name, i32 value)
+{
+	(void)api_name;
+	(void)value;
+}
+
+void
+sys_steam_stats_store(void)
 {
 }
 
