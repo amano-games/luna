@@ -1,6 +1,7 @@
 #include "sys/sys-steam.h"
 
 #include "base/log.h"
+#include "base/str.h"
 
 // #undef USE_STEAM
 // #define USE_STEAM 1
@@ -95,23 +96,23 @@ sys_steam_user_stats(void)
 }
 
 void
-sys_steam_achievement_unlock(const char *api_name)
+sys_steam_achievement_unlock(str8 api_name)
 {
 	ISteamUserStats *user_stats = sys_steam_user_stats();
-	if(user_stats && api_name && api_name[0] != '\0') {
-		if(!SteamAPI_ISteamUserStats_SetAchievement(user_stats, api_name)) {
+	if(user_stats && api_name.size && api_name.str[0] != '\0') {
+		if(!SteamAPI_ISteamUserStats_SetAchievement(user_stats, (const char *)api_name.str)) {
 			log_warn("steam", "SetAchievement failed: %s", api_name);
 		}
 	}
 }
 
 void
-sys_steam_stat_set(const char *api_name, i32 value)
+sys_steam_stat_set(str8 api_name, i32 value)
 {
 	ISteamUserStats *user_stats = sys_steam_user_stats();
-	if(user_stats && api_name && api_name[0] != '\0') {
-		if(!SteamAPI_ISteamUserStats_SetStatInt32(user_stats, api_name, value)) {
-			log_warn("steam", "SetStatInt32 failed: %s=%d", api_name, value);
+	if(user_stats && api_name.size && api_name.str[0] != '\0') {
+		if(!SteamAPI_ISteamUserStats_SetStatInt32(user_stats, (const char *)api_name.str, value)) {
+			log_warn("steam", "SetStatInt32 failed: %.*s=%d", str8_spread(api_name), value);
 		}
 	}
 }
@@ -146,16 +147,13 @@ sys_steam_close(void)
 }
 
 void
-sys_steam_achievement_unlock(const char *api_name)
+sys_steam_achievement_unlock(str8 api_name)
 {
-	(void)api_name;
 }
 
 void
-sys_steam_stat_set(const char *api_name, i32 value)
+sys_steam_stat_set(str8 api_name, i32 value)
 {
-	(void)api_name;
-	(void)value;
 }
 
 void
