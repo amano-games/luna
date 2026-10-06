@@ -31,4 +31,5 @@ assets: assets_pack
 ifneq ($(abspath $(ASSETS_INSTALL)),$(abspath $(ASSETS_PCK)))
 	mkdir -p "$(dir $(ASSETS_INSTALL))"
 	cp -f "$(ASSETS_PCK)" "$(ASSETS_INSTALL)"
+	rm -f "$(ASSETS_PCK)"
 endif
