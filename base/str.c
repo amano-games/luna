@@ -192,6 +192,7 @@ str8_cpy(str8 *src, str8 *dst)
 inline str8
 str8_cpy_push(struct alloc alloc, str8 src)
 {
+	if(src.size == 0) { return (str8){0}; }
 	str8 dst;
 	dst.size = src.size;
 	dst.str  = alloc.allocf(alloc.ctx, src.size + 1 * sizeof(u8), alignof(u8));
