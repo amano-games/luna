@@ -3,16 +3,6 @@
 #include "base/mem.h"
 #include "base/types.h"
 
-enum sys_scores_req_state {
-	SYS_SCORE_REQ_STATE_NONE,
-
-	SYS_SCORE_REQ_STATE_QUEUE,
-	SYS_SCORE_REQ_STATE_LOADING,
-	SYS_SCORE_REQ_STATE_IDLE,
-
-	SYS_SCORE_REQ_STATE_NUM_COUNT,
-};
-
 enum sys_scores_res_type {
 	SYS_SCORE_RES_SCORES_NONE,
 

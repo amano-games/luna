@@ -32,8 +32,8 @@ struct pd_scores_req {
 	str8 board_id;
 	b32 cancelled;
 	enum pd_scores_req_type type;
-	enum sys_scores_req_state state;
 	sys_scores_req_callback callback;
+
 	union {
 		struct pd_scores_req_get get;
 		struct pd_scores_req_add add;
@@ -158,7 +158,6 @@ sys_scores_queue_push(
 		.board_id  = board_id, // TODO: copy board_id
 		.cancelled = false,
 		.type      = type,
-		.state     = SYS_SCORE_REQ_STATE_QUEUE,
 		.callback  = callback,
 		.userdata  = userdata,
 	};
