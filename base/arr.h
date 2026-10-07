@@ -6,6 +6,7 @@
 #include "base/types.h"
 
 // https://ruby0x1.github.io/machinery_blog_archive/post/minimalist-container-library-in-c-part-1/index.html
+// https://danielchasehooper.com/posts/typechecked-generic-c-data-structures/
 
 struct arr_header {
 	ssize len;

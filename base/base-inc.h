@@ -23,5 +23,4 @@
 #include "base/arr.h"
 #include "base/hash.h"
 #include "base/ht.h"
-#include "base/ring.h"
 #include "base/cmd-line.h"
