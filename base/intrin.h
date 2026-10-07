@@ -24,7 +24,13 @@
 #if COMPILER_CLANG
 #define brev_u32 __builtin_bitreverse32
 #elif COMPILER_GCC && ARCH_ARM32 && __ARM_ARCH >= 7
-#define brev_u32 __builtin_arm_rbit
+static inline u32
+brev_u32(u32 v)
+{
+	u32 r;
+	__asm("rbit %0, %1" : "=r"(r) : "r"(v));
+	return r;
+}
 #elif COMPILER_GCC && ARCH_ARM64
 static inline u32
 brev_u32(u32 v)
@@ -47,7 +53,16 @@ brev_u32(u32 x)
 #endif
 
 // signed saturate to i16
-#if (COMPILER_CLANG || COMPILER_GCC) && ARCH_ARM32 && __ARM_ARCH >= 6
+#if COMPILER_GCC && ARCH_ARM32 && __ARM_ARCH >= 6
+// Older ARM GCC releases do not expose __builtin_arm_ssat.
+static inline i32
+ssat_i16(i32 x)
+{
+	i32 r;
+	__asm("ssat %0, #16, %1" : "=r"(r) : "r"(x) : "cc");
+	return r;
+}
+#elif COMPILER_CLANG && ARCH_ARM32 && __ARM_ARCH >= 6
 #define ssat_i16(x) ((i32)__builtin_arm_ssat((x), 16))
 #elif COMPILER_MSVC && ARCH_ARM32
 #define ssat_i16(x) ((i32)_arm_ssat((x), 16))
