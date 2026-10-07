@@ -16,8 +16,6 @@
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
 #include "sys/playdate/sys-playdate.h"
-#include "sys/playdate/sys-playdate-scores.h"
-#include "sys/playdate/sys-playdate-scores.c"
 #include "base/prof.h"
 #include "base/marena.h"
 #include "base/utils.h"

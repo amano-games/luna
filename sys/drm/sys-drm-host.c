@@ -16,7 +16,6 @@
 #include "sys/sys-opts.h"
 #include "sys/sys-pause.h"
 #include "sys/sys-os.h"
-#include "sys/sys-scoreboards.h"
 #include "sys/sys.h"
 #include "engine/dbg-drw/dbg-drw.h"
 
@@ -1956,34 +1955,4 @@ sys_audio_get_volume(void)
 	f32 volume = DRM_AUDIO_VOLUME;
 	sys_audio_unlock();
 	return volume;
-}
-
-int
-sys_scores_queries_clear_queue(void)
-{
-	return 0;
-}
-
-int
-sys_scores_mutations_clear_queue(void)
-{
-	return 0;
-}
-
-int
-sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
-{
-	return 0;
-}
-
-int
-sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, struct alloc alloc)
-{
-	return 0;
-}
-
-int
-sys_scores_personal_best_get(str8 board_id, sys_scores_req_callback callback, void *userdata)
-{
-	return 0;
 }

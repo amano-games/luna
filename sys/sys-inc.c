@@ -26,4 +26,23 @@
 #endif
 
 #include "sys/sys-img.c"
+
+#if SYS_GFX
+
+#if SYS_STEAM_ENABLED
 #include "sys/sys-steam.c"
+#else
+#include "sys/sys-steam-stub.c"
+#endif
+
+#if SYS_SCORES_BACKEND == SYS_SCORES_MOCK
+#include "sys/sys-scoreboards-mock.c"
+#elif SYS_SCORES_BACKEND == SYS_SCORES_PD
+#include "sys/playdate/sys-playdate-scores.c"
+#elif SYS_SCORES_BACKEND == SYS_SCORES_STEAM
+#include "sys/sys-steam-scoreboards.c"
+#elif SYS_SCORES_BACKEND == SYS_SCORES_NONE
+#include "sys/sys-scoreboards-none.c"
+#endif
+
+#endif

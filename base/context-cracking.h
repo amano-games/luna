@@ -207,21 +207,43 @@
 #if !defined(STEAM_APP_ID)
 #define STEAM_APP_ID 0
 #endif
-#if !defined(USE_STEAM)
+#if !defined(SYS_STEAM_ENABLED)
 #if STEAM_APP_ID
-#define USE_STEAM 1
+#define SYS_STEAM_ENABLED 1
 #else
-#define USE_STEAM 0
+#define SYS_STEAM_ENABLED 0
+#endif
+#endif
+#define SYS_SCORES_NONE  0
+#define SYS_SCORES_MOCK  1
+#define SYS_SCORES_PD    2
+#define SYS_SCORES_STEAM 3
+
+#if !defined(SYS_SCORES_BACKEND)
+#if OS_PLAYDATE
+#define SYS_SCORES_BACKEND SYS_SCORES_PD
+#elif SYS_STEAM_ENABLED
+// TODO: when sys-steam-scoreboards.c are ready
+// #define SYS_SCORES_BACKEND SYS_SCORES_STEAM
+#define SYS_SCORES_BACKEND SYS_SCORES_NONE
+#else
+#define SYS_SCORES_BACKEND SYS_SCORES_NONE
 #endif
 #endif
 
 // Pairing / sanity checks
 
-#if USE_STEAM && !STEAM_APP_ID
-#error USE_STEAM requires a non-zero STEAM_APP_ID (add -DSTEAM_APP_ID=<id> to CDEFS)
+#if SYS_STEAM_ENABLED && !STEAM_APP_ID
+#error SYS_STEAM_ENABLED requires a non-zero STEAM_APP_ID (add -DSTEAM_APP_ID=<id> to CDEFS)
 #endif
-#if USE_STEAM && OS_PLAYDATE
-#error USE_STEAM is not supported on Playdate builds.
+#if SYS_STEAM_ENABLED && OS_PLAYDATE
+#error SYS_STEAM_ENABLED is not supported on Playdate builds.
+#endif
+#if SYS_SCORES_BACKEND < SYS_SCORES_NONE || SYS_SCORES_BACKEND > SYS_SCORES_STEAM
+#error Invalid SYS_SCORES_BACKEND
+#endif
+#if SYS_SCORES_BACKEND == SYS_SCORES_MOCK && !BUILD_DEBUG
+#error SYS_SCORES_MOCK requires BUILD_DEBUG
 #endif
 
 #if OS_PLAYDATE && SYS_GFX_SOKOL

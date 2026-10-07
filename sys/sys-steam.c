@@ -3,12 +3,7 @@
 #include "base/log.h"
 #include "base/str.h"
 
-// #undef USE_STEAM
-// #define USE_STEAM 1
-
 static b32 G_SYS_STEAM_OK;
-
-#if USE_STEAM
 
 enum {
 	SYS_STEAM_ERRMSG_MAX = 1024,
@@ -140,46 +135,6 @@ sys_steam_stats_reset(enum sys_steam_reset_achievements achievements)
 		}
 	}
 }
-
-#else
-
-b32
-sys_steam_ini(void)
-{
-	return false;
-}
-
-void
-sys_steam_tick(void)
-{
-}
-
-void
-sys_steam_close(void)
-{
-}
-
-void
-sys_steam_achievement_unlock(str8 api_name)
-{
-}
-
-void
-sys_steam_stat_set(str8 api_name, i32 value)
-{
-}
-
-void
-sys_steam_stats_store(void)
-{
-}
-
-void
-sys_steam_stats_reset(enum sys_steam_reset_achievements achievements)
-{
-}
-
-#endif
 
 b32
 sys_steam_ok(void)
