@@ -10,7 +10,7 @@
 #include "base/log.h"
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
-#include "sys/sys-steam.h"
+#include "sys/steam/sys-steam.h"
 
 #if !defined(SYS_SHOW_FPS)
 #if BUILD_DEBUG

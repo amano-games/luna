@@ -1,4 +1,4 @@
-#include "sys/sys-steam.h"
+#include "sys/steam/sys-steam.h"
 
 b32
 sys_steam_ini(void)
