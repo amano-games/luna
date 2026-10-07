@@ -38,7 +38,7 @@
 #if SYS_SCORES_BACKEND == SYS_SCORES_MOCK
 #include "sys/sys-scoreboards-mock.c"
 #elif SYS_SCORES_BACKEND == SYS_SCORES_PD
-#include "sys/playdate/sys-playdate-scores.c"
+#include "sys/playdate/sys-playdate-scoreboards.c"
 #elif SYS_SCORES_BACKEND == SYS_SCORES_STEAM
 #include "sys/steam/sys-steam-scoreboards.c"
 #elif SYS_SCORES_BACKEND == SYS_SCORES_NONE
