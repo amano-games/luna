@@ -6,6 +6,38 @@
 #include "base/types.h"
 #include "base/dbg.h"
 
+struct ht_entry_u32 {
+	u64 key;
+	u32 value;
+};
+
+struct ht_u32 {
+	i32 len;
+	int exp;
+	struct ht_entry_u32 *ht;
+};
+
+struct ht_entry_u64 {
+	u64 key;
+	u64 value;
+};
+
+struct ht_u64 {
+	i32 len;
+	int exp;
+	struct ht_entry_u64 *ht;
+};
+
+// Compute the next candidate index. Initialize idx to the hash.
+static inline i32
+ht_lookup(u64 hash, int exp, i32 idx)
+{
+	u32 mask = ((u64)1 << exp) - 1;
+	u32 step = (hash >> (64 - exp)) | 1;
+	i32 res  = (idx + step) & mask;
+	return res;
+}
+
 static inline i64
 hash_x_y(i32 x, i32 y, usize len)
 {
@@ -17,27 +49,6 @@ hash_x_y(i32 x, i32 y, usize len)
 	if(n < 0) n += len;
 
 	return n;
-}
-
-struct ht_entry {
-	u64 key;
-	u32 value;
-};
-
-struct ht_u32 {
-	i32 len;
-	int exp;
-	struct ht_entry *ht;
-};
-
-// Compute the next candidate index. Initialize idx to the hash.
-static inline i32
-ht_lookup(u64 hash, int exp, i32 idx)
-{
-	u32 mask = ((u64)1 << exp) - 1;
-	u32 step = (hash >> (64 - exp)) | 1;
-	i32 res  = (idx + step) & mask;
-	return res;
 }
 
 static inline u32
@@ -92,7 +103,63 @@ ht_new_u32(int exp, struct alloc alloc)
 	}
 
 	ssize size = ((size_t)1 << exp) * sizeof(*ht.ht);
-	ht.ht      = alloc_size_aligned(alloc, size, alignof(struct ht_entry), true);
+	ht.ht      = alloc_size_aligned(alloc, size, alignof(struct ht_entry_u32), true);
+	return ht;
+}
+
+static inline u64
+ht_get_u64(struct ht_u64 *t, u64 key)
+{
+	u64 res = 0;
+	for(int32_t i = key;;) {
+		i = ht_lookup(key, t->exp, i);
+		// Empty return 0
+		if(t->ht[i].key == 0) {
+			goto cleanup;
+		} else if(t->ht[i].key == key) {
+			res = t->ht[i].value;
+			goto cleanup;
+		}
+	}
+cleanup:
+	return res;
+}
+
+static inline u64
+ht_set_u64(struct ht_u64 *t, u64 key, u64 value)
+{
+	u64 res = -1;
+	for(int32_t i = key;;) {
+		i = ht_lookup(key, t->exp, i);
+		// empty, insert here
+		if(!t->ht[i].key) {
+			if((uint32_t)t->len + 1 == (uint32_t)1 << t->exp) {
+				res = 0; // out of memory
+				goto cleanup;
+			}
+			t->len++;
+			t->ht[i].key   = key;
+			t->ht[i].value = value;
+			res            = value;
+			goto cleanup;
+		}
+	}
+cleanup:
+	return res;
+}
+
+static inline struct ht_u64
+ht_new_u64(int exp, struct alloc alloc)
+{
+	struct ht_u64 ht = {0, exp, 0};
+
+	dbg_assert(exp >= 0);
+	if(exp >= 32) {
+		return ht; // request too large
+	}
+
+	ssize size = ((size_t)1 << exp) * sizeof(*ht.ht);
+	ht.ht      = alloc_size_aligned(alloc, size, alignof(struct ht_entry_u64), true);
 	return ht;
 }
 
