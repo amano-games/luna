@@ -8,7 +8,6 @@
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
 #include "sys/sys-mem.h"
-#include "sys/sys-log.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -436,33 +435,6 @@ sys_get_current_path(struct alloc alloc)
 	str8 res = str8_from_16(alloc, (str16){(u16 *)wide, length});
 	marena_reset(&OS_STATE.scratch_arena);
 	return res;
-}
-
-#if !defined(SYS_LOG_DISABLE)
-// OutputDebugStringA needs the full text; preformat through the portable fallback.
-void
-sys_printf(const char *fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	sys_log_printf_v(fmt, args);
-	va_end(args);
-}
-#endif
-
-void
-sys_log_os_console(const char *text, b32 raw, u32 level)
-{
-	FILE *stream = raw ? stdout : stderr;
-	fputs(text, stream);
-	fflush(stream);
-	OutputDebugStringA(text);
-}
-
-void
-sys_log_os_panic(const char *msg)
-{
-	abort();
 }
 
 #if SYS_GFX

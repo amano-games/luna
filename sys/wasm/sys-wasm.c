@@ -8,7 +8,6 @@
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
 #include "sys/sys-mem.h"
-#include "sys/sys-log.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -349,34 +348,6 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
-}
-
-#define SOKOL_LOG_IMPL
-#include "sokol/sokol_log.h"
-#undef SOKOL_LOG_IMPL
-
-#if !defined(SYS_LOG_DISABLE)
-// Output must go through the leveled slog_js_log bridge; preformat needed.
-void
-sys_printf(const char *fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	sys_log_printf_v(fmt, args);
-	va_end(args);
-}
-#endif
-
-void
-sys_log_os_console(const char *text, b32 raw, u32 level)
-{
-	slog_js_log(level, text);
-}
-
-void
-sys_log_os_panic(const char *msg)
-{
-	abort();
 }
 
 #if SYS_GFX

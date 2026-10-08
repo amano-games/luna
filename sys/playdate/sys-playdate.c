@@ -416,35 +416,6 @@ sys_allocator(void)
 	return alloc;
 }
 
-#if !defined(SYS_LOG_DISABLE)
-// logToConsole has no v-variant; preformat through the portable fallback.
-void
-sys_printf(const char *fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	sys_log_printf_v(fmt, args);
-	va_end(args);
-}
-#endif
-
-void
-sys_log_os_console(const char *text, b32 raw, u32 level)
-{
-	if(PD_SYS_LOG_TO_CONSOLE) {
-		usize size = strlen(text);
-		// logToConsole supplies the final newline itself.
-		if(size && text[size - 1] == '\n') { size--; }
-		PD_SYS_LOG_TO_CONSOLE("%.*s", (int)size, text);
-	}
-}
-
-void
-sys_log_os_panic(const char *msg)
-{
-	PD->system->error("%s", msg ? msg : "Logging panic");
-}
-
 struct sys_file_props
 sys_file_props_get(str8 path)
 {

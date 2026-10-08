@@ -1,55 +1,32 @@
 #include "sys/sys-log.h"
-#include "base/str.h"
 
-#if !defined(SYS_LOG_DISABLE)
+#if !OS_PLAYDATE
+#define SOKOL_LOG_IMPL
+#include "sokol/sokol_log.h"
+
 void
-sys_log_printf_v(const char *fmt, va_list args)
+sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata)
 {
-	char text[SYS_LOG_TEXT_SIZE];
-	usize cap         = sizeof(text) - 2; // reserve for '\n' and NUL
-	int size          = sys_vsnprintf(text, (int)cap, fmt, args);
-	usize written     = (size >= 0 && (usize)size < cap) ? (usize)size : cap - 1;
-	text[written]     = '\n';
-	text[written + 1] = 0;
-	sys_log_os_console(text, true, SYS_LOG_LEVEL_INFO);
+	slog_func(tag, log_level, log_item, msg, line_nr, filename, userdata);
+}
+#else
+void
+sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata)
+{
+	if(log_level > SYS_LOG_LEVEL) { return; }
+
+	const char *log_level_str = NULL;
+	switch(log_level) {
+	case SYS_LOG_LEVEL_PANI: log_level_str = "PANI"; break;
+	case SYS_LOG_LEVEL_ERROR: log_level_str = "ERRO"; break;
+	case SYS_LOG_LEVEL_WARN: log_level_str = "WARN"; break;
+	default: log_level_str = "INFO"; break;
+	}
+
+#if defined(DEV)
+	sys_printf("[%s] %s:%d\n %s: %s", log_level_str, filename, (int)line_nr, tag, msg);
+#else
+	sys_printf("[%s] %s: %s", log_level_str, tag, msg);
+#endif
 }
 #endif
-
-void
-sys_log(const char *tag, enum sys_log_level level, u32 item, const char *msg, u32 line, const char *filename)
-{
-
-#if !defined(SYS_LOG_DISABLE)
-	if(level <= SYS_LOG_LEVEL) {
-		const char *severity = "info";
-		switch(level) {
-		case SYS_LOG_LEVEL_PANI: severity = "panic"; break;
-		case SYS_LOG_LEVEL_ERROR: severity = "error"; break;
-		case SYS_LOG_LEVEL_WARN: severity = "warning"; break;
-		default: break;
-		}
-
-		char text[SYS_LOG_TEXT_SIZE];
-		if(filename) {
-			sys_snprintf(text, sizeof(text) - 1, "[%s][%s][id:%u] %s:%u:0: %s", tag ? tag : "", severity, (uint)item, filename, (uint)line, msg ? msg : "");
-		} else {
-			sys_snprintf(text, sizeof(text) - 1, "[%s][%s][id:%u][line:%u] %s", tag ? tag : "", severity, (uint)item, (uint)line, msg ? msg : "");
-		}
-
-		usize size     = cstr8_len((u8 *)text);
-		text[size]     = '\n';
-		text[size + 1] = 0;
-		sys_log_os_console(text, false, (u32)level);
-	}
-#endif
-
-	if(level == SYS_LOG_LEVEL_PANI) {
-		sys_log_os_panic(msg);
-	}
-}
-
-void
-sys_log_func(const char *tag, u32 level, u32 item, const char *msg, u32 line, const char *filename, void *user_data)
-{
-	sys_log(tag, (enum sys_log_level)level, item, msg, line, filename);
-}

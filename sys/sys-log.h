@@ -3,7 +3,6 @@
 // https://www.frogtoss.com/labs/low-overhead-structured-logging-in-c.html
 
 #include "base/types.h"
-#include "sokol/sokol_log.h"
 
 enum sys_log_level {
 	SYS_LOG_LEVEL_PANI  = 0,
@@ -30,11 +29,13 @@ extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
 #endif
 #endif
 
-void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
+// NOTE: SOKOL compatible platforms use sys-log.c playdate defines it's own.
+void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
 
 // TODO: Add __attribute__(format(gnu_printf, 6, 7)))
 // for static validation
 // https://github.com/nothings/stb/issues/1814
+// TODO: we are doing double buffering sys_log is calling sokol_log_func that does the same thing
 static inline void
 sys_logf(
 	const char *tag,
@@ -54,7 +55,7 @@ sys_logf(
 	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);
 	va_end(args);
 
-	sys_log(tag, log_level, log_item, strret, line_nr, filename);
+	sys_log(tag, log_level, log_item, strret, line_nr, filename, NULL);
 #endif
 }
 

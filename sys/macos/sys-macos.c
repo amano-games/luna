@@ -8,7 +8,6 @@
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
 #include "sys/sys-mem.h"
-#include "sys/sys-log.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -428,33 +427,6 @@ sys_os_home_dir(void)
 	}
 
 	return (str8){0};
-}
-
-#if !defined(SYS_LOG_DISABLE)
-void
-sys_printf(const char *fmt, ...)
-{
-	va_list args;
-	va_start(args, fmt);
-	vfprintf(stdout, fmt, args);
-	va_end(args);
-	fputc('\n', stdout);
-	fflush(stdout);
-}
-#endif
-
-void
-sys_log_os_console(const char *text, b32 raw, u32 level)
-{
-	FILE *stream = raw ? stdout : stderr;
-	fputs(text, stream);
-	fflush(stream);
-}
-
-void
-sys_log_os_panic(const char *msg)
-{
-	abort();
 }
 
 #if SYS_GFX

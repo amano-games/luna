@@ -273,7 +273,7 @@ error:;
 		.frame_cb           = sokol_frame,
 		.cleanup_cb         = sokol_cleanup,
 		.event_cb           = sokol_event,
-		.logger.func        = sys_log_func,
+		.logger.func        = sys_log,
 		.icon.sokol_default = true,
 		.window_title       = SOKOL_NAME,
 		.fullscreen         = SOKOL_STATE.opts.video.display == SYS_VIDEO_DISPLAY_FULLSCREEN,
@@ -291,13 +291,13 @@ sokol_init(void)
 
 	sg_setup(&(sg_desc){
 		.environment = sglue_environment(),
-		.logger.func = sys_log_func,
+		.logger.func = sys_log,
 	});
 
 #if !defined(SOKOL_DISABLE_AUDIO)
 	saudio_setup(&(saudio_desc){
 		// .buffer_frames = SOKOL_AUDIO_FRAMES,
-		.logger.func = sys_log_func,
+		.logger.func = sys_log,
 		.stream_cb   = sokol_stream_cb,
 	});
 #endif
