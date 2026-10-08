@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/context-cracking.h"
 #include "base/mem.h"
 #include "base/types.h"
 
@@ -8,8 +9,14 @@ enum path_style {
 	path_style_relative,
 	path_style_absolute_windows,
 	path_style_absolute_unix,
-	// TODO: absolute system should be defined based on platform
+
+#if OS_WINDOWS
+	path_style_absolute_system = path_style_absolute_windows,
+#elif OS_LINUX || OS_MACOS || OS_WASM || OS_PLAYDATE
 	path_style_absolute_system = path_style_absolute_unix,
+#else
+#error Absolute path style is undefined for this OS.
+#endif
 };
 
 struct str8_list path_split(struct alloc alloc, str8 str);
