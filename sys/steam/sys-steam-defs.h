@@ -94,8 +94,8 @@ struct sys_steam_scoreboard_entry {
 
 #if OS_WINDOWS
 dbg_static_assert(sizeof(struct sys_steam_scoreboard_find) == 16, steam_scoreboard_find_sz);
-dbg_static_assert(sizeof(struct sys_steam_scoreboard_downloaded) == 24, steam_scoreboard_dl_sz);
-dbg_static_assert(sizeof(struct sys_steam_scoreboard_uploaded) == 32, steam_scoreboard_up_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_get) == 24, steam_scoreboard_dl_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_add) == 32, steam_scoreboard_up_sz);
 dbg_static_assert(sizeof(struct sys_steam_scoreboard_entry) == 32, steam_scoreboard_entry_sz);
 #else
 dbg_static_assert(sizeof(struct sys_steam_scoreboard_find) == 12, steam_lb_find_sz);
