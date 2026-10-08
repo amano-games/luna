@@ -1,6 +1,6 @@
 #include "pinb-ser.h"
 
-#include "base/log.h"
+#include "sys/sys-log.h"
 
 #include "base/arr.h"
 #include "base/dbg.h"

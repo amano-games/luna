@@ -10,7 +10,7 @@
 #include "lib/serialize/serialize.h"
 #include "base/str.h"
 #include "sys/sys-io.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "sys/sys.h"
 #include "tools/btree/btree.h"
 #include "tools/wav/wav.h"

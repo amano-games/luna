@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/utils.h"
 
 #if PD_DEVICE // assertions don't work on hardware - disable

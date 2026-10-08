@@ -1,21 +1,63 @@
 #pragma once
 
-#include "base/log.h"
-#include <stdarg.h>
+// https://www.frogtoss.com/labs/low-overhead-structured-logging-in-c.html
 
-// Sokol-style console line budget, truncate silently
-#define SYS_LOG_TEXT_SIZE (512)
+#include "base/types.h"
+#include "sokol/sokol_log.h"
 
-void sys_log_func(const char *tag, u32 level, u32 item, const char *msg, u32 line, const char *filename, void *user_data);
+enum sys_log_level {
+	SYS_LOG_LEVEL_PANI  = 0,
+	SYS_LOG_LEVEL_ERROR = 1,
+	SYS_LOG_LEVEL_WARN  = 2,
+	SYS_LOG_LEVEL_INFO  = 3,
+};
 
-// NOTE: Internal va_list bridge, not for general use — call sys_printf instead.
-// Exists because the console APIs of the preformatting OS targets cannot absorb
-// variadic output (win: OutputDebugStringA takes a full string, playdate:
-// logToConsole has no v-variant, wasm: the leveled JS bridge takes a char*) and
-// C cannot forward "..." across a function call.
-// linux/macos bypass it entirely and stream with vfprintf instead.
-void sys_log_printf_v(const char *fmt, va_list args);
+#if !defined(SYS_LOG_LEVEL)
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
+#endif
 
-// @per_os_impl Logging sinks. None of these may call back into the logger.
-void sys_log_os_console(const char *text, b32 raw, u32 level);
-void sys_log_os_panic(const char *msg);
+#if defined(SYS_LOG_DISABLE)
+#define sys_printf(...)
+#else
+#if OS_PLAYDATE
+// WARN: Playdate always appends a linebreak and there is no way to disable it on C :(
+// https://devforum.play.date/t/logtoconsole-without-a-linebreak/1819
+extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
+#define sys_printf(...) PD_SYS_LOG_TO_CONSOLE(__VA_ARGS__)
+#else
+#include <stdio.h>
+#define sys_printf(...) (printf(__VA_ARGS__), printf("\n"))
+#endif
+#endif
+
+void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
+
+// TODO: Add __attribute__(format(gnu_printf, 6, 7)))
+// for static validation
+// https://github.com/nothings/stb/issues/1814
+static inline void
+sys_logf(
+	const char *tag,
+	enum sys_log_level log_level,
+	u32 log_item,
+	uint32_t line_nr,
+	const char *filename,
+	const char *fmt,
+	...)
+{
+#if !defined(SYS_LOG_DISABLE)
+	if(log_level > SYS_LOG_LEVEL) { return; }
+
+	char strret[1024];
+	va_list args;
+	va_start(args, fmt);
+	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);
+	va_end(args);
+
+	sys_log(tag, log_level, log_item, strret, line_nr, filename);
+#endif
+}
+
+#define log_info(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_INFO, 0, __LINE__, __FILE__, __VA_ARGS__);
+#define log_warn(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_WARN, 0, __LINE__, __FILE__, __VA_ARGS__);
+#define log_error(tag, ...) sys_logf(tag, SYS_LOG_LEVEL_ERROR, 0, __LINE__, __FILE__, __VA_ARGS__);

@@ -3,7 +3,7 @@
 #include "base/arr.h"
 #include "engine/collisions/collisions.h"
 #include "base/mathfunc.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 
 static inline int ss_grid_cell_col_with_aabb(struct ss_grid *grid, i32 x, i32 y, struct col_aabb aabb);
 

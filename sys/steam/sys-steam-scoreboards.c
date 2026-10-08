@@ -3,7 +3,7 @@
 #include "base/dbg.h"
 #include "base/hash.h"
 #include "base/ht.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/mem.h"
 #include "base/str.h"
 #include "base/types.h"

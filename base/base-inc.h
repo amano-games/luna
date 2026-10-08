@@ -9,7 +9,7 @@
 #include "base/intrin.h"
 #include "base/utils.h"
 #include "base/mem.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/dbg.h"
 #include "base/date-time.h"
 #include "base/str.h"

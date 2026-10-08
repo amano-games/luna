@@ -5,7 +5,7 @@
 #include "base/ht.h"
 #include "base/mathfunc.h"
 #include "sys/sys-io.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/types.h"
 #include "base/utils.h"
 #include "sys/sys.h"

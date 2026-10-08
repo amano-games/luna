@@ -4,7 +4,7 @@
 #include "base/cmd-line.h"
 #include "base/dbg.h"
 #include "base/hash.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"

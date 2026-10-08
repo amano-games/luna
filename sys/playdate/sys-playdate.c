@@ -11,7 +11,6 @@
 #include "sys/sys.h"
 #include "engine/dbg-drw/dbg-drw.h"
 #include "base/types.h"
-#include "base/log.h"
 #include "sys/sys-log.h"
 #include "sys/sys-mem.h"
 #include "sys/sys-io.h"

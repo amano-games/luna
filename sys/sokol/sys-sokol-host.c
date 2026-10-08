@@ -32,7 +32,7 @@
 #include "engine/dbg-drw/dbg-drw.h"
 #include "sys/sys-io.h"
 #include "sys/sys-img.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "sys/sys.h"
 #include "base/prof.h"
 #include "base/dbg.h"

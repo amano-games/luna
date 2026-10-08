@@ -9,7 +9,7 @@
 #include "lib/serialize/serialize.h"
 #include "base/str.h"
 #include "sys/sys-io.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/types.h"
 #include "base/utils.h"
 #include "sys/sys.h"

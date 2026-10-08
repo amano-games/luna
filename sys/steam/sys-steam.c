@@ -1,6 +1,6 @@
 #include "sys/steam/sys-steam.h"
 
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/str.h"
 
 static b32 G_SYS_STEAM_OK;

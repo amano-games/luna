@@ -7,7 +7,7 @@
 #include "lib/bet/bet.h"
 #include "base/dbg.h"
 #include "base/ht.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 
 // Intern path and return its path_table index. Index 0 is the empty sentinel.
 static u32

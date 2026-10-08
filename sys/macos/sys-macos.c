@@ -1,6 +1,6 @@
 // @per_os_impl macOS — owns OS sys_* ; optional Sokol helper for present/window/audio.
 
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"

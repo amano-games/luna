@@ -7,7 +7,7 @@
 #include "engine/gfx/gfx.h"
 #include "sys/sys-font.h"
 #include "sys/sys-font-mono.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
 #include "sys/steam/sys-steam.h"

@@ -1,7 +1,7 @@
 #include "aseprite.h"
 #include "base/arr.h"
 #include "base/dbg.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/mem.h"
 #include "base/path.h"
 #include "base/str.h"

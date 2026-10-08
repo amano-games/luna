@@ -1,7 +1,6 @@
 // @per_os_impl DRM/KMS host — present, input, audio, sys_* display contract.
 
 #include "base/dbg.h"
-#include "base/log.h"
 #include "sys/sys-log.h"
 #include "base/marena.h"
 #include "base/mem.h"

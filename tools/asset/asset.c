@@ -1,6 +1,6 @@
 #include "asset.h"
 #include "base/dbg.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/mem.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-io.h"

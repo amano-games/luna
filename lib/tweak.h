@@ -14,7 +14,7 @@
 #include "base/types.h"
 #include "base/marena.h"
 #include "base/str.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/dbg.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"

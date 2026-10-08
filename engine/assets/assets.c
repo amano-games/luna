@@ -11,7 +11,7 @@
 #include "engine/gfx/gfx.h"
 #include "base/marena.h"
 #include "base/path.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/str.h"
 #include "base/types.h"
 #include "lib/tex/tex.h"

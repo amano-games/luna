@@ -1,5 +1,5 @@
 #include "queue.h"
-#include "base/log.h"
+#include "sys/sys-log.h"
 #include "dbg.h"
 #include "base/utils.h"
 
