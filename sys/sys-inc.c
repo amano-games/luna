@@ -25,6 +25,7 @@
 #error No platform selected for sys-inc.c
 #endif
 
+#include "sys/sys-log.c"
 #include "sys/sys-img.c"
 
 #if SYS_GFX

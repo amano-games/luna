@@ -8,6 +8,7 @@
 #include "sys/sys-defs.h"
 #include "sys/sys-io.h"
 #include "sys/sys-mem.h"
+#include "sys/sys-log.h"
 #include "sys/sys-os.h"
 #include "sys/sys.h"
 
@@ -46,6 +47,14 @@ str8 sys_get_current_path(struct alloc alloc);
 void
 sys_os_init(void)
 {
+	// Attach GUI builds to the launching shell, preserving redirected streams.
+	HANDLE out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE err_handle = GetStdHandle(STD_ERROR_HANDLE);
+	if(AttachConsole(ATTACH_PARENT_PROCESS)) {
+		if(!out_handle || out_handle == INVALID_HANDLE_VALUE) { (void)freopen("CONOUT$", "w", stdout); }
+		if(!err_handle || err_handle == INVALID_HANDLE_VALUE) { (void)freopen("CONOUT$", "w", stderr); }
+	}
+
 	struct alloc alloc_sys = sys_allocator();
 	{
 		void *mem = mem_alloc_size(alloc_sys, OS_ARENA_SIZE);
@@ -160,7 +169,7 @@ sys_make_dir(str8 path)
 	if(!path.str || path.size == 0 || path.size >= 1024) { return false; }
 
 	b32 result = false;
-	i32 n = MultiByteToWideChar(CP_UTF8, 0, (char *)path.str, (int)path.size, name16, 1024 - 1);
+	i32 n      = MultiByteToWideChar(CP_UTF8, 0, (char *)path.str, (int)path.size, name16, 1024 - 1);
 	if(n <= 0) {
 		return result;
 	}
@@ -429,7 +438,32 @@ sys_get_current_path(struct alloc alloc)
 	return res;
 }
 
-#include "sys/sys-log.c"
+#if !defined(SYS_LOG_DISABLE)
+// OutputDebugStringA needs the full text; preformat through the portable fallback.
+void
+sys_printf(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	sys_log_printf_v(fmt, args);
+	va_end(args);
+}
+#endif
+
+void
+sys_log_os_console(const char *text, b32 raw, u32 level)
+{
+	FILE *stream = raw ? stdout : stderr;
+	fputs(text, stream);
+	fflush(stream);
+	OutputDebugStringA(text);
+}
+
+void
+sys_log_os_panic(const char *msg)
+{
+	abort();
+}
 
 #if SYS_GFX
 #include "sys/sys-gamepad.c"

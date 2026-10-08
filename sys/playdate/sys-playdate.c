@@ -12,6 +12,7 @@
 #include "engine/dbg-drw/dbg-drw.h"
 #include "base/types.h"
 #include "base/log.h"
+#include "sys/sys-log.h"
 #include "sys/sys-mem.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
@@ -416,30 +417,33 @@ sys_allocator(void)
 	return alloc;
 }
 
+#if !defined(SYS_LOG_DISABLE)
+// logToConsole has no v-variant; preformat through the portable fallback.
 void
-sys_log(
-	const char *tag,
-	enum sys_log_level log_level,
-	u32 log_item,
-	const char *msg,
-	uint32_t line_nr,
-	const char *filename)
+sys_printf(const char *fmt, ...)
 {
-	if(log_level > SYS_LOG_LEVEL) { return; }
-
-	const char *log_level_str = NULL;
-	switch(log_level) {
-	case SYS_LOG_LEVEL_PANI: log_level_str = "PANI"; break;
-	case SYS_LOG_LEVEL_ERROR: log_level_str = "ERRO"; break;
-	case SYS_LOG_LEVEL_WARN: log_level_str = "WARN"; break;
-	default: log_level_str = "INFO"; break;
-	}
-
-#if defined(DEV)
-	sys_printf("[%s] %s:%d\n %s: %s", log_level_str, filename, (int)line_nr, tag, msg);
-#else
-	sys_printf("[%s] %s: %s", log_level_str, tag, msg);
+	va_list args;
+	va_start(args, fmt);
+	sys_log_printf_v(fmt, args);
+	va_end(args);
+}
 #endif
+
+void
+sys_log_os_console(const char *text, b32 raw, u32 level)
+{
+	if(PD_SYS_LOG_TO_CONSOLE) {
+		usize size = strlen(text);
+		// logToConsole supplies the final newline itself.
+		if(size && text[size - 1] == '\n') { size--; }
+		PD_SYS_LOG_TO_CONSOLE("%.*s", (int)size, text);
+	}
+}
+
+void
+sys_log_os_panic(const char *msg)
+{
+	PD->system->error("%s", msg ? msg : "Logging panic");
 }
 
 struct sys_file_props

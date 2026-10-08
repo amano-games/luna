@@ -2,6 +2,7 @@
 
 #include "base/dbg.h"
 #include "base/log.h"
+#include "sys/sys-log.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/str.h"

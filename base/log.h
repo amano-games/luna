@@ -16,13 +16,7 @@ enum sys_log_level {
 #if defined(SYS_LOG_DISABLE)
 #define sys_printf(...)
 #else
-#if OS_PLAYDATE
-extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
-#define sys_printf(...) PD_SYS_LOG_TO_CONSOLE(__VA_ARGS__)
-#else
-#include <stdio.h>
-#define sys_printf(...) (printf(__VA_ARGS__), printf("\n"))
-#endif
+void sys_printf(const char *fmt, ...);
 #endif
 
 void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename);
