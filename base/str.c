@@ -366,10 +366,16 @@ str8_find_needle(str8 str, usize start_pos, str8 needle, str_match_flags flags)
 		if(adjusted_flags & str_match_flag_case_insensitive) {
 			needle_first_char_adjusted = char_to_upper(needle_first_char_adjusted);
 		}
+		if(adjusted_flags & str_match_flag_slash_insensitive) {
+			needle_first_char_adjusted = char_to_correct_slash(needle_first_char_adjusted);
+		}
 		for(; p < stop_p; p += 1) {
 			u8 haystack_char_adjusted = *p;
 			if(adjusted_flags & str_match_flag_case_insensitive) {
 				haystack_char_adjusted = char_to_upper(haystack_char_adjusted);
+			}
+			if(adjusted_flags & str_match_flag_slash_insensitive) {
+				haystack_char_adjusted = char_to_correct_slash(haystack_char_adjusted);
 			}
 			if(haystack_char_adjusted == needle_first_char_adjusted) {
 				if(str8_match(str8_range(p + 1, string_opl), needle_tail, adjusted_flags)) {
