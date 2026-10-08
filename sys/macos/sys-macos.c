@@ -153,12 +153,19 @@ sys_exe_path(void)
 b32
 sys_make_dir(str8 path)
 {
+	// TODO: use sys-scratch for the temporary path buffer.
+	char path_copy[1024];
+	dbg_assert(path.size < sizeof(path_copy));
+	if(!path.str || path.size == 0 || path.size >= sizeof(path_copy)) { return false; }
+	memcpy(path_copy, path.str, (usize)path.size);
+	path_copy[path.size] = 0;
+
 	b32 result = false;
-	if(mkdir((char *)path.str, 0755) != -1) {
+	if(mkdir(path_copy, 0755) != -1) {
 		result = true;
 	} else {
-		// match windows behavior
-		result = access((char *)path.str, F_OK) == 0;
+		struct stat info = {0};
+		result = stat(path_copy, &info) == 0 && S_ISDIR(info.st_mode);
 	}
 	return result;
 }

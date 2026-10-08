@@ -154,9 +154,13 @@ sys_exe_path(void)
 b32
 sys_make_dir(str8 path)
 {
+	// TODO: use sys-scratch for the temporary path buffer.
+	WCHAR name16[1024];
+	dbg_assert(path.size < 1024);
+	if(!path.str || path.size == 0 || path.size >= 1024) { return false; }
+
 	b32 result = false;
-	WCHAR name16[MAX_PATH];
-	i32 n = MultiByteToWideChar(CP_UTF8, 0, (char *)path.str, (int)path.size, name16, MAX_PATH - 1);
+	i32 n = MultiByteToWideChar(CP_UTF8, 0, (char *)path.str, (int)path.size, name16, 1024 - 1);
 	if(n <= 0) {
 		return result;
 	}

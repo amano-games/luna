@@ -2,6 +2,7 @@
 
 #include "base/date-time.h"
 #include "base/mem.h"
+#include "base/path.h"
 #include "base/str.h"
 #include "base/types.h"
 #include "sys/sys.h"
@@ -67,6 +68,7 @@ sys_file sys_file_open(str8 path, i32 sys_file_mode);
 b32 sys_file_exists(str8 path, i32 sys_file_mode);
 struct sys_full_file_res sys_load_full_file(struct alloc alloc, str8 path);
 dense_time sys_file_modified(str8 path);
+b32 sys_make_dirs(str8 path);
 
 // @per_os_impl File IO
 sys_file sys_file_open_r(str8 path);

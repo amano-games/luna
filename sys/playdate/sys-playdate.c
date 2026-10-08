@@ -751,13 +751,20 @@ sys_get_current_path(struct alloc alloc)
 b32
 sys_make_dir(str8 path)
 {
+	// TODO: use sys-scratch for the temporary path buffer.
+	char path_copy[1024];
+	dbg_assert(path.size < sizeof(path_copy));
+	if(!path.str || path.size == 0 || path.size >= sizeof(path_copy)) { return false; }
+	memcpy(path_copy, path.str, (usize)path.size);
+	path_copy[path.size] = 0;
+
 	b32 result = false;
-	if(PD->file->mkdir((const char *)path.str) == 0) {
+	if(PD->file->mkdir(path_copy) == 0) {
 		result = true;
 	} else {
 		// match windows behavior
 		FileStat pd_stat = {0};
-		result           = PD->file->stat((const char *)path.str, &pd_stat) == 0;
+		result           = PD->file->stat(path_copy, &pd_stat) == 0 && pd_stat.isdir;
 	}
 	return result;
 }

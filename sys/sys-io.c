@@ -4,6 +4,25 @@
 #include "base/path.h"
 #include "base/str.h"
 
+b32
+sys_make_dirs(str8 path)
+{
+	if(path.size == 0) { return true; }
+	if(!path.str || path.size >= PTRDIFF_MAX || str8_find_needle(path, 0, str8_lit("\0"), 0) < path.size) { return false; }
+
+	b32 ok = false;
+	for(u64 slash_pos = 0; slash_pos <= path.size;
+		slash_pos     = str8_find_needle(path, slash_pos + 1, str8_lit("/"), str_match_flag_slash_insensitive)) {
+		str8 ancestor = str8_prefix(path, slash_pos);
+		if(ancestor.size != 0) {
+			ok = sys_make_dir(ancestor);
+		}
+		if(slash_pos == path.size) { break; }
+	}
+
+	return ok;
+}
+
 sys_file
 sys_file_open(str8 path, i32 sys_file_mode)
 {
