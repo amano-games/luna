@@ -123,12 +123,12 @@ aud_cmds_flush(struct alloc scratch)
 			mus_channel_stop(mc);
 			str8 path = asset_db_path_get(&ASSETS.db, cmd->path_handle);
 			if(path.size == 0) {
-				log_warn("Audio", "Music file path doesn't exist in DB");
+				// log_warn("Audio", "Music file path doesn't exist in DB");
 				break;
 			}
 
 			if(!asset_stream_open(&mc->stream, cmd->path_handle)) {
-				log_warn("Audio", "Can't open music file: %s", path.str);
+				// log_warn("Audio", "Can't open music file: %s", path.str);
 				break;
 			}
 
@@ -136,7 +136,7 @@ aud_cmds_flush(struct alloc scratch)
 			struct adpcm *adpcm = &mc->adpcm;
 			u32 num_samples     = 0;
 			if(asset_stream_read(&mc->stream, &num_samples, sizeof(u32)) != (i32)sizeof(u32)) {
-				log_warn("Audio", "Can't read music header: %s", path.str);
+				// log_warn("Audio", "Can't read music header: %s", path.str);
 				asset_stream_close(&mc->stream);
 				break;
 			}
@@ -178,7 +178,7 @@ aud_push_cmd(struct aud_cmd aud_cmd)
 	sys_audio_unlock();
 
 	if(is_full) { // temporary read index
-		log_warn("Audio", "Queue Full!");
+		// log_warn("Audio", "Queue Full!");
 		// TODO: scan queue and see if we can drop a less important command
 	} else {
 		AUDIO.cmds[AUDIO.i_cmd_w_tmp] = aud_cmd;
@@ -238,7 +238,7 @@ mus_play_by_path(
 	b32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
-	log_info("Audio", "play music %s", path.str);
+	// log_info("Audio", "play music %s", path.str);
 	struct asset_handle handle = (struct asset_handle){
 		.path_hash = hash_fnv1a_str8(path),
 	};
