@@ -37,7 +37,8 @@ enum {
 };
 
 enum sys_steam_scores_data_req {
-	SYS_STEAM_SCORES_DATA_GLOBAL = 0,
+	SYS_STEAM_SCORES_DATA_GLOBAL  = 0,
+	SYS_STEAM_SCORES_DATA_FRIENDS = 2,
 };
 
 enum sys_steam_scores_upload_method {

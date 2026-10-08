@@ -17,7 +17,11 @@ sys_scores_mutations_clear_queue(void)
 }
 
 int
-sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
+sys_score_add(
+	str8 board_id,
+	u32 value,
+	sys_scores_req_callback callback,
+	void *userdata)
 {
 	if(callback) {
 		struct sys_scores_res res = {
@@ -30,7 +34,12 @@ sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *
 }
 
 int
-sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, struct alloc alloc)
+sys_scores_get(
+	str8 board_id,
+	enum sys_scores_scope scope,
+	sys_scores_req_callback callback,
+	void *userdata,
+	struct alloc alloc)
 {
 	if(callback) {
 		struct sys_scores_res res = {

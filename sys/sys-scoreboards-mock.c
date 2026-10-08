@@ -28,7 +28,12 @@ sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *
 }
 
 int
-sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, struct alloc alloc)
+sys_scores_get(
+	str8 board_id,
+	enum sys_scores_scope scope,
+	sys_scores_req_callback callback,
+	void *userdata,
+	struct alloc alloc)
 {
 	i32 res          = -1;
 	u32 top_score    = U32_MAX;

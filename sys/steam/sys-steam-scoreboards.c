@@ -41,6 +41,7 @@ enum sys_scores_steam_state {
 };
 
 struct sys_steam_scores_req_get {
+	enum sys_scores_scope scope;
 	struct alloc alloc;
 };
 
@@ -110,6 +111,7 @@ static int sys_scores_queue_push(
 	enum sys_scores_req_type type,
 	str8 board_id,
 	u32 value,
+	enum sys_scores_scope scope,
 	sys_scores_req_callback callback,
 	void *userdata,
 	struct alloc alloc);
@@ -136,26 +138,37 @@ sys_scores_mutations_clear_queue(void)
 }
 
 int
-sys_score_add(str8 board_id, u32 value, sys_scores_req_callback callback, void *userdata)
+sys_score_add(
+	str8 board_id,
+	u32 value,
+	sys_scores_req_callback callback,
+	void *userdata)
 {
 	return sys_scores_queue_push(
 		&SCORES_MUTATIONS_STATE,
 		SYS_SCORES_REQ_ADD,
 		board_id,
 		value,
+		SYS_SCORES_SCOPE_GLOBAL,
 		callback,
 		userdata,
 		(struct alloc){0});
 }
 
 int
-sys_scores_get(str8 board_id, sys_scores_req_callback callback, void *userdata, struct alloc alloc)
+sys_scores_get(
+	str8 board_id,
+	enum sys_scores_scope scope,
+	sys_scores_req_callback callback,
+	void *userdata,
+	struct alloc alloc)
 {
 	return sys_scores_queue_push(
 		&SCORES_QUERIES_STATE,
 		SYS_SCORES_REQ_GET,
 		board_id,
 		0,
+		scope,
 		callback,
 		userdata,
 		alloc);
@@ -172,6 +185,7 @@ sys_scores_personal_best_get(
 		SYS_SCORES_REQ_PERSONAL_BEST,
 		board_id,
 		0,
+		SYS_SCORES_SCOPE_GLOBAL,
 		callback,
 		userdata,
 		(struct alloc){0});
@@ -183,6 +197,7 @@ sys_scores_queue_push(
 	enum sys_scores_req_type type,
 	str8 board_id,
 	u32 value,
+	enum sys_scores_scope scope,
 	sys_scores_req_callback callback,
 	void *userdata,
 	struct alloc alloc)
@@ -208,6 +223,7 @@ sys_scores_queue_push(
 	switch(type) {
 	case SYS_SCORES_REQ_GET: {
 		req->get.alloc = alloc;
+		req->get.scope = scope;
 	} break;
 
 	case SYS_SCORES_REQ_ADD: {
@@ -414,7 +430,7 @@ sys_scores_start_req(
 		sys_steam_api_call call = SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(
 			user_stats,
 			req->board_handle,
-			SYS_STEAM_SCORES_DATA_GLOBAL,
+			req->get.scope == SYS_SCORES_SCOPE_FRIENDS ? SYS_STEAM_SCORES_DATA_FRIENDS : SYS_STEAM_SCORES_DATA_GLOBAL,
 			1,
 			SYS_STEAM_SCORES_TOP_ENTRY_COUNT);
 
@@ -480,6 +496,7 @@ sys_scores_handle_get(struct sys_scores_state *state, struct sys_steam_scores_re
 	}
 
 	dbg_assert(req->get.alloc.allocf != NULL);
+
 	i32 count = clamp_i32(data->count, 0, SYS_STEAM_SCORES_TOP_ENTRY_COUNT);
 	res       = (struct sys_scores_res){
 		.type = SYS_SCORE_RES_SCORES_GET,
@@ -490,11 +507,11 @@ sys_scores_handle_get(struct sys_scores_state *state, struct sys_steam_scores_re
 	};
 
 	struct sys_score_arr *entries = &res.get.entries;
+
 	if(count > 0) {
 		entries->items = alloc_arr(req->get.alloc, entries->items, count);
+		if(entries->items == NULL) { goto error; }
 	}
-
-	if(count > 0 && entries->items == NULL) { goto error; }
 
 	entries->cap = (usize)count;
 	entries->len = 0;
@@ -511,15 +528,20 @@ sys_scores_handle_get(struct sys_scores_state *state, struct sys_steam_scores_re
 			continue;
 		}
 
-		if(entry.steam_id == local_id) {
-			res.get.player_included = true;
+		b32 is_player = entry.steam_id == local_id;
+
+		if(is_player) {
+			res.get.player_included = res.get.player_included | is_player;
 		}
 
-		entries->items[entries->len++] = (struct sys_score){
-			.rank   = (u32)MAX(entry.global_rank, 0),
-			.value  = sys_scores_steam_score_decode(entry.score),
-			.player = sys_scores_steam_user_name_get(users, entry.steam_id),
+		struct sys_score score = {
+			.rank      = (u32)MAX(entry.global_rank, 0),
+			.value     = sys_scores_steam_score_decode(entry.score),
+			.player    = sys_scores_steam_user_name_get(users, entry.steam_id),
+			.is_player = is_player,
 		};
+
+		entries->items[entries->len++] = score;
 	}
 
 	log_info(
