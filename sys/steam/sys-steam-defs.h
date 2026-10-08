@@ -12,7 +12,7 @@
 
 // Steam C API types and callback layouts.
 enum {
-	SYS_STEAM_ERRMSG_MAX = 1024,
+	SYS_STEAM_ERR_MSG_MAX = 1024,
 };
 
 // steam_api.h ESteamAPIInitResult.
@@ -23,7 +23,7 @@ enum sys_steam_init_result {
 	SYS_STEAM_INIT_VERSION_MISMATCH = 3,
 };
 
-typedef char sys_steam_errmsg[SYS_STEAM_ERRMSG_MAX];
+typedef char sys_steam_errmsg[SYS_STEAM_ERR_MSG_MAX];
 
 enum sys_steam_reset_achievements {
 	SYS_STEAM_RESET_STATS_ONLY,
@@ -31,17 +31,17 @@ enum sys_steam_reset_achievements {
 };
 
 enum {
-	SYS_STEAM_CB_LB_FIND       = 1104,
-	SYS_STEAM_CB_LB_DOWNLOADED = 1105,
-	SYS_STEAM_CB_LB_UPLOADED   = 1106,
+	SYS_STEAM_SCOREBOARD_FIND_DATA_SIZE = 1104,
+	SYS_STEAM_SCOREBOARD_GET_DATA_SIZE  = 1105,
+	SYS_STEAM_SCOREBOARD_ADD_DATA_SIZE  = 1106,
 };
 
-enum sys_scores_lb_data_req {
-	SYS_SCORES_LB_DATA_GLOBAL = 0,
+enum sys_steam_scores_data_req {
+	SYS_STEAM_SCORES_DATA_GLOBAL = 0,
 };
 
-enum sys_scores_lb_upload_method {
-	SYS_SCORES_LB_UPLOAD_KEEP_BEST = 1,
+enum sys_steam_scores_upload_method {
+	SYS_STEAM_SCORES_UPLOAD_KEEP_BEST = 1,
 };
 
 typedef struct ISteamUserStats ISteamUserStats;
@@ -50,8 +50,8 @@ typedef struct ISteamFriends ISteamFriends;
 typedef struct ISteamUser ISteamUser;
 
 typedef u64 sys_steam_api_call;
-typedef u64 sys_steam_leaderboard;
-typedef u64 sys_steam_lb_entries;
+typedef u64 sys_steam_board_handle;
+typedef u64 sys_steam_scoreboard_entries;
 typedef u64 sys_steam_id;
 
 // Valve callback packing: Linux/macOS SMALL (4), Windows LARGE (8).
@@ -61,27 +61,27 @@ typedef u64 sys_steam_id;
 #pragma pack(push, 4)
 #endif
 
-struct sys_steam_lb_find {
-	sys_steam_leaderboard leaderboard;
-	u8 found;
+struct sys_steam_scoreboard_find {
+	sys_steam_board_handle board_handle;
+	b8 found;
 };
 
-struct sys_steam_lb_downloaded {
-	sys_steam_leaderboard leaderboard;
-	sys_steam_lb_entries entries;
+struct sys_steam_scoreboard_get {
+	sys_steam_board_handle board_handle;
+	sys_steam_scoreboard_entries entries;
 	i32 count;
 };
 
-struct sys_steam_lb_uploaded {
+struct sys_steam_scoreboard_add {
 	u8 success;
-	sys_steam_leaderboard leaderboard;
+	sys_steam_board_handle board_handle;
 	i32 score;
 	u8 changed;
 	i32 rank_new;
 	i32 rank_prev;
 };
 
-struct sys_steam_lb_entry {
+struct sys_steam_scoreboard_entry {
 	sys_steam_id steam_id;
 	i32 global_rank;
 	i32 score;
@@ -92,15 +92,15 @@ struct sys_steam_lb_entry {
 #pragma pack(pop)
 
 #if OS_WINDOWS
-dbg_static_assert(sizeof(struct sys_steam_lb_find) == 16, steam_lb_find_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_downloaded) == 24, steam_lb_dl_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_uploaded) == 32, steam_lb_up_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_entry) == 32, steam_lb_entry_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_find) == 16, steam_scoreboard_find_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_downloaded) == 24, steam_scoreboard_dl_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_uploaded) == 32, steam_scoreboard_up_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_entry) == 32, steam_scoreboard_entry_sz);
 #else
-dbg_static_assert(sizeof(struct sys_steam_lb_find) == 12, steam_lb_find_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_downloaded) == 20, steam_lb_dl_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_uploaded) == 28, steam_lb_up_sz);
-dbg_static_assert(sizeof(struct sys_steam_lb_entry) == 28, steam_lb_entry_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_find) == 12, steam_lb_find_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_get) == 20, steam_lb_dl_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_add) == 28, steam_lb_up_sz);
+dbg_static_assert(sizeof(struct sys_steam_scoreboard_entry) == 28, steam_lb_entry_sz);
 #endif
 
 // NOLINTBEGIN(readability-identifier-naming)
@@ -134,26 +134,26 @@ b32 SYS_STEAM_CALL SteamAPI_ISteamUtils_GetAPICallResult(
 sys_steam_api_call SYS_STEAM_CALL SteamAPI_ISteamUserStats_FindLeaderboard(ISteamUserStats *self, const char *name);
 sys_steam_api_call SYS_STEAM_CALL SteamAPI_ISteamUserStats_DownloadLeaderboardEntries(
 	ISteamUserStats *self,
-	sys_steam_leaderboard leaderboard,
-	enum sys_scores_lb_data_req data_req,
+	sys_steam_board_handle leaderboard,
+	enum sys_steam_scores_data_req data_req,
 	i32 range_start,
 	i32 range_end);
 sys_steam_api_call SYS_STEAM_CALL SteamAPI_ISteamUserStats_DownloadLeaderboardEntriesForUsers(
 	ISteamUserStats *self,
-	sys_steam_leaderboard leaderboard,
+	sys_steam_board_handle leaderboard,
 	sys_steam_id *users,
 	i32 user_count);
 b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_GetDownloadedLeaderboardEntry(
 	ISteamUserStats *self,
-	sys_steam_lb_entries entries,
+	sys_steam_scoreboard_entries entries,
 	i32 index,
-	struct sys_steam_lb_entry *entry,
+	struct sys_steam_scoreboard_entry *entry,
 	i32 *details,
 	i32 details_max);
 sys_steam_api_call SYS_STEAM_CALL SteamAPI_ISteamUserStats_UploadLeaderboardScore(
 	ISteamUserStats *self,
-	sys_steam_leaderboard leaderboard,
-	enum sys_scores_lb_upload_method method,
+	sys_steam_board_handle leaderboard,
+	enum sys_steam_scores_upload_method method,
 	i32 score,
 	const i32 *score_details,
 	i32 score_details_count);

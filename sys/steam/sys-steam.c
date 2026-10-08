@@ -33,6 +33,9 @@ sys_steam_tick(void)
 {
 	if(G_SYS_STEAM_OK) {
 		SteamAPI_RunCallbacks();
+#if SYS_SCORES_BACKEND == SYS_SCORES_STEAM
+		sys_steam_scores_tick();
+#endif
 	}
 }
 

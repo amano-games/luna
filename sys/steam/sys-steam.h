@@ -4,6 +4,9 @@
 
 b32 sys_steam_ini(void);
 void sys_steam_tick(void);
+#if SYS_SCORES_BACKEND == SYS_SCORES_STEAM
+void sys_steam_scores_tick(void);
+#endif
 void sys_steam_close(void);
 b32 sys_steam_ok(void);
 
