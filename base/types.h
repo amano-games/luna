@@ -9,6 +9,7 @@
 #include <float.h>
 
 #include "sys/sys-sprintf.h"
+#include "sys/sys-printf.h"
 
 #if defined(__clang__)
 // clang supports both __attribute__ and no_sanitize

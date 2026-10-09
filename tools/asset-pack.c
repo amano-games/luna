@@ -5,6 +5,7 @@
 #include "base/dbg.h"
 #include "base/hash.h"
 #include "sys/sys-log.h"
+#include "sys/sys-printf.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"

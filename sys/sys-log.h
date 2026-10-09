@@ -1,6 +1,7 @@
 #pragma once
 
 // https://www.frogtoss.com/labs/low-overhead-structured-logging-in-c.html
+// https://github.com/tsoding/nob.h/blob/main/nob.h#L2037  nob__log_handler?
 
 #include "base/types.h"
 
@@ -15,20 +16,6 @@ enum sys_log_level {
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
 #endif
 
-#if defined(SYS_LOG_DISABLE)
-#define sys_printf(...)
-#else
-#if OS_PLAYDATE
-// WARN: Playdate always appends a linebreak and there is no way to disable it on C :(
-// https://devforum.play.date/t/logtoconsole-without-a-linebreak/1819
-extern void (*PD_SYS_LOG_TO_CONSOLE)(const char *fmt, ...);
-#define sys_printf(...) PD_SYS_LOG_TO_CONSOLE(__VA_ARGS__)
-#else
-#include <stdio.h>
-#define sys_printf(...) (printf(__VA_ARGS__), printf("\n"))
-#endif
-#endif
-
 // NOTE: SOKOL compatible platforms use sys-log.c playdate defines it's own.
 void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
 
@@ -36,6 +23,7 @@ void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const 
 // for static validation
 // https://github.com/nothings/stb/issues/1814
 // TODO: we are doing double buffering sys_log is calling sokol_log_func that does the same thing
+// But this is probably unavoidable becuase playdate doesnt have a vargs alt
 static inline void
 sys_logf(
 	const char *tag,
@@ -49,7 +37,7 @@ sys_logf(
 #if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL) { return; }
 
-	char strret[1024];
+	char strret[512];
 	va_list args;
 	va_start(args, fmt);
 	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);
