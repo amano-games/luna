@@ -101,29 +101,8 @@
 #endif
 #endif
 
-// Prof option cracking
-// PROF_HISTORY: 0 = off, 1 = exclusive-µs ring, 2 = full present ring
-#define PROF_HISTORY_NONE  0
-#define PROF_HISTORY_ZONE  1
-#define PROF_HISTORY_FRAME 2
-
 #if !defined(PROF)
 #define PROF BUILD_DEBUG
-#endif
-#if !defined(PROF_HISTORY)
-#if PROF
-#define PROF_HISTORY PROF_HISTORY_FRAME
-#else
-#define PROF_HISTORY PROF_HISTORY_NONE
-#endif
-#endif
-#if !defined(PROF_HISTORY_SIZE)
-#define PROF_HISTORY_SIZE 128
-#endif
-
-#if !PROF
-#undef PROF_HISTORY
-#define PROF_HISTORY PROF_HISTORY_NONE
 #endif
 
 // Zero all undefined options
@@ -188,6 +167,7 @@
 #if !defined(SYS_GFX_DRM)
 #define SYS_GFX_DRM 0
 #endif
+
 // Has a present host (Sokol, DRM, or Playdate). Not which backend.
 #if !defined(SYS_GFX)
 #define SYS_GFX (SYS_GFX_SOKOL || SYS_GFX_DRM || OS_PLAYDATE)
@@ -201,9 +181,8 @@
 #if !defined(PROF)
 #define PROF 0
 #endif
-#if !defined(PROF_HISTORY)
-#define PROF_HISTORY PROF_HISTORY_NONE
-#endif
+// PROF_HISTORY is cracked in base/prof.h (it owns the PROF_HISTORY_NONE/etc
+// mode constants and the PROF-conditional default); do not default it here.
 #if !defined(STEAM_APP_ID)
 #define STEAM_APP_ID 0
 #endif
@@ -214,6 +193,7 @@
 #define SYS_STEAM_ENABLED 0
 #endif
 #endif
+
 #define SYS_SCORES_NONE  0
 #define SYS_SCORES_MOCK  1
 #define SYS_SCORES_PD    2
@@ -264,12 +244,6 @@
 #endif
 #if (OS_LINUX + OS_MACOS + OS_WINDOWS + OS_WASM + OS_PLAYDATE) != 1
 #error Exactly one OS_* platform flag must be set.
-#endif
-#if PROF_HISTORY_SIZE < 1
-#error PROF_HISTORY_SIZE must be >= 1
-#endif
-#if PROF_HISTORY < PROF_HISTORY_NONE || PROF_HISTORY > PROF_HISTORY_FRAME
-#error PROF_HISTORY must be 0 (off), 1 (zone), or 2 (frame)
 #endif
 
 // Platform identity as a value

@@ -24,12 +24,10 @@
 #define SYS_LOG_LABEL          "sys"
 
 struct sys_data SYS;
+
 struct prof PROFILER;
-#if PROF_HISTORY == PROF_HISTORY_FRAME
-struct prof_hist_slot PROF_FRAME_HIST[PROF_HISTORY_SIZE];
-#elif PROF_HISTORY == PROF_HISTORY_ZONE
-u32 PROF_ZONE_EXCL[PROF_HISTORY_SIZE][PROF_ANCHORS_SIZE];
-#endif
+struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
+u32 PROF_ZONE_EXCL[PROF_ZONE_HIST_SIZE][PROF_ANCHORS_SIZE];
 
 void
 sys_fnt_mono_set(struct fnt fnt)
