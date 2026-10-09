@@ -18,6 +18,7 @@ sys_log_to_file(const char *tag, enum sys_log_level log_level, u32 log_item, con
 // sys_log_file_set_path(str8 path);
 // But how early can we do this?
 // What if luna crashes before the game starts
+// Ideally I would like to have the logs on dev console/file/screen and turn that on/off
 #if 0
 	b32 res = false;
 
