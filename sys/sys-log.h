@@ -22,6 +22,7 @@ void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const 
 // TODO: Add __attribute__(format(gnu_printf, 6, 7)))
 // for static validation
 // https://github.com/nothings/stb/issues/1814
+// https://vimeo.com/855891054
 // TODO: we are doing double buffering sys_log is calling sokol_log_func that does the same thing
 // But this is probably unavoidable becuase playdate doesnt have a vargs alt
 static inline void
