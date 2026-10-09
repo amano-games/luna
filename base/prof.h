@@ -56,6 +56,7 @@
 #define PROF_FRAMES_SIZE          (PROF ? 64 : 1) // number of call depth allowed
 #define PROF_INT_ZERO_THRESHHOLD  0.25f           // threshhold for a moving average of an integer to be at zero
 #define PROF_CALIBRATE_LOOP_COUNT 1000
+#define PROF_DRW_ROW_PAD          1
 
 enum prof_anchor_sys {
 	PROF_ANCHOR_SYS_NONE,
@@ -394,8 +395,10 @@ prof_upd(b32 record_data)
 					prof_history_scalar_upd(&h->us_exclusive, (f32)a->us_exclusive, PROF_PRECOMPUTED_FACTORS);
 					prof_history_scalar_upd(&h->us_inclusive, (f32)a->us_inclusive, PROF_PRECOMPUTED_FACTORS);
 					prof_history_scalar_upd(&h->hit_count, (f32)a->hit_count, PROF_PRECOMPUTED_FACTORS);
-					h->us_inclusive_min = MIN(h->us_inclusive_min, a->us_inclusive);
-					h->us_inclusive_max = MAX(h->us_inclusive_max, a->us_inclusive);
+					if(a->hit_count != 0) {
+						h->us_inclusive_min = MIN(h->us_inclusive_min, a->us_inclusive);
+						h->us_inclusive_max = MAX(h->us_inclusive_max, a->us_inclusive);
+					}
 				}
 
 				if(PROF_HISTORY == PROF_HISTORY_FRAME) {
@@ -466,7 +469,7 @@ prof_drw(
 	i32 (*txt_width)(str8 str))
 {
 	prof_block("prof_drw");
-	i32 pad          = 1;
+	i32 pad          = PROF_DRW_ROW_PAD;
 	i32 field_width  = txt_width(str8_lit("5555.55"));
 	i32 max_columns  = 3;
 	i32 name_width   = full_width - (field_width * max_columns);
@@ -553,7 +556,7 @@ prof_graph_drw(
 
 	if(report == 0) { goto cleanup; }
 
-	i32 pad          = 1;
+	i32 pad          = PROF_DRW_ROW_PAD;
 	u16 n            = prof_history_capacity();
 	i32 row_h        = abs_i32(line_spacing);
 	i32 title_count  = prof_report_title_count(report);
@@ -831,9 +834,11 @@ prof_report_title_count(struct prof_report *report)
 static inline i32
 prof_report_visible_count(struct prof_report *report, i32 height, i32 line_spacing)
 {
-	i32 ls          = abs_i32(line_spacing);
-	i32 max_records = (height - prof_report_title_count(report) * ls) / ls;
-	return min_i32((i32)report->entry_count, max_records);
+	i32 ls    = abs_i32(line_spacing);
+	i32 pad   = PROF_DRW_ROW_PAD;
+	i32 fixed = (prof_report_title_count(report) + 1) * ls;
+	i32 rows  = (height - fixed + pad) / (ls + pad);
+	return min_i32((i32)report->entry_count, rows);
 }
 
 static inline void
