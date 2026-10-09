@@ -37,7 +37,7 @@ sys_logf(
 #if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL) { return; }
 
-	char strret[512];
+	char strret[512]; // the msg that is passed to sys_log is 512 but that can be truncated by sokol_log as it also uses 512 and includes all the data.
 	va_list args;
 	va_start(args, fmt);
 	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);

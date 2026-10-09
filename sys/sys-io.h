@@ -100,6 +100,7 @@ str8 sys_logs_path(void);
 str8 sys_path_to_config_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
 str8 sys_path_to_data_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
 str8 sys_path_to_cache_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
+str8 sys_path_to_log_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name);
 
 static inline str8
 sys_path_timestamp(struct alloc alloc)
