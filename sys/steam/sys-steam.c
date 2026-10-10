@@ -10,10 +10,13 @@ sys_steam_ini(void)
 {
 	b32 should_quit = false;
 
+#if 0
 	if(SteamAPI_RestartAppIfNecessary((u32)STEAM_APP_ID)) {
 		log_info("steam", "restart via steam (app_id=%u)", (u32)STEAM_APP_ID);
 		should_quit = true;
-	} else {
+	} else
+#endif
+	{
 		sys_steam_errmsg err_msg          = {0};
 		enum sys_steam_init_result result = SteamAPI_InitFlat(&err_msg);
 
