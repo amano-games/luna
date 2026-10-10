@@ -112,6 +112,7 @@ sys_os_init(void)
 		if(got && size > 0) {
 			info->binary_file_path = str8_cpy_push(alloc, (str8){.str = buffer, .size = (usize)size});
 			info->binary_path      = str8_chop_last_slash(info->binary_file_path);
+			info->base_path        = info->binary_path;
 		}
 		marena_reset(&OS_STATE.scratch_arena);
 	}

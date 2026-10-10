@@ -81,6 +81,8 @@ sys_os_init(void)
 			// UTF-8 into alloc: scratch is already full of WCHARs (size * sizeof(WCHAR)).
 			info->binary_file_path = str8_from_16(alloc, str16_cstr((u16 *)buffer));
 			info->binary_path      = str8_chop_last_slash(info->binary_file_path);
+			info->base_path        = info->binary_path;
+			// TODO: base_path vs binary path?
 		}
 		marena_reset(&OS_STATE.scratch_arena);
 	}
