@@ -1,10 +1,12 @@
 # Keep relative so recursive $(MAKE) -f stays free of spaces in MAKEFILE_LIST.
 ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
-SRC_DIR      ?= src
-LUNA_DIR     ?= luna
-GAME_NAME    ?= luna-game
-COMPANY_NAME ?= amanogames
+SRC_DIR       ?= src
+LUNA_DIR      ?= luna
+APP_NAME      ?= luna-game
+ORG_NAME      ?= amanogames
+ITCH_ORG_NAME ?= $(ORG_NAME)
+ITCH_APP_NAME ?= $(APP_NAME)
 
 DETECTED_OS := $(strip $(shell uname -s))
 

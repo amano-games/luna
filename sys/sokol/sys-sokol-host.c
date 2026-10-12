@@ -135,9 +135,6 @@ static struct sokol_state SOKOL_STATE = {
 	.opts.audio.volume = SYS_AUDIO_VOLUME_DEFAULT,
 };
 
-#define SOKOL_ORG  "amano"
-#define SOKOL_NAME "luna"
-
 void sokol_init(void);
 void sokol_frame(void);
 void sokol_event(const sapp_event *ev);
@@ -201,7 +198,7 @@ sokol_main(i32 argc, char **argv)
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
-		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
+		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
 	}
 
 	SOKOL_STATE.resolution = SOKOL_STATE.opts.video.resolution;
@@ -256,8 +253,8 @@ sokol_main(i32 argc, char **argv)
 		str8 dir_path = sys_path_to_config_path(
 			SOKOL_STATE.scratch,
 			str8_lit(""),
-			str8_lit(SOKOL_ORG),
-			str8_lit(SOKOL_NAME));
+			str8_lit(SYS_ORG_NAME),
+			str8_lit(SYS_APP_NAME));
 		sys_make_dir(dir_path);
 	}
 
@@ -275,7 +272,7 @@ error:;
 		.event_cb           = sokol_event,
 		.logger.func        = sys_log,
 		.icon.sokol_default = true,
-		.window_title       = SOKOL_NAME,
+		.window_title       = SYS_APP_NAME,
 		.fullscreen         = SOKOL_STATE.opts.video.display == SYS_VIDEO_DISPLAY_FULLSCREEN,
 	};
 	log_info("SYS", "init");
@@ -428,7 +425,7 @@ sokol_event(const sapp_event *ev)
 				"%.*s/%s-%s.mp4",
 				(int)SOKOL_STATE.opts.recording.save_path.size,
 				SOKOL_STATE.opts.recording.save_path.str,
-				SOKOL_NAME,
+				SYS_APP_NAME,
 				sys_path_timestamp(scratch).str);
 			sys_recording_write(
 				scratch,
@@ -1170,7 +1167,7 @@ sokol_screenshot_save(struct tex tex)
 		"%.*s/%s-%s.png",
 		(int)SOKOL_STATE.opts.screentshot.save_path.size,
 		SOKOL_STATE.opts.screentshot.save_path.str,
-		SOKOL_NAME,
+		SYS_APP_NAME,
 		sys_path_timestamp(alloc).str);
 
 	if(sys_img_write(tex, path, SOKOL_STATE.opts.screentshot.colors, alloc)) {
@@ -1183,7 +1180,7 @@ sokol_prof_csv_save(void)
 {
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc alloc = SOKOL_STATE.scratch;
-	prof_csv_save(alloc, str8_lit(SOKOL_NAME), str8_lit(SOKOL_ORG));
+	prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 }
 
 static void
@@ -1214,7 +1211,7 @@ static void
 sokol_opts_save(void)
 {
 	struct marena_tmp tmp = marena_tmp_start(&SOKOL_STATE.scratch_marena);
-	sys_opts_write(SOKOL_STATE.scratch, &SOKOL_STATE.opts, str8_lit(SOKOL_ORG), str8_lit(SOKOL_NAME));
+	sys_opts_write(SOKOL_STATE.scratch, &SOKOL_STATE.opts, str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
 	marena_tmp_end(tmp);
 }
 

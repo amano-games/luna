@@ -62,16 +62,16 @@ LINK_FLAGS += --preload-file=$(BUILD_DIR)/icons@/icons
 
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
 
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build run publish_release release
+.PHONY: all clean build run publish_itch release
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS='$(CDEFS)'
 
 # Directory existence is not enough: obj may create BUILD_DIR first.
 PLATFORM_READY := $(BUILD_DIR)/icons
@@ -93,21 +93,21 @@ run:
 	emrun $(BINARY)
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/www.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/www.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
+	$(MAKE) -f $(ROOT_DIR)/www.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 $(PUBLISH_OBJS): $(BINARY)
 	rm -f $(BUILD_DIR)/assets.pck
 	rm -rf $(BUILD_DIR)/gen-assets
 	rm -rf $(BUILD_DIR)/obj
-	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
+	cd $(BUILD_DIR) && zip -r ./$(APP_NAME).zip ./*
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/www.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/www.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
-publish_release:
-	$(MAKE) -f $(ROOT_DIR)/www.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/www.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):html5
+publish_itch:
+	$(MAKE) -f $(ROOT_DIR)/www.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	$(MAKE) -f $(ROOT_DIR)/www.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	butler push $(PUBLISH_OBJS) $(ITCH_ORG_NAME)/$(ITCH_APP_NAME):html5

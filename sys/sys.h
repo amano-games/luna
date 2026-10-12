@@ -5,6 +5,14 @@
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
 
+#if !defined(SYS_ORG_NAME)
+#define SYS_ORG_NAME "amano"
+#endif
+
+#if !defined(SYS_APP_NAME)
+#define SYS_APP_NAME "luna"
+#endif
+
 // App hooks
 void app_init(usize mem_max);
 void app_tick(f32 dt);

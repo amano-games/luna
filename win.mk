@@ -12,7 +12,7 @@ endif
 DESTDIR      ?=
 PREFIX       ?=
 PLATFORM_DIR := platforms/win
-TARGET       := $(GAME_NAME).exe
+TARGET       := $(APP_NAME).exe
 
 RELEASE_BINDIR := ${PREFIX}win-release
 ifeq ($(BUILD_DEBUG),0)
@@ -62,7 +62,7 @@ CFLAGS += $(CDEFS)
 
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
+PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
 
 # Platform files must land before obj/assets mkdir -p creates BUILD_DIR.
 ASSETS_EXTRA := $(BUILD_DIR)
@@ -70,11 +70,11 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam_build steam_release_build run release publish_release
+.PHONY: all clean build steam_build steam_release_build run release publish_itch
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/win.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS='$(CDEFS)'
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -86,18 +86,18 @@ $(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) assets
 $(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/gen-assets
 	rm -rf $(BUILD_DIR)/obj
-	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./*
+	cd $(BUILD_DIR) && zip -r ./$(APP_NAME).zip ./*
 
 clean:
 	rm -rf $(BUILD_DIR)
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/win.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/win.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
@@ -107,16 +107,16 @@ run:
 	cd $(BUILD_DIR) && wine ./$(TARGET)
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/win.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 steam_release_build:
-	$(MAKE) -f $(ROOT_DIR)/win.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/win.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
-publish_release:
-	$(MAKE) -f $(ROOT_DIR)/win.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/win.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):win
+publish_itch:
+	$(MAKE) -f $(ROOT_DIR)/win.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	butler push $(PUBLISH_OBJS) $(ITCH_ORG_NAME)/$(ITCH_APP_NAME):win

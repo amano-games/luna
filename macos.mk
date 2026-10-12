@@ -9,7 +9,7 @@ include $(ROOT_DIR)/common.mk
 DESTDIR      ?=
 PREFIX       ?=
 PLATFORM_DIR := platforms/macos
-TARGET       := $(GAME_NAME).app
+TARGET       := $(APP_NAME).app
 
 RELEASE_BINDIR := ${PREFIX}macos-release
 ifeq ($(BUILD_DEBUG),0)
@@ -66,8 +66,8 @@ LDFLAGS += $(ARCH_FLAGS)
 
 OBJS           := $(BUILD_DIR)/$(TARGET)
 ASSETS_INSTALL := $(OBJS)/Contents/Resources/assets.pck
-EXE_OUT        := $(OBJS)/Contents/MacOS/$(GAME_NAME)
-PUBLISH_OBJS   := $(PUBLISH_BUILD_DIR)/$(GAME_NAME).zip
+EXE_OUT        := $(OBJS)/Contents/MacOS/$(APP_NAME)
+PUBLISH_OBJS   := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
 OBJ_DIR        := $(BUILD_DIR)/obj
 
 include $(ROOT_DIR)/game.mk
@@ -82,11 +82,11 @@ $(OBJS): $(BUILD_DIR)
 ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam_build steam_release_build run publish_release release sign
+.PHONY: all clean build steam_build steam_release_build run publish_itch release sign
 .DEFAULT_GOAL := all
 
 all: build
-	$(MAKE) -f $(ROOT_DIR)/macos.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk run DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS='$(CDEFS)'
 
 $(EXE_OUT): $(UNITY_OBJS) assets
 	cp -r $(PLATFORM_DIR)/Info.plist $(BUILD_DIR)/$(TARGET)/Contents
@@ -98,7 +98,7 @@ sign: $(OBJS)
 	codesign --force --deep -s - $(OBJS)
 
 $(PUBLISH_OBJS): $(EXE_OUT) sign
-	cd $(BUILD_DIR) && zip -r ./$(GAME_NAME).zip ./$(TARGET)
+	cd $(BUILD_DIR) && zip -r ./$(APP_NAME).zip ./$(TARGET)
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -112,30 +112,30 @@ run:
 endif
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME)
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	cp -f "$(STEAM_LIB)" "$(dir $(EXE_OUT))"
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(EXE_OUT))steam_appid.txt"
 endif
 
 release:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 	rm -f $(DESTDIR)$(RELEASE_BINDIR)/assets.pck
 
 steam_release_build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 	rm -f $(DESTDIR)$(RELEASE_BINDIR)/assets.pck
 
-publish_release:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) GAME_NAME=$(GAME_NAME) CDEFS="$(CDEFS)"
-	butler push $(PUBLISH_OBJS) $(COMPANY_NAME)/$(GAME_NAME):macos
+publish_itch:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk release DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(PUBLISH_OBJS) BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	butler push $(PUBLISH_OBJS) $(ITCH_ORG_NAME)/$(ITCH_APP_NAME):macos
