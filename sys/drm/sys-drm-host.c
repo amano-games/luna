@@ -1620,9 +1620,19 @@ main(int argc, char **argv)
 	marena_init(&DRM_HOST.scratch_arena, mem, DRM_HOST_SCRATCH_SIZE);
 	DRM_HOST.scratch = marena_allocator(&DRM_HOST.scratch_arena);
 
+	{
+		str8 path = sys_path_to_log_path(
+			DRM_HOST.scratch,
+			str8_lit(SYS_APP_NAME ".log"),
+			str8_lit(SYS_ORG_NAME),
+			str8_lit(SYS_APP_NAME));
+		sys_log_ini(DRM_HOST.scratch, path);
+	}
+
 	DRM_HOST.opts = sys_opts_load(
 		DRM_HOST.scratch,
 		DRM_HOST.scratch,
+		str8_lit("settings-luna.json"),
 		str8_lit(DRM_HOST_ORG),
 		str8_lit(DRM_HOST_NAME));
 
@@ -1756,6 +1766,7 @@ error:
 	if(app_inited) {
 		sys_internal_close();
 	}
+	sys_log_close();
 	drm_alsa_close();
 	/* BlueZ HID close(evdev) never returns. Kernel reaps fds. */
 	if(display_ok) {

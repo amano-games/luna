@@ -107,6 +107,17 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		PD_PERSONAL_BEST_GET = PD->scoreboards->getPersonalBest;
 		PD_SCORE_FREE        = PD->scoreboards->freeScore;
 
+		{
+			marena_stack(marena, 256);
+			struct alloc alloc = marena_allocator(&marena);
+			str8 path          = sys_path_to_log_path(
+				alloc,
+				str8_lit(SYS_APP_NAME ".log"),
+				str8_lit(SYS_ORG_NAME),
+				str8_lit(SYS_APP_NAME));
+			sys_log_ini(alloc, path);
+		}
+
 		PD->system->setUpdateCallback(sys_pd_update, PD);
 		PD->sound->addSource(sys_pd_audio, NULL, 0);
 
@@ -132,6 +143,7 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 	case kEventTerminate:
 		PD->graphics->freeBitmap(PD_STATE.menu_bitmap);
 		sys_internal_close();
+		sys_log_close();
 		break;
 	case kEventPause:
 		sys_internal_pause();

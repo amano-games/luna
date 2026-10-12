@@ -177,6 +177,15 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
+		str8 path = sys_path_to_log_path(
+			SOKOL_STATE.scratch,
+			str8_lit(SYS_APP_NAME ".log"),
+			str8_lit(SYS_ORG_NAME),
+			str8_lit(SYS_APP_NAME));
+		sys_log_ini(SOKOL_STATE.scratch, path);
+	}
+
+	{
 		usize mem_size = MMEGABYTE(1);
 #if defined(SOKOL_RECORDING_ENABLED)
 		// Holds the default 120 seconds at 50 FPS with a 400x720 framebuffer.
@@ -756,6 +765,7 @@ sokol_cleanup(void)
 {
 	SOKOL_STATE.status = 0;
 	sys_internal_close();
+	sys_log_close();
 	sys_free(SOKOL_STATE.marena.buf);
 	sys_free(SOKOL_STATE.scratch_marena.buf);
 	sg_shutdown();

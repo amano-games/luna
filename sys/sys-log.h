@@ -3,6 +3,7 @@
 // https://www.frogtoss.com/labs/low-overhead-structured-logging-in-c.html
 // https://github.com/tsoding/nob.h/blob/main/nob.h#L2037  nob__log_handler?
 
+#include "base/mem.h"
 #include "base/types.h"
 
 enum sys_log_level {
@@ -15,6 +16,17 @@ enum sys_log_level {
 #if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
 #endif
+
+#if !defined(SYS_LOG_STDIO)
+#define SYS_LOG_STDIO 1
+#endif
+
+#if !defined(SYS_LOG_FILE)
+#define SYS_LOG_FILE (SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARN)
+#endif
+
+b32 sys_log_ini(struct alloc alloc, str8 path);
+void sys_log_close(void);
 
 // NOTE: SOKOL compatible platforms use sys-log.c playdate defines it's own.
 void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
