@@ -1,11 +1,6 @@
 #include "base/base-inc.h"
 
 // TODO: entrypoint
-#if !OS_PLAYDATE
-#if !OS_WASM
-#include "whereami.c"
-#endif
-#endif
 
 #include "sys/sys-inc.c"
 

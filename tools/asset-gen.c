@@ -13,7 +13,6 @@
 #include "sys/sys.h"
 #include "tools/aseprite/aseprite.h"
 #include "tools/asset/asset.h"
-#include "whereami.c"
 
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"

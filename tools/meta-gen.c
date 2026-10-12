@@ -3,7 +3,6 @@
 #include <tinydir.h>
 #include <jsmn.h>
 #include "sys/sys.h"
-#include "whereami.c"
 
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"

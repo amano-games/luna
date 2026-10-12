@@ -13,7 +13,6 @@
 #include "engine/assets/pck.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
-#include "whereami.c"
 
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"
