@@ -4,7 +4,7 @@ ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 SRC_DIR       ?= src
 LUNA_DIR      ?= luna
 APP_NAME      ?= luna-game
-ORG_NAME      ?= amanogames
+ORG_NAME      ?= amano
 ITCH_ORG_NAME ?= $(ORG_NAME)
 ITCH_APP_NAME ?= $(APP_NAME)
 
