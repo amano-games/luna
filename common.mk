@@ -8,6 +8,8 @@ ORG_NAME      ?= amanogames
 ITCH_ORG_NAME ?= $(ORG_NAME)
 ITCH_APP_NAME ?= $(APP_NAME)
 
+override CDEFS := $(CDEFS) -DSYS_ORG_NAME=\"$(ORG_NAME)\" -DSYS_APP_NAME=\"$(APP_NAME)\"
+
 DETECTED_OS := $(strip $(shell uname -s))
 
 WARN_FLAGS += -Werror -Wall -Wextra -pedantic-errors
