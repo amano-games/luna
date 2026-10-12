@@ -57,9 +57,8 @@ static void sys_opts_parse_color_palette(jsmntok_t *key, ssize key_idx, jsmntok_
 static b32 sys_opts_parse_color_palette_key(str8 json, jsmntok_t *key, enum gfx_col *out);
 
 struct sys_opts
-sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name)
+sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str8 name)
 {
-	str8 path              = str8_lit("settings.json");
 	str8 full_path         = sys_path_to_config_path(scratch, path, org, name);
 	str8 default_save_path = sys_path_to_data_path(alloc, str8_lit(""), org, name);
 	struct sys_opts res    = {

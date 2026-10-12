@@ -198,7 +198,7 @@ sokol_main(i32 argc, char **argv)
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
-		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
+		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit("settings-luna.json"), str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
 	}
 
 	SOKOL_STATE.resolution = SOKOL_STATE.opts.video.resolution;

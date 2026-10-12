@@ -79,4 +79,4 @@ struct sys_opts {
 
 b32 sys_opts_read(struct alloc alloc, jsmn_parser *r, struct sys_opts *data, str8 json, jsmntok_t *tokens, ssize token_count);
 b32 sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8 name);
-struct sys_opts sys_opts_load(struct alloc alloc, struct alloc scratch, str8 org, str8 name);
+struct sys_opts sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str8 name);
