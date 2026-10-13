@@ -70,7 +70,8 @@ sys_load_full_file(struct alloc alloc, str8 path)
 	res.data = data;
 	res.size = f_size;
 
-	log_info("sys", "Loaded full file contents %.*s %$$u", str8_spread(path), (uint)res.size);
+	char size_b[STR_BYTES_CAP];
+	log_info("sys", "Loaded full file contents %.*s %.*s", str8_spread(path), str8_spread(str8_from_bytes_buf(size_b, sizeof(size_b), (u64)res.size)));
 
 	return res;
 

@@ -43,9 +43,9 @@ sys_log_ini(struct alloc alloc, str8 path)
 				sys_file_flush(SYS_LOG_FILE_HANDLE);
 			}
 
-			log_info("sys-log", "log file path: %s", path);
+			log_info("sys-log", "log file path: %.*s", str8_spread(path));
 		} else {
-			log_warn("sys-log", "failed to open log file path: %s", path);
+			log_warn("sys-log", "failed to open log file path: %.*s", str8_spread(path));
 		}
 	}
 

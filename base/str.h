@@ -89,6 +89,11 @@ b32 str8_cat_in_place_bounded(str8 *dst, usize cap, str8 src);
 str8 str8_fmtv_push(struct alloc alloc, char *fmt, va_list args);
 str8 str8_fmt_push(struct alloc alloc, char *fmt, ...);
 
+// stb_sprintf.h
+#define STR_BYTES_CAP (32) // enough for "8191.9 Ei" worst case
+str8 str8_from_bytes_buf(char *buf, usize cap, u64 bytes);
+str8 str8_from_bytes(struct alloc alloc, u64 bytes);
+
 // String slicing
 str8 str8_postfix(str8 str, usize size);
 str8 str8_skip(str8 str, usize amt);

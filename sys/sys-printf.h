@@ -4,7 +4,13 @@
 
 #if defined(__has_attribute)
 #if __has_attribute(format)
-#define SYS_PRINTF_FORMAT(fmt, va) __attribute__((format(printf, fmt, va)))
+// https://github.com/nothings/stb/issues/1814
+// https://vimeo.com/855891054
+// gnu_printf == ISO C99 + POSIX/GNU checker on every target (GCC and clang).
+// The plain printf archetype is target dependent: with mingw-gcc it checks
+// MSVCRT rules and rejects %zu/%jd/%td/%b, even though stb_sprintf supports
+// all of them. MSVC has no GNU attributes, macro compiles to nothing there.
+#define SYS_PRINTF_FORMAT(fmt, va) __attribute__((format(gnu_printf, fmt, va)))
 #endif
 #endif
 

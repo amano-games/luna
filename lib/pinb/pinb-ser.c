@@ -48,9 +48,9 @@ pinb_read(
 	}
 	log_info(
 		"pinb-ser",
-		"version: %d "
-		"entities_count: %d "
-		"entities_max_id %d",
+		"version: %zd "
+		"entities_count: %zd "
+		"entities_max_id %zd",
 		table->version,
 		table->entities_count,
 		table->entities_max_id);
@@ -64,7 +64,7 @@ pinb_inspect(struct alloc alloc, str8 path, struct ser_reader *r)
 	i32 res               = 0;
 	struct ser_value root = ser_read(r);
 	str8 data             = ser_value_to_str(alloc, r, root);
-	sys_file file = sys_file_open_w(path);
+	sys_file file         = sys_file_open_w(path);
 	if(!sys_file_is_valid(file)) {
 		log_error("pinb-ser", "can't open file %s for writing!", path.str);
 		return -1;

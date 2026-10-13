@@ -66,11 +66,11 @@ asset_blob_from_handle(struct alloc alloc, struct asset_handle handle)
 	void *data            = NULL;
 	i32 size              = 0;
 
-	dbg_check(f, "assets", "failed to find file hash %016llx", handle.path_hash);
+	dbg_check(f, "assets", "failed to find file hash %016zx", (size_t)handle.path_hash);
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
 
 	data = mem_alloc_size(alloc, (usize)f->size);
-	dbg_check(data, "assets", "failed to alloc file hash %016llx", handle.path_hash);
+	dbg_check(data, "assets", "failed to alloc file hash %016zx", (size_t)handle.path_hash);
 
 	size = pck_read(&ASSETS.pck, f, data);
 	dbg_check(size == f->size, "assets", "pck size doesn't match: %d %d", size, (i32)f->size);
@@ -107,7 +107,7 @@ asset_stream_open(struct asset_stream *s, struct asset_handle handle)
 	b32 res            = false;
 	struct pck_file *f = pck_find_hash(&ASSETS.pck, handle.path_hash);
 
-	dbg_check(f, "assets", "stream find failed hash %016llx", handle.path_hash);
+	dbg_check(f, "assets", "stream find failed hash %016zx", (size_t)handle.path_hash);
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
 	dbg_check(ASSETS.pack_path.size, "assets", "pack path missing");
 	dbg_check(pck_open(ASSETS.pack_path, &s->pck) != 0, "assets", "stream pck open failed");
@@ -173,13 +173,14 @@ error:;
 void *
 asset_allocf(void *ctx, ssize size, ssize align)
 {
+	char req_b[STR_BYTES_CAP];
 	struct assets *assets = (struct assets *)ctx;
 	void *mem             = marena_alloc(&assets->marena, size, align);
 	dbg_check_mem(mem != NULL, "assets");
 	return mem;
 
 error:;
-	log_error("assets", "Ran out of asset mem! requested: %$u", (uint)size);
+	log_error("assets", "Ran out of asset mem! requested: %.*s", str8_spread(str8_from_bytes_buf(req_b, sizeof(req_b), (u64)size)));
 	MARENA_LOG_USAGE(&ASSETS.marena, "assets");
 	return NULL;
 }
@@ -214,45 +215,45 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
 	dbg_assert(f->size == f->base_size);
-	dbg_check(f->size >= header_size, "assets", "tex too small hash %016llx", f->hash);
+	dbg_check(f->size >= header_size, "assets", "tex too small hash %016zx", (size_t)f->hash);
 
 	n = pck_read_ex(&ASSETS.pck, f, (u8 *)&header, 0, header_size);
-	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016llx", f->hash);
+	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016zx", (size_t)f->hash);
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"assets",
-		"invalid tex fmt %u hash %016llx",
+		"invalid tex fmt %u hash %016zx",
 		header.fmt,
-		f->hash);
+		(size_t)f->hash);
 	dbg_check(header.w > 0 && header.h > 0,
 		"assets",
-		"invalid tex size %ux%u hash %016llx",
+		"invalid tex size %ux%u hash %016zx",
 		header.w,
 		header.h,
-		f->hash);
+		(size_t)f->hash);
 	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
 		"assets",
-		"invalid tex flags %u hash %016llx",
+		"invalid tex flags %u hash %016zx",
 		header.flags,
-		f->hash);
+		(size_t)f->hash);
 
 	res = tex_create(alloc, (i32)header.w, (i32)header.h, header.fmt);
-	dbg_check(res.px1b, "assets", "tex alloc failed hash %016llx", f->hash);
+	dbg_check(res.px1b, "assets", "tex alloc failed hash %016zx", (size_t)f->hash);
 
 	tex_size   = (ssize)sizeof(u32) * res.wword * res.h;
 	packed_len = f->size - header_size;
-	dbg_check(packed_len > 0, "assets", "tex pixels missing hash %016llx", f->hash);
+	dbg_check(packed_len > 0, "assets", "tex pixels missing hash %016zx", (size_t)f->hash);
 
 	if(header.flags & TEX_FLAG_LZ4) {
 		px_src = mem_alloc_size(scratch, (usize)packed_len);
-		dbg_check(px_src, "assets", "scratch too small for packed tex hash %016llx", f->hash);
+		dbg_check(px_src, "assets", "scratch too small for packed tex hash %016zx", (size_t)f->hash);
 		n = pck_read_ex(&ASSETS.pck, f, px_src, header_size, packed_len);
-		dbg_check(n == (i32)packed_len, "assets", "tex packed read failed hash %016llx", f->hash);
+		dbg_check(n == (i32)packed_len, "assets", "tex packed read failed hash %016zx", (size_t)f->hash);
 		n = sys_lz4_decompress(px_src, res.px1b, packed_len, tex_size);
-		dbg_check(n == (int)tex_size, "assets", "tex lz4 decode failed hash %016llx", f->hash);
+		dbg_check(n == (int)tex_size, "assets", "tex lz4 decode failed hash %016zx", (size_t)f->hash);
 	} else {
-		dbg_check(packed_len >= tex_size, "assets", "tex truncated hash %016llx", f->hash);
+		dbg_check(packed_len >= tex_size, "assets", "tex truncated hash %016zx", (size_t)f->hash);
 		n = pck_read_ex(&ASSETS.pck, f, (u8 *)res.px1b, header_size, tex_size);
-		dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed hash %016llx", f->hash);
+		dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed hash %016zx", (size_t)f->hash);
 	}
 
 error:;
@@ -265,7 +266,7 @@ asset_tex_from_handle(struct alloc alloc, struct alloc scratch, struct asset_han
 	struct tex res     = {0};
 	struct pck_file *f = pck_find_hash(&ASSETS.pck, handle.path_hash);
 
-	dbg_check(f, "assets", "failed to find tex hash %016llx", handle.path_hash);
+	dbg_check(f, "assets", "failed to find tex hash %016zx", (size_t)handle.path_hash);
 	res = asset_tex_from_pck(alloc, scratch, f);
 
 error:;
@@ -438,23 +439,23 @@ asset_snd_from_handle(struct alloc alloc, struct asset_handle handle)
 	struct snd_header snd_header = {0};
 	struct pck_file *f           = pck_find_hash(&ASSETS.pck, handle.path_hash);
 
-	dbg_check(f, "assets", "failed to find snd hash %016llx", handle.path_hash);
-	dbg_check(f->size >= (ssize)sizeof(u32), "assets", "snd too small hash %016llx", handle.path_hash);
+	dbg_check(f, "assets", "failed to find snd hash %016zx", (size_t)handle.path_hash);
+	dbg_check(f->size >= (ssize)sizeof(u32), "assets", "snd too small hash %016zx", (size_t)handle.path_hash);
 
 	i32 n = pck_read_ex(&ASSETS.pck, f, (u8 *)&snd_header, 0, (ssize)sizeof(u32));
-	dbg_check(n == (i32)sizeof(u32), "assets", "snd header read failed hash %016llx", handle.path_hash);
+	dbg_check(n == (i32)sizeof(u32), "assets", "snd header read failed hash %016zx", (size_t)handle.path_hash);
 
 	u32 bytes = (snd_header.sample_count + 1) >> 1;
 	dbg_check(f->size >= (ssize)sizeof(u32) + (ssize)bytes,
 		"assets",
-		"snd truncated hash %016llx",
-		handle.path_hash);
+		"snd truncated hash %016zx",
+		(size_t)handle.path_hash);
 
 	u8 *buf = alloc_size_aligned(alloc, bytes, alignof(u8), false);
-	dbg_check(buf, "assets", "snd alloc failed hash %016llx", handle.path_hash);
+	dbg_check(buf, "assets", "snd alloc failed hash %016zx", (size_t)handle.path_hash);
 
 	n = pck_read_ex(&ASSETS.pck, f, buf, (ssize)sizeof(u32), (ssize)bytes);
-	dbg_check(n == (i32)bytes, "assets", "snd samples read failed hash %016llx", handle.path_hash);
+	dbg_check(n == (i32)bytes, "assets", "snd samples read failed hash %016zx", (size_t)handle.path_hash);
 
 	res.buf = buf;
 	res.len = snd_header.sample_count;

@@ -52,22 +52,24 @@ sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 	ssize app_mem           = permanent_aligned + transient_aligned;
 	struct alloc alloc      = sys_allocator();
 
+	marena_stack(bytes, STR_BYTES_CAP * 11);
+	struct alloc bytes_alloc = marena_allocator(&bytes);
+
 	dbg_check(
 		app_mem <= mem_max,
 		SYS_LOG_LABEL,
-		"Not enough sys memory | asked:%$$u available:%$$u missing:%$$u",
-		(uint)app_mem,
-		(uint)mem_max,
-		(uint)(app_mem - mem_max));
+		"Not enough sys memory | asked:%.*s available:%.*s missing:%.*s",
+		str8_spread(str8_from_bytes(bytes_alloc, (u64)app_mem)),
+		str8_spread(str8_from_bytes(bytes_alloc, (u64)mem_max)),
+		str8_spread(str8_from_bytes(bytes_alloc, (u64)(app_mem - mem_max))));
 
 	ssize debug_size = MAX(0, mem_max - permanent_aligned - transient_aligned);
 	ssize mem_total  = permanent_aligned + transient_aligned + debug_size;
 
-	log_info(SYS_LOG_LABEL, "Permanent: %$$u aligned:%$$u", (uint)permanent, (uint)permanent_aligned);
-	log_info(SYS_LOG_LABEL, "Transient: %$$u aligned:%$$u", (uint)transient, (uint)transient_aligned);
-	log_info(SYS_LOG_LABEL, "Debug    : %$$u", (uint)debug_size);
-	log_info(SYS_LOG_LABEL, "Total    : %$$u/%$$u", (uint)mem_total, (uint)mem_max);
-	log_info(SYS_LOG_LABEL, "Total    : %'u/%'u", (uint)mem_total, (uint)mem_max);
+	log_info(SYS_LOG_LABEL, "Permanent: %.*s aligned:%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent)), str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent_aligned)));
+	log_info(SYS_LOG_LABEL, "Transient: %.*s aligned:%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)transient)), str8_spread(str8_from_bytes(bytes_alloc, (u64)transient_aligned)));
+	log_info(SYS_LOG_LABEL, "Debug    : %.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)debug_size)));
+	log_info(SYS_LOG_LABEL, "Total    : %.*s/%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)mem_total)), str8_spread(str8_from_bytes(bytes_alloc, (u64)mem_max)));
 
 	sys_mem->app_mem.size   = mem_total;
 	sys_mem->app_mem.buffer = alloc_size_aligned(alloc, sys_mem->app_mem.size, align, false);
@@ -75,8 +77,8 @@ sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 	dbg_check(
 		sys_mem->app_mem.buffer != NULL,
 		SYS_LOG_LABEL,
-		"Failed to reserve app memory %$$u: %p",
-		(uint)sys_mem->app_mem.size,
+		"Failed to reserve app memory %.*s: %p",
+		str8_spread(str8_from_bytes(bytes_alloc, (u64)sys_mem->app_mem.size)),
 		sys_mem->app_mem.buffer);
 
 #if BUILD_DEBUG

@@ -30,19 +30,15 @@ void sys_log_close(void);
 
 void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
 
-// TODO: Add __attribute__(format(gnu_printf, 6, 7)))
-// for static validation
-// https://github.com/nothings/stb/issues/1814
-// https://vimeo.com/855891054
 static inline void
-sys_logf(
-	const char *tag,
-	u32 log_level,
-	u32 log_item,
-	uint32_t line_nr,
-	const char *filename,
-	const char *fmt,
-	...)
+	SYS_PRINTF_FORMAT(6, 7) sys_logf(
+		const char *tag,
+		u32 log_level,
+		u32 log_item,
+		uint32_t line_nr,
+		const char *filename,
+		const char *fmt,
+		...)
 {
 #if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL) { return; }

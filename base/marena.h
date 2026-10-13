@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/mem.h"
+#include "base/str.h"
 #include "base/types.h"
 #include "base/dbg.h"
 
@@ -36,12 +37,13 @@ marena_log_usage(const struct marena *marena, const char *tag, const char *name)
 	ssize total = marena->buf_size;
 	ssize used  = total - left;
 
+	char used_b[STR_BYTES_CAP], total_b[STR_BYTES_CAP], left_b[STR_BYTES_CAP];
 	log_info(tag,
-		"mem-%s| %_$u/%_$u left:%_$u",
+		"mem-%s| %.*s/%.*s left:%.*s",
 		name,
-		(uint)used,
-		(uint)total,
-		(uint)left);
+		str8_spread(str8_from_bytes_buf(used_b, sizeof(used_b), (u64)used)),
+		str8_spread(str8_from_bytes_buf(total_b, sizeof(total_b), (u64)total)),
+		str8_spread(str8_from_bytes_buf(left_b, sizeof(left_b), (u64)left)));
 }
 
 #define MARENA_LOG_USAGE(marena, tag) \

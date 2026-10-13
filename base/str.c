@@ -2,6 +2,7 @@
 #include "base/link-list.h"
 #include "base/mathfunc.h"
 #include "base/mem.h"
+#include "sys/sys-printf.h"
 #include "sys/sys-str.h"
 #include "base/types.h"
 #include "base/utils.h"
@@ -260,6 +261,59 @@ str8_fmt_push(struct alloc alloc, char *fmt, ...)
 	str8 result = str8_fmtv_push(alloc, fmt, args);
 	va_end(args);
 	return (result);
+}
+
+str8
+str8_from_bytes_buf(char *buf, usize cap, u64 bytes)
+{
+	static char const *suffixes[] = {
+		"",
+		" Ki",
+		" Mi",
+		" Gi",
+		" Ti",
+		" Pi",
+		" Ei",
+	};
+
+	u32 suffix_idx = 0;
+	u64 whole      = bytes;
+	u64 frac10     = 0; // one decimal digit, like stb's '$' (its default pr = 1)
+
+	while(whole >= MKILOBYTE(1) && suffix_idx < (ARRLEN(suffixes) - 1)) {
+		frac10 = ((whole % MKILOBYTE(1)) * 10 + (MKILOBYTE(1) / 2)) / MKILOBYTE(1);
+		whole /= MKILOBYTE(1);
+		suffix_idx += 1;
+	}
+
+	if(frac10 == 10) { // rounded across a suffix boundary: 1023.96 -> 1.0 (next tier)
+		whole += 1;
+		frac10 = 0;
+		while(whole >= MKILOBYTE(1) && suffix_idx < (ARRLEN(suffixes) - 1)) {
+			whole /= MKILOBYTE(1);
+			suffix_idx += 1;
+		}
+	}
+
+	// NOTE: conditional format strings are checked per-arm by gcc/clang, so
+	// each call must carry its own self-consistent arg list (no cross-arm sharing).
+	int written;
+	if(suffix_idx == 0) {
+		written = sys_snprintf(buf, (int)cap, "%llu%s", (unsigned long long)whole, suffixes[suffix_idx]);
+	} else {
+		written = sys_snprintf(buf, (int)cap, "%llu.%llu%s", (unsigned long long)whole, (unsigned long long)frac10, suffixes[suffix_idx]);
+	}
+	dbg_assert(written > 0 && (usize)written < cap); // STR_BYTES_CAP sized for it
+
+	return str8_cstr_capped(buf, buf + written);
+}
+
+str8
+str8_from_bytes(struct alloc alloc, u64 bytes)
+{
+	char buf[STR_BYTES_CAP];
+	str8 res = str8_from_bytes_buf(buf, sizeof(buf), bytes);
+	return str8_cpy_push(alloc, res);
 }
 
 str8

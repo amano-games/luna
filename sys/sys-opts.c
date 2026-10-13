@@ -194,7 +194,7 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str
 
 	log_info(
 		"sys-opts",
-		"loaded screenshot:\n",
+		"loaded screenshot:\n"
 		" colors: %.*s,%.*s,%.*s\n"
 		" save path: %.*s",
 
