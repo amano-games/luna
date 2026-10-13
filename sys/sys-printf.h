@@ -6,11 +6,12 @@
 #if __has_attribute(format)
 // https://github.com/nothings/stb/issues/1814
 // https://vimeo.com/855891054
-// gnu_printf == ISO C99 + POSIX/GNU checker on every target (GCC and clang).
-// The plain printf archetype is target dependent: with mingw-gcc it checks
-// MSVCRT rules and rejects %zu/%jd/%td/%b, even though stb_sprintf supports
-// all of them. MSVC has no GNU attributes, macro compiles to nothing there.
-#define SYS_PRINTF_FORMAT(fmt, va) __attribute__((format(gnu_printf, fmt, va)))
+#if defined(__clang__) && defined(__apple_build_version__)
+#define SYS_PRINTF_ARCHETYPE printf
+#else
+#define SYS_PRINTF_ARCHETYPE gnu_printf
+#endif
+#define SYS_PRINTF_FORMAT(fmt, va) __attribute__((format(SYS_PRINTF_ARCHETYPE, fmt, va)))
 #endif
 #endif
 
