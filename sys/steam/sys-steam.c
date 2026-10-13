@@ -67,7 +67,7 @@ sys_steam_achievement_unlock(str8 api_name)
 	ISteamUserStats *user_stats = sys_steam_user_stats();
 	if(user_stats && api_name.size && api_name.str[0] != '\0') {
 		if(!SteamAPI_ISteamUserStats_SetAchievement(user_stats, (const char *)api_name.str)) {
-			log_warn("steam", "SetAchievement failed: %s", api_name);
+			log_warn("steam", "SetAchievement failed: %.*s", str8_spread(api_name));
 		}
 	}
 }
