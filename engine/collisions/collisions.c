@@ -143,7 +143,7 @@ col_circle_to_aabb(f32 x, f32 y, f32 r, f32 x1, f32 y1, f32 x2, f32 y2)
 		{
 			.p = (c2v){x, y},
 			.r = r,
-		};
+	};
 	c2AABB c2b = {.min = (c2v){x1, y1}, .max = (c2v){x2, y2}};
 	int res    = c2CircletoAABB(c2a, c2b);
 	return res;

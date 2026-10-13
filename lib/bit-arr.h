@@ -17,7 +17,7 @@ static inline b32
 bit_arr_u32_exists(const u32 *arr, usize count, usize index)
 {
 	usize integer_index = index >> 5;
-	u32 mask = UINT32_C(1) << (index & 31);
+	u32 mask            = UINT32_C(1) << (index & 31);
 	return (arr[integer_index] & mask) != 0;
 }
 
@@ -25,23 +25,17 @@ static inline void
 bit_arr_u32_set(u32 *arr, usize count, usize index)
 {
 	usize integer_index = index >> 5;
-	u32 mask = UINT32_C(1) << (index & 31);
+	u32 mask            = UINT32_C(1) << (index & 31);
 	arr[integer_index] |= mask;
 }
 
-// 7.7 Avoiding Retesting 341 Real time collision detection
 static inline b32
 bit_arr_u32_exists_and_set(u32 *arr, usize count, usize index)
 {
-	// Calculate the index of the integer in the array
 	usize integer_index = index >> 5;
-	// Lookup the corresponding bit in the appropiated word (32bits)
-	u32 mask = UINT32_C(1) << (index & 31);
+	u32 mask            = UINT32_C(1) << (index & 31);
 
 	if((arr[integer_index] & mask) == 0) {
-		// Bit not set, so pair has not already been processed;
-		// process object pair for intersection now
-		// Mark object pair as processed
 		arr[integer_index] |= mask;
 		return false;
 	}

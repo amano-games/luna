@@ -25,8 +25,8 @@ path_db_write(struct ser_writer *w, str8 *paths)
 str8 *
 path_db_read(struct ser_reader *r, struct alloc alloc)
 {
-	str8 *res            = NULL;
-	struct ser_value db  = ser_read(r);
+	str8 *res           = NULL;
+	struct ser_value db = ser_read(r);
 	struct ser_value key, value;
 
 	dbg_assert(db.type == SER_TYPE_OBJECT);

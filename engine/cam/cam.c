@@ -9,10 +9,10 @@
 rec_i32
 cam_rec_px(struct cam *c)
 {
-	v2_i32 sys_resolution = sys_resolution_get();
+	v2_i32 sys_resolution      = sys_resolution_get();
 	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
-	v2_i32 p  = v2_round(v2_add(c->p, c->offset));
-	rec_i32 r = {p.x - sys_resolution_half.x, p.y - sys_resolution_half.y, sys_resolution.x, sys_resolution.y};
+	v2_i32 p                   = v2_round(v2_add(c->p, c->offset));
+	rec_i32 r                  = {p.x - sys_resolution_half.x, p.y - sys_resolution_half.y, sys_resolution.x, sys_resolution.y};
 
 	r.x &= ~1; // avoid dither flickering -> snap camera pos
 	r.y &= ~1;
@@ -29,10 +29,10 @@ cam_set_pos_px(struct cam *c, int x, int y)
 v2
 cam_drag_position(struct cam *c, int tx, int ty, v2 min, v2 max)
 {
-	v2_i32 sys_resolution = sys_resolution_get();
+	v2_i32 sys_resolution      = sys_resolution_get();
 	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
-	v2 target_p = {tx, ty};
-	v2 cam_p    = {c->p.x, c->p.y};
+	v2 target_p                = {tx, ty};
+	v2 cam_p                   = {c->p.x, c->p.y};
 
 	// Convert the margin min / max
 	// from a range of 0.0,1.0 to pixels
@@ -60,7 +60,7 @@ cam_drag_position(struct cam *c, int tx, int ty, v2 min, v2 max)
 v2
 cam_limit_position(const struct cam *c, v2 p, struct col_aabb limits)
 {
-	v2_i32 sys_resolution = sys_resolution_get();
+	v2_i32 sys_resolution      = sys_resolution_get();
 	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
 
 	f32 left   = limits.min.x + sys_resolution_half.x;

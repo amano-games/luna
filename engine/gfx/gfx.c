@@ -36,16 +36,16 @@ struct tex
 tex_frame_buffer(void)
 {
 	v2_i32 sys_resolution = sys_resolution_get();
-	struct tex t = {0};
+	struct tex t          = {0};
 #if SYS_GFX_SOKOL
-	t.fmt   = TEX_FMT_8B_INDEX;
+	t.fmt = TEX_FMT_8B_INDEX;
 #else
-	t.fmt   = TEX_FMT_1B_OPAQUE;
+	t.fmt = TEX_FMT_1B_OPAQUE;
 #endif
 	t.wword = tex_wword(sys_resolution.x, t.fmt);
-	t.px1b = (u32 *)sys_1bit_buffer();
-	t.w    = sys_resolution.x;
-	t.h    = sys_resolution.y;
+	t.px1b  = (u32 *)sys_1bit_buffer();
+	t.w     = sys_resolution.x;
+	t.h     = sys_resolution.y;
 	return t;
 }
 
@@ -53,7 +53,7 @@ struct tex
 tex_dbg_buffer(void)
 {
 	v2_i32 sys_resolution = sys_resolution_get();
-	struct tex t = {0};
+	struct tex t          = {0};
 #if SYS_GFX_SOKOL
 	t.fmt   = TEX_FMT_8B_INDEX;
 	t.pxu8  = (u8 *)sys_dbg_buffer();

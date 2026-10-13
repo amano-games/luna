@@ -131,9 +131,9 @@ path_absolute_dst_from_relative_dst_src(
 	str8 result               = dst;
 	enum path_style dst_style = path_style_from_str8(dst);
 	if(dst.size != 0 && dst_style == path_style_relative) {
-		str8 joined                    = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(src), str8_spread(dst));
-		struct str8_list parts         = path_split(scratch, joined);
-		enum path_style style          = path_style_from_str8(src);
+		str8 joined            = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(src), str8_spread(dst));
+		struct str8_list parts = path_split(scratch, joined);
+		enum path_style style  = path_style_from_str8(src);
 		path_resolve_dots_in_place(&parts, style, scratch);
 		result = path_join_by_style(alloc, &parts, style);
 	}

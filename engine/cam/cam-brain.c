@@ -56,7 +56,7 @@ cam_brain_upd(struct cam_brain *brain, f32 tx, f32 ty, f32 dt)
 void
 cam_brain_data_set(struct cam_brain *brain, struct cam_data value, b32 do_lerp)
 {
-	v2_i32 sys_resolution = sys_resolution_get();
+	v2_i32 sys_resolution      = sys_resolution_get();
 	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
 	dbg_assert(brain->cam != NULL);
 	struct cam *cam       = brain->cam;

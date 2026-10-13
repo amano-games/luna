@@ -9,8 +9,8 @@
 void
 dbg_drw_cam(struct cam *c, u8 col)
 {
-	v2_i32 sys_resolution = sys_resolution_get();
-	v2 tp   = c->p_final;
+	v2_i32 sys_resolution      = sys_resolution_get();
+	v2 tp                      = c->p_final;
 	v2_i32 sys_resolution_half = {sys_resolution.x >> 1, sys_resolution.y >> 1};
 
 	struct col_aabb soft = {
