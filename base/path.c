@@ -35,8 +35,10 @@ str8
 path_join_by_style(struct alloc alloc, struct str8_list *path, enum path_style style)
 {
 	struct str_join params = {0};
+	struct str8 res        = {0};
 	switch(style) {
 	case path_style_none: {
+		dbg_sentinel("path_style_none is not a joinable style");
 	} break;
 	case path_style_relative:
 	case path_style_absolute_windows: {
@@ -49,8 +51,10 @@ path_join_by_style(struct alloc alloc, struct str8_list *path, enum path_style s
 	} break;
 	}
 
-	str8 result = str8_list_join(alloc, path, &params);
-	return result;
+	res = str8_list_join(alloc, path, &params);
+
+error:;
+	return res;
 }
 
 str8
