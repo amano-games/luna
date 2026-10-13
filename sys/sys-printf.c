@@ -2,7 +2,7 @@
 #define STB_SPRINTF_NOUNALIGNED
 #include "stb_sprintf.h"
 
-#include "sys/sys-sprintf.h"
+#include "sys/sys-printf.h"
 
 int
 sys_vsprintf(char *buf, char const *fmt, va_list va)

@@ -8,7 +8,6 @@
 #include <inttypes.h>
 #include <float.h>
 
-#include "sys/sys-sprintf.h"
 #include "sys/sys-printf.h"
 
 #if defined(__clang__)

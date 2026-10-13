@@ -2,7 +2,7 @@
 // Shared core once, then exactly one platform.
 
 #include "sys/sys-io.c"
-#include "sys/sys-sprintf.c"
+#include "sys/sys-printf.c"
 #include "sys/sys-mem.c"
 #include "sys/sys-lz4.c"
 
