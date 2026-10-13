@@ -2,6 +2,7 @@
 
 // https://www.frogtoss.com/labs/low-overhead-structured-logging-in-c.html
 // https://github.com/tsoding/nob.h/blob/main/nob.h#L2037  nob__log_handler?
+// https://github.com/rxi/log.c
 
 #include "base/mem.h"
 #include "base/types.h"
