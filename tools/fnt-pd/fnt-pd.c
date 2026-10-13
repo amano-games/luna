@@ -19,7 +19,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 {
 	sys_file f = sys_file_open_r(path);
 	if(!sys_file_is_valid(f)) {
-		log_warn("fnt-pd", "Can't open %s", path.str);
+		log_warn("fnt-pd", "Can't open %.*s", str8_spread(path));
 		return 0;
 	}
 	sys_file_seek_end(f, 0);
@@ -28,7 +28,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
-		log_error("fnt-pd", "loading %s", path.str);
+		log_error("fnt-pd", "loading %.*s", str8_spread(path));
 		return 0;
 	}
 	sys_file_r(f, buf, (u32)f_size);
@@ -204,7 +204,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	str8 out_file_path = out_path;
 	out_file           = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
-		log_error("ai-gen", "can't open file %s for writing!", out_file_path.str);
+		log_error("ai-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
 		return -1;
 	}
 	// TODO: Serialize font
@@ -216,7 +216,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	sys_file_close(out_file);
 
 	sys_free(mem_buffer);
-	log_info("fnt-gen", "%s -> %s", in_path.str, out_file_path.str);
+	log_info("fnt-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
 
 	return 1;
 }

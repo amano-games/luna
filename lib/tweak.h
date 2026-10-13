@@ -66,7 +66,7 @@ tweak_look_up_value_f32(
 	str8 project_root  = str8_chop_last_slash(str8_chop_last_slash(str8_chop_last_slash(exe_path)));
 	str8 full_path     = str8_fmt_push(alloc, "%.*s/%s", project_root.size, project_root.str, src_file);
 	f                  = sys_file_open_r(full_path);
-	dbg_check_warn(sys_file_is_valid(f), "tweak", "failed to open the file %s", full_path.str);
+	dbg_check_warn(sys_file_is_valid(f), "tweak", "failed to open the file %.*s", str8_spread(full_path));
 
 	struct sys_full_file_res res = sys_load_full_file(alloc, full_path);
 	u8 *buffer                   = res.data;

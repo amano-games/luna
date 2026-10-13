@@ -261,7 +261,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
-		log_error("ai-gen", "can't open file %s for writing!", out_file_path.str);
+		log_error("ai-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
 		return -1;
 	}
 
@@ -277,8 +277,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	sys_file_close(out_file);
 
 	sys_free(mem_buffer);
-	// sys_printf("%s -> %s\n", in_path.str, out_file_path.str);
-	log_info("ai-gen", "%s -> %s", in_path.str, out_file_path.str);
+	log_info("ai-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
 
 	return 1;
 }

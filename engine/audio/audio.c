@@ -128,7 +128,7 @@ aud_cmds_flush(struct alloc scratch)
 			}
 
 			if(!asset_stream_open(&mc->stream, cmd->path_handle)) {
-				log_warn("Audio", "Can't open music file: %s", path.str);
+				log_warn("Audio", "Can't open music file: %.*s", str8_spread(path));
 				break;
 			}
 
@@ -136,7 +136,7 @@ aud_cmds_flush(struct alloc scratch)
 			struct adpcm *adpcm = &mc->adpcm;
 			u32 num_samples     = 0;
 			if(asset_stream_read(&mc->stream, &num_samples, sizeof(u32)) != (i32)sizeof(u32)) {
-				log_warn("Audio", "Can't read music header: %s", path.str);
+				log_warn("Audio", "Can't read music header: %.*s", str8_spread(path));
 				asset_stream_close(&mc->stream);
 				break;
 			}
@@ -238,7 +238,7 @@ mus_play_by_path(
 	b32 loop)
 {
 	dbg_assert(channel_id != AUD_MUS_CHANNEL_NONE);
-	log_info("Audio", "play music %s", path.str);
+	log_info("Audio", "play music %.*s", str8_spread(path));
 	struct asset_handle handle = (struct asset_handle){
 		.path_hash = hash_fnv1a_str8(path),
 	};

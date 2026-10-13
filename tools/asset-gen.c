@@ -70,11 +70,11 @@ file_cpy_raw(const str8 in_path, const str8 out_path)
 	b32 res                         = false;
 	struct sys_full_file_res in_res = sys_load_full_file(sys_allocator(), in_path);
 	sys_file out                    = sys_file_open_w(out_path);
-	dbg_check(sys_file_is_valid(out), "file-cpy-raw", "failed to open file to write %s", out_path.str);
-	dbg_check(sys_file_w(out, in_res.data, in_res.size) == (ssize)in_res.size, "file-cpy-raw", "failed to write: %s", out_path.str);
+	dbg_check(sys_file_is_valid(out), "file-cpy-raw", "failed to open file to write %.*s", str8_spread(out_path));
+	dbg_check(sys_file_w(out, in_res.data, in_res.size) == (ssize)in_res.size, "file-cpy-raw", "failed to write: %.*s", str8_spread(out_path));
 
 	res = true;
-	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
+	log_info("cpy", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
 
 error:;
 	if(in_res.data) { sys_free(in_res.data); }
@@ -92,11 +92,11 @@ file_cpy(const str8 in_path, const str8 out_path)
 	ssize n;
 
 	while((n = sys_file_r(in, buffer, sizeof(buffer))) > 0) {
-		dbg_check(sys_file_w(out, buffer, (u32)n) == n, "asset-gen", "Failed to copy file", out_path.str);
+		dbg_check(sys_file_w(out, buffer, (u32)n) == n, "asset-gen", "Failed to copy file %.*s", str8_spread(out_path));
 	}
 
 	res = true;
-	log_info("cpy", "%s -> %s", in_path.str, out_path.str);
+	log_info("cpy", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
 
 error:;
 	if(sys_file_is_valid(in)) { sys_file_close(in); }
@@ -229,7 +229,7 @@ main(int argc, char *argv[])
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;
 
-	log_info("asset-gen", "Processing%s assets from %s -> %s", packed ? " packed" : "", in_path.str, out_path.str);
+	log_info("asset-gen", "Processing%s assets from %.*s -> %.*s", packed ? " packed" : "", str8_spread(in_path), str8_spread(out_path));
 	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
 	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, palette_map, flag);

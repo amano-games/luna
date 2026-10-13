@@ -68,7 +68,7 @@ png_to_tex_blob(
 	b32 res = false;
 	i32 w, h, n;
 	u32 *data = (u32 *)stbi_load((char *)in_path.str, &w, &h, &n, 4);
-	dbg_check(data != NULL, "png", "Failed to load image with path %s: %s", in_path.str, stbi_failure_reason());
+	dbg_check(data != NULL, "png", "Failed to load image with path %.*s: %s", str8_spread(in_path), stbi_failure_reason());
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)data;
 	struct tex t                   = {0};

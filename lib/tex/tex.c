@@ -58,8 +58,8 @@ tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 	u8 *packed               = NULL;
 	i32 n                    = 0;
 
-	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %s", path.str);
-	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
+	dbg_check(sys_file_is_valid(f), "tex", "failed to open texture %.*s", str8_spread(path));
+	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %.*s", str8_spread(path));
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"tex",
 		"invalid tex fmt %" PRIu32 "",
@@ -76,23 +76,23 @@ tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 
 	t        = tex_create(alloc, header.w, header.h, header.fmt);
 	tex_size = tex_mem_size(header.w, header.h, header.fmt);
-	dbg_check(t.px1b, "tex", "tex alloc failed %s", path.str);
+	dbg_check(t.px1b, "tex", "tex alloc failed %.*s", str8_spread(path));
 
 	if(header.flags & TEX_FLAG_LZ4) {
 		sys_file_seek_end(f, 0);
 		file_size = sys_file_tell(f);
-		dbg_check(file_size > (ssize)sizeof(header), "tex", "tex lz4 empty %s", path.str);
+		dbg_check(file_size > (ssize)sizeof(header), "tex", "tex lz4 empty %.*s", str8_spread(path));
 		packed_len = file_size - (ssize)sizeof(header);
 		sys_file_seek_set(f, (ssize)sizeof(header));
 
 		packed = mem_alloc_size(scratch, (usize)packed_len);
-		dbg_check(packed, "tex", "tex lz4 staging failed %s", path.str);
-		dbg_check(sys_file_r(f, packed, (u32)packed_len) == packed_len, "tex", "tex lz4 read failed %s", path.str);
+		dbg_check(packed, "tex", "tex lz4 staging failed %.*s", str8_spread(path));
+		dbg_check(sys_file_r(f, packed, (u32)packed_len) == packed_len, "tex", "tex lz4 read failed %.*s", str8_spread(path));
 
 		n = sys_lz4_decompress(packed, t.px1b, packed_len, tex_size);
-		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %s", path.str);
+		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %.*s", str8_spread(path));
 	} else {
-		dbg_check(sys_file_r(f, t.px1b, (u32)tex_size) == tex_size, "tex", "tex pixels read failed %s", path.str);
+		dbg_check(sys_file_r(f, t.px1b, (u32)tex_size) == tex_size, "tex", "tex pixels read failed %.*s", str8_spread(path));
 	}
 
 	res = t;

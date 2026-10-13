@@ -345,7 +345,7 @@ asset_ani_load(struct alloc scratch, str8 tex_path)
 			.size = arr_len(clips),
 		};
 		res = (i32)asset_db_animation_slice_push(&ASSETS.db, tex_path, slice);
-		log_info("assets", "ani slice for: %s size: %d", tex_path.str, (int)slice.size);
+		log_info("assets", "ani slice for: %.*s size: %d", str8_spread(tex_path), (int)slice.size);
 	}
 
 error:;
@@ -366,7 +366,7 @@ asset_tex_load(struct alloc scratch, str8 path, struct tex *tex)
 
 	dbg_check(t.px1b, "assets", "failed to load tex: %.*s", str8_spread(path));
 
-	log_info("assets", "Tex loaded: %s", path.str);
+	log_info("assets", "Tex loaded: %.*s", str8_spread(path));
 	res = asset_db_tex_push(&ASSETS.db, path, t);
 	if(tex) {
 		*tex = t;
@@ -417,7 +417,7 @@ asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 	f.grid_w = f.t.w / f.cell_w;
 	f.grid_h = f.t.h / f.cell_h;
 
-	log_info("assets", "Load fnt %s", path.str);
+	log_info("assets", "Load fnt %.*s", str8_spread(path));
 	res = asset_db_fnt_push(&ASSETS.db, path, f);
 	if(fnt) *fnt = f;
 
@@ -483,7 +483,7 @@ asset_snd_load(str8 path, struct snd *snd)
 	struct snd s = asset_snd_read(ASSETS.alloc, path);
 
 	dbg_check(s.len, "assets", "failed to load snd: %.*s", str8_spread(path));
-	log_info("assets", "Load snd %s", path.str);
+	log_info("assets", "Load snd %.*s", str8_spread(path));
 	res = asset_db_snd_push(&ASSETS.db, path, s);
 	if(snd) *snd = s;
 
@@ -522,7 +522,7 @@ asset_bet_load(struct alloc scratch, str8 path, struct bet *bet)
 	struct bet b           = bet_load_from_mem(ASSETS.alloc, blob.data, (usize)blob.size);
 
 	dbg_check(b.nodes, "assets", "Bet loading failed: %.*s", str8_spread(path));
-	log_info("assets", "Bet loaded: %s", path.str);
+	log_info("assets", "Bet loaded: %.*s", str8_spread(path));
 	res = asset_db_bet_push(&ASSETS.db, path, b);
 	if(bet) *bet = b;
 

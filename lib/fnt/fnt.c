@@ -221,7 +221,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	dbg_assert(str8_ends_with(path, fnt_ext, 0));
 	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
 	if(file_res.data == NULL) {
-		log_error("fnt", "Failed loading info: %s", path.str);
+		log_error("fnt", "Failed loading info: %.*s", str8_spread(path));
 		return res;
 	}
 
@@ -235,7 +235,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 
 	res.t = tex_load(alloc, scratch, tex_path);
 	if(res.t.px1b == NULL) {
-		log_error("fnt", "Failed loading tex: %s", path.str);
+		log_error("fnt", "Failed loading tex: %.*s", str8_spread(path));
 		return res;
 	}
 

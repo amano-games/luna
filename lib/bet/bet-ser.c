@@ -28,12 +28,12 @@ bet_load_from_mem(struct alloc alloc, void *data, usize size)
 struct bet
 bet_load(str8 path, struct alloc alloc, struct alloc scratch)
 {
-	log_info("Bet", "Load bet %s", path.str);
+	log_info("Bet", "Load bet %.*s", str8_spread(path));
 	struct bet res                    = {0};
 	struct sys_full_file_res file_res = sys_load_full_file(scratch, path);
 
 	if(file_res.data == NULL) {
-		log_error("Bet", "failed to open bet file: %s", path.str);
+		log_error("Bet", "failed to open bet file: %.*s", str8_spread(path));
 		return res;
 	}
 

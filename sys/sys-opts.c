@@ -292,20 +292,20 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 	dbg_check_warn(json.str && json.size <= U32_MAX, "sys-opts", "failed to serialize, json too big");
 	str8 dir = sys_path_to_config_path(scratch, str8_lit(""), org, name);
 
-	dbg_check_warn(dir.size == 0 || sys_make_dir(dir), "sys-opts", "failed to create directory: %s", dir.str);
+	dbg_check_warn(dir.size == 0 || sys_make_dir(dir), "sys-opts", "failed to create directory: %.*s", str8_spread(dir));
 	file = sys_file_open_w(path_new);
 
-	dbg_check_warn(sys_file_is_valid(file), "sys-opts", "failed to open for writing: %s", path_new.str);
-	dbg_check_warn(sys_file_w(file, json.str, (u32)json.size) == (ssize)json.size, "sys-opts", "failed to write: %s", path_new.str);
-	dbg_check_warn(sys_file_flush(file), "sys-opts", "failed to flush: %s", path_new.str);
+	dbg_check_warn(sys_file_is_valid(file), "sys-opts", "failed to open for writing: %.*s", str8_spread(path_new));
+	dbg_check_warn(sys_file_w(file, json.str, (u32)json.size) == (ssize)json.size, "sys-opts", "failed to write: %.*s", str8_spread(path_new));
+	dbg_check_warn(sys_file_flush(file), "sys-opts", "failed to flush: %.*s", str8_spread(path_new));
 
 	b32 closed = sys_file_close(file);
 	file       = sys_file_zero();
-	dbg_check_warn(closed, "sys-opts", "failed to close: %s", path_new.str);
+	dbg_check_warn(closed, "sys-opts", "failed to close: %.*s", str8_spread(path_new));
 
-	dbg_check_warn(sys_file_replace(path_new, path), "sys-opts", "failed to replace: %s", path.str);
+	dbg_check_warn(sys_file_replace(path_new, path), "sys-opts", "failed to replace: %.*s", str8_spread(path));
 
-	log_info("sys-opts", "saved: %s", path.str);
+	log_info("sys-opts", "saved: %.*s", str8_spread(path));
 	res = true;
 
 error:;

@@ -275,7 +275,7 @@ sys_file_props_get(str8 path)
 	WIN32_FILE_ATTRIBUTE_DATA attr_data = {0};
 
 	if(!GetFileAttributesExA((char *)path.str, GetFileExInfoStandard, &attr_data)) {
-		log_error("IO", "failed to get file stats %s", path.str);
+		log_error("IO", "failed to get file stats %.*s", str8_spread(path));
 		return res;
 	}
 

@@ -66,12 +66,12 @@ pinb_inspect(struct alloc alloc, str8 path, struct ser_reader *r)
 	str8 data             = ser_value_to_str(alloc, r, root);
 	sys_file file         = sys_file_open_w(path);
 	if(!sys_file_is_valid(file)) {
-		log_error("pinb-ser", "can't open file %s for writing!", path.str);
+		log_error("pinb-ser", "can't open file %.*s for writing!", str8_spread(path));
 		return -1;
 	}
 	sys_file_w(file, data.str, data.size);
 	sys_file_close(file);
-	log_info("pinb-ser", "inspect output: %s", path.str);
+	log_info("pinb-ser", "inspect output: %.*s", str8_spread(path));
 
 	return res;
 }

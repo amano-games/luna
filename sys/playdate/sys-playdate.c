@@ -437,7 +437,7 @@ sys_file_props_get(str8 path)
 	FileStat pd_stat = {0};
 	int res          = PD->file->stat((const char *)path.str, &pd_stat);
 	if(res == -1) {
-		log_error("IO", "%s: %s", PD->file->geterr(), path.str);
+		log_error("IO", "%s: %.*s", PD->file->geterr(), str8_spread(path));
 	}
 	return (struct sys_file_props){
 		.isdir    = pd_stat.isdir,
@@ -501,7 +501,7 @@ sys_file_rename(str8 from, str8 to)
 {
 	i32 res = PD->file->rename((char *)from.str, (char *)to.str);
 	if(res == -1) {
-		log_error("io", "failed to rename %s -> %s: %s", from.str, to.str, PD->file->geterr());
+		log_error("io", "failed to rename %.*s -> %.*s: %s", str8_spread(from), str8_spread(to), PD->file->geterr());
 	}
 
 	return res == 0;

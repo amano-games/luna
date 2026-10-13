@@ -35,8 +35,8 @@ aseprite_to_atlas(const ase_t *ase, const str8 out_path, struct alloc scratch)
 			"tex-atlas",
 			"can't pack %s",
 			atlas_path.str);
-		dbg_check(asset_blob_w(blob, atlas_path), "tex-atlas", "can't write %s", atlas_path.str);
-		log_info("tex-atlas", "%s cell=%dx%d", atlas_path.str, atlas.cell_w, atlas.cell_h);
+		dbg_check(asset_blob_w(blob, atlas_path), "tex-atlas", "can't write %.*s", str8_spread(atlas_path));
+		log_info("tex-atlas", "%.*s cell=%dx%d", str8_spread(atlas_path), atlas.cell_w, atlas.cell_h);
 	}
 
 error:;
@@ -47,7 +47,7 @@ aseprite_to_assets(const str8 in_path, const str8 out_path, struct alloc scratch
 {
 	b32 res    = false;
 	ase_t *ase = cute_aseprite_load_from_file((char *)in_path.str, NULL);
-	dbg_check(ase, "aseprite", "failed to load file %s", in_path.str);
+	dbg_check(ase, "aseprite", "failed to load file %.*s", str8_spread(in_path));
 	struct asset_blob blob = {0};
 
 	{
@@ -152,10 +152,10 @@ aseprite_to_ani(const ase_t *ase, const str8 out_path, struct alloc scratch)
 
 		out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ANI_EXT));
 		file          = sys_file_open_w(out_file_path);
-		dbg_check(sys_file_is_valid(file), "ase-ani", "failed to open file to write: %s", out_file_path.str);
+		dbg_check(sys_file_is_valid(file), "ase-ani", "failed to open file to write: %.*s", str8_spread(out_file_path));
 		w.f = file;
 		ani_clips_write(&w, clips);
-		log_info("ase-ani", "%s", out_file_path.str);
+		log_info("ase-ani", "%.*s", str8_spread(out_file_path));
 	}
 
 	res = true;

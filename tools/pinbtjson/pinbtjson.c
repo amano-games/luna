@@ -1477,7 +1477,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
-		log_error("pinb-gen", "can't open file %s for writing!", out_file_path.str);
+		log_error("pinb-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
 		return -1;
 	}
 
@@ -1498,7 +1498,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 
 	sys_free(mem_buffer);
 	sys_free(scratch_mem_buffer);
-	log_info("pinb-gen", "%s -> %s", in_path.str, out_file_path.str);
+	log_info("pinb-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
 
 	return 1;
 }

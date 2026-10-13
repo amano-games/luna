@@ -182,7 +182,7 @@ sys_scores_queue_push(
 	case PD_SCORES_REQ_TYPE_ADD: {
 		req->add.value   = value;
 		req->add.attemps = 0;
-		log_info("sys-scores", "Queue add score for %s: %" PRIu32 "", req->board_id.str, req->add.value);
+		log_info("sys-scores", "Queue add score for %.*s: %" PRIu32 "", str8_spread(req->board_id), req->add.value);
 	} break;
 
 	case PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET: {
@@ -226,7 +226,7 @@ pd_scores_start_next(struct pd_scores_state *state)
 	} break;
 
 	case PD_SCORES_REQ_TYPE_ADD: {
-		log_info("sys-scores", "Adding score for %s: %" PRIu32 "", req->board_id.str, req->add.value);
+		log_info("sys-scores", "Adding score for %.*s: %" PRIu32 "", str8_spread(req->board_id), req->add.value);
 		PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
 	} break;
 
@@ -257,16 +257,16 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 	struct sys_scores_res res = {.type = SYS_SCORE_RES_SCORES_ADD};
 
 	if(error_message) {
-		log_error("sys-scores", "Failed to submit score to board %s: %s", req->board_id.str, error_message);
+		log_error("sys-scores", "Failed to submit score to board %.*s: %s", str8_spread(req->board_id), error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
 			PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
-			log_info("sys-scores", "Attempt: %d, to submit score to board: %s", (int)req->add.attemps, req->board_id.str);
+			log_info("sys-scores", "Attempt: %d, to submit score to board: %.*s", (int)req->add.attemps, str8_spread(req->board_id));
 			return;
 		}
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		log_info("sys-scores", "Submited score for board %s: %" PRId32 ". %s %" PRIu32 "", req->board_id.str, score->rank, score->player, score->value);
+		log_info("sys-scores", "Submited score for board %.*s: %" PRId32 ". %s %" PRIu32 "", str8_spread(req->board_id), score->rank, score->player, score->value);
 		res.add = (struct sys_scores_res_add){
 			.score = (struct sys_score){
 				.rank   = score->rank,
@@ -303,7 +303,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
 
 	if(error_message) {
-		log_error("sys-scores", "Failed to get scores for board %s: %s", req->board_id.str, error_message);
+		log_error("sys-scores", "Failed to get scores for board %.*s: %s", str8_spread(req->board_id), error_message);
 		res.error_message = str8_cstr((char *)error_message);
 		goto error;
 	} else {
@@ -379,7 +379,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
 
 	if(error_message) {
-		log_error("sys-scores", "Failed to get personal best for board %s: %s", req->board_id.str, error_message);
+		log_error("sys-scores", "Failed to get personal best for board %.*s: %s", str8_spread(req->board_id), error_message);
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
 		if(score) {
@@ -402,7 +402,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 				},
 			};
 		} else {
-			log_info("sys-scores", "No personal best for board %s", req->board_id.str);
+			log_info("sys-scores", "No personal best for board %.*s", str8_spread(req->board_id));
 		}
 	}
 

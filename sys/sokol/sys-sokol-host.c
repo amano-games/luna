@@ -1027,7 +1027,7 @@ sokol_set_icon(void)
 	sapp_icon_desc icon_desc = {.sokol_default = true};
 
 	tinydir_open(dir, (char *)icons_dir.str);
-	log_info("sokol", "loading icons from: %s", icons_dir.str);
+	log_info("sokol", "loading icons from: %.*s", str8_spread(icons_dir));
 
 	i32 icon_count = 0;
 	while(dir->has_next) {
@@ -1053,7 +1053,7 @@ sokol_set_icon(void)
 		str8_list_push(scratch, &path_list, file_name);
 		str8 full_path = path_join_by_style(scratch, &path_list, path_style);
 
-		log_info("sokol", "Found icon of size %d: %.*s", icon_size, (i32)full_path.size, full_path.str);
+		log_info("sokol", "Found icon of size %d: %.*s", icon_size, str8_spread(full_path));
 
 		i32 w, h, n;
 		uint32_t *data = (uint32_t *)stbi_load((char *)full_path.str, &w, &h, &n, 4);
@@ -1063,7 +1063,7 @@ sokol_set_icon(void)
 
 		sapp_image_desc img            = {.height = h, .width = w, .pixels = {.size = w * h * n, .ptr = data}};
 		icon_desc.images[icon_count++] = img;
-		log_info("sokol", "Loaded icon of size %d loaded: %.*s", icon_size, (i32)full_path.size, full_path.str);
+		log_info("sokol", "Loaded icon of size %d loaded: %.*s", icon_size, str8_spread(full_path));
 	}
 	tinydir_close(dir);
 
@@ -1179,7 +1179,7 @@ sokol_screenshot_save(struct tex tex)
 		sys_path_timestamp(alloc).str);
 
 	if(sys_img_write(tex, path, SOKOL_STATE.opts.screentshot.colors, alloc)) {
-		log_info("sokol", "screentshot saved: %s", path.str);
+		log_info("sokol", "screentshot saved: %.*s", str8_spread(path));
 	}
 }
 

@@ -59,7 +59,7 @@ wav_parse(const void *data, ssize data_size, struct wav *res)
 		}
 	}
 
-	dbg_check_warn(res->sample_count > 0, "wav", "%s invalid, no audio samples");
+	dbg_check_warn(res->sample_count > 0, "wav", "invalid, no audio samples");
 
 	return true;
 
@@ -76,8 +76,8 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 	u8 *out_data                     = NULL;
 	struct wav wav                   = {0};
 
-	dbg_check_warn(in_data.size >= 44 && in_data.data != NULL, "snd-gen", "%s failed to read full file", in_path.str);
-	dbg_check_warn(wav_parse(in_data.data, in_data.size, &wav), "snd-gen", "%s failed to parse wav file", in_path.str);
+	dbg_check_warn(in_data.size >= 44 && in_data.data != NULL, "snd-gen", "%.*s failed to read full file", str8_spread(in_path));
+	dbg_check_warn(wav_parse(in_data.data, in_data.size, &wav), "snd-gen", "%.*s failed to parse wav file", str8_spread(in_path));
 	dbg_check_warn(wav.sample_format == WAVE_FORMAT_PCM, "snd_gen", "invalid, wav format not supported");
 	dbg_check_warn(wav.channel_count == 1, "wav", "invalid, unsupported number of channels", wav.channel_count);
 	dbg_check_warn(wav.sample_rate == 44100, "wav", "invalid, unsupported sample rate: %d", wav.sample_rate);
@@ -86,8 +86,8 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 	struct snd_header snd_header = {.sample_count = wav.sample_count};
 	str8 out_file_path           = path_make_file_name_with_ext(scratch, out_path, str8_lit(SND_FILE_EXT));
 	out_file                     = sys_file_open_w(out_file_path);
-	dbg_check_warn(sys_file_is_valid(out_file), "snd-gen", "%s failed to open", out_file_path.str);
-	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)) == (ssize)sizeof(snd_header), "snd-gen", "%s failed to write", out_file_path.str);
+	dbg_check_warn(sys_file_is_valid(out_file), "snd-gen", "%.*s failed to open", str8_spread(out_file_path));
+	dbg_check_warn(sys_file_w(out_file, &snd_header, sizeof(snd_header)) == (ssize)sizeof(snd_header), "snd-gen", "%.*s failed to write", str8_spread(out_file_path));
 
 	{
 		struct alloc alloc = sys_allocator();
@@ -96,10 +96,10 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 		out_data        = (u8 *)alloc_arr(alloc, out_data, data_size);
 
 		adpcm_i16_encode((i16 *)wav.sample_data, out_data, wav.sample_count);
-		dbg_check_warn(sys_file_w(out_file, out_data, data_size) == (ssize)data_size, "snd-gen", "%s failed to write", out_file_path.str);
+		dbg_check_warn(sys_file_w(out_file, out_data, data_size) == (ssize)data_size, "snd-gen", "%.*s failed to write", str8_spread(out_file_path));
 	}
 
-	log_info("snd-gen", "%s -> %s", in_path.str, out_file_path.str);
+	log_info("snd-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
 	res = true;
 
 error:;

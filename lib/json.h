@@ -16,7 +16,7 @@ json_load(const str8 path, struct alloc alloc, str8 *out)
 {
 	sys_file f = sys_file_open_r(path);
 	if(!sys_file_is_valid(f)) {
-		log_warn("json", "Can't open %s", path.str);
+		log_warn("json", "Can't open %.*s", str8_spread(path));
 		return 0;
 	}
 	sys_file_seek_end(f, 0);
@@ -25,7 +25,7 @@ json_load(const str8 path, struct alloc alloc, str8 *out)
 	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
 	if(!buf) {
 		sys_file_close(f);
-		log_error("json", "loading %s", path.str);
+		log_error("json", "loading %.*s", str8_spread(path));
 		return 0;
 	}
 	sys_file_r(f, buf, (u32)f_size);

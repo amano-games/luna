@@ -1377,7 +1377,7 @@ drm_host_menu_trace(const char *phase)
 		struct sys_menu *menu = &DRM_HOST.pause.menus[m];
 		for(i32 i = 0; i < menu->len; ++i) {
 			struct sys_menu_item *item = &menu->items[i];
-			log_info("drm-menu", "menu=%d row=%d selected=%d id=%d title=%.*s value=%d pending=%d", m, i, menu->idx == i, item->id, (int)item->title.size, item->title.str, item->value, (int)item->callback_pending);
+			log_info("drm-menu", "menu=%d row=%d selected=%d id=%d title=%.*s value=%d pending=%d", m, i, menu->idx == i, item->id, str8_spread(item->title), item->value, (int)item->callback_pending);
 		}
 	}
 }

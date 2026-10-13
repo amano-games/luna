@@ -280,7 +280,7 @@ sys_file_props_get(str8 path)
 	struct stat st            = {0};
 
 	if(stat((char *)path.str, &st) != 0) {
-		log_error("IO", "failed to get file stats %s", path.str);
+		log_error("IO", "failed to get file stats %.*s", str8_spread(path));
 		return res;
 	}
 

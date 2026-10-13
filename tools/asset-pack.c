@@ -299,7 +299,7 @@ main(int argc, char *argv[])
 		out_path = cmd.inputs.first->next->str;
 	}
 
-	log_info(LOG_ID, "Packing assets from %s -> %s", in_path.str, out_path.str);
+	log_info(LOG_ID, "Packing assets from %.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
 	dbg_check(pck_pack(alloc, in_path, out_path), LOG_ID, "pack failed");
 
 	res = EXIT_SUCCESS;

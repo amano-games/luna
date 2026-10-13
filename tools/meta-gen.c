@@ -275,7 +275,7 @@ gen_table(const str8 in_path, struct alloc scratch)
 	sys_file_close(f);
 	sys_free(mem);
 
-	log_info(LOG_ID, "items:%-2d %s -> %s", (int)arr_len(table.rows), in_path.str + 3, out_file_path.str + 3);
+	log_info(LOG_ID, "items:%-2d %.*s -> %.*s", (int)arr_len(table.rows), str8_spread(str8_skip(in_path, 3)), str8_spread(str8_skip(out_file_path, 3)));
 	return EXIT_SUCCESS;
 }
 
@@ -286,7 +286,7 @@ gen_tables_recursive(const str8 in_dir, struct marena *arena)
 	tinydir_dir *dir   = alloc_struct(alloc, dir);
 
 	if(tinydir_open(dir, (char *)in_dir.str) == -1) {
-		log_error(LOG_ID, "Cannot open directory: %s", in_dir.str);
+		log_error(LOG_ID, "Cannot open directory: %.*s", str8_spread(in_dir));
 		return;
 	}
 
@@ -330,7 +330,7 @@ main(i32 argc, char *argv[])
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 
 	marena_init(&arena, mem, mem_size);
-	log_info(LOG_ID, "Processing C from %s -> %s", in_path.str, in_path.str);
+	log_info(LOG_ID, "Processing C from %.*s -> %.*s", str8_spread(in_path), str8_spread(in_path));
 	gen_tables_recursive(in_path, &arena);
 
 	res = EXIT_SUCCESS;

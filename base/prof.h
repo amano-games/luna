@@ -1200,7 +1200,7 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 	sys_file f     = sys_file_open_w(full_path);
 
 	if(!sys_file_is_valid(f)) {
-		log_error("prof", "csv save failed: %s", full_path.str);
+		log_error("prof", "csv save failed: %.*s", str8_spread(full_path));
 		return res;
 	}
 	if(csv.size > 0) {
@@ -1208,6 +1208,6 @@ prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 	}
 	sys_file_close(f);
 	res = true;
-	log_info("prof", "prof csv saved: %s", full_path.str);
+	log_info("prof", "prof csv saved: %.*s", str8_spread(full_path));
 	return res;
 }

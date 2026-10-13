@@ -377,9 +377,9 @@ tsj_atlas_gen(str8 src_root, str8 dest_root, str8 src_path, struct tex_atlas atl
 
 	if((i32)atlas.cell_w != tex_size.x || (i32)atlas.cell_h != tex_size.y) {
 		tsj_make_parents(out, scratch);
-		dbg_check(atlas_to_blob(scratch, atlas, &blob), "tex-atlas", "can't pack %s", out.str);
-		dbg_check(asset_blob_w(blob, out), "tex-atlas", "can't write %s", out.str);
-		log_info("tex-atlas", "%s cell=%dx%d", out.str, atlas.cell_w, atlas.cell_h);
+		dbg_check(atlas_to_blob(scratch, atlas, &blob), "tex-atlas", "can't pack %.*s", str8_spread(out));
+		dbg_check(asset_blob_w(blob, out), "tex-atlas", "can't write %.*s", str8_spread(out));
+		log_info("tex-atlas", "%.*s cell=%dx%d", str8_spread(out), atlas.cell_w, atlas.cell_h);
 	}
 
 error:;
@@ -413,10 +413,10 @@ tsj_ani_gen(str8 src_root, str8 dest_root, str8 src_path, struct animation_clip 
 	tsj_make_parents(out, scratch);
 
 	file = sys_file_open_w(out);
-	dbg_check(sys_file_is_valid(file), "ani", "can't write %s", out.str);
+	dbg_check(sys_file_is_valid(file), "ani", "can't write %.*s", str8_spread(out));
 	w.f = file;
 	ani_clips_write(&w, clips);
-	log_info("ani", "%s clips=%d", out.str, (int)arr_len(clips));
+	log_info("ani", "%.*s clips=%d", str8_spread(out), (int)arr_len(clips));
 
 error:;
 	if(sys_file_is_valid(file)) {
@@ -444,7 +444,7 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
-		log_error("path-db-gen", "can't open file %s for writing!", out_file_path.str);
+		log_error("path-db-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
 		return -1;
 	}
 
@@ -464,6 +464,6 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 
 #endif
 	sys_free(mem_buffer);
-	log_info("path-db-gen", "%s -> %s", in_path.str, out_file_path.str);
+	log_info("path-db-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
 	return 1;
 }
