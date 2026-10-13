@@ -7,6 +7,7 @@
 #include "base/mem.h"
 #include "base/types.h"
 
+#define SYS_LOG_LINE_LENGTH (512) // parity with sokol_log.h _SLOG_LINE_LENGTH
 #define SYS_LOG_LEVEL_PANI  0
 #define SYS_LOG_LEVEL_ERROR 1
 #define SYS_LOG_LEVEL_WARN  2
@@ -33,8 +34,6 @@ void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint
 // for static validation
 // https://github.com/nothings/stb/issues/1814
 // https://vimeo.com/855891054
-// TODO: we are doing double buffering sys_log is calling sokol_log_func that does the same thing
-// But this is probably unavoidable becuase playdate doesnt have a vargs alt
 static inline void
 sys_logf(
 	const char *tag,
@@ -48,7 +47,8 @@ sys_logf(
 #if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL) { return; }
 
-	char strret[512];
+	// This allows us to format the code without ussing malloc and friends and having the same formatting rules on all platforms
+	char strret[SYS_LOG_LINE_LENGTH];
 	va_list args;
 	va_start(args, fmt);
 	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);

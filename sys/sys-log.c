@@ -3,8 +3,6 @@
 #include "sys/sys-os.h"
 #include "sys/sys-printf.h"
 
-#define SYS_LOG_LINE_LENGTH (512) // parity with sokol_log.h _SLOG_LINE_LENGTH
-
 static sys_file SYS_LOG_FILE_HANDLE = {0};
 
 b32
@@ -81,7 +79,14 @@ sys_log_itoa(u32 x, str8 *buf)
 }
 
 void
-sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata)
+sys_log(
+	const char *tag,
+	u32 log_level,
+	u32 log_item,
+	const char *msg,
+	uint32_t line_nr,
+	const char *filename,
+	void *userdata)
 {
 	(void)userdata;
 	if(log_level > SYS_LOG_LEVEL) { return; }
