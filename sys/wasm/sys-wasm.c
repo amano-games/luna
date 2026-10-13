@@ -1,5 +1,6 @@
 // @per_os_impl WASM — owns OS sys_* ; optional Sokol helper for present/window/audio.
 
+#include "base/types.h"
 #include "sys/sys-log.h"
 #include "base/marena.h"
 #include "base/mem.h"
@@ -16,6 +17,7 @@
 #include "sys/sys-keyboard.h"
 #endif
 
+#include <emscripten/emscripten.h> // EM_JS
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -348,6 +350,30 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+// slog_js_log
+EM_JS(void, sys_log_js_console, (u32 level, const char *c_str), {
+	const str = UTF8ToString(c_str);
+	switch(level) {
+	case 0: console.error(str); break;
+	case 1: console.error(str); break;
+	case 2: console.warn(str); break;
+	default: console.info(str); break;
+	}
+})
+
+void
+sys_log_to_console(u32 log_level, str8 message)
+{
+	sys_log_js_console(log_level, (const char *)message.str);
+	if(log_level == SYS_LOG_LEVEL_PANI) { abort(); }
+}
+
+void
+sys_abort(void)
+{
+	abort();
 }
 
 #if SYS_GFX

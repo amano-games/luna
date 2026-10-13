@@ -40,8 +40,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "sys/sys-log.h"
-
 #define SOKOL_IMPL
 #define SOKOL_dbg_assert(c) dbg_assert(c);
 

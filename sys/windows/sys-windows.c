@@ -1,6 +1,6 @@
 // @per_os_impl Windows — owns OS sys_* ; optional Sokol helper for present/window/audio.
 
-#include "sys/sys-log.h"
+#include "sys/sys-log.h
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"
@@ -437,6 +437,23 @@ sys_get_current_path(struct alloc alloc)
 	str8 res = str8_from_16(alloc, (str16){(u16 *)wide, length});
 	marena_reset(&OS_STATE.scratch_arena);
 	return res;
+}
+
+void
+sys_log_to_console(u32 log_level, str8 message)
+{
+	// Playdate parity: logToConsole always appends a linebreak.
+	fputs((const char *)message.str, stderr);
+	fputs("\n", stderr);
+	OutputDebugStringA((const char *)message.str);
+	OutputDebugStringA("\n");
+	if(log_level == SYS_LOG_LEVEL_PANI) { abort(); }
+}
+
+void
+sys_abort(void)
+{
+	abort();
 }
 
 #if SYS_GFX

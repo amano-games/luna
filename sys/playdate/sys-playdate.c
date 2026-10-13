@@ -12,6 +12,7 @@
 #include "engine/dbg-drw/dbg-drw.h"
 #include "base/types.h"
 #include "sys/sys-log.h"
+#include "sys/sys-os.h" // sys_abort decl
 #include "sys/sys-mem.h"
 #include "sys/sys-io.h"
 #include "sys/sys-input.h"
@@ -19,6 +20,8 @@
 #include "base/prof.h"
 #include "base/marena.h"
 #include "base/utils.h"
+
+#include <stdlib.h> // abort
 
 PlaydateAPI *PD;
 
@@ -869,3 +872,22 @@ _kill(void)
 // end ARM linker warning hack
 //
 //
+
+void
+sys_log_to_console(u32 log_level, str8 message)
+{
+	if(log_level == SYS_LOG_LEVEL_PANI) {
+		// NUL guard: panic may fire before eventHandler wired PD.
+		if(PD && PD->system && PD->system->error) {
+			PD->system->error("%s", (const char *)message.str);
+		}
+	} else {
+		PD_SYS_LOG_TO_CONSOLE("%s", (const char *)message.str);
+	}
+}
+
+void
+sys_abort(void)
+{
+	if(PD && PD->system && PD->system->error) { PD->system->error(""); }
+}

@@ -429,6 +429,20 @@ sys_os_home_dir(void)
 	return (str8){0};
 }
 
+void
+sys_log_to_console(u32 log_level, str8 message)
+{
+	fputs((const char *)message.str, stderr);
+	fputs("\n", stderr);
+	if(log_level == SYS_LOG_LEVEL_PANI) { abort(); }
+}
+
+void
+sys_abort(void)
+{
+	abort();
+}
+
 #if SYS_GFX
 #include "sys/sys-gamepad.c"
 #include "sys/sys-keyboard.c"

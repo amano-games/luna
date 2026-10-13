@@ -19,7 +19,7 @@ fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
 {
 	sys_file f = sys_file_open_r(path);
 	if(!sys_file_is_valid(f)) {
-		log_warn("fnt-pd", "Can't open %s\n", path.str);
+		log_warn("fnt-pd", "Can't open %s", path.str);
 		return 0;
 	}
 	sys_file_seek_end(f, 0);
@@ -216,7 +216,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	sys_file_close(out_file);
 
 	sys_free(mem_buffer);
-	log_info("fnt-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	log_info("fnt-gen", "%s -> %s", in_path.str, out_file_path.str);
 
 	return 1;
 }

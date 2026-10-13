@@ -1498,7 +1498,7 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 
 	sys_free(mem_buffer);
 	sys_free(scratch_mem_buffer);
-	log_info("pinb-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	log_info("pinb-gen", "%s -> %s", in_path.str, out_file_path.str);
 
 	return 1;
 }

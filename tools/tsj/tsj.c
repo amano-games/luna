@@ -464,6 +464,6 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 
 #endif
 	sys_free(mem_buffer);
-	log_info("path-db-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	log_info("path-db-gen", "%s -> %s", in_path.str, out_file_path.str);
 	return 1;
 }

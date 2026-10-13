@@ -117,7 +117,7 @@ sys_recording_write(
 	str8 cmd               = str8_list_join(scratch, &cmd_list, &params);
 	ssize dst_size         = w * h * sizeof(u32);
 	u32 *dst               = alloc_arr(scratch, dst, w * h);
-	log_info("sokol-sys", "ffmpeg command: %s\n", cmd.str);
+	log_info("sokol-sys", "ffmpeg command: %s", cmd.str);
 
 	pipe = popen((char *)cmd.str, "w");
 	dbg_check_warn(pipe, "sokol", "Failed to open pipe to ffmpeg cmd: %s", cmd.str);

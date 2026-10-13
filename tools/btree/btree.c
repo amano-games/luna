@@ -278,7 +278,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 
 	sys_free(mem_buffer);
 	// sys_printf("%s -> %s\n", in_path.str, out_file_path.str);
-	log_info("ai-gen", "%s -> %s\n", in_path.str, out_file_path.str);
+	log_info("ai-gen", "%s -> %s", in_path.str, out_file_path.str);
 
 	return 1;
 }

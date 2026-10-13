@@ -6,12 +6,10 @@
 #include "base/mem.h"
 #include "base/types.h"
 
-enum sys_log_level {
-	SYS_LOG_LEVEL_PANI  = 0,
-	SYS_LOG_LEVEL_ERROR = 1,
-	SYS_LOG_LEVEL_WARN  = 2,
-	SYS_LOG_LEVEL_INFO  = 3,
-};
+#define SYS_LOG_LEVEL_PANI  0
+#define SYS_LOG_LEVEL_ERROR 1
+#define SYS_LOG_LEVEL_WARN  2
+#define SYS_LOG_LEVEL_INFO  3
 
 #if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_WARN
@@ -22,14 +20,13 @@ enum sys_log_level {
 #endif
 
 #if !defined(SYS_LOG_FILE)
-#define SYS_LOG_FILE (SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARN)
+#define SYS_LOG_FILE (SYS_LOG_LEVEL <= SYS_LOG_LEVEL_WARN)
 #endif
 
 b32 sys_log_ini(struct alloc alloc, str8 path);
 void sys_log_close(void);
 
-// NOTE: SOKOL compatible platforms use sys-log.c playdate defines it's own.
-void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
+void sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t line_nr, const char *filename, void *userdata);
 
 // TODO: Add __attribute__(format(gnu_printf, 6, 7)))
 // for static validation
@@ -40,7 +37,7 @@ void sys_log(const char *tag, enum sys_log_level log_level, u32 log_item, const 
 static inline void
 sys_logf(
 	const char *tag,
-	enum sys_log_level log_level,
+	u32 log_level,
 	u32 log_item,
 	uint32_t line_nr,
 	const char *filename,
@@ -50,7 +47,7 @@ sys_logf(
 #if !defined(SYS_LOG_DISABLE)
 	if(log_level > SYS_LOG_LEVEL) { return; }
 
-	char strret[512]; // the msg that is passed to sys_log is 512 but that can be truncated by sokol_log as it also uses 512 and includes all the data.
+	char strret[512];
 	va_list args;
 	va_start(args, fmt);
 	sys_vsnprintf(strret, sizeof(strret) - 1, fmt, args);
@@ -60,6 +57,6 @@ sys_logf(
 #endif
 }
 
-#define log_info(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_INFO, 0, __LINE__, __FILE__, __VA_ARGS__);
+#define log_info(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_INFO, 0, 0, 0, __VA_ARGS__);
 #define log_warn(tag, ...)  sys_logf(tag, SYS_LOG_LEVEL_WARN, 0, __LINE__, __FILE__, __VA_ARGS__);
 #define log_error(tag, ...) sys_logf(tag, SYS_LOG_LEVEL_ERROR, 0, __LINE__, __FILE__, __VA_ARGS__);
