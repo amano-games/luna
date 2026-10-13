@@ -4,6 +4,7 @@
 #include "base/mem.h"
 #include "lib/tex/tex.h"
 #include "sys/sys-defs.h"
+#include "sys/sys-os.h"
 
 #if !defined(SYS_ORG_NAME)
 #define SYS_ORG_NAME "amano"
@@ -52,18 +53,6 @@ void sys_prof_pause(void);
 void sys_prof_resume(void);
 void sys_prof_aud_cb_add(u32 dt);
 
-// @per_os_impl Memory
-void *sys_alloc(void *ptr, ssize size, ssize align);
-void sys_free(void *ptr);
-struct alloc sys_allocator(void);
-
-// @per_os_impl Time
-f32 sys_time_elapsed(void);
-void sys_time_elapsed_reset(void);
-u32 sys_time_ms(void);
-u32 sys_time_us(void);
-u32 sys_epoch_2000(u32 *milliseconds);
-
 v2_i32 sys_resolution_get(void);
 
 // @per_os_impl Display (1-bit framebuffer)
@@ -79,10 +68,6 @@ void sys_color_u32_set(enum gfx_col color, u32 value);
 void sys_audio_set_volume(f32 vol);
 f32 sys_audio_get_volume(void);
 
-// Nonrecursive exclusion with app_audio; do not acquire from the mixer.
-void sys_audio_lock(void);
-void sys_audio_unlock(void);
-
 // @per_os_impl System menu / host chrome
 i32 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg);
 i32 sys_menu_checkmark_add(const char *title, int val, void (*callback)(void *arg), void *arg);
@@ -91,13 +76,10 @@ int sys_menu_value(int id);
 void sys_menu_item_remove(int id);
 void sys_menu_clr(void);
 void sys_set_menu_image(struct tex tex, i32 x_offset);
-void sys_set_auto_lock_disabled(int disabled);
 void sys_set_app_name(str8 value);
 void sys_fullscreen_set(b32 enabled);
 b32 sys_fullscreen_get(void);
 void sys_quit(void);
-str8 sys_get_current_path(struct alloc alloc);
-struct sys_process_info *sys_process_info(void);
 
 // Playdate-only (not part of portable contract; Phase 4 may fold present into sys_*)
 #if OS_PLAYDATE
