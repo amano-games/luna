@@ -94,6 +94,12 @@ str8 str8_fmt_push(struct alloc alloc, char *fmt, ...);
 str8 str8_from_bytes_buf(char *buf, usize cap, u64 bytes);
 str8 str8_from_bytes(struct alloc alloc, u64 bytes);
 
+#define STR_DATE_TIME_CAP (32) // enough for "31 Dec 2025, 07:59:59 pm" / "2025-12-31--07-59-59"
+str8 str_from_date_time_buf(char *buf, usize cap, struct date_time *date_time);
+str8 str_from_date_time__file_name_buf(char *buf, usize cap, struct date_time *date_time);
+str8 str_from_date_time(struct alloc alloc, struct date_time *date_time);
+str8 str_from_date_time__file_name(struct alloc alloc, struct date_time *date_time);
+
 // String slicing
 str8 str8_postfix(str8 str, usize size);
 str8 str8_skip(str8 str, usize amt);
@@ -141,7 +147,6 @@ struct str8_list wrapped_lines_from_str(struct alloc alloc, str8 str, usize firs
 
 str8 str_from_week_day(enum week_day week_day);
 str8 str_from_month(enum month month);
-str8 str_date_time_push(struct alloc alloc, struct date_time *date_time);
 
 enum os_kind str8_to_os(str8 str);
 str8 str8_from_os(enum os_kind value);

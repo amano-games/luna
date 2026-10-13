@@ -106,14 +106,6 @@ static inline str8
 sys_path_timestamp(struct alloc alloc)
 {
 	struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-	// 2026-09-07_19-14-03
-	return str8_fmt_push(
-		alloc,
-		"%04d-%02d-%02d_%02d-%02d-%02d",
-		dt.year,
-		dt.month + 1,
-		dt.day,
-		dt.hour,
-		dt.min,
-		dt.sec);
+	// 2026-10-13--19-14-03
+	return str_from_date_time__file_name(alloc, &dt);
 }

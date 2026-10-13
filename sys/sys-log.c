@@ -1,7 +1,6 @@
 #include "sys/sys-log.h"
 #include "sys/sys-io.h"
 #include "sys/sys-os.h"
-#include "sys/sys-printf.h"
 
 static sys_file SYS_LOG_FILE_HANDLE = {0};
 
@@ -23,23 +22,18 @@ sys_log_ini(struct alloc alloc, str8 path)
 			str8 platform          = str8_from_os(OS_KIND_CURRENT);
 			const char *build_type = BUILD_DEBUG ? "debug" : "release";
 
-			u8 header_mem[96];
+			char date_mem[STR_DATE_TIME_CAP];
 			struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
-			i32 header_size     = sys_snprintf(
-				(char *)header_mem,
-				sizeof(header_mem),
-				"--- %04d-%02d-%02d %02d:%02d:%02d %s %s\n",
-				dt.year,
-				dt.mon + 1,
-				dt.day,
-				dt.hour,
-				dt.min,
-				dt.sec,
-				platform.str,
+			str8 date           = str_from_date_time_buf(date_mem, sizeof(date_mem), &dt);
+			str8 header         = str8_fmt_push(
+				alloc,
+				"--- %.*s %.*s %s\n",
+				str8_spread(date),
+				str8_spread(platform),
 				build_type);
 
-			if(header_size > 0) {
-				sys_file_w(SYS_LOG_FILE_HANDLE, header_mem, (u32)header_size);
+			if(header.size > 0) {
+				sys_file_w(SYS_LOG_FILE_HANDLE, header.str, (u32)header.size);
 				sys_file_flush(SYS_LOG_FILE_HANDLE);
 			}
 

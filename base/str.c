@@ -896,9 +896,8 @@ str_from_month(enum month month)
 }
 
 str8
-str_date_time_push(struct alloc alloc, struct date_time *date_time)
+str_from_date_time_buf(char *buf, usize cap, struct date_time *date_time)
 {
-	char *mon_str     = (char *)str_from_month(date_time->month).str;
 	u32 adjusted_hour = date_time->hour % 12;
 	if(adjusted_hour == 0) {
 		adjusted_hour = 12;
@@ -907,17 +906,54 @@ str_date_time_push(struct alloc alloc, struct date_time *date_time)
 	if(date_time->hour >= 12) {
 		ampm = "pm";
 	}
-	str8 result = str8_fmt_push(
-		alloc,
-		"%02d %s %02d, %02d:%02d:%02d%s GMT",
+	i32 written = sys_snprintf(
+		buf,
+		(int)cap,
+		"%d %s %d, %02d:%02d:%02d %s",
 		date_time->day,
-		mon_str,
-		date_time->year % 100,
+		(char *)str_from_month(date_time->month).str,
+		date_time->year,
 		adjusted_hour,
 		date_time->min,
 		date_time->sec,
 		ampm);
-	return result;
+	dbg_assert(written > 0 && (usize)written < cap); // STR_DATE_TIME_CAP sized for it
+
+	return str8_cstr_capped(buf, buf + written);
+}
+
+str8
+str_from_date_time(struct alloc alloc, struct date_time *date_time)
+{
+	char buf[STR_DATE_TIME_CAP];
+	str8 res = str_from_date_time_buf(buf, sizeof(buf), date_time);
+	return str8_cpy_push(alloc, res);
+}
+
+str8
+str_from_date_time__file_name_buf(char *buf, usize cap, struct date_time *date_time)
+{
+	i32 written = sys_snprintf(
+		buf,
+		(int)cap,
+		"%d-%02d-%d--%02d-%02d-%02d",
+		date_time->year,
+		date_time->mon + 1,
+		date_time->day,
+		date_time->hour,
+		date_time->min,
+		date_time->sec);
+	dbg_assert(written > 0 && (usize)written < cap);
+
+	return str8_cstr_capped(buf, buf + written);
+}
+
+str8
+str_from_date_time__file_name(struct alloc alloc, struct date_time *date_time)
+{
+	char buf[STR_DATE_TIME_CAP];
+	str8 res = str_from_date_time__file_name_buf(buf, sizeof(buf), date_time);
+	return str8_cpy_push(alloc, res);
 }
 
 struct
