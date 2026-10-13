@@ -62,16 +62,16 @@ tex_load(struct alloc alloc, struct alloc scratch, str8 path)
 	dbg_check(sys_file_r(f, &header, sizeof(struct tex_header)) == (ssize)sizeof(struct tex_header), "tex", "failed to read tex header %s", path.str);
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"tex",
-		"invalid tex fmt %u",
+		"invalid tex fmt %" PRIu32 "",
 		header.fmt);
 	dbg_check(header.w > 0 && header.h > 0,
 		"tex",
-		"invalid tex size %ux%u",
+		"invalid tex size %" PRIu32 "x%" PRIu32 "",
 		header.w,
 		header.h);
 	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
 		"tex",
-		"invalid tex flags %u",
+		"invalid tex flags %" PRIu32 "",
 		header.flags);
 
 	t        = tex_create(alloc, header.w, header.h, header.fmt);
@@ -119,16 +119,16 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"tex",
-		"invalid tex fmt %u",
+		"invalid tex fmt %" PRIu32 "",
 		header.fmt);
 	dbg_check(header.w > 0 && header.h > 0,
 		"tex",
-		"invalid tex size %ux%u",
+		"invalid tex size %" PRIu32 "x%" PRIu32 "",
 		header.w,
 		header.h);
 	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
 		"tex",
-		"invalid tex flags %u",
+		"invalid tex flags %" PRIu32 "",
 		header.flags);
 
 	tex_size = tex_mem_size(header.w, header.h, header.fmt);
@@ -139,7 +139,7 @@ tex_load_from_mem(struct alloc alloc, void *data, ssize size)
 		packed_len = size - (ssize)sizeof(header);
 		dbg_check(packed_len > 0, "tex", "tex lz4 empty");
 		n = sys_lz4_decompress(src + sizeof(header), res.px1b, packed_len, tex_size);
-		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %d %d", n, (i32)tex_size);
+		dbg_check(n == (int)tex_size, "tex", "tex lz4 decode failed %" PRId32 " %" PRId32 "", n, (i32)tex_size);
 	} else {
 		dbg_check(size >= (ssize)sizeof(header) + tex_size, "tex", "tex blob truncated");
 		mcpy(res.px1b, src + sizeof(header), tex_size);

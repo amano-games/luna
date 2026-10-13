@@ -149,7 +149,7 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str
 
 	log_info(
 		"sys-opts",
-		"loaded video: resolution=%dx%d scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
+		"loaded video: resolution=%" PRId32 "x%" PRId32 " scaling=%.*s filter=%.*s display=%.*s mouse-capture=%s",
 		res.video.resolution.x,
 		res.video.resolution.y,
 		(int)scaling_label.size,

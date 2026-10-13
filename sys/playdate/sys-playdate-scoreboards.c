@@ -266,7 +266,7 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 		}
 		res.error_message = str8_cstr((char *)error_message);
 	} else {
-		log_info("sys-scores", "Submited score for board %s: %d. %s %" PRIu32 "", req->board_id.str, score->rank, score->player, score->value);
+		log_info("sys-scores", "Submited score for board %s: %" PRId32 ". %s %" PRIu32 "", req->board_id.str, score->rank, score->player, score->value);
 		res.add = (struct sys_scores_res_add){
 			.score = (struct sys_score){
 				.rank   = score->rank,
@@ -322,7 +322,7 @@ pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 			(int)scores->limit,
 			scores->lastUpdated);
 		for(ssize i = 0; i < (ssize)scores->count; ++i) {
-			log_info("sys-scores", "%d. %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
+			log_info("sys-scores", "%" PRId32 ". %s: %" PRIu32 "", scores->scores[i].rank, scores->scores[i].player, scores->scores[i].value);
 		}
 		res.get = (struct sys_scores_res_get){
 			.board_id        = req->board_id,
@@ -387,7 +387,7 @@ pd_personal_best_get_callback(PDScore *score, const char *error_message)
 				"sys-scores",
 				"Personal best,"
 				" board:%s"
-				" rank:%d"
+				" rank:%" PRId32 ""
 				" score:%" PRIu32
 				" player:%s",
 				req->board_id.str,

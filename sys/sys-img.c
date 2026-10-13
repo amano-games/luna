@@ -38,7 +38,7 @@ sys_img_write(struct tex tex, str8 path, struct gfx_col_palette pallete, struct 
 
 	dbg_check(tex.fmt == TEX_FMT_1B_OPAQUE || tex.fmt == TEX_FMT_8B_INDEX, SYS_IMG_LOG, "tex must be opaque");
 	dbg_check(tex.px1b != NULL, SYS_IMG_LOG, "tex has no pixels");
-	dbg_check(w > 0 && h > 0, SYS_IMG_LOG, "invalid tex size %d x %d", w, h);
+	dbg_check(w > 0 && h > 0, SYS_IMG_LOG, "invalid tex size %" PRId32 " x %" PRId32 "", w, h);
 
 	rgba = alloc_arr(scratch, rgba, px_n);
 	dbg_check_mem(rgba, SYS_IMG_LOG);

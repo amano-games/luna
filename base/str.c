@@ -909,7 +909,7 @@ str_from_date_time_buf(char *buf, usize cap, struct date_time *date_time)
 	i32 written = sys_snprintf(
 		buf,
 		(int)cap,
-		"%d %s %d, %02d:%02d:%02d %s",
+		"%d %s %" PRId32 ", %02" PRId32 ":%02d:%02d %s",
 		date_time->day,
 		(char *)str_from_month(date_time->month).str,
 		date_time->year,
@@ -936,7 +936,7 @@ str_from_date_time__file_name_buf(char *buf, usize cap, struct date_time *date_t
 	i32 written = sys_snprintf(
 		buf,
 		(int)cap,
-		"%d-%02d-%d--%02d-%02d-%02d",
+		"%" PRId32 "-%02" PRId32 "-%d--%02d-%02d-%02d",
 		date_time->year,
 		date_time->mon + 1,
 		date_time->day,

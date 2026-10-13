@@ -73,7 +73,7 @@ asset_blob_from_handle(struct alloc alloc, struct asset_handle handle)
 	dbg_check(data, "assets", "failed to alloc file hash %016zx", (size_t)handle.path_hash);
 
 	size = pck_read(&ASSETS.pck, f, data);
-	dbg_check(size == f->size, "assets", "pck size doesn't match: %d %d", size, (i32)f->size);
+	dbg_check(size == f->size, "assets", "pck size doesn't match: %" PRId32 " %" PRId32 "", size, (i32)f->size);
 
 	res.size = f->size;
 	res.data = data;
@@ -221,18 +221,18 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016zx", (size_t)f->hash);
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"assets",
-		"invalid tex fmt %u hash %016zx",
+		"invalid tex fmt %" PRIu32 " hash %016zx",
 		header.fmt,
 		(size_t)f->hash);
 	dbg_check(header.w > 0 && header.h > 0,
 		"assets",
-		"invalid tex size %ux%u hash %016zx",
+		"invalid tex size %" PRIu32 "x%" PRIu32 " hash %016zx",
 		header.w,
 		header.h,
 		(size_t)f->hash);
 	dbg_check((header.flags & ~TEX_FLAG_LZ4) == 0,
 		"assets",
-		"invalid tex flags %u hash %016zx",
+		"invalid tex flags %" PRIu32 " hash %016zx",
 		header.flags,
 		(size_t)f->hash);
 
