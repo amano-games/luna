@@ -62,6 +62,20 @@ struct table {
 	struct row *rows;
 };
 
+static usize
+designator_field_len(const struct table table)
+{
+	usize max_id_len = str8_lit("NONE").size;
+	for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
+		str8 id = table.rows[j].items[0].string;
+		if(id.size > max_id_len) {
+			max_id_len = id.size;
+		}
+	}
+	/* 	[brackets prefix id] + one space before '=' */
+	return 2 + table.prefix.size + max_id_len + 1;
+}
+
 i32
 gen_table(const str8 in_path, struct alloc scratch)
 {
@@ -194,21 +208,27 @@ gen_table(const str8 in_path, struct alloc scratch)
 			switch(column.type) {
 			case COLUMN_TYPE_ID: {
 				str8_list_pushf(alloc, &content, "enum %.*s {\n", str8_spread(table.name));
-				str8_list_pushf(alloc, &content, "  %.*s,\n\n", str8_spread(enum_none));
+				str8_list_pushf(alloc, &content, "\t%.*s,\n\n", str8_spread(enum_none));
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row             = table.rows[j];
 					struct row_value row_value = row.items[i];
 					dbg_assert(row_value.type == column.type);
-					str8_list_pushf(alloc, &content, "  %.*s%.*s,\n", str8_spread(table.prefix), str8_spread(row_value.string));
+					str8_list_pushf(alloc, &content, "\t%.*s%.*s,\n", str8_spread(table.prefix), str8_spread(row_value.string));
 				}
-				str8_list_pushf(alloc, &content, "\n  %.*s,\n", str8_spread(enum_count));
+				str8_list_pushf(alloc, &content, "\n\t%.*s,\n", str8_spread(enum_count));
 				str8_list_pushf(alloc, &content, "};\n\n");
-				str8_list_pushf(alloc, &content, "\n");
 
 			} break;
 			case COLUMN_TYPE_LABEL: {
+				usize field_len = designator_field_len(table);
 				str8_list_pushf(alloc, &content, "static const str8 %.*sLABELS[%.*s] = {\n", str8_spread(table.prefix), str8_spread(enum_count));
-				str8_list_pushf(alloc, &content, "  [%.*sNONE] = str8_lit_comp(\"NONE\"),\n", str8_spread(table.prefix));
+				str8_list_pushf(
+					alloc,
+					&content,
+					"\t[%.*sNONE]%*s= str8_lit_comp(\"NONE\"),\n",
+					str8_spread(table.prefix),
+					(i32)(field_len - (2 + table.prefix.size + str8_lit("NONE").size)),
+					"");
 
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
@@ -218,14 +238,17 @@ gen_table(const str8 in_path, struct alloc scratch)
 					str8_list_pushf(
 						alloc,
 						&content,
-						"  [%.*s%.*s] = str8_lit_comp(\"%.*s\"),\n",
+						"\t[%.*s%.*s]%*s= str8_lit_comp(\"%.*s\"),\n",
 						str8_spread(table.prefix),
 						str8_spread(row_value_id.string),
+						(i32)(field_len - (2 + table.prefix.size + row_value_id.string.size)),
+						"",
 						str8_spread(row_value.string));
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
 			} break;
 			case COLUMN_TYPE_BITMASK: {
+				usize field_len   = designator_field_len(table);
 				size_t rows_count = arr_len(table.rows) + 1; /* +1 for NONE */
 				str8 bitmask_type = {0};
 				dbg_assert(rows_count <= 64);
@@ -245,7 +268,14 @@ gen_table(const str8 in_path, struct alloc scratch)
 					str8_spread(bitmask_type),
 					str8_spread(table.prefix),
 					(i32)arr_len(table.rows) + 1);
-				str8_list_pushf(alloc, &content, "  [%.*sNONE] = %d,\n", str8_spread(table.prefix), 0);
+				str8_list_pushf(
+					alloc,
+					&content,
+					"\t[%.*sNONE]%*s= %d,\n",
+					str8_spread(table.prefix),
+					(i32)(field_len - (2 + table.prefix.size + str8_lit("NONE").size)),
+					"",
+					0);
 
 				for(ssize j = 0; j < (ssize)arr_len(table.rows); ++j) {
 					struct row row                = table.rows[j];
@@ -255,9 +285,11 @@ gen_table(const str8 in_path, struct alloc scratch)
 					str8_list_pushf(
 						alloc,
 						&content,
-						"  [%.*s%.*s] = %" PRIu64 ",\n",
+						"\t[%.*s%.*s]%*s= %" PRIu64 ",\n",
 						str8_spread(table.prefix),
 						str8_spread(row_value_id.string),
+						(i32)(field_len - (2 + table.prefix.size + row_value_id.string.size)),
+						"",
 						row_value.u64);
 				}
 				str8_list_pushf(alloc, &content, "};\n\n");
@@ -270,7 +302,13 @@ gen_table(const str8 in_path, struct alloc scratch)
 
 	str8 out_file_path = path_make_file_name_with_ext(scratch, in_path, str8_lit("h"));
 	str8 res           = str8_list_join(alloc, &content, NULL);
-	sys_file f         = sys_file_open_w(out_file_path);
+
+	/* clang-format collapses runs of blank lines to one and has no trailing blank lines at EOF. */
+	while(str8_ends_with(res, str8_lit("\n\n"), 0)) {
+		res = str8_chop(res, 1);
+	}
+
+	sys_file f = sys_file_open_w(out_file_path);
 	sys_file_w(f, res.str, res.size);
 	sys_file_close(f);
 	sys_free(mem);
