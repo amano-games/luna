@@ -5,21 +5,22 @@
 #include "base/types.h"
 #include "base/dbg.h"
 
-// TODO: accept OS enum
-str_match_flags
-path_match_flags_from_os(void)
+static str_match_flags
+path_match_flags_from_os(enum os_kind os)
 {
 	str_match_flags flags = str_match_flag_slash_insensitive;
-	// switch(os) {
-	// default: {
-	// } break;
-	// case OperatingSystem_Windows: {
-	// 	flags |= str_match_flag_case_insensitive;
-	// } break;
-	// case OperatingSystem_Linux:
-	// case OperatingSystem_Mac: {
-	// } break;
-	// }
+	switch(os) {
+	default: {
+	} break;
+	case OS_KIND_WINDOWS: {
+		flags |= str_match_flag_case_insensitive;
+	} break;
+	case OS_KIND_LINUX:
+	case OS_KIND_MACOS:
+	case OS_KIND_WASM:
+	case OS_KIND_PLAYDATE: {
+	} break;
+	}
 	return flags;
 }
 
@@ -155,7 +156,7 @@ path_relative_dst_from_absolute_dst_src(struct alloc alloc, str8 dst, str8 src, 
 	for(struct str8_node *src_n = src_folders.first, *bp_n = dst_folders.first;
 		src_n != 0 && bp_n != 0;
 		src_n = src_n->next, bp_n = bp_n->next) {
-		if(str8_match(src_n->str, bp_n->str, path_match_flags_from_os())) {
+		if(str8_match(src_n->str, bp_n->str, path_match_flags_from_os(OS_KIND_CURRENT))) {
 			num_backtracks -= 1;
 		} else {
 			break;
@@ -181,7 +182,7 @@ path_relative_dst_from_absolute_dst_src(struct alloc alloc, str8 dst, str8 src, 
 			for(struct str8_node *src_n = src_folders.first, *bp_n = dst_folders.first;
 				bp_n != 0;
 				bp_n = bp_n->next) {
-				if(!unique_from_src && (src_n == 0 || !str8_match(src_n->str, bp_n->str, path_match_flags_from_os()))) {
+				if(!unique_from_src && (src_n == 0 || !str8_match(src_n->str, bp_n->str, path_match_flags_from_os(OS_KIND_CURRENT)))) {
 
 					unique_from_src = 1;
 				}
