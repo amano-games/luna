@@ -138,5 +138,5 @@ str8 str_from_week_day(enum week_day week_day);
 str8 str_from_month(enum month month);
 str8 str_date_time_push(struct alloc alloc, struct date_time *date_time);
 
-static enum os_kind str8_to_os(str8 str);
-static str8 str8_from_os(enum os_kind value);
+enum os_kind str8_to_os(str8 str);
+str8 str8_from_os(enum os_kind value);

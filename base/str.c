@@ -880,7 +880,7 @@ struct
 		[OS_KIND_WASM]     = {str8_lit_comp("wasm"), OS_KIND_MACOS},
 };
 
-static enum os_kind
+enum os_kind
 str8_to_os(str8 str)
 {
 	enum os_kind res = OS_KIND_NONE;
@@ -892,7 +892,7 @@ str8_to_os(str8 str)
 	return res;
 }
 
-static str8
+str8
 str8_from_os(enum os_kind value)
 {
 	str8 res = G_OS_ENUM_MAP[OS_KIND_NONE].str;

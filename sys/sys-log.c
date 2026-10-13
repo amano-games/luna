@@ -21,6 +21,29 @@ sys_log_ini(struct alloc alloc, str8 path)
 		SYS_LOG_FILE_HANDLE = sys_file_open_w(path);
 		res                 = sys_file_is_valid(SYS_LOG_FILE_HANDLE);
 		if(res) {
+			// session header, one line: "--- <datetime> <platform> <build>"
+			str8 platform8     = str8_from_os(OS_KIND_CURRENT);
+			const char *build8 = BUILD_DEBUG ? "debug" : "release"; // folds at compile time, type-checked everywhere
+
+			u8 header_mem[96];
+			struct date_time dt = date_time_from_epoch_2000_gmt(sys_epoch_2000(NULL));
+			i32 header_size     = sys_snprintf(
+				(char *)header_mem,
+				sizeof(header_mem),
+				"--- %04d-%02d-%02d %02d:%02d:%02d %s %s\n",
+				dt.year,
+				dt.mon + 1,
+				dt.day,
+				dt.hour,
+				dt.min,
+				dt.sec,
+				platform8.str, // str8_lit_comp storage, NUL-terminated
+				build8);
+			if(header_size > 0) {
+				sys_file_w(SYS_LOG_FILE_HANDLE, header_mem, (u32)header_size);
+				sys_file_flush(SYS_LOG_FILE_HANDLE);
+			}
+
 			log_info("sys-log", "log file path: %s", path);
 		} else {
 			log_warn("sys-log", "failed to open log file path: %s", path);
@@ -130,6 +153,7 @@ sys_log(const char *tag, u32 log_level, u32 log_item, const char *msg, uint32_t 
 #if SYS_LOG_FILE
 	if(sys_file_is_valid(SYS_LOG_FILE_HANDLE)) {
 		sys_file_w(SYS_LOG_FILE_HANDLE, line.str, (u32)line.size);
+		sys_file_w(SYS_LOG_FILE_HANDLE, "\n", 1);
 		sys_file_flush(SYS_LOG_FILE_HANDLE);
 	}
 #endif
