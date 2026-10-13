@@ -209,6 +209,22 @@ str8_cat_in_place(str8 *dst, str8 *src)
 	dst->str[dst->size] = 0;
 }
 
+inline b32
+str8_cat_in_place_bounded(str8 *dst, usize cap, str8 src)
+{
+	if(dst->str == NULL || cap == 0) { return false; }
+	if(src.str == NULL) { src.size = 0; }
+
+	usize free_bytes = (dst->size + 1 < cap) ? (cap - dst->size - 1) : 0;
+	usize copied     = (src.size < free_bytes) ? src.size : free_bytes;
+	if(copied > 0) {
+		mcpy(dst->str + dst->size, src.str, copied);
+		dst->size += copied;
+	}
+	if(dst->size < cap) { dst->str[dst->size] = 0; }
+	return copied == src.size;
+}
+
 inline str8
 str8_cat_push(struct alloc alloc, str8 s1, str8 s2)
 {
