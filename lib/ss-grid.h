@@ -24,8 +24,7 @@ struct ss_grid {
 };
 
 struct ss_item {
-	u16 index;
-	u16 id; // Use as generic ID for handles
+	u32 id; // Use as generic ID for handles
 	struct col_aabb aabb;
 };
 
