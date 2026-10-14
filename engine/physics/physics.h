@@ -66,4 +66,4 @@ void body_clear_torque(struct body *body);
 v2 body_gravity_force(struct body *body, f32 gravity);
 
 void body_positional_correction(struct physics *physics, struct body *a, struct body *b, struct col_manifold *m);
-void body_impulse_correction(struct body *a, struct body *b, f32 restitution_slop, struct col_manifold *m);
+void body_impulse_correction(struct body *a, struct body *b, v2 a_p, v2 b_p, f32 restitution_slop, struct col_manifold *m);

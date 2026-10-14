@@ -205,6 +205,8 @@ void
 body_impulse_correction(
 	struct body *a,
 	struct body *b,
+	v2 a_p,
+	v2 b_p,
 	f32 restitution_slop,
 	struct col_manifold *m)
 {
@@ -215,8 +217,8 @@ body_impulse_correction(
 	v2 start = m->contact_points[0];
 	v2 end   = v2_add(v2_mul(v2_normalized(m->normal), m->depth), start);
 
-	v2 ra = v2_sub(end, a->p);
-	v2 rb = v2_sub(start, b->p);
+	v2 ra = v2_sub(end, a_p);
+	v2 rb = v2_sub(start, b_p);
 
 	v2 va = v2_add(a->vel, (v2){-a->ang_vel * ra.y, a->ang_vel * ra.x});
 	v2 vb = v2_add(b->vel, (v2){-b->ang_vel * rb.y, b->ang_vel * rb.x});
