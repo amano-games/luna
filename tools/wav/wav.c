@@ -79,7 +79,7 @@ wav_to_snd(str8 in_path, str8 out_path, struct alloc scratch)
 	dbg_check_warn(in_data.size >= 44 && in_data.data != NULL, "snd-gen", "%.*s failed to read full file", str8_spread(in_path));
 	dbg_check_warn(wav_parse(in_data.data, in_data.size, &wav), "snd-gen", "%.*s failed to parse wav file", str8_spread(in_path));
 	dbg_check_warn(wav.sample_format == WAVE_FORMAT_PCM, "snd_gen", "invalid, wav format not supported");
-	dbg_check_warn(wav.channel_count == 1, "wav", "invalid, unsupported number of channels", wav.channel_count);
+	dbg_check_warn(wav.channel_count == 1, "wav", "invalid, unsupported number of channels: %u", wav.channel_count);
 	dbg_check_warn(wav.sample_rate == 44100, "wav", "invalid, unsupported sample rate: %d", wav.sample_rate);
 	dbg_check_warn(wav.bits_per_sample == 16, "wav", "invalid, unsupported bits per sample: %d", wav.bits_per_sample);
 

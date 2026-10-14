@@ -182,11 +182,18 @@ pck_pack_file(struct pck_w *pack, str8 root, str8 path, struct alloc scratch)
 	file = pck_store_file(scratch, disk_path, pack->file);
 	dbg_check(file.size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
 
+	char size_buf[STR_BYTES_CAP];
 	file.hash     = hash;
 	file.offset   = pack->archive_size;
 	file.path_len = path_len;
 
-	log_info(LOG_ID, "%6d %016llx %_$$10u %.*s", pack->file_count, hash, (u32)file.size, str8_spread(path));
+	log_info(
+		LOG_ID,
+		"%6d %016llx %11.*s %.*s",
+		(int)pack->file_count,
+		(unsigned long long)hash,
+		str8_spread(str8_from_bytes_buf(size_buf, sizeof(size_buf), (u64)file.size)),
+		str8_spread(path));
 
 	pack->files[pack->file_count] = file;
 	pack->archive_size += file.size + path_len;
@@ -248,7 +255,12 @@ pck_pack(struct alloc alloc, str8 input_path, str8 out_path)
 	pck_u32w(PCK_MAGIC, pack.file);
 
 	res = true;
-	log_info(LOG_ID, "files: %d, size: %_$$u", pack.file_count, (u32)total_size);
+	char size_buf[STR_BYTES_CAP];
+	log_info(
+		LOG_ID,
+		"files: %d, size: %.*s",
+		(int)pack.file_count,
+		str8_spread(str8_from_bytes_buf(size_buf, sizeof(size_buf), (u64)total_size)));
 
 error:;
 	if(sys_file_is_valid(pack.file)) {

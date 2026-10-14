@@ -224,13 +224,13 @@ main(int argc, char *argv[])
 	if(palette_path.size > 0) {
 		// palette_map.palette = asset_gen_load_palette(palette_path);
 	}
-	log_info("asset-gen", "color palette: %d", palette_map.palette.len);
+	log_info("asset-gen", "color palette: %ld", palette_map.palette.len);
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;
 
 	log_info("asset-gen", "Processing%s assets from %.*s -> %.*s", packed ? " packed" : "", str8_spread(in_path), str8_spread(out_path));
-	dbg_check(sys_make_dir(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
+	dbg_check(sys_make_dirs(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
 	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, palette_map, flag);
 
