@@ -86,6 +86,9 @@ ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
 			t->ht[i].value = value;
 			res            = value;
 			goto cleanup;
+		} else if(t->ht[i].key == key) {
+			res = t->ht[i].value;
+			goto cleanup;
 		}
 	}
 cleanup:
@@ -141,6 +144,9 @@ ht_set_u64(struct ht_u64 *t, u64 key, u64 value)
 			t->ht[i].key   = key;
 			t->ht[i].value = value;
 			res            = value;
+			goto cleanup;
+		} else if(t->ht[i].key == key) {
+			res = t->ht[i].value;
 			goto cleanup;
 		}
 	}
