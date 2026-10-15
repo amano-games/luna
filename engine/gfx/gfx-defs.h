@@ -17,6 +17,9 @@ struct gfx_col_palette {
 };
 
 struct gfx_col_palette_map {
+	struct ht_u32 ht;
+	struct gfx_col_palette palette;
+
 	// colors the tex actually has, for example in a grayscale input
 	// color 0 is black, color 1 is gray, color 2 is white
 	struct gfx_col_palette palette_in;
