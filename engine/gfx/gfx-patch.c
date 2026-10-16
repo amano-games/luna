@@ -42,7 +42,10 @@ gfx_spr_tiled(
 
 	i32 tile_w = src.r.w;
 	i32 tile_h = src.r.h;
-	b32 stamp  = tile_w > 0 &&
+	// The stamp only pays off for 1-bit word blits,
+	// 8-bit is per pixel and the stamp buffer is sized for 1-bit rows
+	b32 stamp = src.t.fmt != TEX_FMT_8B_INDEX &&
+		tile_w > 0 &&
 		tile_w < GFX_SPR_TILED_STAMP_W &&
 		(GFX_SPR_TILED_STAMP_W % tile_w) == 0 &&
 		tile_h > 0 &&
@@ -69,7 +72,7 @@ gfx_spr_tiled(
 		};
 		struct gfx_ctx stamp_ctx = gfx_ctx_default(stamp_tex);
 		for(i32 x = 0; x < GFX_SPR_TILED_STAMP_W; x += tile_w) {
-			gfx_spr(stamp_ctx, src, x, 0, 0, mode);
+			gfx_spr(stamp_ctx, src, x, 0, 0, SPR_MODE_COPY);
 		}
 
 		struct tex_rec stamp_src = {
