@@ -175,6 +175,8 @@ gfx_spr_8b(
 					// Only monochrome palette indices have a defined inverse.
 					if(dp[x] <= 1 && col == (mode == SPR_MODE_XOR)) dp[x] ^= 1;
 					break;
+				case SPR_MODE_HIDDEN: break;
+				case SPR_MODE_NUM_COUNT: break;
 				}
 			}
 		}

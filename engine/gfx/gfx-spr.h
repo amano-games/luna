@@ -53,6 +53,8 @@ spr_blit_p_res(u32 dp, u32 dm, u32 sp, u32 sm, u32 pt, enum spr_mode mode, u32 *
 		dp_clr = zm & (sp ^ dp);
 		dp_set = zm & (~sp ^ dp);
 		break;
+	case SPR_MODE_HIDDEN: break;
+	case SPR_MODE_NUM_COUNT: break;
 	}
 
 	*out_dp = (dp & ~dp_clr) | dp_set;
