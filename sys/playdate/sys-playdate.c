@@ -359,10 +359,10 @@ sys_color_v4_get(enum gfx_col color)
 	v4 res = {0};
 	switch(color) {
 	case GFX_COL_WHITE: {
-		res = (v4){1.0f, 1.0f, 1.0f, 1.0f};
+		res = (v4){.x = 1.0f, .y = 1.0f, .z = 1.0f, .w = 1.0f};
 	} break;
 	case GFX_COL_BLACK: {
-		res = (v4){0.0f, 0.0f, 0.0f, 1.0f};
+		res = (v4){.x = 0.0f, .y = 0.0f, .z = 0.0f, .w = 1.0f};
 	} break;
 	default: {
 	} break;
