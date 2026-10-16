@@ -26,6 +26,8 @@ enum prim_mode {
 	PRIM_MODE_WHITE_BLACK, // fills white, pattern holes are black
 	PRIM_MODE_BLACK_WHITE, // fills black, pattern holes are white
 	PRIM_MODE_INV,         // inverts canvas, pattern holes are transparent
+
+	PRIM_MODE_NUM_COUNT,
 };
 
 enum spr_flip {

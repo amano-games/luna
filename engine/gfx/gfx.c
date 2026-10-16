@@ -460,36 +460,28 @@ gfx_cir(struct gfx_ctx ctx, i32 px, i32 py, i32 d, enum prim_mode mode)
 
 	// Jesko's Method, shameless copy
 	// https://schwarzers.com/algorithms/
+
 	i32 r = d >> 1;
 	i32 x = r;
 	i32 y = 0;
 	i32 t = r >> 4;
 
 	do {
-		i32 x1 = max_i32(px - x, ctx.clip_x1);
-		i32 x2 = min_i32(px + x, ctx.clip_x2);
-		i32 x3 = max_i32(px - y, ctx.clip_x1);
-		i32 x4 = min_i32(px + y, ctx.clip_x2);
-		i32 y4 = py - x; // ordered in y
-		i32 y2 = py - y;
-		i32 y1 = py + y;
-		i32 y3 = py + x;
-
-		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_prim_blit_pixel(ctx, x3, y4, mode);
-			gfx_prim_blit_pixel(ctx, x4, y4, mode);
+		// Collapses to 2 pixels on the axis
+		gfx_prim_blit_pixel(ctx, px - x, py - y, mode);
+		gfx_prim_blit_pixel(ctx, px + x, py - y, mode);
+		if(y != 0) {
+			gfx_prim_blit_pixel(ctx, px - x, py + y, mode);
+			gfx_prim_blit_pixel(ctx, px + x, py + y, mode);
 		}
-		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
-			gfx_prim_blit_pixel(ctx, x1, y2, mode);
-			gfx_prim_blit_pixel(ctx, x2, y2, mode);
-		}
-		if(ctx.clip_y1 <= y1 && y1 <= ctx.clip_y2 && x1 <= x2 && y != 0) {
-			gfx_prim_blit_pixel(ctx, x1, y1, mode);
-			gfx_prim_blit_pixel(ctx, x2, y1, mode);
-		}
-		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			gfx_prim_blit_pixel(ctx, x3, y3, mode);
-			gfx_prim_blit_pixel(ctx, x4, y3, mode);
+		// Collapse same pixels as above on the diagonal
+		if(x != y) {
+			gfx_prim_blit_pixel(ctx, px - y, py - x, mode);
+			gfx_prim_blit_pixel(ctx, px - y, py + x, mode);
+			if(y != 0) {
+				gfx_prim_blit_pixel(ctx, px + y, py - x, mode);
+				gfx_prim_blit_pixel(ctx, px + y, py + x, mode);
+			}
 		}
 
 		y++;
@@ -540,14 +532,7 @@ gfx_cir_fill(
 		i32 y1 = py + y;
 		i32 y3 = py + x;
 
-		if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y4, x3, x4, mode);
-			if(indexed) {
-				gfx_prim_blit_span_8b(&info);
-			} else {
-				gfx_prim_blit_span(&info);
-			}
-		}
+		// rows py +/- y: y is unique per iteration
 		if(ctx.clip_y1 <= y2 && y2 <= ctx.clip_y2 && x1 <= x2) {
 			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y2, x1, x2, mode);
 			if(indexed) {
@@ -564,21 +549,38 @@ gfx_cir_fill(
 				gfx_prim_blit_span(&info);
 			}
 		}
-		if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
-			struct gfx_span_blit info = gfx_span_blit_gen(ctx, y3, x3, x4, mode);
-			if(indexed) {
-				gfx_prim_blit_span_8b(&info);
-			} else {
-				gfx_prim_blit_span(&info);
-			}
-		}
 
+		i32 yy = y;
+		i32 xx = x;
+		b32 x_step;
 		y++;
 		t += y;
-		i32 k = t - x;
-		if(0 <= k) {
+		i32 k  = t - x;
+		x_step = 0 <= k;
+		if(x_step) {
 			t = k;
 			x--;
+		}
+
+		// rows py +/ x: only draw once per x (widest span, on the last y before x steps)
+		// and not when x == y, as that row was already drawn above
+		if((x_step || y > x) && xx != yy) {
+			if(ctx.clip_y1 <= y4 && y4 <= ctx.clip_y2 && x3 <= x4) {
+				struct gfx_span_blit info = gfx_span_blit_gen(ctx, y4, x3, x4, mode);
+				if(indexed) {
+					gfx_prim_blit_span_8b(&info);
+				} else {
+					gfx_prim_blit_span(&info);
+				}
+			}
+			if(ctx.clip_y1 <= y3 && y3 <= ctx.clip_y2 && x3 <= x4) {
+				struct gfx_span_blit info = gfx_span_blit_gen(ctx, y3, x3, x4, mode);
+				if(indexed) {
+					gfx_prim_blit_span_8b(&info);
+				} else {
+					gfx_prim_blit_span(&info);
+				}
+			}
 		}
 	} while(y <= x);
 }
@@ -631,7 +633,9 @@ gfx_lin_thick(struct gfx_ctx ctx, i32 ax, i32 ay, i32 bx, i32 by, i32 d, enum pr
 
 	i32 ymin = max_i32(min_i32(ay, by) - r, ctx.clip_y1);
 	i32 ymax = min_i32(max_i32(ay, by) + r, ctx.clip_y2);
+
 	if(ymin > ymax) return;
+
 	// Emit each row once, keeping scratch storage independent of the framebuffer height.
 	for(i32 batch_min = ymin; batch_min <= ymax; batch_min += GFX_LIN_NUM_SPANS) {
 		i32 batch_max = min_i32(ymax, batch_min + GFX_LIN_NUM_SPANS - 1);
