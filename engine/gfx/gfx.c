@@ -240,6 +240,7 @@ gfx_span_blit_gen(struct gfx_ctx ctx, i32 y, i32 x1, i32 x2, enum prim_mode mode
 		info.b8.px_count = x2 - x1 + 1;
 		info.b8.x        = x1;
 		info.b8.y        = y;
+		// WARN: how do we handle more than 3 colors?
 		mcpy_array(info.b8.colors, ctx.color_map);
 	} else {
 		i32 nbit          = (x2 + 1) - x1; // number of bits in a row to blit
@@ -331,7 +332,7 @@ gfx_prim_blit_span_8b(const struct gfx_span_blit *info)
 	default: return;
 	}
 
-	bg = info->mode == PRIM_MODE_WHITE_BLACK ? GFX_COL_BLACK : GFX_COL_WHITE;
+	bg = info->b8.colors[info->mode == PRIM_MODE_WHITE_BLACK ? GFX_COL_BLACK : GFX_COL_WHITE];
 
 	if(pt == 0 && !opaque) return;
 	if(pt == U32_MAX || pt == 0) {
