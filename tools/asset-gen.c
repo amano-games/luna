@@ -114,11 +114,13 @@ asset_gen_recursive(
 	struct gfx_col_palette_map palette_map,
 	enum asset_flag flag)
 {
+	void *dir_reset_p  = arena->p;
 	struct alloc alloc = marena_allocator(arena);
 	tinydir_dir *dir   = alloc_struct(alloc, dir);
 	tinydir_open(dir, (char *)in_dir.str);
 
 	while(dir->has_next) {
+		void *entry_reset_p = arena->p;
 		tinydir_file file;
 		tinydir_readfile(dir, &file);
 
@@ -158,10 +160,12 @@ asset_gen_recursive(
 			marena_reset_to(arena, reset_p);
 		}
 
+		marena_reset_to(arena, entry_reset_p);
 		tinydir_next(dir);
 	}
 
 	tinydir_close(dir);
+	marena_reset_to(arena, dir_reset_p);
 }
 
 struct gfx_col_palette
@@ -194,7 +198,7 @@ main(int argc, char *argv[])
 	int res                = EXIT_FAILURE;
 	struct alloc alloc_sys = sys_allocator();
 
-	usize mem_size = MMEGABYTE(1);
+	usize mem_size = MMEGABYTE(2);
 	void *mem      = mem_alloc_size(alloc_sys, mem_size);
 	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
 	struct marena scratch_arena = {0};
@@ -214,17 +218,17 @@ main(int argc, char *argv[])
 	}
 
 	struct gfx_col_palette_map palette_map = {
-		.ht      = ht_new_u32(ht_exp_from_count(250), scratch),
-		.palette = {
+		.ht_in       = ht_new_u32(ht_exp_from_count(250), scratch),
+		.palette_out = {
 			.len    = 2,
 			.colors = {[0] = 0x000000ff, [1] = 0xffffffff},
 		},
 	};
 	str8 palette_path = cmd_line_str8(&cmd, str8_lit("palette"));
 	if(palette_path.size > 0) {
-		// palette_map.palette = asset_gen_load_palette(palette_path);
+		palette_map.palette_out = asset_gen_load_palette(palette_path);
 	}
-	log_info("asset-gen", "color palette: %ld", palette_map.palette.len);
+	log_info("asset-gen", "color palette: %ld", palette_map.palette_out.len);
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;

@@ -15,6 +15,9 @@ enum spr_mode {          // pattern holes always transparent
 	SPR_MODE_NXOR,       // 5 kDrawModeNXOR
 	SPR_MODE_XOR,        // 6 kDrawModeXOR
 	SPR_MODE_INV,        // 7 kDrawModeInverted
+	SPR_MODE_HIDDEN,     // 8 Skip this spr no playdate equivalent
+
+	SPR_MODE_NUM_COUNT,
 };
 
 enum prim_mode {

@@ -136,6 +136,13 @@ sqrt_f32(f32 x)
 }
 
 static inline f32
+cbrt_f32(f32 x)
+{
+	f32 r = cbrtf(x);
+	return r;
+}
+
+static inline f32
 exp_f32(f32 x)
 {
 	f32 r = expf(x);
@@ -308,40 +315,40 @@ pow2_i32(i32 v)
 	return i32_mul(v, v);
 }
 
-static f32
+static inline f32
 pow_f32(f32 v, f32 power)
 {
 	f32 r = powf(v, power);
 	return r;
 }
 
-static f32
+static inline f32
 sin_f32(f32 x)
 {
 	f32 i = fmodf(x, PI2_FLOAT) / PI2_FLOAT;
 	return ((f32)sin_q16((i32)(i * (f32)Q16_ANGLE_TURN)) * .000015258789f);
 }
 
-static f32
+static inline f32
 cos_f32(f32 x)
 {
 	f32 i = fmodf(x, PI2_FLOAT) / PI2_FLOAT;
 	return ((f32)cos_q16((i32)(i * (f32)Q16_ANGLE_TURN)) * .000015258789f);
 }
 
-static f32
+static inline f32
 atan2_f32(f32 y, f32 x)
 {
 	return atan2f(y, x);
 }
 
-static f32
+static inline f32
 acos_f32(f32 x)
 {
 	return acosf(x);
 }
 
-static i32
+static inline i32
 mod_euc_i32(i32 a, i32 b)
 {
 	dbg_assert(b > 0);
@@ -349,7 +356,7 @@ mod_euc_i32(i32 a, i32 b)
 	return r < 0 ? r + b : r;
 }
 
-static f32
+static inline f32
 rem_f32(f32 a, f32 b)
 {
 	dbg_assert(b > 0);
@@ -357,7 +364,14 @@ rem_f32(f32 a, f32 b)
 	return r;
 }
 
-static f32
+static inline f32
+mod_f32(f32 a, f32 b)
+{
+	f32 r = fmodf(a, b);
+	return r;
+}
+
+static inline f32
 mod_euc_f32(f32 a, f32 b)
 {
 	dbg_assert(b > 0);

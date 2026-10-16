@@ -18,6 +18,7 @@
 #include "base/path.h"
 #include "base/mathfunc.h"
 #include "base/v2.h"
+#include "base/v3.h"
 #include "base/rec.h"
 #include "base/link-list.h"
 #include "base/arr.h"

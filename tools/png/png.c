@@ -2,6 +2,9 @@
 #include "base/dbg.h"
 #include "base/ht.h"
 #include "base/mem.h"
+#include "base/str.h"
+#include "base/v3.h"
+#include "lib/color.h"
 #include "lib/tex/tex.h"
 #include "tools/asset/asset.h"
 #include "tools/asset/asset-defs.h"
@@ -12,12 +15,22 @@
 u8
 find_color_index(struct gfx_col_palette_map palette_map, u32 color)
 {
-	u8 res = 0;
-	// TODO: closest color to palette
-	for(ssize i = 0; i < palette_map.palette.len; ++i) {
-		if(color == palette_map.palette.colors[i]) {
+	u8 res      = 0;
+	f32 closest = F32_MAX;
+	v3 a        = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(color).xyz));
+	for(ssize i = 0; i < palette_map.palette_out.len; ++i) {
+		u32 b_rgba = palette_map.palette_out.colors[i];
+
+		if(b_rgba == color) {
 			res = i;
 			break;
+		}
+
+		v3 b         = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(b_rgba).xyz));
+		f32 distance = v3_distance_sq(a, b);
+		if(distance < closest) {
+			res     = i;
+			closest = distance;
 		}
 	}
 	return res;
@@ -31,6 +44,8 @@ tex_u8_from_rgba(
 	i32 h,
 	struct gfx_col_palette_map palette_map)
 {
+	dbg_assert(palette_map.ht_in.ht);
+
 	struct tex t = tex_create(alloc, w, h, TEX_FMT_8B_INDEX);
 	if(!t.pxu8) { return t; }
 	ssize stride = (ssize)t.wword * sizeof(u32);
@@ -40,14 +55,13 @@ tex_u8_from_rgba(
 		for(i32 x = 0; x < w; ++x) {
 			struct pixel_u8 pixel = row[x];
 			u32 color             = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
-			// Reserve zero for empty keys and cache misses, including transparent black.
-			u64 key   = (u64)color + 1;
-			u32 value = ht_get_u32(&palette_map.ht, key);
+			u64 key               = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
+			u32 value             = ht_get_u32(&palette_map.ht_in, key);
 			if(value == 0) {
 				u8 index = find_color_index(palette_map, color);
 				value    = (u32)index + 1;
-				if(index < palette_map.palette.len) {
-					ht_set_u32(&palette_map.ht, key, value);
+				if(index < palette_map.palette_out.len) {
+					ht_set_u32(&palette_map.ht_in, key, value);
 				}
 			}
 			t.pxu8[y * stride + x] = (u8)(value - 1);
@@ -72,7 +86,7 @@ png_to_tex_blob(
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)data;
 	struct tex t                   = {0};
-	if(palette_map.palette.len > 2) {
+	if(palette_map.palette_out.len > 2) {
 		t = tex_u8_from_rgba(scratch, in_data, w, h, palette_map);
 	} else {
 		t = tex_1b_from_rgb(scratch, in_data, w, h);

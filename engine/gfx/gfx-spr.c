@@ -121,7 +121,13 @@
 #undef SPRBLIT_COPYMODE
 
 static void
-gfx_spr_8b(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, i32 flip, enum spr_mode mode)
+gfx_spr_8b(
+	struct gfx_ctx ctx,
+	struct tex_rec src,
+	i32 px,
+	i32 py,
+	i32 flip,
+	enum spr_mode mode)
 {
 	if(!src.t.pxu8 || !ctx.dst.pxu8) return;
 	if(src.t.fmt != TEX_FMT_8B_INDEX && src.t.fmt != TEX_FMT_1B_OPAQUE && src.t.fmt != TEX_FMT_1B_MASK) {
@@ -265,9 +271,10 @@ void
 gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip flip, enum spr_mode mode)
 {
 	if(!src.t.px1b) return;
+	if(mode == SPR_MODE_HIDDEN) { return; }
+	dbg_assert(mode >= SPR_MODE_COPY && mode < SPR_MODE_NUM_COUNT);
 
 	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
-		dbg_assert(src.t.fmt != TEX_FMT_8B_INDEX || mode == SPR_MODE_COPY);
 		gfx_spr_8b(ctx, src, px, py, flip, mode);
 
 	} else {

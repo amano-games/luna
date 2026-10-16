@@ -108,13 +108,53 @@ typedef struct v2 {
 	f32 x, y;
 } v2;
 
-typedef struct v3 {
-	f32 x, y, z;
-} v3;
+typedef union v3 v3;
+union v3 {
+	struct
+	{
+		f32 x;
+		f32 y;
+		f32 z;
+	};
+	struct
+	{
+		v2 xy;
+		f32 z0;
+	};
+	struct
+	{
+		f32 x0;
+		v2 yz;
+	};
+	f32 v[3];
+};
 
-typedef struct v4 {
-	f32 x, y, z, w;
-} v4;
+typedef union v4 v4;
+union v4 {
+	struct
+	{
+		f32 x;
+		f32 y;
+		f32 z;
+		f32 w;
+	};
+	struct
+	{
+		v2 xy;
+		v2 zw;
+	};
+	struct
+	{
+		v3 xyz;
+		f32 z0;
+	};
+	struct
+	{
+		f32 x0;
+		v3 yzw;
+	};
+	f32 v[4];
+};
 
 // 2d rotation composed of cos/sin pair for a single angle
 // We use two floats as a small optimization to avoid computing sin/cos unnecessarily

@@ -192,11 +192,16 @@ v2_normal(v2 a)
 	return v2_normalized((v2){a.y, -a.x});
 }
 
-static inline u32
+static inline f32
 v2_distance_sq(v2 a, v2 b)
 {
-	// WARN: should be b-a
 	return v2_len_sq(v2_sub(a, b));
+}
+
+static inline f32
+v2_distance(v2 a, v2 b)
+{
+	return v2_len(v2_sub(a, b));
 }
 
 static inline v2
