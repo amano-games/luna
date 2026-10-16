@@ -120,6 +120,14 @@
 #undef SPRBLIT_FLIPPEDX
 #undef SPRBLIT_COPYMODE
 
+static inline u8
+gfx_spr_8b_inv(const u8 *cm, u8 c)
+{
+	if(c == cm[GFX_COL_BLACK]) return cm[GFX_COL_WHITE];
+	if(c == cm[GFX_COL_WHITE]) return cm[GFX_COL_BLACK];
+	return c;
+}
+
 static void
 gfx_spr_8b(
 	struct gfx_ctx ctx,
@@ -134,6 +142,8 @@ gfx_spr_8b(
 		dbg_assert(0);
 		return;
 	}
+
+	const u8 *cm = ctx.color_map;
 
 	i32 x1 = max_i32(max_i32(ctx.clip_x1, 0), px);
 	i32 y1 = max_i32(max_i32(ctx.clip_y1, 0), py);
@@ -151,33 +161,38 @@ gfx_spr_8b(
 
 			i32 sx = src.r.x + ((flip & SPR_FLIP_X) ? src.r.w - 1 - (x - px) : x - px);
 
+			u8 s = 0;
 			if(src.t.fmt == TEX_FMT_8B_INDEX) {
-				dp[x] = src.t.pxu8[(ssize)sy * src.t.wword * sizeof(u32) + sx];
+				s = src.t.pxu8[(ssize)sy * src.t.wword * sizeof(u32) + sx];
 			} else {
 				b32 masked = src.t.fmt == TEX_FMT_1B_MASK;
 				u32 bit    = bswap_u32(0x80000000U >> (sx & 31));
 				u32 *sp    = src.t.px1b + (ssize)sy * src.t.wword + ((sx >> 5) << masked);
 				if(masked && !(sp[1] & bit)) continue;
-				u8 col = (sp[0] & bit) != 0;
-				switch(mode) {
-				case SPR_MODE_COPY: dp[x] = col; break;
-				case SPR_MODE_INV: dp[x] = col ^ 1; break;
-				case SPR_MODE_BLACK: dp[x] = 0; break;
-				case SPR_MODE_WHITE: dp[x] = 1; break;
-				case SPR_MODE_BLACK_ONLY:
-					if(!col) dp[x] = 0;
-					break;
-				case SPR_MODE_WHITE_ONLY:
-					if(col) dp[x] = 1;
-					break;
-				case SPR_MODE_XOR:
-				case SPR_MODE_NXOR:
-					// Only monochrome palette indices have a defined inverse.
-					if(dp[x] <= 1 && col == (mode == SPR_MODE_XOR)) dp[x] ^= 1;
-					break;
-				case SPR_MODE_HIDDEN: break;
-				case SPR_MODE_NUM_COUNT: break;
-				}
+				s = cm[(sp[0] & bit) ? GFX_COL_WHITE : GFX_COL_BLACK];
+			}
+
+			if(s == cm[GFX_COL_CLEAR]) continue;
+
+			switch(mode) {
+			case SPR_MODE_COPY: dp[x] = s; break;
+			case SPR_MODE_WHITE_ONLY:
+				if(s == cm[GFX_COL_WHITE]) dp[x] = s;
+				break;
+			case SPR_MODE_BLACK_ONLY:
+				if(s == cm[GFX_COL_BLACK]) dp[x] = s;
+				break;
+			case SPR_MODE_BLACK: dp[x] = cm[GFX_COL_BLACK]; break;
+			case SPR_MODE_WHITE: dp[x] = cm[GFX_COL_WHITE]; break;
+			case SPR_MODE_INV: dp[x] = gfx_spr_8b_inv(cm, s); break;
+			case SPR_MODE_XOR:
+				if(s == cm[GFX_COL_WHITE]) dp[x] = gfx_spr_8b_inv(cm, dp[x]);
+				break;
+			case SPR_MODE_NXOR:
+				if(s == cm[GFX_COL_BLACK]) dp[x] = gfx_spr_8b_inv(cm, dp[x]);
+				break;
+			case SPR_MODE_HIDDEN: break;
+			case SPR_MODE_NUM_COUNT: break;
 			}
 		}
 	}
