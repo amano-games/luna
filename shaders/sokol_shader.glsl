@@ -108,7 +108,7 @@ void main() {
       rel.y < 0.0 ||
       rel.x >= size.x ||
       rel.y >= size.y ) {
-    frag_color = vec4(app_colors[0].rgb, 1.0);
+    frag_color = vec4(app_colors[1].rgb, 1.0); // GFX_COL_BLACK
     return;
   }
 

@@ -557,6 +557,8 @@ tex_u8_from_rgba(
 	struct gfx_col_lut *lut)
 {
 	dbg_assert(lut->ht.ht);
+	// lut->out[0] is always transparent
+	dbg_static_assert(GFX_COL_CLEAR == 0, asset_gen_clear_is_gfx_col_clear);
 
 	struct tex t = tex_create(alloc, w, h, TEX_FMT_8B_INDEX);
 	if(!t.pxu8) { return t; }
@@ -569,7 +571,7 @@ tex_u8_from_rgba(
 		for(i32 x = 0; x < w; ++x) {
 			struct pixel_u8 pixel = row[x];
 			if(pixel.a == 0) {
-				t.pxu8[y * stride + x] = 0; // GFX_COL_CLEAR, lut->out[0] is always transparent
+				t.pxu8[y * stride + x] = GFX_COL_CLEAR;
 				continue;
 			}
 			u32 color = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;

@@ -3,10 +3,11 @@
 #include "base/ht.h"
 #include "base/types.h"
 
+// Values are 8-bit palette indices: asset-gen reserves 0 for clear
 enum gfx_col {
+	GFX_COL_CLEAR,
 	GFX_COL_BLACK,
 	GFX_COL_WHITE,
-	GFX_COL_CLEAR,
 
 	GFX_COL_NUM_COUNT,
 };

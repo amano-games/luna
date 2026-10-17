@@ -688,6 +688,8 @@ sokol_frame(void)
 		? SOKOL_STATE.smp_nearest
 		: SOKOL_STATE.smp_linear;
 
+	// sokol_shader.glsl letterbox uses app_colors[1], keep in sync with GFX_COL_BLACK
+	dbg_static_assert(GFX_COL_BLACK == 1, shader_letterbox_is_gfx_col_black);
 	for(usize i = 0; i < ARRLEN(colors.app_colors); ++i) {
 		colors.app_colors[i] = color_rgba_from_u32(SOKOL_STATE.opts.colors.colors[i]);
 	}

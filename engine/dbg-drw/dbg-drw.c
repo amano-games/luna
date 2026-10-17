@@ -41,7 +41,7 @@ void
 dbg_drw_clr(void)
 {
 	struct tex dst = DBG_DRW_STATE.ctx.dst;
-	tex_clr(dst, dst.fmt == TEX_FMT_8B_INDEX ? 0 : GFX_COL_BLACK);
+	tex_clr(dst, dst.fmt == TEX_FMT_8B_INDEX ? GFX_COL_CLEAR : GFX_COL_BLACK);
 }
 
 void
