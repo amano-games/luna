@@ -4,6 +4,7 @@
 #include "base/str.h"
 #include "base/types.h"
 #include "base/utils.h"
+#include "base/v3.h"
 
 u32
 color_rgba_to_u32(v4 rgba)
@@ -224,4 +225,28 @@ color_lineara_from_oklab(v4 oklab)
 	result.xyz = color_linear_from_oklab(oklab.xyz);
 	result.w   = oklab.w;
 	return result;
+}
+
+static inline ssize
+color_map_find_closest_color(u32 *colors, ssize color_count, u32 color)
+{
+	u8 res      = 0;
+	f32 closest = F32_MAX;
+	v3 a        = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(color).xyz));
+
+	for(ssize i = 0; i < color_count; ++i) {
+		u32 b_rgba = colors[i];
+		if(b_rgba == color) {
+			res = i;
+			break;
+		}
+
+		v3 b         = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(b_rgba).xyz));
+		f32 distance = v3_distance_sq(a, b);
+		if(distance < closest) {
+			res     = i;
+			closest = distance;
+		}
+	}
+	return res;
 }

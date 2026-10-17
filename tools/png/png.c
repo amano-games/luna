@@ -12,92 +12,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-u8
-find_color_index(struct gfx_col_palette_map palette_map, u32 color)
-{
-	u8 res      = 0;
-	f32 closest = F32_MAX;
-	v3 a        = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(color).xyz));
-	for(ssize i = 0; i < palette_map.palette_out.len; ++i) {
-		u32 b_rgba = palette_map.palette_out.colors[i];
-
-		// Transparent entries share rgb with real colors, never match them by distance
-		if((b_rgba & 0xFF) <= 127) { continue; }
-
-		if(b_rgba == color) {
-			res = i;
-			break;
-		}
-
-		v3 b         = color_oklab_from_linear(color_linear_from_srgb(color_rgba_from_u32(b_rgba).xyz));
-		f32 distance = v3_distance_sq(a, b);
-		if(distance < closest) {
-			res     = i;
-			closest = distance;
-		}
-	}
-	return res;
-}
-
-struct tex
-tex_u8_from_rgba(
-	struct alloc alloc,
-	const struct pixel_u8 *in_data,
-	i32 w,
-	i32 h,
-	struct gfx_col_palette_map palette_map)
-{
-	dbg_assert(palette_map.ht_in.ht);
-
-	ssize clear_index = -1;
-	for(ssize i = 0; i < palette_map.palette_out.len; ++i) {
-		if((palette_map.palette_out.colors[i] & 0xFF) <= 127) {
-			clear_index = i;
-			break;
-		}
-	}
-
-	struct tex t = tex_create(alloc, w, h, TEX_FMT_8B_INDEX);
-	if(!t.pxu8) { return t; }
-
-	ssize stride = (ssize)t.wword * sizeof(u32);
-	mset(t.pxu8, 0, stride * h);
-
-	for(ssize y = 0; y < h; ++y) {
-		const struct pixel_u8 *row = in_data + y * w;
-		for(i32 x = 0; x < w; ++x) {
-			struct pixel_u8 pixel = row[x];
-			if(pixel.a <= 127) {
-				if(clear_index < 0) {
-					log_error("png", "Transparent pixel at %d,%d but the palette has no transparent color", x, (i32)y);
-					return (struct tex){0};
-				}
-				t.pxu8[y * stride + x] = (u8)clear_index;
-				continue;
-			}
-			u32 color = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
-			u64 key   = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
-			u32 value = ht_get_u32(&palette_map.ht_in, key);
-			if(value == 0) {
-				u8 index = find_color_index(palette_map, color);
-				value    = (u32)index + 1;
-				if(index < palette_map.palette_out.len) {
-					ht_set_u32(&palette_map.ht_in, key, value);
-				}
-			}
-			t.pxu8[y * stride + x] = (u8)(value - 1);
-		}
-	}
-	return t;
-}
-
 b32
 png_to_tex_blob(
 	str8 in_path,
 	struct alloc scratch,
 	struct alloc alloc,
 	struct asset_blob *out,
-	struct gfx_col_palette_map palette_map,
+	struct gfx_col_lut *col_map,
 	enum asset_flag flag)
 {
 	b32 res = false;
@@ -107,10 +28,12 @@ png_to_tex_blob(
 
 	const struct pixel_u8 *in_data = (const struct pixel_u8 *)data;
 	struct tex t                   = {0};
-	if(palette_map.palette_out.len > 2) {
-		t = tex_u8_from_rgba(scratch, in_data, w, h, palette_map);
-	} else {
+	if(col_map->ht.ht == NULL) {
 		t = tex_1b_from_rgb(scratch, in_data, w, h);
+	} else if(col_map->out.len > 3) {
+		t = tex_u8_from_rgba(scratch, in_data, w, h, col_map);
+	} else {
+		t = tex_1b_from_rgb_lut(scratch, in_data, w, h, col_map);
 	}
 	dbg_check(t.pxu8 != NULL, "png", "Failed to convert image with path %.*s", str8_spread(in_path));
 	res = tex_to_blob(scratch, alloc, t, out, flag);

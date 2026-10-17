@@ -4,6 +4,7 @@
 #include "base/utils.h"
 #include "engine/gfx/gfx-defs.h"
 #include "base/intrin.h"
+#include "lib/color.h"
 #include "sys/sys-io.h"
 #include "sys/sys-lz4.h"
 #include "sys/sys.h"
@@ -372,7 +373,11 @@ tex_cpy(struct tex *dst, struct tex *src)
 }
 
 struct tex
-tex_1b_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h)
+tex_1b_from_rgb(
+	struct alloc alloc,
+	const struct pixel_u8 *in_data,
+	i32 w,
+	i32 h)
 {
 	struct tex t  = {0};
 	b32 opaque    = true;
@@ -441,5 +446,142 @@ tex_1b_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h
 	}
 
 error:;
+	return t;
+}
+
+struct tex
+tex_1b_from_rgb_lut(
+	struct alloc alloc,
+	const struct pixel_u8 *in_data,
+	i32 w,
+	i32 h,
+	struct gfx_col_lut *lut)
+{
+	dbg_assert(lut->ht.ht);
+	dbg_assert(lut->out.len == 3);
+	dbg_assert(lut->in.len > 1 && lut->in.len == lut->map.len);
+
+	struct tex t  = {0};
+	b32 opaque    = true;
+	u32 *dst      = NULL;
+	i32 w_aligned = 0;
+	ssize bit_idx = 0;
+	u32 color_row = 0;
+	u32 mask_row  = 0;
+
+	// Any pixel with alpha == 0 makes this a mask tex.
+	for(i32 y = 0; y < h && opaque; ++y) {
+		const struct pixel_u8 *row = in_data + y * w;
+		for(i32 x = 0; x < w; ++x) {
+			if(row[x].a == 0) {
+				opaque = false;
+				break;
+			}
+		}
+	}
+
+	t = tex_create(alloc, w, h, opaque ? TEX_FMT_1B_OPAQUE : TEX_FMT_1B_MASK);
+	dbg_check_mem(t.px1b, "tex");
+
+	dst       = t.px1b;
+	w_aligned = (w + 31) & ~31;
+
+	for(ssize y = 0; y < h; ++y) {
+		const struct pixel_u8 *row = in_data + y * w;
+
+		for(i32 x = 0; x < w_aligned; ++x) {
+			struct pixel_u8 pixel = {0};
+			if(x < w) {
+				pixel = row[x];
+			}
+
+			u32 color_rgba = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
+			u64 key        = (u64)color_rgba + 1; // Reserve zero for empty keys and cache misses, including transparent black.
+			u32 in_idx     = ht_get_u32(&lut->ht, key);
+
+			if(in_idx == 0) {
+				// TODO: convert all colors to oklab
+				in_idx = (u32)color_map_find_closest_color(lut->in.colors + 1, lut->in.len - 1, color_rgba) + 1;
+				ht_set_u32(&lut->ht, key, in_idx);
+			}
+			dbg_assert(in_idx < lut->map.len);
+			u32 out_idx = lut->map.colors[in_idx];
+			dbg_assert(out_idx > 0 && out_idx < lut->out.len);
+
+			u32 out_rgba = lut->out.colors[out_idx];
+			i32 color    = (((out_rgba >> 24) & 0xFF) + ((out_rgba >> 16) & 0xFF) + ((out_rgba >> 8) & 0xFF)) > (3 * 127);
+
+			i32 alpha      = pixel.a != 0;
+			u32 pixel_mask = (1u << (31 - bit_idx));
+
+			if(color) { color_row |= pixel_mask; }
+			if(alpha) { mask_row |= pixel_mask; }
+
+			if(++bit_idx == 32) {
+				*dst++ = bswap_u32(color_row);
+				if(!opaque) {
+					*dst++ = bswap_u32(mask_row);
+				}
+
+				color_row = 0;
+				mask_row  = 0;
+				bit_idx   = 0;
+			}
+		}
+
+		// Flush leftover bits when width is not a multiple of 32.
+		if(bit_idx > 0) {
+			*dst++ = bswap_u32(color_row);
+			if(!opaque) {
+				*dst++ = bswap_u32(mask_row);
+			}
+
+			color_row = 0;
+			mask_row  = 0;
+			bit_idx   = 0;
+		}
+	}
+
+error:;
+	return t;
+}
+
+struct tex
+tex_u8_from_rgba(
+	struct alloc alloc,
+	const struct pixel_u8 *in_data,
+	i32 w,
+	i32 h,
+	struct gfx_col_lut *lut)
+{
+	dbg_assert(lut->ht.ht);
+
+	struct tex t = tex_create(alloc, w, h, TEX_FMT_8B_INDEX);
+	if(!t.pxu8) { return t; }
+
+	ssize stride = (ssize)t.wword * sizeof(u32);
+	mset(t.pxu8, 0, stride * h);
+
+	for(ssize y = 0; y < h; ++y) {
+		const struct pixel_u8 *row = in_data + y * w;
+		for(i32 x = 0; x < w; ++x) {
+			struct pixel_u8 pixel = row[x];
+			if(pixel.a == 0) {
+				t.pxu8[y * stride + x] = 0;
+				continue;
+			}
+			u32 color = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
+			u64 key   = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
+			// Cached value is the slot in lut->out (>= 1), zero means cache miss
+			u32 out_idx = ht_get_u32(&lut->ht, key);
+			if(out_idx == 0) {
+				// TODO: convert all colors to oklab
+				out_idx = (u32)color_map_find_closest_color(lut->out.colors + 1, lut->out.len - 1, color) + 1;
+				ht_set_u32(&lut->ht, key, out_idx);
+			}
+			dbg_assert(out_idx < lut->out.len);
+			t.pxu8[y * stride + x] = (u8)out_idx;
+		}
+	}
 	return t;
 }

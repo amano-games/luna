@@ -111,7 +111,7 @@ asset_gen_recursive(
 	const str8 src_root,
 	const str8 dest_root,
 	struct marena *arena,
-	struct gfx_col_palette_map palette_map,
+	struct gfx_col_lut *lut,
 	enum asset_flag flag)
 {
 	void *dir_reset_p  = arena->p;
@@ -131,14 +131,14 @@ asset_gen_recursive(
 		if(file.is_dir) {
 			if(!str8_match(file_name, str8_lit("."), 0) && !str8_match(file_name, str8_lit(".."), 0)) {
 				sys_make_dir(out_path);
-				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, palette_map, flag);
+				asset_gen_recursive(str8_cstr(file.path), out_path, src_root, dest_root, arena, lut, flag);
 			}
 		} else {
 			void *reset_p  = arena->p;
 			str8 extension = str8_cstr(file.extension);
 			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				struct asset_blob blob = {0};
-				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, palette_map, flag);
+				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, lut, flag);
 				str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(TEX_EXT));
 				b32 res            = asset_blob_w(blob, out_file_path);
 				sys_free(blob.data);
@@ -168,22 +168,59 @@ asset_gen_recursive(
 	marena_reset_to(arena, dir_reset_p);
 }
 
-struct gfx_col_palette
-asset_gen_load_palette(str8 path)
+struct gfx_col_lut
+asset_gen_load_palette_map(str8 path)
 {
-	struct gfx_col_palette res = {0};
+	struct gfx_col_lut res = {0};
 	dbg_check(path.size > 0, "asset-gen", "palette path empty");
 
 	i32 w, h, n;
 	stbi_uc *data = stbi_load((char *)path.str, &w, &h, &n, 4);
 	dbg_check(data, "asset-gen", "palette failed to load: %.*s", str8_spread(path));
-	dbg_check(h == 1 && w < U8_MAX, "asset-gen", "palette wrong dimensions (%dx%d): %.*s", w, h, str8_spread(path));
+	dbg_check(h < 4 && w > 2 && w < (U8_MAX - 1), "asset-gen", "palette wrong dimensions (%dx%d): %.*s", w, h, str8_spread(path));
 
-	for(ssize i = 0; i < w; ++i) {
-		const stbi_uc *p = data + i * 4;
-		res.colors[i]    = ((u32)p[0] << 24) | ((u32)p[1] << 16) | ((u32)p[2] << 8) | (u32)p[3];
+	struct gfx_col_palette *out = &res.out;
+	out->len                    = 1;
+	for(ssize x = 0; x < w; ++x) {
+		const stbi_uc *p = data + x * 4;
+		u32 color        = ((u32)p[0] << 24) | ((u32)p[1] << 16) | ((u32)p[2] << 8) | (u32)p[3];
+
+		if(p[3] == 0) { break; } // palette_out stops after first transparent pixel
+
+		// Entry 0 in palette is always transparent
+		out->colors[out->len++] = color;
 	}
-	res.len = w;
+
+	struct gfx_col_palette *in  = &res.in;
+	struct gfx_col_palette *map = &res.map;
+	map->len                    = w + 1;
+	in->len                     = w + 1;
+	i32 stride                  = w * 4;
+	for(ssize y = 1; y < h; ++y) {
+		for(ssize x = 0; x < w; ++x) {
+			const stbi_uc *p = data + (stride * y) + x * 4;
+			u32 color        = ((u32)p[0] << 24) | ((u32)p[1] << 16) | ((u32)p[2] << 8) | (u32)p[3];
+			switch(y) {
+			case 1: {
+				// Entry 0 in palette is always transparent
+				in->colors[x + 1] = color;
+			} break;
+			case 2: {
+				// search for the color in the already stored palette_out,
+				// if it matches map it
+				b32 found = false;
+				for(ssize i = 1; i < out->len; ++i) {
+					if(out->colors[i] == color) {
+						map->colors[x + 1] = i;
+						found              = true;
+						break;
+					}
+				}
+				dbg_check(found, "asset-gen", "color in map row not found");
+			} break;
+			}
+		}
+	}
 
 error:;
 	if(data) {
@@ -217,18 +254,13 @@ main(int argc, char *argv[])
 		goto error;
 	}
 
-	struct gfx_col_palette_map palette_map = {
-		.ht_in       = ht_new_u32(ht_exp_from_count(250), scratch),
-		.palette_out = {
-			.len    = 2,
-			.colors = {[0] = 0x000000ff, [1] = 0xffffffff},
-		},
-	};
-	str8 palette_path = cmd_line_str8(&cmd, str8_lit("palette"));
+	struct gfx_col_lut lut = {0};
+	str8 palette_path      = cmd_line_str8(&cmd, str8_lit("palette"));
 	if(palette_path.size > 0) {
-		palette_map.palette_out = asset_gen_load_palette(palette_path);
+		lut    = asset_gen_load_palette_map(palette_path);
+		lut.ht = ht_new_u32(ht_exp_from_count(250), scratch);
 	}
-	log_info("asset-gen", "color palette: %ld", palette_map.palette_out.len);
+	log_info("asset-gen", "color palette: %ld", lut.out.len);
 
 	str8 in_path  = cmd.inputs.first->str;
 	str8 out_path = cmd.inputs.first->next->str;
@@ -236,7 +268,7 @@ main(int argc, char *argv[])
 	log_info("asset-gen", "Processing%s assets from %.*s -> %.*s", packed ? " packed" : "", str8_spread(in_path), str8_spread(out_path));
 	dbg_check(sys_make_dirs(out_path), "asset-gen", "failed to create folder %.*s", str8_spread(out_path));
 
-	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, palette_map, flag);
+	asset_gen_recursive(in_path, out_path, in_path, out_path, &scratch_arena, &lut, flag);
 
 	res = EXIT_SUCCESS;
 
