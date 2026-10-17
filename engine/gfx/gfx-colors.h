@@ -7,22 +7,22 @@ static const u32 APP_DEFAULT_WHITE = 0xA5A5A2FF;
 static const u32 APP_DEFAULT_BLACK = 0x110B0DFF;
 
 static const u32 GFX_1B_PALETTES[][GFX_COL_NUM_COUNT] = {
-	{APP_DEFAULT_BLACK, APP_DEFAULT_WHITE}, // Default
-	{0x000000FF, 0xFFFFFFFF},               // Black & White
-	{0x0F380FFF, 0x9BBC0FFF},               // Game Boy
-	{0x1D0F44FF, 0xF44E38FF},               // Sunset
-	{0x12101FFF, 0x8672FFFF},               // Purple Night
-	{0x4C3118FF, 0xD7A564FF},               // Parchment
-	{0x6F09B7FF, 0x83DD47FF},               // TMNT
-	{0x004D58FF, 0x99D7FFFF},               // Aqua
-	{0x5F112EFF, 0xFF4848FF},               // VB
-	{0x7E8280FF, 0xDBE1DCFF},               // Low Contrast
-	{0xEF289DFF, 0xFFE673FF},               // MBorg
-	{0x000000FF, 0xFFE673FF},               // Aurus
-	{0x000000FF, 0xFF2C80FF},               // Pinky
-	{0x000000FF, 0xFF6D4BFF},               // Orengi
-	{0x000000FF, 0x72dec2FF},               // Merv
-	{0x290973FF, 0x00FFBDFF},               // Tensie
+	{[GFX_COL_BLACK] = APP_DEFAULT_BLACK, [GFX_COL_WHITE] = APP_DEFAULT_WHITE}, // Default
+	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0xFFFFFFFF},               // Black & White
+	{[GFX_COL_BLACK] = 0x0F380FFF, [GFX_COL_WHITE] = 0x9BBC0FFF},               // Game Boy
+	{[GFX_COL_BLACK] = 0x1D0F44FF, [GFX_COL_WHITE] = 0xF44E38FF},               // Sunset
+	{[GFX_COL_BLACK] = 0x12101FFF, [GFX_COL_WHITE] = 0x8672FFFF},               // Purple Night
+	{[GFX_COL_BLACK] = 0x4C3118FF, [GFX_COL_WHITE] = 0xD7A564FF},               // Parchment
+	{[GFX_COL_BLACK] = 0x6F09B7FF, [GFX_COL_WHITE] = 0x83DD47FF},               // TMNT
+	{[GFX_COL_BLACK] = 0x004D58FF, [GFX_COL_WHITE] = 0x99D7FFFF},               // Aqua
+	{[GFX_COL_BLACK] = 0x5F112EFF, [GFX_COL_WHITE] = 0xFF4848FF},               // VB
+	{[GFX_COL_BLACK] = 0x7E8280FF, [GFX_COL_WHITE] = 0xDBE1DCFF},               // Low Contrast
+	{[GFX_COL_BLACK] = 0xEF289DFF, [GFX_COL_WHITE] = 0xFFE673FF},               // MBorg
+	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0xFFE673FF},               // Aurus
+	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0xFF2C80FF},               // Pinky
+	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0xFF6D4BFF},               // Orengi
+	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0x72dec2FF},               // Merv
+	{[GFX_COL_BLACK] = 0x290973FF, [GFX_COL_WHITE] = 0x00FFBDFF},               // Tensie
 
 };
 

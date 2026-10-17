@@ -142,9 +142,9 @@ gfx_ctx_default(struct tex dst)
 	ctx.dst                      = dst;
 	ctx.clip_x2                  = dst.w - 1;
 	ctx.clip_y2                  = dst.h - 1;
-	ctx.color_map[GFX_COL_BLACK] = 0;
-	ctx.color_map[GFX_COL_WHITE] = 1;
-	ctx.color_map[GFX_COL_CLEAR] = 2;
+	ctx.color_map[GFX_COL_BLACK] = GFX_COL_BLACK;
+	ctx.color_map[GFX_COL_WHITE] = GFX_COL_WHITE;
+	ctx.color_map[GFX_COL_CLEAR] = GFX_COL_CLEAR;
 	mset(&ctx.pat, 0xFF, sizeof(struct gfx_pattern));
 
 	return ctx;

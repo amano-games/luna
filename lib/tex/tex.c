@@ -207,15 +207,17 @@ tex_px_at_unsafe(struct tex tex, i32 x, i32 y)
 	if(tex.fmt == TEX_FMT_8B_INDEX) {
 		res = tex.pxu8[(ssize)y * tex.wword * sizeof(u32) + x];
 	} else {
-		u32 b = bswap_u32(0x80000000U >> (x & 31));
+		u32 b   = bswap_u32(0x80000000U >> (x & 31));
+		u32 bit = 0;
 		switch(tex.fmt) {
 		case TEX_FMT_1B_MASK: {
-			res = (tex.px1b[y * tex.wword + ((x >> 5) << 1)] & b);
+			bit = (tex.px1b[y * tex.wword + ((x >> 5) << 1)] & b);
 		} break;
 		case TEX_FMT_1B_OPAQUE: {
-			res = (tex.px1b[y * tex.wword + (x >> 5)] & b);
+			bit = (tex.px1b[y * tex.wword + (x >> 5)] & b);
 		} break;
 		}
+		res = bit ? GFX_COL_WHITE : GFX_COL_BLACK;
 	}
 	return res;
 }
@@ -242,7 +244,7 @@ tex_pxset_unsafe(struct tex tex, i32 x, i32 y, u8 col)
 		case TEX_FMT_1B_OPAQUE: p = &tex.px1b[y * tex.wword + (x >> 5)]; break;
 		default: return;
 		}
-		*p = (col == 0 ? *p & ~b : *p | b);
+		*p = (col == GFX_COL_WHITE ? *p | b : *p & ~b);
 	}
 }
 
@@ -567,7 +569,7 @@ tex_u8_from_rgba(
 		for(i32 x = 0; x < w; ++x) {
 			struct pixel_u8 pixel = row[x];
 			if(pixel.a == 0) {
-				t.pxu8[y * stride + x] = 0;
+				t.pxu8[y * stride + x] = 0; // GFX_COL_CLEAR, lut->out[0] is always transparent
 				continue;
 			}
 			u32 color = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;

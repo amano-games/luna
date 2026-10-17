@@ -40,7 +40,8 @@ dbg_drw_offset_set(i32 x, i32 y)
 void
 dbg_drw_clr(void)
 {
-	tex_clr(DBG_DRW_STATE.ctx.dst, GFX_COL_BLACK);
+	struct tex dst = DBG_DRW_STATE.ctx.dst;
+	tex_clr(dst, dst.fmt == TEX_FMT_8B_INDEX ? 0 : GFX_COL_BLACK);
 }
 
 void

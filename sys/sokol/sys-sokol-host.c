@@ -634,10 +634,14 @@ sokol_record_frame(void)
 {
 	struct tex frame = SOKOL_STATE.frame_ctx.dst;
 	struct tex mono  = SOKOL_STATE.recording_frame;
+	const u8 *cm     = SOKOL_STATE.frame_ctx.color_map;
 	tex_clr(mono, GFX_COL_BLACK);
 	for(i32 y = 0; y < frame.h; ++y) {
 		for(i32 x = 0; x < frame.w; ++x) {
-			if(frame.pxu8[(ssize)y * frame.wword * sizeof(u32) + x] != 0) {
+			// Black and clear record as black, every other index as white
+			// TODO: recurd as 8bit
+			u8 c = frame.pxu8[(ssize)y * frame.wword * sizeof(u32) + x];
+			if(c != cm[GFX_COL_BLACK] && c != cm[GFX_COL_CLEAR]) {
 				mono.px1b[y * mono.wword + (x >> 5)] |= bswap_u32(0x80000000U >> (x & 31));
 			}
 		}
