@@ -38,7 +38,10 @@ include $(ROOT_DIR)/steamworks.mk
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
 ARCH_FLAGS := -arch x86_64 -arch arm64
+SANITIZE_FLAGS :=
+ifeq ($(ASAN), 1)
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
+endif
 
 RELEASE_CFLAGS := ${CFLAGS}
 RELEASE_CFLAGS += -std=gnu11 -O2 -g

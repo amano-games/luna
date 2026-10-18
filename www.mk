@@ -43,7 +43,9 @@ DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DBUILD_DEBUG=1
 DEBUG_CFLAGS += -Wno-limited-postlink-optimizations
+ifeq ($(ASAN), 1)
 DEBUG_CFLAGS += -fsanitize-trap -fsanitize=address,unreachable,undefined
+endif
 
 ifeq ($(BUILD_DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
