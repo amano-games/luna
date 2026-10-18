@@ -3,6 +3,8 @@ ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
+CC := clang
+
 SRC_DIR   := $(ROOT_DIR)/tools
 DESTDIR   ?=
 BINDIR    ?= bin

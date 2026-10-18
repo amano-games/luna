@@ -3,6 +3,8 @@ ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
+CC := clang
+
 # https://developer.apple.com/documentation/bundleresources/information-property-list
 # https://tmewett.com/making-macos-bundle-info-plist/
 

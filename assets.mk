@@ -10,7 +10,7 @@ ASSETS_INSTALL   ?= $(ASSETS_PCK)
 ASSETS_PALETTE   ?=
 ASSETS_ARGS      := --compress $(if $(strip $(ASSETS_PALETTE)),--palette="$(ASSETS_PALETTE)")
 
-HOSTCC ?= cc
+HOSTCC ?= clang
 
 $(ASSETS_BIN) $(ASSETS_PACK_BIN): $(LUNA_C_H)
 	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0 CC="$(HOSTCC)"

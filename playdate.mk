@@ -3,6 +3,8 @@ ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
+CC := clang
+
 DESTDIR      ?=
 PREFIX       ?=
 PLATFORM_DIR := platforms/playdate
