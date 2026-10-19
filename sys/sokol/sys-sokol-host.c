@@ -760,6 +760,7 @@ sokol_frame(void)
 	if(updated) { dbg_drw_clr(); }
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
+		sys_internal_close();
 		sys_internal_init();
 		SOKOL_STATE.status = SOKOL_STATUS_INI;
 	}
