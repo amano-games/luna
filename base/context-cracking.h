@@ -4,6 +4,8 @@
 
 #if defined(__clang__)
 #define COMPILER_CLANG 1
+#elif defined(__TINYC__)
+#define COMPILER_TCC 1
 #elif defined(_MSC_VER)
 #define COMPILER_MSVC 1
 #if _MSC_VER >= 1920
@@ -139,6 +141,9 @@
 #endif
 #if !defined(COMPILER_CLANG)
 #define COMPILER_CLANG 0
+#endif
+#if !defined(COMPILER_TCC)
+#define COMPILER_TCC 0
 #endif
 #if !defined(OS_WINDOWS)
 #define OS_WINDOWS 0
