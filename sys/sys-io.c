@@ -46,6 +46,34 @@ sys_file_exists(str8 path, i32 sys_file_mode)
 	return res;
 }
 
+// Fallback for sys_file_copy
+// IDK if I like this or should be copied over on wasm and pd
+static b32
+sys_file_copy_chunked(str8 from, str8 to)
+{
+	b32 res      = false;
+	sys_file in  = sys_file_open_r(from);
+	sys_file out = sys_file_is_valid(in) ? sys_file_open_w(to) : sys_file_zero();
+	if(sys_file_is_valid(in) && sys_file_is_valid(out)) {
+		u8 buf[MKILOBYTE(4)];
+		res = true;
+		for(;;) {
+			ssize n = sys_file_r(in, buf, sizeof(buf));
+			if(n < 0 || (n > 0 && sys_file_w(out, buf, (u32)n) != n)) {
+				res = false;
+				break;
+			}
+			if(n == 0) { break; }
+		}
+	}
+	if(sys_file_is_valid(in)) { sys_file_close(in); }
+	if(sys_file_is_valid(out)) {
+		res = sys_file_close(out) && res;
+		if(!res) { sys_file_del(to); }
+	}
+	return res;
+}
+
 struct sys_full_file_res
 sys_load_full_file(struct alloc alloc, str8 path)
 {

@@ -431,6 +431,13 @@ sys_file_replace(str8 from, str8 to)
 	return MoveFileExW((WCHAR *)from_wide.str, (WCHAR *)to_wide.str, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
 }
 
+// Overwrites to, fails if to is a loaded DLL
+b32
+sys_file_copy(str8 from, str8 to)
+{
+	return CopyFileA((char *)from.str, (char *)to.str, FALSE) != 0;
+}
+
 void
 sys_set_auto_lock_disabled(int disable)
 {

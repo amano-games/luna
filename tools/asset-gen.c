@@ -64,46 +64,6 @@
 #define ASSETS_DB_EXT     "tsj"
 #define PINBALL_TABLE_EXT "pinbjson"
 
-b32
-file_cpy_raw(const str8 in_path, const str8 out_path)
-{
-	b32 res                         = false;
-	struct sys_full_file_res in_res = sys_load_full_file(sys_allocator(), in_path);
-	sys_file out                    = sys_file_open_w(out_path);
-	dbg_check(sys_file_is_valid(out), "file-cpy-raw", "failed to open file to write %.*s", str8_spread(out_path));
-	dbg_check(sys_file_w(out, in_res.data, in_res.size) == (ssize)in_res.size, "file-cpy-raw", "failed to write: %.*s", str8_spread(out_path));
-
-	res = true;
-	log_info("cpy", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
-
-error:;
-	if(in_res.data) { sys_free(in_res.data); }
-	if(sys_file_is_valid(out)) { sys_file_close(out); }
-	return res;
-}
-
-b32
-file_cpy(const str8 in_path, const str8 out_path)
-{
-	b32 res      = false;
-	sys_file in  = sys_file_open_r(in_path);
-	sys_file out = sys_file_open_w(out_path);
-	char buffer[7192];
-	ssize n;
-
-	while((n = sys_file_r(in, buffer, sizeof(buffer))) > 0) {
-		dbg_check(sys_file_w(out, buffer, (u32)n) == n, "asset-gen", "Failed to copy file %.*s", str8_spread(out_path));
-	}
-
-	res = true;
-	log_info("cpy", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
-
-error:;
-	if(sys_file_is_valid(in)) { sys_file_close(in); }
-	if(sys_file_is_valid(out)) { sys_file_close(out); }
-	return res;
-}
-
 void
 asset_gen_recursive(
 	const str8 in_dir,
@@ -155,7 +115,12 @@ asset_gen_recursive(
 			} else if(str8_match(extension, str8_lit(PINBALL_TABLE_EXT), 0)) {
 				i32 res = pinbtjson_handle(in_path, out_path);
 			} else if(str8_match(extension, str8_lit(RAW_EXT), 0)) {
-				b32 res = file_cpy_raw(in_path, out_path);
+				b32 res = sys_file_copy(in_path, out_path);
+				if(res) {
+					log_info("cpy", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
+				} else {
+					log_error("cpy", "failed to copy %.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
+				}
 			}
 			marena_reset_to(arena, reset_p);
 		}

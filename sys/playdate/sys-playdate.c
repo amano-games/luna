@@ -536,6 +536,12 @@ sys_file_replace(str8 from, str8 to)
 }
 
 b32
+sys_file_copy(str8 from, str8 to)
+{
+	return sys_file_copy_chunked(from, to);
+}
+
+b32
 sys_file_flush(sys_file f)
 {
 	if(!sys_file_is_valid(f)) { return false; }

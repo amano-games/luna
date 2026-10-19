@@ -18,10 +18,12 @@
 #include <limits.h>
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
@@ -435,6 +437,34 @@ b32
 sys_file_replace(str8 from, str8 to)
 {
 	return sys_file_rename(from, to);
+}
+
+b32
+sys_file_copy(str8 from, str8 to)
+{
+	b32 res        = false;
+	struct stat st = {0};
+	int in         = open((char *)from.str, O_RDONLY);
+	if(in < 0) { return res; }
+	if(fstat(in, &st) == 0) {
+		int out = open((char *)to.str, O_WRONLY | O_CREAT | O_TRUNC, st.st_mode & 0777);
+		if(out >= 0) {
+			res       = true;
+			off_t off = 0;
+			while(off < st.st_size) {
+				ssize_t n = sendfile(out, in, &off, (size_t)(st.st_size - off));
+				if(n < 0 && errno == EINTR) { continue; }
+				if(n <= 0) {
+					res = false;
+					break;
+				}
+			}
+			res = close(out) == 0 && res;
+			if(!res) { unlink((char *)to.str); }
+		}
+	}
+	close(in);
+	return res;
 }
 
 void

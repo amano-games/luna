@@ -373,6 +373,12 @@ sys_file_replace(str8 from, str8 to)
 	return sys_file_rename(from, to);
 }
 
+b32
+sys_file_copy(str8 from, str8 to)
+{
+	return sys_file_copy_chunked(from, to);
+}
+
 void
 sys_set_auto_lock_disabled(int disable)
 {

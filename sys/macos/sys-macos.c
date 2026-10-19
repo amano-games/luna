@@ -16,6 +16,7 @@
 #include "sys/sys-keyboard.h"
 #endif
 
+#include <copyfile.h>
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
 #include <pthread.h>
@@ -409,6 +410,15 @@ b32
 sys_file_replace(str8 from, str8 to)
 {
 	return sys_file_rename(from, to);
+}
+
+b32
+sys_file_copy(str8 from, str8 to)
+{
+	if(access((char *)from.str, R_OK) != 0) { return false; }
+	b32 res = copyfile((char *)from.str, (char *)to.str, NULL, COPYFILE_ALL) == 0;
+	if(!res) { unlink((char *)to.str); }
+	return res;
 }
 
 void

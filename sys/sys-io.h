@@ -46,7 +46,8 @@ struct sys_full_file_res {
  * Contract (all platforms):
  * - open_*: zero handle on failure
  * - r/w: byte counts; -1 hard error; 0 EOF / empty
- * - close/flush/del/rename/mkdir: b32 true = success
+ * - close/flush/del/rename/copy/mkdir: b32 true = success
+ * - copy: overwrites to; a missing from never creates to; a partial to is deleted
  * - seek_*: 0 = success
  * - tell: byte offset (negative on error)
  * - props_from_*: zero props on failure; modified/created are UTC dense_time with msec (Playdate: seconds only)
@@ -77,6 +78,7 @@ b32 sys_file_close(sys_file f);
 b32 sys_file_del(str8 path);
 b32 sys_file_rename(str8 from, str8 to);
 b32 sys_file_replace(str8 from, str8 to);
+b32 sys_file_copy(str8 from, str8 to);
 b32 sys_file_flush(sys_file f);
 i32 sys_file_tell(sys_file f);
 i32 sys_file_seek_set(sys_file f, i32 pos);
