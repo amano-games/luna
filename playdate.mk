@@ -211,11 +211,11 @@ build:
 		PLATFORM_DIR=$(PLATFORM_DIR) BUILD_DEBUG=$(BUILD_DEBUG) CDEFS='$(CDEFS)' CC="$(CC)"
 
 assets_clean:
-	rm -rf "$(ASSETS_GEN_OUT)" "$(ASSETS_PACK_ROOT)" "$(ASSETS_PCK)"
+	rm -rf "$(ASSETS_GEN_OUT)" "$(ASSETS_PCK)"
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/playdate.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) PLATFORM_DIR=$(PLATFORM_DIR) CDEFS='$(CDEFS)'
-	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 clean:

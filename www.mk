@@ -100,13 +100,13 @@ build:
 
 $(PUBLISH_OBJS): $(BINARY)
 	rm -f $(BUILD_DIR)/assets.pck
-	rm -rf $(BUILD_DIR)/gen-assets
+	rm -rf $(BUILD_DIR)/assets
 	rm -rf $(BUILD_DIR)/obj
 	cd $(BUILD_DIR) && zip -r ./$(APP_NAME).zip ./*
 
 release:
 	$(MAKE) -f $(ROOT_DIR)/www.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
-	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/gen-assets
+	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 publish_itch:

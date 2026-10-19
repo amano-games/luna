@@ -164,14 +164,19 @@ error:;
 }
 
 static b32
-pck_pack_file(struct pck_w *pack, str8 root, str8 path, struct alloc scratch)
+pck_pack_file(struct pck_w *pack, str8 root, str8 rel, str8 prefix, struct alloc scratch)
 {
 	b32 res = false;
 	u8 zero = 0;
 	u16 path_len;
 	u64 hash;
 	struct pck_file file;
-	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(path));
+	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(rel));
+	str8 path      = rel;
+
+	if(prefix.size > 0) {
+		path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(prefix), str8_spread(rel));
+	}
 
 	hash     = hash_fnv1a_str8(path);
 	path_len = (u16)(path.size + 1);
@@ -206,7 +211,7 @@ error:;
 }
 
 static b32
-pck_pack(struct alloc alloc, str8 input_path, str8 out_path)
+pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 {
 	b32 res                      = false;
 	struct pck_w pack            = {0};
@@ -235,7 +240,7 @@ pck_pack(struct alloc alloc, str8 input_path, str8 out_path)
 
 	for(struct str8_node *node = paths.first; node != NULL; node = node->next) {
 		void *reset_p = scratch_marena.p;
-		dbg_check(pck_pack_file(&pack, input_path, node->str, scratch), LOG_ID, "failed packing %.*s", str8_spread(node->str));
+		dbg_check(pck_pack_file(&pack, input_path, node->str, prefix, scratch), LOG_ID, "failed packing %.*s", str8_spread(node->str));
 		marena_reset_to(&scratch_marena, reset_p);
 	}
 
@@ -281,6 +286,7 @@ main(int argc, char *argv[])
 	struct marena marena   = {0};
 	str8 in_path;
 	str8 out_path;
+	str8 prefix;
 
 	{
 		usize mem_size = MMEGABYTE(4);
@@ -294,8 +300,9 @@ main(int argc, char *argv[])
 
 	if(cmd.inputs.node_count < 1) {
 		sys_printf(
-			"Usage: %.*s <input-folder|input-pck> [output-folder|output-pck]\n"
+			"Usage: %.*s [--prefix=<dir>] <input-folder|input-pck> [output-folder|output-pck]\n"
 			"  output defaults to %s\n"
+			"  --prefix prepends <dir>/ to every packed path\n"
 			"  example: %.*s ./tmp/assets/files ./tmp/assets.pck\n",
 			str8_spread(cmd.exe_name),
 			DEFAULT_OUT_FILE,
@@ -306,13 +313,14 @@ main(int argc, char *argv[])
 
 	in_path  = cmd.inputs.first->str;
 	out_path = str8_lit(DEFAULT_OUT_FILE);
+	prefix   = cmd_line_str8(&cmd, str8_lit("prefix"));
 
 	if(cmd.inputs.node_count >= 2) {
 		out_path = cmd.inputs.first->next->str;
 	}
 
 	log_info(LOG_ID, "Packing assets from %.*s -> %.*s", str8_spread(in_path), str8_spread(out_path));
-	dbg_check(pck_pack(alloc, in_path, out_path), LOG_ID, "pack failed");
+	dbg_check(pck_pack(alloc, in_path, prefix, out_path), LOG_ID, "pack failed");
 
 	res = EXIT_SUCCESS;
 
