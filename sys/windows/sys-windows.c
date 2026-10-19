@@ -436,6 +436,28 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+sys_lib
+sys_lib_open(str8 path)
+{
+	HMODULE mod = LoadLibraryA((char *)path.str);
+	if(!mod) { log_error("sys-lib", "LoadLibrary failed %.*s: %lu", str8_spread(path), (unsigned long)GetLastError()); }
+	sys_lib lib = {.u64[0] = (u64)(uptr)mod};
+	return lib;
+}
+
+void
+sys_lib_close(sys_lib lib)
+{
+	if(sys_lib_is_valid(lib)) { FreeLibrary((HMODULE)(uptr)lib.u64[0]); }
+}
+
+sys_proc *
+sys_lib_load_proc(sys_lib lib, str8 name)
+{
+	if(!sys_lib_is_valid(lib)) { return NULL; }
+	return (sys_proc *)GetProcAddress((HMODULE)(uptr)lib.u64[0], (char *)name.str);
+}
+
 void
 sys_audio_lock(void)
 {

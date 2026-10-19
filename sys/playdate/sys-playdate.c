@@ -584,6 +584,24 @@ sys_set_auto_lock_disabled(int disable)
 	PD_SYS_SET_AUTO_LOCK_DISABLED(disable);
 }
 
+sys_lib
+sys_lib_open(str8 path)
+{
+	log_error("sys-lib", "dynamic libraries not supported: %.*s", str8_spread(path));
+	return (sys_lib){0};
+}
+
+void
+sys_lib_close(sys_lib lib)
+{
+}
+
+sys_proc *
+sys_lib_load_proc(sys_lib lib, str8 name)
+{
+	return NULL;
+}
+
 i32
 sys_menu_item_add(const char *title, void (*callback)(void *arg), void *arg)
 {

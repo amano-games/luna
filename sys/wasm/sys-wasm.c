@@ -378,6 +378,24 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+sys_lib
+sys_lib_open(str8 path)
+{
+	log_error("sys-lib", "dynamic libraries not supported: %.*s", str8_spread(path));
+	return (sys_lib){0};
+}
+
+void
+sys_lib_close(sys_lib lib)
+{
+}
+
+sys_proc *
+sys_lib_load_proc(sys_lib lib, str8 name)
+{
+	return NULL;
+}
+
 // slog_js_log
 EM_JS(void, sys_log_js_console, (u32 level, const char *c_str), {
 	const str = UTF8ToString(c_str);

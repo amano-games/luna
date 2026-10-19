@@ -16,6 +16,7 @@
 #endif
 
 #include <limits.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
 #include <pwd.h>
@@ -439,6 +440,31 @@ sys_file_replace(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+sys_lib
+sys_lib_open(str8 path)
+{
+	void *so = dlopen((char *)path.str, RTLD_NOW | RTLD_LOCAL);
+	if(!so) { log_error("sys-lib", "dlopen failed: %s", dlerror()); }
+	sys_lib lib = {.u64[0] = (u64)(uptr)so};
+	return lib;
+}
+
+void
+sys_lib_close(sys_lib lib)
+{
+	if(sys_lib_is_valid(lib)) { dlclose((void *)(uptr)lib.u64[0]); }
+}
+
+sys_proc *
+sys_lib_load_proc(sys_lib lib, str8 name)
+{
+	sys_proc *proc = NULL;
+	if(!sys_lib_is_valid(lib)) { return proc; }
+	void *sym = dlsym((void *)(uptr)lib.u64[0], (char *)name.str);
+	mcpy(&proc, &sym, sizeof(proc));
+	return proc;
 }
 
 // HOME, else passwd pw_dir. Empty string counts as missing.
