@@ -1,0 +1,16 @@
+{
+  "name": "app_proc",
+  "prefix": "APP_PROC_",
+  "columns": ["id", "label"],
+  "elements": [
+    "INIT",
+    "TICK",
+    "DRAW",
+    "AUDIO",
+    "CLOSE",
+    "PAUSE",
+    "RESUME",
+    "STREAM_START",
+    "STREAM_END"
+  ]
+}

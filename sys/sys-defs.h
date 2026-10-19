@@ -2,6 +2,7 @@
 
 #include "base/base-inc.h"
 #include "lib/fnt/fnt-defs.h"
+#include "sys/sys-app-proc.h"
 
 #define SYS_PD_DISPLAY_W 400
 #define SYS_PD_DISPLAY_H 240
@@ -94,15 +95,21 @@ typedef APP_VOID(app_void_fn);
 
 struct app_code {
 	b32 is_valid;
-	app_init_fn *init;
-	app_tick_fn *tick;
-	app_draw_fn *draw;
-	app_audio_fn *audio;
-	app_void_fn *close;
-	app_void_fn *pause;
-	app_void_fn *resume;
-	app_void_fn *stream_start;
-	app_void_fn *stream_end;
+	union {
+		app_void_fn *procs[APP_PROC_NUM_COUNT];
+		struct {
+			app_void_fn *none;
+			app_init_fn *init;
+			app_tick_fn *tick;
+			app_draw_fn *draw;
+			app_audio_fn *audio;
+			app_void_fn *close;
+			app_void_fn *pause;
+			app_void_fn *resume;
+			app_void_fn *stream_start;
+			app_void_fn *stream_end;
+		};
+	};
 };
 
 struct sys_data {
