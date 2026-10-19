@@ -23,13 +23,9 @@ $(ASSETS_INSTALL): $(ASSETS_SRC) $(ASSETS_BIN) $(ASSETS_PACK_BIN) $(ASSETS_PALET
 	rm -rf "$(ASSETS_GEN_OUT)"
 	mkdir -p "$(ASSETS_GEN_OUT)"
 	"$(ASSETS_BIN)" $(ASSETS_ARGS) "$(ASSETS_DIR)" "$(ASSETS_GEN_OUT)"
-	mkdir -p "$(dir $(ASSETS_PCK))"
-	"$(ASSETS_PACK_BIN)" --prefix=assets "$(ASSETS_GEN_OUT)" "$(ASSETS_PCK)"
-ifneq ($(abspath $(ASSETS_INSTALL)),$(abspath $(ASSETS_PCK)))
-	mkdir -p "$(dir $(ASSETS_INSTALL))"
-	cp -f "$(ASSETS_PCK)" "$(ASSETS_INSTALL)"
-	rm -f "$(ASSETS_PCK)"
-endif
+	mkdir -p "$(dir $(ASSETS_PCK))" "$(dir $(ASSETS_INSTALL))"
+	"$(ASSETS_PACK_BIN)" --prefix=assets "$(ASSETS_GEN_OUT)" "$(ASSETS_PCK).tmp"
+	mv -f "$(ASSETS_PCK).tmp" "$(ASSETS_INSTALL)"
 
 # Ship only the pack into the platform location.
 assets: $(ASSETS_INSTALL)
