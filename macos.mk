@@ -39,7 +39,14 @@ include $(ROOT_DIR)/steamworks.mk
 
 INC_FLAGS := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 
+# Local debug builds target the host
+# release builds support both Mac architectures.
+ifeq ($(BUILD_DEBUG), 1)
+ARCH_FLAGS := -arch $(shell uname -m)
+else
 ARCH_FLAGS := -arch x86_64 -arch arm64
+endif
+
 SANITIZE_FLAGS :=
 ifeq ($(ASAN), 1)
 SANITIZE_FLAGS := -fsanitize-trap -fsanitize=address,unreachable,undefined
