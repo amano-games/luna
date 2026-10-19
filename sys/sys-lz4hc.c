@@ -2,6 +2,10 @@
 
 #include "sys/sys-lz4hc.h"
 
+#ifndef SYS_LZ4HC_LEVEL
+#define SYS_LZ4HC_LEVEL 10
+#endif
+
 i32
 sys_lz4_compress_hc(const void *src, void *dst, ssize src_size, ssize dst_cap)
 {
@@ -10,5 +14,5 @@ sys_lz4_compress_hc(const void *src, void *dst, ssize src_size, ssize dst_cap)
 		(char *)dst,
 		(int)src_size,
 		(int)dst_cap,
-		LZ4HC_CLEVEL_MAX);
+		SYS_LZ4HC_LEVEL);
 }
