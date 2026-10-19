@@ -3,7 +3,13 @@ ROOT_DIR := $(patsubst %/,%,$(dir $(firstword $(MAKEFILE_LIST))))
 
 include $(ROOT_DIR)/common.mk
 
+# TCC=1 builds with tinycc: no sanitizers, no pedantic/-Werror flags.
+TCC ?= 0
+ifeq ($(TCC),1)
+CC := tcc
+else
 CC := clang
+endif
 
 DESTDIR      ?=
 PREFIX       ?=
@@ -53,6 +59,12 @@ DEBUG_CFLAGS += $(WARN_FLAGS)
 DEBUG_CFLAGS += -DSOKOL_DEBUG=1
 DEBUG_CFLAGS += -DBUILD_DEBUG=1
 DEBUG_CFLAGS += $(SANITIZE_FLAGS)
+
+ifeq ($(TCC),1)
+RELEASE_CFLAGS := ${CFLAGS} -g -DNDEBUG -DBUILD_DEBUG=0 -Wall
+DEBUG_CFLAGS   := -g -Wall -DSOKOL_DEBUG=1 -DBUILD_DEBUG=1
+SANITIZE_FLAGS :=
+endif
 
 ifeq ($(BUILD_DEBUG), 1)
 	CFLAGS := $(DEBUG_CFLAGS)
