@@ -23,7 +23,24 @@
 #define SYS_MEM_POISON_PATTERN 0xCD
 #define SYS_LOG_LABEL          "sys"
 
+#if SYS_HOT_RELOAD
 struct sys_data SYS;
+#else
+struct sys_data SYS = {
+	.app = {
+		.is_valid     = true,
+		.init         = app_init,
+		.tick         = app_tick,
+		.draw         = app_draw,
+		.audio        = app_audio,
+		.close        = app_close,
+		.pause        = app_pause,
+		.resume       = app_resume,
+		.stream_start = app_stream_start,
+		.stream_end   = app_stream_end,
+	},
+};
+#endif
 
 struct prof PROFILER;
 struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
@@ -202,7 +219,7 @@ sys_internal_init(void)
 		return;
 	}
 
-	app_init(SYS_MAX_MEM);
+	if(SYS.app.is_valid) { SYS.app.init(SYS_MAX_MEM); }
 	SYS.initialized = true;
 	sys_timing_reset();
 }
@@ -238,7 +255,7 @@ sys_internal_update(void)
 
 		prof_block_start("upd", PROF_ANCHOR_SYS_UPD);
 		sys_steam_tick();
-		app_tick((f32)sys->timing.dt_us * 1e-6f);
+		if(sys->app.is_valid) { sys->app.tick((f32)sys->timing.dt_us * 1e-6f); }
 		prof_block_end();
 
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
@@ -272,7 +289,7 @@ sys_internal_update(void)
 #endif
 
 		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
-		app_draw();
+		if(sys->app.is_valid) { sys->app.draw(); }
 		prof_block_end();
 
 #if SYS_SHOW_FPS
@@ -383,7 +400,7 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 	u32 tu1 = sys_time_us();
 #endif
 	sys_audio_lock();
-	app_audio(lbuf, rbuf, len);
+	if(SYS.app.is_valid) { SYS.app.audio(lbuf, rbuf, len); }
 	sys_audio_unlock();
 
 #if !OS_PLAYDATE
@@ -414,7 +431,7 @@ void
 sys_internal_close(void)
 {
 	if(SYS.initialized) {
-		app_close();
+		if(SYS.app.is_valid) { SYS.app.close(); }
 		sys_free(SYS.mem.app_mem.buffer);
 	}
 	sys_steam_close();
@@ -423,26 +440,26 @@ sys_internal_close(void)
 void
 sys_internal_pause(void)
 {
-	app_pause();
+	if(SYS.app.is_valid) { SYS.app.pause(); }
 }
 
 void
 sys_internal_resume(void)
 {
 	sys_timing_reset();
-	app_resume();
+	if(SYS.app.is_valid) { SYS.app.resume(); }
 }
 
 void
 sys_internal_stream_start(void)
 {
-	app_stream_start();
+	if(SYS.app.is_valid) { SYS.app.stream_start(); }
 }
 
 void
 sys_internal_stream_end(void)
 {
-	app_stream_end();
+	if(SYS.app.is_valid) { SYS.app.stream_end(); }
 }
 
 void

@@ -10,6 +10,10 @@
 #define SYS_SHOW_FPS_FPS  1 // two-digit FPS
 #define SYS_SHOW_FPS_FULL 2 // FPS + UPS + miss + cpu ms
 
+#if !defined(SYS_HOT_RELOAD)
+#define SYS_HOT_RELOAD 0
+#endif
+
 // The Playdate panel cannot scan out faster than 50 fps
 // 50 is both the update rate and the render rate ceiling.
 #define SYS_DEFAULT_UPS 50
@@ -76,8 +80,34 @@ struct sys_timing {
 	u32 drw_avg_cpu_us; // avg us per frame (render/draw)
 };
 
+#define APP_INIT(name)  void name(usize mem_max)
+#define APP_TICK(name)  void name(f32 dt)
+#define APP_DRAW(name)  void name(void)
+#define APP_AUDIO(name) void name(i16 *lbuf, i16 *rbuf, i32 len)
+#define APP_VOID(name)  void name(void)
+
+typedef APP_INIT(app_init_fn);
+typedef APP_TICK(app_tick_fn);
+typedef APP_DRAW(app_draw_fn);
+typedef APP_AUDIO(app_audio_fn);
+typedef APP_VOID(app_void_fn);
+
+struct app_code {
+	b32 is_valid;
+	app_init_fn *init;
+	app_tick_fn *tick;
+	app_draw_fn *draw;
+	app_audio_fn *audio;
+	app_void_fn *close;
+	app_void_fn *pause;
+	app_void_fn *resume;
+	app_void_fn *stream_start;
+	app_void_fn *stream_end;
+};
+
 struct sys_data {
 	b32 initialized;
+	struct app_code app;
 	struct fnt fnt_mono;
 	void *frame_buffer;
 

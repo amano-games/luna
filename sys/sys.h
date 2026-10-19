@@ -14,16 +14,15 @@
 #define SYS_APP_NAME "luna"
 #endif
 
-// App hooks
-void app_init(usize mem_max);
-void app_tick(f32 dt);
-void app_draw(void);
-void app_audio(i16 *lbuf, i16 *rbuf, i32 len);
-void app_close(void);
-void app_pause(void);
-void app_resume(void);
-void app_stream_start(void);
-void app_stream_end(void);
+APP_INIT(app_init);
+APP_TICK(app_tick);
+APP_DRAW(app_draw);
+APP_AUDIO(app_audio);
+APP_VOID(app_close);
+APP_VOID(app_pause);
+APP_VOID(app_resume);
+APP_VOID(app_stream_start);
+APP_VOID(app_stream_end);
 
 struct app_mem sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear);
 
