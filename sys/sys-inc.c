@@ -25,7 +25,8 @@
 #error No platform selected for sys-inc.c
 #endif
 
-#if SYS_HOT_RELOAD
+// Game host only: needs SYS from sys.c
+#if SYS_GFX && SYS_HOT_RELOAD
 #include "sys/sys-hot-reload.c"
 #endif
 
