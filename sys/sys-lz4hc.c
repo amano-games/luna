@@ -1,3 +1,4 @@
+#include "lz4/lz4.c"
 #include "lz4/lz4hc.c"
 
 #include "sys/sys-lz4hc.h"
