@@ -11,6 +11,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
+#if COMPILER_TCC
+#define STBI_NO_SIMD
+#endif
 #include "stb_image.h"
 
 b32
