@@ -37,8 +37,8 @@ ASSETS_DIR      := $(SRC_DIR)/assets
 ASSETS_BIN      := bin/luna-asset-gen
 ASSETS_PACK_BIN := bin/luna-asset-pack
 
-# Let Make rebuild tools when any luna source/header changes.
 LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print)
+GAME_C_H := $(shell find "$(SRC_DIR)" \( -name '*.c' -o -name '*.h' \) -print)
 
 ifeq ($(DETECTED_OS), Linux)
 SHADER_BIN   ?= $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc

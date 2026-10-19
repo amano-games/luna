@@ -156,10 +156,10 @@ $(SIM_READY): $(UNITY_OBJS) $(SETUP_OBJ) | $(TMP_DIR)
 $(PD_OBJ_DIR):
 	mkdir -p "$(PD_OBJ_DIR)"
 
-$(PD_LUNA_OBJ): $(LUNA_SRC) | $(PD_OBJ_DIR)
+$(PD_LUNA_OBJ): $(LUNA_SRC) $(LUNA_C_H) | $(PD_OBJ_DIR)
 	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) -c "$<" -o "$@"
 
-$(PD_GAME_OBJ): $(GAME_SRC) | $(PD_OBJ_DIR)
+$(PD_GAME_OBJ): $(GAME_SRC) $(GAME_C_H) $(LUNA_C_H) | $(PD_OBJ_DIR)
 	$(PD_CC) $(PD_CFLAGS) $(CFLAGS_BASE) $(INC_FLAGS) -c "$<" -o "$@"
 
 $(PD_SETUP_OBJ): $(SRC_SDK) | $(PD_OBJ_DIR)

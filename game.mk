@@ -17,8 +17,8 @@ endif
 $(OBJ_DIR): | $(BUILD_DIR)
 	mkdir -p "$(OBJ_DIR)"
 
-$(LUNA_OBJ): $(LUNA_SRC) | $(OBJ_DIR)
+$(LUNA_OBJ): $(LUNA_SRC) $(LUNA_C_H) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) -c "$<" -o "$@"
 
-$(GAME_OBJ): $(GAME_SRC) | $(OBJ_DIR)
+$(GAME_OBJ): $(GAME_SRC) $(GAME_C_H) $(LUNA_C_H) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INC_FLAGS) -c "$<" -o "$@"
