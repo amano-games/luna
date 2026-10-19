@@ -174,7 +174,10 @@ $(DEVICE_READY): $(ELF) | $(TMP_DIR)
 	touch "$@"
 
 # Package .pdx only after the required binary stamp(s) exist (safe under -j).
-$(OBJS): assets | $(TMP_DIR)
+# Repackage when the pack, platform files or any already-built binary stamp changes;
+# build/build_sim/build_pd make their stamps in a prior $(MAKE) call, so wildcard sees them.
+PLATFORM_SRC := $(shell find "$(PLATFORM_DIR)" | sed 's/ /\\ /g')
+$(OBJS): $(ASSETS_INSTALL) $(PLATFORM_SRC) $(wildcard $(SIM_READY) $(DEVICE_READY)) | $(TMP_DIR)
 	rm -rf "$@"
 	cp -r $(PLATFORM_DIR)/* $(TMP_DIR)
 	$(PDC) $(PDCFLAGS) $(TMP_DIR) "$@"

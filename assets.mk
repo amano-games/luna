@@ -9,27 +9,27 @@ ASSETS_INSTALL   ?= $(ASSETS_PCK)
 ASSETS_PALETTE   ?=
 ASSETS_ARGS      := --compress $(if $(strip $(ASSETS_PALETTE)),--palette="$(ASSETS_PALETTE)")
 
+ASSETS_SRC := $(shell find "$(ASSETS_DIR)" -not -name '*.tiled-session' | sed 's/ /\\ /g')
+
 HOSTCC ?= clang
 
 # Grouped target (&:)
 $(ASSETS_BIN) $(ASSETS_PACK_BIN) &: $(LUNA_C_H)
 	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0 CC="$(HOSTCC)"
 
-.PHONY: assets_gen assets_pack assets
+.PHONY: assets
 
-# Cook src/assets into $(ASSETS_GEN_OUT); --prefix keeps the assets/ prefix on pack members.
-assets_gen: $(ASSETS_BIN) $(ASSETS_EXTRA)
+$(ASSETS_INSTALL): $(ASSETS_SRC) $(ASSETS_BIN) $(ASSETS_PACK_BIN) $(ASSETS_PALETTE) | $(ASSETS_EXTRA)
+	rm -rf "$(ASSETS_GEN_OUT)"
 	mkdir -p "$(ASSETS_GEN_OUT)"
 	"$(ASSETS_BIN)" $(ASSETS_ARGS) "$(ASSETS_DIR)" "$(ASSETS_GEN_OUT)"
-
-assets_pack: assets_gen $(ASSETS_PACK_BIN)
 	mkdir -p "$(dir $(ASSETS_PCK))"
 	"$(ASSETS_PACK_BIN)" --prefix=assets "$(ASSETS_GEN_OUT)" "$(ASSETS_PCK)"
-
-# Ship only the pack into the platform location.
-assets: assets_pack
 ifneq ($(abspath $(ASSETS_INSTALL)),$(abspath $(ASSETS_PCK)))
 	mkdir -p "$(dir $(ASSETS_INSTALL))"
 	cp -f "$(ASSETS_PCK)" "$(ASSETS_INSTALL)"
 	rm -f "$(ASSETS_PCK)"
 endif
+
+# Ship only the pack into the platform location.
+assets: $(ASSETS_INSTALL)
