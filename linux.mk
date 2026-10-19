@@ -11,6 +11,16 @@ else
 CC := clang
 endif
 
+# Hot code reloading
+HOT ?= 0
+ifeq ($(HOT),1)
+ifeq ($(BUILD_DEBUG),0)
+$(error HOT=1 is debug only)
+endif
+override ASAN  := 0
+override CDEFS := $(CDEFS) -DSYS_HOT_RELOAD=1
+endif
+
 DESTDIR      ?=
 PREFIX       ?=
 PLATFORM_DIR := platforms/linux
@@ -77,6 +87,8 @@ CFLAGS += $(CDEFS)
 
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
+GAME_SO      := $(BUILD_DIR)/game.so
+GAME_LOCK    := $(BUILD_DIR)/game.lock
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
 
 # Platform files must land before obj/assets mkdir -p creates BUILD_DIR.
@@ -85,7 +97,18 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-.PHONY: all clean build steam_build steam_release_build run release publish_itch
+ifeq ($(HOT),1)
+HOST_OBJS     := $(LUNA_OBJ)
+HOST_LDFLAGS  := -rdynamic
+BUILD_TARGETS := $(BINARY) $(GAME_SO)
+$(GAME_OBJ): CFLAGS += -fPIC
+else
+HOST_OBJS     := $(UNITY_OBJS)
+HOST_LDFLAGS  :=
+BUILD_TARGETS := $(BINARY)
+endif
+
+.PHONY: all clean build game steam_build steam_release_build run release publish_itch
 .DEFAULT_GOAL := all
 
 all: build
@@ -95,8 +118,13 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 	cp -fr $(PLATFORM_DIR)/. $(BUILD_DIR)
 
-$(BINARY): $(UNITY_OBJS) | $(BUILD_DIR) assets
-	$(CC) $(CFLAGS) $(UNITY_OBJS) $(LDLIBS) $(LDFLAGS) -o $@
+$(BINARY): $(HOST_OBJS) | $(BUILD_DIR) assets
+	$(CC) $(CFLAGS) $(HOST_OBJS) $(LDLIBS) $(LDFLAGS) $(HOST_LDFLAGS) -o $@
+
+$(GAME_SO): $(GAME_OBJ) | $(BUILD_DIR)
+	touch "$(GAME_LOCK)"; \
+	$(CC) -shared $(CFLAGS) $(GAME_OBJ) -lm $(LDFLAGS) -o "$@.tmp" && mv -f "$@.tmp" "$@"; \
+	rc=$$?; rm -f "$(GAME_LOCK)"; exit $$rc
 
 $(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/assets
@@ -107,10 +135,13 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+
+game:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(GAME_SO) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
