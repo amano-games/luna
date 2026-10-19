@@ -18,6 +18,24 @@
 #define bswap_u16 _byteswap_ushort
 #define bswap_u32 _byteswap_ulong
 #define bswap_u64 _byteswap_uint64
+#else
+static inline u16
+bswap_u16(u16 x)
+{
+	return (u16)((x >> 8) | (x << 8));
+}
+
+static inline u32
+bswap_u32(u32 x)
+{
+	return (x >> 24) | ((x >> 8) & 0x0000ff00u) | ((x << 8) & 0x00ff0000u) | (x << 24);
+}
+
+static inline u64
+bswap_u64(u64 x)
+{
+	return ((u64)bswap_u32((u32)x) << 32) | bswap_u32((u32)(x >> 32));
+}
 #endif
 
 // bit reverse
