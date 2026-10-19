@@ -3,8 +3,8 @@
 #include "base/types.h"
 #include "engine/gfx/gfx-defs.h"
 
-static const u32 APP_DEFAULT_WHITE = 0xA5A5A2FF;
-static const u32 APP_DEFAULT_BLACK = 0x110B0DFF;
+#define APP_DEFAULT_WHITE 0xA5A5A2FFu
+#define APP_DEFAULT_BLACK 0x110B0DFFu
 
 static const u32 GFX_1B_PALETTES[][GFX_COL_NUM_COUNT] = {
 	{[GFX_COL_BLACK] = APP_DEFAULT_BLACK, [GFX_COL_WHITE] = APP_DEFAULT_WHITE}, // Default
