@@ -432,22 +432,26 @@ sys_allocator(void)
 }
 
 struct sys_file_props
-sys_file_props_get(str8 path)
+sys_file_props_from_path(str8 path)
 {
 	FileStat pd_stat = {0};
 	int res          = PD->file->stat((const char *)path.str, &pd_stat);
 	if(res == -1) {
 		log_error("IO", "%s: %.*s", PD->file->geterr(), str8_spread(path));
 	}
+	// FileStat has no msec or creation time
+	struct date_time dt = {
+		.year = (u32)pd_stat.m_year,
+		.mon  = (u32)(pd_stat.m_month > 0 ? pd_stat.m_month - 1 : 0),
+		.day  = (u16)(pd_stat.m_day > 0 ? pd_stat.m_day - 1 : 0),
+		.hour = (u16)pd_stat.m_hour,
+		.min  = (u16)pd_stat.m_minute,
+		.sec  = (u16)pd_stat.m_second,
+	};
 	return (struct sys_file_props){
-		.isdir    = pd_stat.isdir,
 		.size     = pd_stat.size,
-		.m_year   = pd_stat.m_year,
-		.m_month  = pd_stat.m_month,
-		.m_day    = pd_stat.m_day,
-		.m_hour   = pd_stat.m_hour,
-		.m_minute = pd_stat.m_minute,
-		.m_second = pd_stat.m_second,
+		.modified = res == -1 ? 0 : dense_time_from_date_time(dt),
+		.flags    = pd_stat.isdir ? SYS_FILE_PROP_FLAG_IS_DIR : 0,
 	};
 }
 
@@ -463,6 +467,24 @@ static SDFile *
 sys_file_pd(sys_file f)
 {
 	return (SDFile *)(uptr)f.u64[0];
+}
+
+// SDFile has no stat: only the size is known, from seeking to the end
+struct sys_file_props
+sys_file_props_from_file(sys_file f)
+{
+	struct sys_file_props res = {0};
+	if(!sys_file_is_valid(f)) { return res; }
+	SDFile *fp = sys_file_pd(f);
+	int pos    = PD->file->tell(fp);
+	if(pos < 0 || PD->file->seek(fp, 0, SEEK_END) != 0) {
+		log_error("IO", "%s", PD->file->geterr());
+		return res;
+	}
+	int size = PD->file->tell(fp);
+	PD->file->seek(fp, pos, SEEK_SET);
+	res.size = size < 0 ? 0 : (u64)size;
+	return res;
 }
 
 sys_file

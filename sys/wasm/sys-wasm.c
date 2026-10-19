@@ -221,32 +221,58 @@ sys_file_fp(sys_file f)
 	return (FILE *)(uptr)f.u64[0];
 }
 
+static dense_time
+sys_dense_time_from_timespec(struct timespec in)
+{
+	struct tm tm_time = {0};
+	gmtime_r(&in.tv_sec, &tm_time);
+	struct date_time dt = {
+		.year = (u32)tm_time.tm_year + 1900,
+		.mon  = (u32)tm_time.tm_mon,
+		.day  = (u16)(tm_time.tm_mday - 1),
+		.hour = (u16)tm_time.tm_hour,
+		.min  = (u16)tm_time.tm_min,
+		.sec  = (u16)tm_time.tm_sec,
+		.msec = (u16)(in.tv_nsec / 1000000),
+	};
+	return dense_time_from_date_time(dt);
+}
+
+static struct sys_file_props
+sys_file_props_from_stat(struct stat *s)
+{
+	struct sys_file_props res = {0};
+	res.size                  = (u64)s->st_size;
+	res.modified              = sys_dense_time_from_timespec(s->st_mtim);
+	res.created               = sys_dense_time_from_timespec(s->st_ctim); // status change, not birth
+	if(S_ISDIR(s->st_mode)) { res.flags |= SYS_FILE_PROP_FLAG_IS_DIR; }
+	return res;
+}
+
 struct sys_file_props
-sys_file_props_get(str8 path)
+sys_file_props_from_file(sys_file f)
 {
 	struct sys_file_props res = {0};
 	struct stat st            = {0};
+	if(!sys_file_is_valid(f)) { return res; }
+	if(fstat(fileno(sys_file_fp(f)), &st) != 0) {
+		log_error("IO", "failed to get file stats from handle");
+		return res;
+	}
+	res = sys_file_props_from_stat(&st);
+	return res;
+}
 
+struct sys_file_props
+sys_file_props_from_path(str8 path)
+{
+	struct sys_file_props res = {0};
+	struct stat st            = {0};
 	if(stat((char *)path.str, &st) != 0) {
 		log_error("IO", "failed to get file stats %.*s", str8_spread(path));
 		return res;
 	}
-
-	res.size  = (u32)st.st_size;
-	res.isdir = S_ISDIR(st.st_mode) ? 1 : 0;
-
-	// Fill 1-based calendar fields for shared dense_time packing.
-	{
-		struct tm tm_time = {0};
-		localtime_r(&st.st_mtime, &tm_time);
-		res.m_year   = tm_time.tm_year + 1900;
-		res.m_month  = tm_time.tm_mon + 1;
-		res.m_day    = tm_time.tm_mday;
-		res.m_hour   = tm_time.tm_hour;
-		res.m_minute = tm_time.tm_min;
-		res.m_second = tm_time.tm_sec;
-	}
-
+	res = sys_file_props_from_stat(&st);
 	return res;
 }
 

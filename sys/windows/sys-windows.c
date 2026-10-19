@@ -16,6 +16,7 @@
 #include "sys/sys-keyboard.h"
 #endif
 
+#include <io.h> // _get_osfhandle
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -268,32 +269,59 @@ sys_file_fp(sys_file f)
 	return (FILE *)(uptr)f.u64[0];
 }
 
+static dense_time
+sys_dense_time_from_file_time(FILETIME in)
+{
+	SYSTEMTIME st = {0};
+	FileTimeToSystemTime(&in, &st);
+	struct date_time dt = {
+		.year = st.wYear,
+		.mon  = (u32)(st.wMonth - 1),
+		.day  = (u16)(st.wDay - 1),
+		.hour = st.wHour,
+		.min  = st.wMinute,
+		.sec  = st.wSecond,
+		.msec = st.wMilliseconds,
+	};
+	return dense_time_from_date_time(dt);
+}
+
+static struct sys_file_props
+sys_file_props_from_win32(DWORD size_hi, DWORD size_lo, FILETIME modified, FILETIME created, DWORD attributes)
+{
+	struct sys_file_props res = {0};
+	res.size                  = ((u64)size_hi << 32) | size_lo;
+	res.modified              = sys_dense_time_from_file_time(modified);
+	res.created               = sys_dense_time_from_file_time(created);
+	if(attributes & FILE_ATTRIBUTE_DIRECTORY) { res.flags |= SYS_FILE_PROP_FLAG_IS_DIR; }
+	return res;
+}
+
 struct sys_file_props
-sys_file_props_get(str8 path)
+sys_file_props_from_file(sys_file f)
+{
+	struct sys_file_props res       = {0};
+	BY_HANDLE_FILE_INFORMATION info = {0};
+	if(!sys_file_is_valid(f)) { return res; }
+	HANDLE handle = (HANDLE)_get_osfhandle(_fileno(sys_file_fp(f)));
+	if(handle == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(handle, &info)) {
+		log_error("IO", "failed to get file stats from handle");
+		return res;
+	}
+	res = sys_file_props_from_win32(info.nFileSizeHigh, info.nFileSizeLow, info.ftLastWriteTime, info.ftCreationTime, info.dwFileAttributes);
+	return res;
+}
+
+struct sys_file_props
+sys_file_props_from_path(str8 path)
 {
 	struct sys_file_props res           = {0};
 	WIN32_FILE_ATTRIBUTE_DATA attr_data = {0};
-
 	if(!GetFileAttributesExA((char *)path.str, GetFileExInfoStandard, &attr_data)) {
 		log_error("IO", "failed to get file stats %.*s", str8_spread(path));
 		return res;
 	}
-
-	res.size  = attr_data.nFileSizeLow;
-	res.isdir = (attr_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : 0;
-
-	// Fill 1-based calendar fields for shared dense_time packing.
-	{
-		SYSTEMTIME st = {0};
-		FileTimeToSystemTime(&attr_data.ftLastWriteTime, &st);
-		res.m_year   = st.wYear;
-		res.m_month  = st.wMonth;
-		res.m_day    = st.wDay;
-		res.m_hour   = st.wHour;
-		res.m_minute = st.wMinute;
-		res.m_second = st.wSecond;
-	}
-
+	res = sys_file_props_from_win32(attr_data.nFileSizeHigh, attr_data.nFileSizeLow, attr_data.ftLastWriteTime, attr_data.ftCreationTime, attr_data.dwFileAttributes);
 	return res;
 }
 

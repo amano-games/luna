@@ -80,23 +80,6 @@ error:
 	return (struct sys_full_file_res){0};
 }
 
-// Pack 1-based FileStat-style calendar into dense_time (0-based day/mon).
-dense_time
-sys_file_modified(str8 path)
-{
-	struct sys_file_props props = sys_file_props_get(path);
-	struct date_time dt         = {0};
-
-	dt.year = (u32)props.m_year;
-	dt.mon  = (u32)(props.m_month > 0 ? props.m_month - 1 : 0);
-	dt.day  = (u32)(props.m_day > 0 ? props.m_day - 1 : 0);
-	dt.hour = (u16)props.m_hour;
-	dt.min  = (u16)props.m_minute;
-	dt.sec  = (u16)props.m_second;
-
-	return dense_time_from_date_time(dt);
-}
-
 str8
 sys_config_path(void)
 {

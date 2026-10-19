@@ -19,16 +19,16 @@ enum {
 	SYS_FILE_SEEK_END, // SEEK_END
 };
 
-// Calendar fields match Playdate FileStat (month/day 1-based).
+enum sys_file_prop_flag {
+	SYS_FILE_PROP_FLAG_IS_DIR = 1 << 0,
+};
+
+// Times are UTC dense_time with msec (0 where the OS doesn't report it)
 struct sys_file_props {
-	i32 isdir;
-	u32 size;
-	i32 m_year;
-	i32 m_month;
-	i32 m_day;
-	i32 m_hour;
-	i32 m_minute;
-	i32 m_second;
+	u64 size;
+	dense_time modified;
+	dense_time created;
+	u32 flags;
 };
 
 // Opaque OS file handle (FILE* / SDFile* stored in u64[0]).
@@ -49,7 +49,7 @@ struct sys_full_file_res {
  * - close/flush/del/rename/mkdir: b32 true = success
  * - seek_*: 0 = success
  * - tell: byte offset (negative on error)
- * - modified: dense_time from stats calendar fields
+ * - props_from_*: zero props on failure; modified/created are UTC dense_time with msec (Playdate: seconds only)
  */
 
 static inline sys_file
@@ -67,7 +67,6 @@ sys_file_is_valid(sys_file f)
 sys_file sys_file_open(str8 path, i32 sys_file_mode);
 b32 sys_file_exists(str8 path, i32 sys_file_mode);
 struct sys_full_file_res sys_load_full_file(struct alloc alloc, str8 path);
-dense_time sys_file_modified(str8 path);
 b32 sys_make_dirs(str8 path);
 
 // @per_os_impl File IO
@@ -85,7 +84,8 @@ i32 sys_file_seek_cur(sys_file f, i32 pos);
 i32 sys_file_seek_end(sys_file f, i32 pos);
 ssize sys_file_w(sys_file f, const void *buf, u32 bsize);
 ssize sys_file_r(sys_file f, void *buf, u32 bsize);
-struct sys_file_props sys_file_props_get(str8 path);
+struct sys_file_props sys_file_props_from_file(sys_file f);
+struct sys_file_props sys_file_props_from_path(str8 path);
 b32 sys_make_dir(str8 path);
 
 // @per_os_impl Paths
