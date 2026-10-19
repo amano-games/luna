@@ -37,8 +37,8 @@ ASSETS_DIR      := $(SRC_DIR)/assets
 ASSETS_BIN      := bin/luna-asset-gen
 ASSETS_PACK_BIN := bin/luna-asset-pack
 
-LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print)
-GAME_C_H := $(shell find "$(SRC_DIR)" \( -name '*.c' -o -name '*.h' \) -print)
+LUNA_C_H := $(shell find "$(LUNA_DIR)" -path '*/.git' -prune -o \( -name '*.c' -o -name '*.h' \) -print | sed 's/ /\\ /g')
+GAME_C_H := $(shell find "$(SRC_DIR)" \( -name '*.c' -o -name '*.h' \) -print | sed 's/ /\\ /g')
 
 ifeq ($(DETECTED_OS), Linux)
 SHADER_BIN   ?= $(LUNA_DIR)/external/sokol/shdc/linux/sokol-shdc
