@@ -95,11 +95,9 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
 ifeq ($(BUILD_DEBUG),1)
@@ -110,11 +108,13 @@ run:
 	cd $(BUILD_DIR) && ./$(TARGET)
 
 release:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk clean BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 
 steam_release_build:
+	$(MAKE) -f $(ROOT_DIR)/linux.mk clean BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/linux.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj

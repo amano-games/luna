@@ -117,11 +117,9 @@ run:
 endif
 
 build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk clean DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	cp -f "$(STEAM_LIB)" "$(dir $(EXE_OUT))"
 ifeq ($(BUILD_DEBUG),1)
@@ -129,12 +127,14 @@ ifeq ($(BUILD_DEBUG),1)
 endif
 
 release:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
 	rm -f $(DESTDIR)$(RELEASE_BINDIR)/assets.pck
 
 steam_release_build:
+	$(MAKE) -f $(ROOT_DIR)/macos.mk clean BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME)
 	$(MAKE) -f $(ROOT_DIR)/macos.mk steam_build BUILD_DEBUG=0 DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/assets
 	rm -rf $(DESTDIR)$(RELEASE_BINDIR)/obj
