@@ -45,7 +45,7 @@ override CDEFS := $(filter-out \
 	,$(CDEFS))
 
 RELEASE_CFLAGS := ${CFLAGS}
-RELEASE_CFLAGS += -std=gnu11 -g
+RELEASE_CFLAGS += -std=gnu11 -O2 -g
 RELEASE_CFLAGS += -DBUILD_DEBUG=0
 
 DEBUG_CFLAGS := -std=gnu11 -g -O0
