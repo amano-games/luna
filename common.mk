@@ -28,6 +28,9 @@ WARN_FLAGS += -Wno-unused-parameter
 # Daily builds default to debug; pass BUILD_DEBUG=0 for release.
 BUILD_DEBUG ?= 1
 
+JOBS ?=
+MAKEFLAGS += -j$(JOBS)
+
 ASAN ?= 1
 
 ASSETS_DIR      := $(SRC_DIR)/assets
