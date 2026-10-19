@@ -25,6 +25,10 @@
 #error No platform selected for sys-inc.c
 #endif
 
+#if SYS_HOT_RELOAD
+#include "sys/sys-hot-reload.c"
+#endif
+
 #include "base/date-time.c"
 #include "sys/sys-log.c"
 #include "sys/sys-img.c"
