@@ -11,23 +11,9 @@ else
 CC := clang
 endif
 
-# Hot code reloading
-# Names are relative to the exe dir and passed to the host as SYS_HOT_* defines
-HOT             ?= 0
-GAME_SO_NAME    := game.so
-GAME_LOCK_NAME  := game.lock
+# Hot code reloading, relative to the exe dir
 GAME_TMP_PREFIX := obj/game-hot-
-
-ifeq ($(HOT),1)
-ifeq ($(BUILD_DEBUG),0)
-$(error HOT=1 is debug only)
-endif
-override CDEFS := $(CDEFS) \
-	-DSYS_HOT_RELOAD=1 \
-	-DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" \
-	-DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" \
-	-DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
-endif
+include $(ROOT_DIR)/hot.mk
 
 DESTDIR      ?=
 PREFIX       ?=
@@ -98,6 +84,7 @@ BINARY       := $(BUILD_DIR)/$(TARGET)
 GAME_SO      := $(BUILD_DIR)/$(GAME_SO_NAME)
 GAME_LOCK    := $(BUILD_DIR)/$(GAME_LOCK_NAME)
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
+HOT_HOST     := $(BINARY)
 
 # Platform files must land before obj/assets mkdir -p creates BUILD_DIR.
 ASSETS_EXTRA := $(BUILD_DIR)
@@ -105,28 +92,11 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
-# HOT=1 rebuilds hold game.lock until done
-# Sub-makes get GAME_LOCK_HELD=1 so only the outermost make takes the lock
-GAME_LOCK_HELD  ?= 0
-GAME_LOCK_BEGIN  =
-GAME_LOCK_END    =
-
 ifeq ($(HOT),1)
-ifeq ($(GAME_LOCK_HELD),0)
-GAME_LOCK_BEGIN  = touch "$(GAME_LOCK)";
-GAME_LOCK_END    = ; rc=$$?; rm -f "$(GAME_LOCK)"; exit $$rc
-endif
-endif
-
-ifeq ($(HOT),1)
-HOST_OBJS     := $(LUNA_OBJ)
 HOST_LDFLAGS  := -rdynamic
-BUILD_TARGETS := $(BINARY) $(GAME_SO)
 $(GAME_OBJ): CFLAGS += -fPIC
 else
-HOST_OBJS     := $(UNITY_OBJS)
 HOST_LDFLAGS  :=
-BUILD_TARGETS := $(BINARY)
 endif
 
 .PHONY: all clean build game steam_build steam_release_build run release publish_itch

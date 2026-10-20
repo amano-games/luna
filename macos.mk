@@ -5,23 +5,9 @@ include $(ROOT_DIR)/common.mk
 
 CC := clang
 
-# Hot code reloading
-# Names are relative to the exe dir (Contents/MacOS) and passed to the host as SYS_HOT_* defines
-HOT             ?= 0
-GAME_SO_NAME    := game.so
-GAME_LOCK_NAME  := game.lock
+# Hot code reloading, relative to the exe dir (Contents/MacOS)
 GAME_TMP_PREFIX := hot/game-hot-
-
-ifeq ($(HOT),1)
-ifeq ($(BUILD_DEBUG),0)
-$(error HOT=1 is debug only)
-endif
-override CDEFS := $(CDEFS) \
-	-DSYS_HOT_RELOAD=1 \
-	-DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" \
-	-DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" \
-	-DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
-endif
+include $(ROOT_DIR)/hot.mk
 
 # https://developer.apple.com/documentation/bundleresources/information-property-list
 # https://tmewett.com/making-macos-bundle-info-plist/
@@ -90,8 +76,7 @@ else
 CFLAGS := $(RELEASE_CFLAGS)
 endif
 
-# -x objective-c is compile-only; arch/sanitize also go on the link line via LDFLAGS.
-CFLAGS += $(CDEFS) -x objective-c $(ARCH_FLAGS)
+CFLAGS  += $(CDEFS) $(ARCH_FLAGS)
 LDFLAGS += $(ARCH_FLAGS)
 
 OBJS           := $(BUILD_DIR)/$(TARGET)
@@ -103,8 +88,13 @@ EXE_DIR        := $(dir $(EXE_OUT))
 GAME_SO        := $(EXE_DIR)$(GAME_SO_NAME)
 GAME_LOCK      := $(EXE_DIR)$(GAME_LOCK_NAME)
 GAME_TMP_DIR   := $(patsubst %/,%,$(EXE_DIR)$(dir $(GAME_TMP_PREFIX)))
+HOT_HOST       := $(EXE_OUT)
 
 include $(ROOT_DIR)/game.mk
+
+# Only luna (sokol, OS code) is Objective-C, game.o stays plain C
+# -x objective-c is compile-only, it would make clang read .o link inputs as source
+$(LUNA_OBJ): CFLAGS += -x objective-c
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -116,28 +106,8 @@ $(OBJS): $(BUILD_DIR)
 ASSETS_EXTRA := $(BUILD_DIR) $(OBJS)
 include $(ROOT_DIR)/assets.mk
 
-# HOT=1 rebuilds hold game.lock until done
-# Sub-makes get GAME_LOCK_HELD=1 so only the outermost make takes the lock
-GAME_LOCK_HELD  ?= 0
-GAME_LOCK_BEGIN  =
-GAME_LOCK_END    =
-
-ifeq ($(HOT),1)
-ifeq ($(GAME_LOCK_HELD),0)
-GAME_LOCK_BEGIN  = mkdir -p "$(EXE_DIR)"; touch "$(GAME_LOCK)";
-GAME_LOCK_END    = ; rc=$$?; rm -f "$(GAME_LOCK)"; exit $$rc
-endif
-endif
-
 # The game is an MH_BUNDLE linked against the host with -bundle_loader
 # The host exports its globals by default, so it needs no -rdynamic
-ifeq ($(HOT),1)
-HOST_OBJS     := $(LUNA_OBJ)
-BUILD_TARGETS := $(EXE_OUT) $(GAME_SO)
-else
-HOST_OBJS     := $(UNITY_OBJS)
-BUILD_TARGETS := $(EXE_OUT)
-endif
 
 .PHONY: all clean build game steam_build steam_release_build run publish_itch release sign
 .DEFAULT_GOAL := all
