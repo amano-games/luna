@@ -289,19 +289,23 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 {
 	if(!src.t.px1b) return;
 	if(mode == SPR_MODE_HIDDEN) { return; }
+
+	enum tex_fmt src_fmt = src.t.fmt;
+	enum tex_fmt dst_fmt = ctx.dst.fmt;
+
 	dbg_assert(mode >= SPR_MODE_COPY && mode < SPR_MODE_NUM_COUNT);
 
-	if(ctx.dst.fmt == TEX_FMT_8B_INDEX) {
+	if(dst_fmt == TEX_FMT_8B_INDEX) {
 		gfx_spr_8b(ctx, src, px, py, flip, mode);
 
 	} else {
 
-		dbg_assert(src.t.fmt != TEX_FMT_8B_INDEX);
+		dbg_assert(src_fmt != TEX_FMT_8B_INDEX);
 
-		if(ctx.dst.fmt == TEX_FMT_1B_OPAQUE) {
+		if(dst_fmt == TEX_FMT_1B_OPAQUE) {
 			if(mode == SPR_MODE_COPY) {
 				gfx_spr_cpy(ctx, src, px, py, flip);
-			} else if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
+			} else if(src_fmt == TEX_FMT_1B_OPAQUE) {
 				gfx_spr_d_s(ctx, src, px, py, flip, mode);
 			} else {
 				if(flip & SPR_FLIP_X) {
@@ -311,7 +315,7 @@ gfx_spr(struct gfx_ctx ctx, struct tex_rec src, i32 px, i32 py, enum spr_flip fl
 				}
 			}
 		} else {
-			if(src.t.fmt == TEX_FMT_1B_OPAQUE) {
+			if(src_fmt == TEX_FMT_1B_OPAQUE) {
 				if(flip & SPR_FLIP_X) {
 					gfx_spr_dm_s_fx(ctx, src, px, py, flip, mode);
 				} else {
