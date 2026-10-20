@@ -6,7 +6,7 @@
 #if __has_attribute(format)
 // https://github.com/nothings/stb/issues/1814
 // https://vimeo.com/855891054
-#if (defined(__clang__) && defined(__apple_build_version__)) || defined(__EMSCRIPTEN__)
+#if defined(__clang__) || defined(__EMSCRIPTEN__)
 #define SYS_PRINTF_ARCHETYPE printf
 #else
 #define SYS_PRINTF_ARCHETYPE gnu_printf
