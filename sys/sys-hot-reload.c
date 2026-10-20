@@ -3,15 +3,31 @@
 #include "base/str.h"
 #include "sys/sys-log.h"
 
-#define SYS_CODE_LABEL         "hot-reload"
+#define SYS_CODE_LABEL         "sys-hot"
 #define SYS_CODE_TEMP_COUNT    1024
 #define SYS_CODE_COPY_ATTEMPTS 128
+#define SYS_CODE_POLL_US       (200 * 1000)
 
 b32
 sys_code_props_changed(struct sys_file_props loaded, struct sys_file_props current)
 {
 	if(current.modified == 0) { return false; }
 	b32 res = current.modified != loaded.modified || current.size != loaded.size;
+	return res;
+}
+
+b32
+sys_code_changed(struct sys_loaded_code *c)
+{
+	u32 now = sys_time_us();
+
+	// NOTE: u32 wrap (~71 min)
+	if(now - c->poll_last_us < SYS_CODE_POLL_US) { return false; }
+	c->poll_last_us = now;
+
+	if(!sys_file_exists(c->so_path, SYS_FILE_MODE_R)) { return false; }
+	struct sys_file_props current = sys_file_props_from_path(c->so_path);
+	b32 res                       = sys_code_props_changed(c->props, current);
 	return res;
 }
 
@@ -97,4 +113,12 @@ sys_code_load(struct sys_loaded_code *c)
 error:
 	mclr_struct(&res);
 	return res;
+}
+
+void
+sys_code_unload(struct sys_loaded_code *c, struct app_code *code)
+{
+	if(sys_lib_is_valid(c->lib)) { log_info(SYS_CODE_LABEL, "unloaded, library still mapped"); }
+	c->lib = (sys_lib){0};
+	mclr_struct(code);
 }
