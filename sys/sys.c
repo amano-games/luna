@@ -495,7 +495,7 @@ sys_internal_restart(void)
 void
 sys_internal_code_ini(struct alloc alloc)
 {
-	SYS_CODE = sys_code_ini(alloc, sys_base_path());
+	SYS_CODE = sys_code_ini(alloc, sys_process_info()->binary_path);
 	SYS.app  = sys_code_load(&SYS_CODE);
 	if(!SYS.app.is_valid) { log_error(SYS_LOG_LABEL, "failed to load game code %.*s", str8_spread(SYS_CODE.so.path)); }
 }
