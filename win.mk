@@ -94,9 +94,13 @@ clean:
 build:
 	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
+STEAM_LIB_OUT := $(dir $(BINARY))$(notdir $(STEAM_LIB))
+
+$(STEAM_LIB_OUT): $(STEAM_LIB) | $(BUILD_DIR)
+	install -m 644 "$<" "$@"
+
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
-	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
+	$(MAKE) -f $(ROOT_DIR)/win.mk $(BINARY) $(STEAM_LIB_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
 endif

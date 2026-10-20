@@ -126,9 +126,13 @@ endif
 build:
 	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
+STEAM_LIB_OUT := $(dir $(EXE_OUT))$(notdir $(STEAM_LIB))
+
+$(STEAM_LIB_OUT): $(STEAM_LIB) | $(EXE_OUT)
+	install -m 644 "$<" "$@"
+
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
-	cp -f "$(STEAM_LIB)" "$(dir $(EXE_OUT))"
+	$(MAKE) -f $(ROOT_DIR)/macos.mk $(EXE_OUT) $(STEAM_LIB_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(EXE_OUT))steam_appid.txt"
 endif

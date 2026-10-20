@@ -144,9 +144,14 @@ build:
 game:
 	$(MAKE) -f $(ROOT_DIR)/linux.mk $(GAME_SO) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 
+STEAM_LIB_OUT := $(dir $(BINARY))$(notdir $(STEAM_LIB))
+
+# Using install for hot code reloading safe shananigans
+$(STEAM_LIB_OUT): $(STEAM_LIB) | $(BUILD_DIR)
+	install -m 644 "$<" "$@"
+
 steam_build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
-	cp -f "$(STEAM_LIB)" "$(dir $(BINARY))"
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) $(STEAM_LIB_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
 endif
