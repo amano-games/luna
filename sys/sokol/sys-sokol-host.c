@@ -234,7 +234,7 @@ sokol_main(i32 argc, char **argv)
 	}
 
 	{
-		struct tex tex             = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_1B_MASK);
+		struct tex tex             = tex_create(SOKOL_STATE.alloc, sys_resolution.x, sys_resolution.y, TEX_FMT_8B_INDEX);
 		SOKOL_STATE.pause.menu_tex = tex;
 		dbg_check(tex.px1b, "sokol", "Failed to create menu tex");
 	}
