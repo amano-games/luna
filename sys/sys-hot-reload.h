@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/base-inc.h"
+#include "sys/sys-defs.h"
 #include "sys/sys-io.h"
 #include "sys/sys-os.h"
 
@@ -28,5 +29,5 @@ struct sys_loaded_code sys_code_ini(struct alloc alloc, str8 base_dir);
 b32 sys_code_props_changed(struct sys_file_props loaded, struct sys_file_props current);
 struct app_code sys_code_load(struct sys_loaded_code *c);
 void sys_code_unload(struct sys_loaded_code *c, struct app_code *code);
-b32 sys_code_changed(struct sys_loaded_code *c);
+b32 sys_code_changed(struct sys_loaded_code *c, b32 throttle);
 b32 sys_code_reload(struct sys_loaded_code *c, struct app_code *code);

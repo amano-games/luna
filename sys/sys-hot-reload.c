@@ -4,7 +4,7 @@
 #include "sys/sys-log.h"
 
 #define SYS_CODE_LABEL          "sys-hot"
-#define SYS_CODE_TEMP_COUNT     1024
+#define SYS_CODE_TMP_COUNT      1024
 #define SYS_CODE_COPY_ATTEMPTS  128
 #define SYS_CODE_POLL_US        (200 * 1000)
 #define SYS_CODE_RELOAD_TRIES   100
@@ -22,7 +22,7 @@ sys_code_ini(struct alloc alloc, str8 base_dir)
 
 	marena_stack(scratch_marena, MKILOBYTE(4));
 	struct alloc scratch = marena_allocator(&scratch_marena);
-	for(u32 idx = 0; idx < SYS_CODE_TEMP_COUNT; ++idx) {
+	for(u32 idx = 0; idx < SYS_CODE_TMP_COUNT; ++idx) {
 		marena_reset(&scratch_marena);
 		sys_file_del(sys_code_tmp_path(scratch, &res, idx));
 	}
@@ -38,12 +38,12 @@ sys_code_props_changed(struct sys_file_props loaded, struct sys_file_props curre
 }
 
 b32
-sys_code_changed(struct sys_loaded_code *c)
+sys_code_changed(struct sys_loaded_code *c, b32 throttle)
 {
 	u32 now = sys_time_us();
 
 	// NOTE: u32 wrap (~71 min)
-	if(now - c->poll_last_us < SYS_CODE_POLL_US) { return false; }
+	if(throttle && now - c->poll_last_us < SYS_CODE_POLL_US) { return false; }
 	c->poll_last_us = now;
 
 	if(!sys_file_exists(c->so_path, SYS_FILE_MODE_R)) { return false; }
@@ -97,7 +97,7 @@ sys_code_load(struct sys_loaded_code *c)
 	for(u32 attempt = 0; attempt < SYS_CODE_COPY_ATTEMPTS && !copied; ++attempt) {
 		marena_reset(&scratch_marena);
 		tmp_path   = sys_code_tmp_path(scratch, c, c->tmp_idx);
-		c->tmp_idx = (c->tmp_idx + 1) % SYS_CODE_TEMP_COUNT;
+		c->tmp_idx = (c->tmp_idx + 1) % SYS_CODE_TMP_COUNT;
 
 		// Delete instead of overwrite: on POSIX an older copy that is still mapped keeps its inode,
 		// on Windows a loaded copy can't be deleted, the copy fails and the next index is tried
@@ -145,9 +145,13 @@ b32
 sys_code_reload(struct sys_loaded_code *c, struct app_code *code)
 {
 	sys_code_unload(c, code);
-	for(u32 try_idx = 0; try_idx < SYS_CODE_RELOAD_TRIES && !code->is_valid; ++try_idx) {
-		if(try_idx > 0) { sys_sleep_ms(SYS_CODE_RELOAD_WAIT_MS); }
+	for(u32 try_idx = 0; try_idx < SYS_CODE_RELOAD_TRIES; ++try_idx) {
+		if(sys_file_exists(c->lock_path, SYS_FILE_MODE_R)) {
+			sys_sleep_ms(SYS_CODE_RELOAD_WAIT_MS);
+			continue;
+		}
 		*code = sys_code_load(c);
+		break;
 	}
 	if(!code->is_valid) { log_error(SYS_CODE_LABEL, "reload failed, running without game code"); }
 	return code->is_valid;
