@@ -23,6 +23,7 @@ f32 sys_time_elapsed(void);
 void sys_time_elapsed_reset(void);
 u32 sys_time_ms(void);
 u32 sys_time_us(void);
+void sys_sleep_ms(u32 ms);
 u32 sys_epoch_2000(u32 *milliseconds);
 
 // @per_os_impl Paths / process / device integration

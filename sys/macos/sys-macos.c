@@ -17,6 +17,7 @@
 #endif
 
 #include <copyfile.h>
+#include <errno.h>
 #include <dlfcn.h>
 #include <mach-o/dyld.h>
 #include <pthread.h>
@@ -204,6 +205,13 @@ u32
 sys_time_us(void)
 {
 	return (u32)(u64)(stm_us(stm_since(OS_STATE.tick_start)));
+}
+
+void
+sys_sleep_ms(u32 ms)
+{
+	struct timespec ts = {.tv_sec = ms / 1000, .tv_nsec = (long)(ms % 1000) * 1000000};
+	while(nanosleep(&ts, &ts) != 0 && errno == EINTR) {}
 }
 
 u32

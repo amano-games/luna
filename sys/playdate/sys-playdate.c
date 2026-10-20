@@ -302,6 +302,11 @@ sys_time_us(void)
 	return PD_STATE.us_monotonic + partial;
 }
 
+void
+sys_sleep_ms(u32 ms)
+{
+}
+
 // Milliseconds
 u32
 sys_time_ms(void)

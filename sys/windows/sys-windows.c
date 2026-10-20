@@ -215,6 +215,12 @@ sys_time_us(void)
 	return (u32)(u64)(stm_us(stm_since(OS_STATE.tick_start)));
 }
 
+void
+sys_sleep_ms(u32 ms)
+{
+	Sleep(ms);
+}
+
 u32
 sys_time_ms(void)
 {
