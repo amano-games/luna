@@ -399,8 +399,9 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 #if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 	u32 tu1 = sys_time_us();
 #endif
+
 	sys_audio_lock();
-	if(SYS.app.is_valid) { SYS.app.audio(lbuf, rbuf, len); }
+	if(SYS.app.is_valid && SYS.app.audio) { SYS.app.audio(lbuf, rbuf, len); }
 	sys_audio_unlock();
 
 #if !OS_PLAYDATE
@@ -432,7 +433,8 @@ sys_internal_close(void)
 {
 	if(SYS.initialized) {
 		if(SYS.app.is_valid) { SYS.app.close(); }
-		sys_free(SYS.mem.app_mem.buffer);
+		if(SYS.mem.app_mem.buffer) { sys_free(SYS.mem.app_mem.buffer); }
+		SYS.mem.app_mem.buffer = NULL;
 	}
 	sys_steam_close();
 }
