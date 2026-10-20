@@ -506,9 +506,9 @@ tex_1b_from_rgb_lut(
 				in_idx = (u32)color_map_find_closest_color(lut->in.colors + 1, lut->in.len - 1, color_rgba) + 1;
 				ht_set_u32(&lut->ht, key, in_idx);
 			}
-			dbg_assert(in_idx < lut->map.len);
+			dbg_assert((ssize)in_idx < lut->map.len);
 			u32 out_idx = lut->map.colors[in_idx];
-			dbg_assert(out_idx > 0 && out_idx < lut->out.len);
+			dbg_assert(out_idx > 0 && (ssize)out_idx < lut->out.len);
 
 			u32 out_rgba = lut->out.colors[out_idx];
 			i32 color    = (((out_rgba >> 24) & 0xFF) + ((out_rgba >> 16) & 0xFF) + ((out_rgba >> 8) & 0xFF)) > (3 * 127);
@@ -583,7 +583,7 @@ tex_u8_from_rgba(
 				out_idx = (u32)color_map_find_closest_color(lut->out.colors + 1, lut->out.len - 1, color) + 1;
 				ht_set_u32(&lut->ht, key, out_idx);
 			}
-			dbg_assert(out_idx < lut->out.len);
+			dbg_assert((ssize)out_idx < lut->out.len);
 			t.pxu8[y * stride + x] = (u8)out_idx;
 		}
 	}
