@@ -43,7 +43,9 @@ struct sys_data SYS = {
 };
 #endif
 
+#if SYS_HOT_RELOAD
 static struct sys_loaded_code SYS_CODE;
+#endif
 
 struct prof PROFILER;
 struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
@@ -489,6 +491,7 @@ sys_internal_restart(void)
 	sys_restart(new_code);
 }
 
+#if SYS_HOT_RELOAD
 void
 sys_internal_code_ini(struct alloc alloc)
 {
@@ -510,6 +513,7 @@ sys_internal_code_poll(void)
 	if(sys_internal_code_building()) { return; }
 	if(sys_file_watch_changed(&SYS_CODE.so, true)) { sys_restart(true); }
 }
+#endif
 
 void
 sys_internal_pause(void)
