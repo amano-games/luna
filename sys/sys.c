@@ -542,12 +542,13 @@ sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 		i32 cy = ((i32)*c >> 5) << 3;
 		for(i32 n = 0; n < 8; n++) {
 			u8 bits = ((u8 *)SYS_CONSOLE_FONT)[cx + ((cy + n) << 5)];
+
 #if SYS_GFX_SOKOL
 			i32 yy = (tile_y << 3) + n;
 			for(i32 bit = 0; bit < 8; ++bit) {
 				i32 xx = x * 8 + bit;
 				if(0 <= xx && xx < sys_resolution.x && 0 <= yy && yy < sys_resolution.y) {
-					fb[xx + yy * ((sys_resolution.x + 3) & ~3)] = (bits >> (7 - bit)) & 1;
+					fb[xx + yy * ((sys_resolution.x + 3) & ~3)] = ((bits >> (7 - bit)) & 1) ? GFX_COL_WHITE : GFX_COL_BLACK;
 				}
 			}
 #else
