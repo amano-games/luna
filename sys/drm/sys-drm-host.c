@@ -1951,6 +1951,11 @@ sys_quit(void)
 }
 
 void
+sys_restart_request(void)
+{
+}
+
+void
 sys_audio_set_volume(f32 vol)
 {
 	if(!isfinite(vol)) return;

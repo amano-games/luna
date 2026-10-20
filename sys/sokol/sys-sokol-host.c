@@ -1181,6 +1181,14 @@ sys_quit(void)
 	sapp_request_quit();
 }
 
+void
+sys_restart_request(void)
+{
+	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+		SOKOL_STATE.status = SOKOL_STATUS_RELOAD;
+	}
+}
+
 static void
 sokol_screenshot_save(struct tex tex)
 {

@@ -86,6 +86,7 @@ void sys_set_app_name(str8 value);
 void sys_fullscreen_set(b32 enabled);
 b32 sys_fullscreen_get(void);
 void sys_quit(void);
+void sys_restart_request(void);
 
 // Playdate-only (not part of portable contract; Phase 4 may fold present into sys_*)
 #if OS_PLAYDATE

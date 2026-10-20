@@ -776,6 +776,11 @@ sys_quit(void)
 	PD->system->exitToLauncher();
 }
 
+void
+sys_restart_request(void)
+{
+}
+
 struct sys_process_info *
 sys_process_info(void)
 {
