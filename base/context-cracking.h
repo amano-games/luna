@@ -107,6 +107,15 @@
 #define PROF BUILD_DEBUG
 #endif
 
+// Sanitizer cracking
+#if defined(__SANITIZE_ADDRESS__)
+#define BUILD_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define BUILD_ASAN 1
+#endif
+#endif
+
 // Zero all undefined options
 
 #if !defined(ARCH_32BIT)
@@ -182,6 +191,9 @@
 #endif
 #if !defined(LANG_C)
 #define LANG_C 0
+#endif
+#if !defined(BUILD_ASAN)
+#define BUILD_ASAN 0
 #endif
 #if !defined(PROF)
 #define PROF 0
