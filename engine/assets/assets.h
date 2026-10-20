@@ -7,6 +7,7 @@
 #include "engine/gfx/gfx.h"
 #include "base/mem.h"
 #include "base/marena.h"
+#include "sys/sys-io.h"
 #include "tools/asset/asset-defs.h"
 
 struct assets {
@@ -14,7 +15,7 @@ struct assets {
 
 	struct pck_desc pck;
 	void *pck_ht;
-	str8 pack_path;
+	struct sys_file_watch pck_watch;
 
 	struct marena marena;
 	struct alloc alloc;

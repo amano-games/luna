@@ -23,12 +23,17 @@ enum sys_file_prop_flag {
 	SYS_FILE_PROP_FLAG_IS_DIR = 1 << 0,
 };
 
-// Times are UTC dense_time with msec (0 where the OS doesn't report it)
 struct sys_file_props {
 	u64 size;
 	dense_time modified;
 	dense_time created;
 	u32 flags;
+};
+
+struct sys_file_watch {
+	str8 path;
+	struct sys_file_props props;
+	u32 poll_last_us;
 };
 
 // Opaque OS file handle (FILE* / SDFile* stored in u64[0]).
@@ -69,6 +74,9 @@ sys_file sys_file_open(str8 path, i32 sys_file_mode);
 b32 sys_file_exists(str8 path, i32 sys_file_mode);
 struct sys_full_file_res sys_load_full_file(struct alloc alloc, str8 path);
 b32 sys_make_dirs(str8 path);
+
+struct sys_file_watch sys_file_watch_ini(str8 path);
+b32 sys_file_watch_changed(struct sys_file_watch *w, b32 throttle);
 
 // @per_os_impl File IO
 sys_file sys_file_open_r(str8 path);

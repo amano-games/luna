@@ -36,11 +36,13 @@ void
 assets_pck_ini(struct alloc scratch, str8 path)
 {
 	str8 pack = asset_path_to_full_path(scratch, path);
-	dbg_check(pck_open(pack, &ASSETS.pck) != 0, "assets", "pck open failed");
 
 	// Keep a permanent copy so music can open a second pack handle later.
-	ASSETS.pack_path = str8_cpy_push(ASSETS.alloc, pack);
-	dbg_check(ASSETS.pack_path.str, "assets", "pck path copy failed");
+	str8 pck_path = str8_cpy_push(ASSETS.alloc, pack);
+	dbg_check(pck_path.str, "assets", "pck path copy failed");
+
+	ASSETS.pck_watch = sys_file_watch_ini(pck_path);
+	dbg_check(pck_open(pack, &ASSETS.pck) != 0, "assets", "pck open failed");
 
 	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.ht_size);
 	dbg_check(ASSETS.pck_ht, "assets", "pck ht alloc failed");
@@ -55,7 +57,7 @@ assets_pck_close(void)
 		pck_close(&ASSETS.pck);
 	}
 	ASSETS.pck_ht    = NULL;
-	ASSETS.pack_path = str8_zero();
+	ASSETS.pck_watch = (struct sys_file_watch){0};
 }
 
 struct asset_blob
@@ -109,8 +111,8 @@ asset_stream_open(struct asset_stream *s, struct asset_handle handle)
 
 	dbg_check(f, "assets", "stream find failed hash %016zx", (size_t)handle.path_hash);
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
-	dbg_check(ASSETS.pack_path.size, "assets", "pack path missing");
-	dbg_check(pck_open(ASSETS.pack_path, &s->pck) != 0, "assets", "stream pck open failed");
+	dbg_check(ASSETS.pck_watch.path.size, "assets", "pack path missing");
+	dbg_check(pck_open(ASSETS.pck_watch.path, &s->pck) != 0, "assets", "stream pck open failed");
 
 	s->pck.ht     = ASSETS.pck.ht;
 	s->pck.ht_len = ASSETS.pck.ht_len;

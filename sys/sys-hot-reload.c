@@ -1,12 +1,12 @@
 #include "sys/sys-hot-reload.h"
 #include "base/marena.h"
 #include "base/str.h"
+#include "sys/sys-io.h"
 #include "sys/sys-log.h"
 
 #define SYS_CODE_LABEL          "sys-hot"
 #define SYS_CODE_TMP_COUNT      1024
 #define SYS_CODE_COPY_ATTEMPTS  128
-#define SYS_CODE_POLL_US        (200 * 1000)
 #define SYS_CODE_RELOAD_TRIES   100
 #define SYS_CODE_RELOAD_WAIT_MS 100
 
@@ -16,7 +16,7 @@ struct sys_loaded_code
 sys_code_ini(struct alloc alloc, str8 base_dir)
 {
 	struct sys_loaded_code res = {0};
-	res.so_path                = str8_fmt_push(alloc, "%.*s/%s", str8_spread(base_dir), SYS_HOT_LIB_PATH);
+	res.so.path                = str8_fmt_push(alloc, "%.*s/%s", str8_spread(base_dir), SYS_HOT_LIB_PATH);
 	res.lock_path              = str8_fmt_push(alloc, "%.*s/%s", str8_spread(base_dir), SYS_HOT_LOCK_PATH);
 	res.tmp_prefix             = str8_fmt_push(alloc, "%.*s/%s", str8_spread(base_dir), SYS_HOT_TMP_PREFIX);
 
@@ -26,29 +26,6 @@ sys_code_ini(struct alloc alloc, str8 base_dir)
 		marena_reset(&scratch_marena);
 		sys_file_del(sys_code_tmp_path(scratch, &res, idx));
 	}
-	return res;
-}
-
-b32
-sys_code_props_changed(struct sys_file_props loaded, struct sys_file_props current)
-{
-	if(current.modified == 0) { return false; }
-	b32 res = current.modified != loaded.modified || current.size != loaded.size;
-	return res;
-}
-
-b32
-sys_code_changed(struct sys_loaded_code *c, b32 throttle)
-{
-	u32 now = sys_time_us();
-
-	// NOTE: u32 wrap (~71 min)
-	if(throttle && now - c->poll_last_us < SYS_CODE_POLL_US) { return false; }
-	c->poll_last_us = now;
-
-	if(!sys_file_exists(c->so_path, SYS_FILE_MODE_R)) { return false; }
-	struct sys_file_props current = sys_file_props_from_path(c->so_path);
-	b32 res                       = sys_code_props_changed(c->props, current);
 	return res;
 }
 
@@ -90,8 +67,8 @@ sys_code_load(struct sys_loaded_code *c)
 
 	if(sys_file_exists(c->lock_path, SYS_FILE_MODE_R)) { goto error; }
 
-	c->props = sys_file_props_from_path(c->so_path);
-	if(c->props.modified == 0) { goto error; }
+	c->so = sys_file_watch_ini(c->so.path);
+	if(c->so.props.modified == 0) { goto error; }
 
 	// The OS loader caches by path, every load needs a new one
 	for(u32 attempt = 0; attempt < SYS_CODE_COPY_ATTEMPTS && !copied; ++attempt) {
@@ -102,11 +79,11 @@ sys_code_load(struct sys_loaded_code *c)
 		// Delete instead of overwrite: on POSIX an older copy that is still mapped keeps its inode,
 		// on Windows a loaded copy can't be deleted, the copy fails and the next index is tried
 		sys_file_del(tmp_path);
-		copied = sys_file_copy(c->so_path, tmp_path);
+		copied = sys_file_copy(c->so.path, tmp_path);
 	}
 
 	if(!copied) {
-		log_error(SYS_CODE_LABEL, "failed to copy %.*s", str8_spread(c->so_path));
+		log_error(SYS_CODE_LABEL, "failed to copy %.*s", str8_spread(c->so.path));
 		goto error;
 	}
 
@@ -160,7 +137,7 @@ sys_code_reload(struct sys_loaded_code *c, struct app_code *code)
 static str8
 sys_code_tmp_path(struct alloc alloc, struct sys_loaded_code *c, u32 idx)
 {
-	str8 so_name = str8_skip_last_slash(c->so_path);
+	str8 so_name = str8_skip_last_slash(c->so.path);
 	str8 so_ext  = str8_skip(so_name, str8_chop_last_dot(so_name).size);
 	return str8_fmt_push(alloc, "%.*s%u%.*s", str8_spread(c->tmp_prefix), idx, str8_spread(so_ext));
 }

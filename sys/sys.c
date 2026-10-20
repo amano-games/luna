@@ -11,6 +11,7 @@
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
 #include "sys/steam/sys-steam.h"
+
 #if SYS_HOT_RELOAD
 #include "sys/sys-hot-reload.h"
 #endif
@@ -484,7 +485,7 @@ sys_internal_restart(void)
 	b32 new_code = false;
 
 #if SYS_HOT_RELOAD
-	new_code = sys_code_changed(&SYS_CODE, false);
+	new_code = sys_file_watch_changed(&SYS_CODE.so, false);
 #endif
 
 	sys_restart(new_code);
@@ -496,13 +497,13 @@ sys_internal_code_ini(struct alloc alloc)
 {
 	SYS_CODE = sys_code_ini(alloc, sys_base_path());
 	SYS.app  = sys_code_load(&SYS_CODE);
-	if(!SYS.app.is_valid) { log_error(SYS_LOG_LABEL, "failed to load game code %.*s", str8_spread(SYS_CODE.so_path)); }
+	if(!SYS.app.is_valid) { log_error(SYS_LOG_LABEL, "failed to load game code %.*s", str8_spread(SYS_CODE.so.path)); }
 }
 
 void
 sys_internal_code_poll(void)
 {
-	if(sys_code_changed(&SYS_CODE, true)) { sys_restart(true); }
+	if(sys_file_watch_changed(&SYS_CODE.so, true)) { sys_restart(true); }
 }
 #endif
 

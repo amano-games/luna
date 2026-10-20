@@ -3,6 +3,9 @@
 #include "sys/sys-log.h"
 #include "base/path.h"
 #include "base/str.h"
+#include "sys/sys-os.h"
+
+#define SYS_FILE_WATCH_POLL_US (200 * 1000)
 
 b32
 sys_make_dirs(str8 path)
@@ -170,4 +173,36 @@ str8
 sys_path_to_log_path(struct alloc alloc, str8 path, str8 org_name, str8 app_name)
 {
 	return sys_path_to_root(alloc, sys_logs_path(), path, org_name, app_name);
+}
+
+struct sys_file_watch
+sys_file_watch_ini(str8 path)
+{
+	struct sys_file_watch res = {0};
+	res.path                  = path;
+	res.props                 = sys_file_props_from_path(path);
+	return res;
+}
+
+b32
+sys_file_watch_changed(struct sys_file_watch *w, b32 throttle)
+{
+	u32 now = sys_time_us();
+
+	// NOTE: u32 wrap (~71 min)
+	if(throttle && now - w->poll_last_us < SYS_FILE_WATCH_POLL_US) { return false; }
+
+	w->poll_last_us = now;
+
+	if(w->path.size == 0) { return false; }
+
+	if(!sys_file_exists(w->path, SYS_FILE_MODE_R)) { return false; }
+
+	struct sys_file_props current = sys_file_props_from_path(w->path);
+
+	if(current.modified == 0) { return false; }
+
+	b32 res = current.modified != w->props.modified || current.size != w->props.size;
+
+	return res;
 }
