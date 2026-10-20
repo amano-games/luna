@@ -17,11 +17,16 @@ HOT             ?= 0
 GAME_SO_NAME    := game.so
 GAME_LOCK_NAME  := game.lock
 GAME_TMP_PREFIX := obj/game-hot-
+
 ifeq ($(HOT),1)
 ifeq ($(BUILD_DEBUG),0)
 $(error HOT=1 is debug only)
 endif
-override CDEFS := $(CDEFS) -DSYS_HOT_RELOAD=1 -DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" -DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" -DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
+override CDEFS := $(CDEFS) \
+	-DSYS_HOT_RELOAD=1 \
+	-DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" \
+	-DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" \
+	-DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
 endif
 
 DESTDIR      ?=
@@ -100,6 +105,19 @@ ASSETS_EXTRA := $(BUILD_DIR)
 include $(ROOT_DIR)/game.mk
 include $(ROOT_DIR)/assets.mk
 
+# HOT=1 rebuilds hold game.lock until done
+# Sub-makes get GAME_LOCK_HELD=1 so only the outermost make takes the lock
+GAME_LOCK_HELD  ?= 0
+GAME_LOCK_BEGIN  =
+GAME_LOCK_END    =
+
+ifeq ($(HOT),1)
+ifeq ($(GAME_LOCK_HELD),0)
+GAME_LOCK_BEGIN  = touch "$(GAME_LOCK)";
+GAME_LOCK_END    = ; rc=$$?; rm -f "$(GAME_LOCK)"; exit $$rc
+endif
+endif
+
 ifeq ($(HOT),1)
 HOST_OBJS     := $(LUNA_OBJ)
 HOST_LDFLAGS  := -rdynamic
@@ -125,9 +143,9 @@ $(BINARY): $(HOST_OBJS) | $(BUILD_DIR) assets
 	$(CC) $(CFLAGS) $(HOST_OBJS) $(LDLIBS) $(LDFLAGS) $(HOST_LDFLAGS) -o $@
 
 $(GAME_SO): $(GAME_OBJ) | $(BUILD_DIR)
-	touch "$(GAME_LOCK)"; \
-	$(CC) -shared $(CFLAGS) $(GAME_OBJ) -lm $(LDFLAGS) -o "$@.tmp" && mv -f "$@.tmp" "$@"; \
-	rc=$$?; rm -f "$(GAME_LOCK)"; exit $$rc
+	$(GAME_LOCK_BEGIN) \
+	$(CC) -shared $(CFLAGS) $(GAME_OBJ) -lm $(LDFLAGS) -o "$@.tmp" && mv -f "$@.tmp" "$@" \
+	$(GAME_LOCK_END)
 
 $(PUBLISH_OBJS): $(BINARY)
 	rm -rf $(BUILD_DIR)/assets
@@ -137,11 +155,15 @@ $(PUBLISH_OBJS): $(BINARY)
 clean:
 	rm -rf $(BUILD_DIR)
 
-build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+build: | $(BUILD_DIR)
+	$(GAME_LOCK_BEGIN) \
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)' GAME_LOCK_HELD=1 \
+	$(GAME_LOCK_END)
 
-game:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(GAME_SO) assets DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+game: | $(BUILD_DIR)
+	$(GAME_LOCK_BEGIN) \
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(GAME_SO) assets DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)' GAME_LOCK_HELD=1 \
+	$(GAME_LOCK_END)
 
 STEAM_LIB_OUT := $(dir $(BINARY))$(notdir $(STEAM_LIB))
 
@@ -149,8 +171,10 @@ STEAM_LIB_OUT := $(dir $(BINARY))$(notdir $(STEAM_LIB))
 $(STEAM_LIB_OUT): $(STEAM_LIB) | $(BUILD_DIR)
 	install -m 644 "$<" "$@"
 
-steam_build:
-	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) $(STEAM_LIB_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)'
+steam_build: | $(BUILD_DIR)
+	$(GAME_LOCK_BEGIN) \
+	$(MAKE) -f $(ROOT_DIR)/linux.mk $(BUILD_TARGETS) $(STEAM_LIB_OUT) DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) APP_NAME=$(APP_NAME) CDEFS='$(CDEFS)' GAME_LOCK_HELD=1 \
+	$(GAME_LOCK_END)
 ifeq ($(BUILD_DEBUG),1)
 	printf '%s\n' "$(STEAM_APP_ID)" > "$(dir $(BINARY))steam_appid.txt"
 endif
