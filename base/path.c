@@ -262,40 +262,43 @@ path_resolve_dots_in_place(
 		goto save_with_stack;
 
 	// handlers:
-	save_with_stack: {
-		str8_list_push_node(path, node);
+	save_with_stack:
+		{
+			str8_list_push_node(path, node);
 
-		struct str8_meta_node *stack_node = free_meta_node;
-		if(stack_node != 0) {
-			SLLStackPop(free_meta_node);
-		} else {
-			stack_node = alloc_struct(scratch, stack_node);
+			struct str8_meta_node *stack_node = free_meta_node;
+			if(stack_node != 0) {
+				SLLStackPop(free_meta_node);
+			} else {
+				stack_node = alloc_struct(scratch, stack_node);
+			}
+			SLLStackPush(stack, stack_node);
+			stack_node->node = node;
+
+			continue;
 		}
-		SLLStackPush(stack, stack_node);
-		stack_node->node = node;
 
-		continue;
-	}
+	save_without_stack:
+		{
+			str8_list_push_node(path, node);
 
-	save_without_stack: {
-		str8_list_push_node(path, node);
-
-		continue;
-	}
-
-	eliminate_stack_top: {
-		path->node_count -= 1;
-		path->total_size -= stack->node->str.size;
-
-		SLLStackPop(stack);
-
-		if(stack == 0) {
-			path->last = path->first;
-		} else {
-			path->last = stack->node;
+			continue;
 		}
-		continue;
-	}
+
+	eliminate_stack_top:
+		{
+			path->node_count -= 1;
+			path->total_size -= stack->node->str.size;
+
+			SLLStackPop(stack);
+
+			if(stack == 0) {
+				path->last = path->first;
+			} else {
+				path->last = stack->node;
+			}
+			continue;
+		}
 
 	do_nothing:
 		continue;
