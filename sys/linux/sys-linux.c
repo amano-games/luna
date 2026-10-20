@@ -454,6 +454,8 @@ sys_file_copy(str8 from, str8 to)
 	int in         = open((char *)from.str, O_RDONLY);
 	if(in < 0) { return res; }
 	if(fstat(in, &st) == 0) {
+		// Replace instead of overwrite, a process with `to` mapped keeps the old inode
+		unlink((char *)to.str);
 		int out = open((char *)to.str, O_WRONLY | O_CREAT | O_TRUNC, st.st_mode & 0777);
 		if(out >= 0) {
 			res       = true;

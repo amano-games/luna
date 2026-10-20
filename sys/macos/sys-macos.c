@@ -24,6 +24,7 @@
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/clonefile.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
@@ -424,7 +425,10 @@ b32
 sys_file_copy(str8 from, str8 to)
 {
 	if(access((char *)from.str, R_OK) != 0) { return false; }
-	b32 res = copyfile((char *)from.str, (char *)to.str, NULL, COPYFILE_ALL) == 0;
+	// APFS clone first, it fails if `to` exists across volumes or file systems, then a real copy
+	unlink((char *)to.str);
+	b32 res = clonefile((char *)from.str, (char *)to.str, 0) == 0;
+	if(!res) { res = copyfile((char *)from.str, (char *)to.str, NULL, COPYFILE_ALL) == 0; }
 	if(!res) { unlink((char *)to.str); }
 	return res;
 }
