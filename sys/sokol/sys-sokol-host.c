@@ -87,6 +87,7 @@ enum sokol_status {
 
 struct sokol_state {
 	enum sokol_status status;
+	b32 restart_requested;
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -399,6 +400,7 @@ sokol_init(void)
 #if SYS_HOT_RELOAD
 	sys_internal_code_ini(SOKOL_STATE.alloc);
 #endif
+
 	sys_internal_init();
 }
 
@@ -763,12 +765,27 @@ sokol_frame(void)
 	sg_draw(0, 6, 1);
 	sg_end_pass();
 	sg_commit();
+
 	if(updated) { dbg_drw_clr(); }
+
+	if(SOKOL_STATE.restart_requested && SOKOL_STATE.status == SOKOL_STATUS_INI) {
+		b32 building = false;
+
+#if SYS_HOT_RELOAD
+		building = sys_internal_code_building();
+#endif
+
+		if(!building) {
+			SOKOL_STATE.restart_requested = false;
+			SOKOL_STATE.status            = SOKOL_STATUS_RELOAD;
+		}
+	}
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
 		sys_internal_restart();
 		SOKOL_STATE.status = SOKOL_STATUS_INI;
 	}
+
 #if SYS_HOT_RELOAD
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
 		sys_internal_code_poll();
@@ -1184,9 +1201,7 @@ sys_quit(void)
 void
 sys_restart_request(void)
 {
-	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
-		SOKOL_STATE.status = SOKOL_STATUS_RELOAD;
-	}
+	SOKOL_STATE.restart_requested = true;
 }
 
 static void

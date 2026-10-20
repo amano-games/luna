@@ -11,10 +11,7 @@
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
 #include "sys/steam/sys-steam.h"
-
-#if SYS_HOT_RELOAD
 #include "sys/sys-hot-reload.h"
-#endif
 
 #if !defined(SYS_SHOW_FPS)
 #if BUILD_DEBUG
@@ -29,7 +26,6 @@
 
 #if SYS_HOT_RELOAD
 struct sys_data SYS;
-static struct sys_loaded_code SYS_CODE;
 #else
 struct sys_data SYS = {
 	.app = {
@@ -46,6 +42,8 @@ struct sys_data SYS = {
 	},
 };
 #endif
+
+static struct sys_loaded_code SYS_CODE;
 
 struct prof PROFILER;
 struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
@@ -491,7 +489,6 @@ sys_internal_restart(void)
 	sys_restart(new_code);
 }
 
-#if SYS_HOT_RELOAD
 void
 sys_internal_code_ini(struct alloc alloc)
 {
@@ -500,12 +497,19 @@ sys_internal_code_ini(struct alloc alloc)
 	if(!SYS.app.is_valid) { log_error(SYS_LOG_LABEL, "failed to load game code %.*s", str8_spread(SYS_CODE.so.path)); }
 }
 
+b32
+sys_internal_code_building(void)
+{
+	b32 res = sys_file_exists(SYS_CODE.lock_path, SYS_FILE_MODE_R);
+	return res;
+}
+
 void
 sys_internal_code_poll(void)
 {
+	if(sys_internal_code_building()) { return; }
 	if(sys_file_watch_changed(&SYS_CODE.so, true)) { sys_restart(true); }
 }
-#endif
 
 void
 sys_internal_pause(void)
