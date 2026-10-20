@@ -191,6 +191,7 @@ tex_clr(struct tex dst, u8 col)
 			}
 			break;
 		case GFX_COL_CLEAR:
+			dbg_assert(dst.fmt != TEX_FMT_1B_OPAQUE);
 			if(dst.fmt == TEX_FMT_1B_OPAQUE) break;
 			for(i32 n = 0; n < nn; n++) {
 				*p++ = 0;
