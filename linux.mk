@@ -12,13 +12,17 @@ CC := clang
 endif
 
 # Hot code reloading
-HOT ?= 0
+# Names are relative to the exe dir and passed to the host as SYS_HOT_* defines
+HOT             ?= 0
+GAME_SO_NAME    := game.so
+GAME_LOCK_NAME  := game.lock
+GAME_TMP_PREFIX := obj/game-hot-
 ifeq ($(HOT),1)
 ifeq ($(BUILD_DEBUG),0)
 $(error HOT=1 is debug only)
 endif
 override ASAN  := 0
-override CDEFS := $(CDEFS) -DSYS_HOT_RELOAD=1
+override CDEFS := $(CDEFS) -DSYS_HOT_RELOAD=1 -DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" -DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" -DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
 endif
 
 DESTDIR      ?=
@@ -87,8 +91,8 @@ CFLAGS += $(CDEFS)
 
 OBJ_DIR      := $(BUILD_DIR)/obj
 BINARY       := $(BUILD_DIR)/$(TARGET)
-GAME_SO      := $(BUILD_DIR)/game.so
-GAME_LOCK    := $(BUILD_DIR)/game.lock
+GAME_SO      := $(BUILD_DIR)/$(GAME_SO_NAME)
+GAME_LOCK    := $(BUILD_DIR)/$(GAME_LOCK_NAME)
 PUBLISH_OBJS := $(PUBLISH_BUILD_DIR)/$(APP_NAME).zip
 
 # Platform files must land before obj/assets mkdir -p creates BUILD_DIR.
