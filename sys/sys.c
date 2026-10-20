@@ -11,6 +11,9 @@
 #include "base/dbg.h"
 #include "sys/sys-mem.h"
 #include "sys/steam/sys-steam.h"
+#if SYS_HOT_RELOAD
+#include "sys/sys-hot-reload.h"
+#endif
 
 #if !defined(SYS_SHOW_FPS)
 #if BUILD_DEBUG
@@ -25,6 +28,7 @@
 
 #if SYS_HOT_RELOAD
 struct sys_data SYS;
+static struct sys_loaded_code SYS_CODE;
 #else
 struct sys_data SYS = {
 	.app = {
@@ -438,6 +442,69 @@ sys_internal_close(void)
 	}
 	sys_steam_close();
 }
+
+static void
+sys_restart(b32 new_code)
+{
+	sys_audio_lock();
+	app_audio_fn *audio = SYS.app.audio;
+	SYS.app.audio       = NULL;
+	sys_audio_unlock();
+
+	sys_internal_close();
+
+#if SYS_HOT_RELOAD
+	if(new_code) {
+		struct app_code next = {0};
+
+		sys_audio_lock();
+		sys_code_unload(&SYS_CODE, &SYS.app);
+		sys_audio_unlock();
+
+		sys_code_reload(&SYS_CODE, &next);
+		audio      = next.audio;
+		next.audio = NULL;
+
+		sys_audio_lock();
+		SYS.app = next;
+		sys_audio_unlock();
+	}
+#endif
+
+	sys_internal_init();
+
+	sys_audio_lock();
+	SYS.app.audio = audio;
+	sys_audio_unlock();
+}
+
+void
+sys_internal_restart(void)
+{
+	b32 new_code = false;
+
+#if SYS_HOT_RELOAD
+	new_code = sys_code_changed(&SYS_CODE, false);
+#endif
+
+	sys_restart(new_code);
+}
+
+#if SYS_HOT_RELOAD
+void
+sys_internal_code_ini(struct alloc alloc)
+{
+	SYS_CODE = sys_code_ini(alloc, sys_base_path());
+	SYS.app  = sys_code_load(&SYS_CODE);
+	if(!SYS.app.is_valid) { log_error(SYS_LOG_LABEL, "failed to load game code %.*s", str8_spread(SYS_CODE.so_path)); }
+}
+
+void
+sys_internal_code_poll(void)
+{
+	if(sys_code_changed(&SYS_CODE, true)) { sys_restart(true); }
+}
+#endif
 
 void
 sys_internal_pause(void)

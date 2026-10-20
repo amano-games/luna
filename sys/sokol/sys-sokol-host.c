@@ -17,9 +17,6 @@
 #include "sys/sys-opts.h"
 #include "sys/sys-pause.h"
 #include "sys/sys-record.h"
-#if SYS_HOT_RELOAD
-#include "sys/sys-hot-reload.h"
-#endif
 
 #include <jsmn.h>
 #include <stdio.h>
@@ -90,9 +87,6 @@ enum sokol_status {
 
 struct sokol_state {
 	enum sokol_status status;
-#if SYS_HOT_RELOAD
-	struct sys_loaded_code code;
-#endif
 
 	struct marena scratch_marena;
 	struct alloc scratch;
@@ -207,10 +201,6 @@ sokol_main(i32 argc, char **argv)
 		marena_init(&SOKOL_STATE.marena, mem, mem_size);
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
-
-#if SYS_HOT_RELOAD
-	SOKOL_STATE.code = sys_code_ini(SOKOL_STATE.alloc, sys_base_path());
-#endif
 
 	struct str8 exe_path = sys_exe_path();
 	str8 base_name       = str8_chop_last_slash(exe_path);
@@ -407,8 +397,7 @@ sokol_init(void)
 	sokol_set_icon();
 
 #if SYS_HOT_RELOAD
-	SYS.app = sys_code_load(&SOKOL_STATE.code);
-	if(!SYS.app.is_valid) { log_error("sokol", "failed to load game code %.*s", str8_spread(SOKOL_STATE.code.so_path)); }
+	sys_internal_code_ini(SOKOL_STATE.alloc);
 #endif
 	sys_internal_init();
 }
@@ -777,10 +766,14 @@ sokol_frame(void)
 	if(updated) { dbg_drw_clr(); }
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_RELOAD) {
-		sys_internal_close();
-		sys_internal_init();
+		sys_internal_restart();
 		SOKOL_STATE.status = SOKOL_STATUS_INI;
 	}
+#if SYS_HOT_RELOAD
+	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
+		sys_internal_code_poll();
+	}
+#endif
 }
 
 void

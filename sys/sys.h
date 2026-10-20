@@ -42,6 +42,13 @@ void sys_internal_init(void);
 i32 sys_internal_update(void);
 void sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len);
 void sys_internal_close(void);
+void sys_internal_restart(void);
+
+#if SYS_HOT_RELOAD
+void sys_internal_code_ini(struct alloc alloc);
+void sys_internal_code_poll(void);
+#endif
+
 void sys_internal_pause(void);
 void sys_internal_resume(void);
 void sys_internal_stream_start(void);
