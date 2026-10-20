@@ -21,7 +21,6 @@ ifeq ($(HOT),1)
 ifeq ($(BUILD_DEBUG),0)
 $(error HOT=1 is debug only)
 endif
-override ASAN  := 0
 override CDEFS := $(CDEFS) -DSYS_HOT_RELOAD=1 -DSYS_HOT_LIB_PATH=\"$(GAME_SO_NAME)\" -DSYS_HOT_LOCK_PATH=\"$(GAME_LOCK_NAME)\" -DSYS_HOT_TMP_PREFIX=\"$(GAME_TMP_PREFIX)\"
 endif
 
