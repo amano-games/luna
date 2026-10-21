@@ -14,6 +14,8 @@
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 
+#include <stdlib.h>
+
 #include "sys/sys-inc.h"
 #include "sys/sys-inc.c"
 
@@ -28,10 +30,16 @@
 #define DEFAULT_OUT_FILE "assets." PCK_EXT
 
 struct pck_w {
-	ssize archive_size;
+	ssize data_size;
+	ssize paths_size;
 	ssize file_count;
 	sys_file file;
 	struct pck_file *files;
+};
+
+struct pck_w_entry {
+	str8 rel;  // relative to the input folder, for reading from disk
+	str8 path; // packed path, with the prefix
 };
 
 static void
@@ -163,45 +171,53 @@ error:;
 	return res;
 }
 
+static str8
+pck_path_ext(str8 path)
+{
+	str8 name = str8_skip_last_slash(path);
+	str8 ext  = str8_skip_last_dot(name);
+	return ext.size == name.size ? (str8){0} : ext;
+}
+
+// NOTE: sort by extension, then path
+static int
+pck_entry_cmp(const void *pa, const void *pb)
+{
+	const struct pck_w_entry *a = pa;
+	const struct pck_w_entry *b = pb;
+	int res                     = str8_cmp(pck_path_ext(a->path), pck_path_ext(b->path), 0);
+	if(res == 0) { res = str8_cmp(a->path, b->path, 0); }
+	return res;
+}
+
 static b32
-pck_pack_file(struct pck_w *pack, str8 root, str8 rel, str8 prefix, struct alloc scratch)
+pck_pack_file(struct pck_w *pack, str8 root, struct pck_w_entry entry, struct alloc scratch)
 {
 	b32 res = false;
-	u8 zero = 0;
-	u16 path_len;
-	u64 hash;
 	struct pck_file file;
-	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(rel));
-	str8 path      = rel;
-
-	if(prefix.size > 0) {
-		path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(prefix), str8_spread(rel));
-	}
-
-	hash     = hash_fnv1a_str8(path);
-	path_len = (u16)(path.size + 1);
-
-	dbg_check(sys_file_w(pack->file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
-	dbg_check(sys_file_w(pack->file, &zero, 1) == 1, LOG_ID, "failed writing path null");
+	str8 disk_path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(entry.rel));
 
 	file = pck_store_file(scratch, disk_path, pack->file);
 	dbg_check(file.size >= 0, LOG_ID, "failed copying %.*s", str8_spread(disk_path));
 
 	char size_buf[STR_BYTES_CAP];
-	file.hash     = hash;
-	file.offset   = pack->archive_size;
-	file.path_len = path_len;
+	file.hash     = hash_fnv1a_str8(entry.path);
+	file.offset   = pack->data_size;
+	file.path_off = pack->paths_size;
+	file.path_len = (u16)(entry.path.size + 1);
+	file.tags     = 0;
 
 	log_info(
 		LOG_ID,
 		"%6d %016llx %11.*s %.*s",
 		(int)pack->file_count,
-		(unsigned long long)hash,
+		(unsigned long long)file.hash,
 		str8_spread(str8_from_bytes_buf(size_buf, sizeof(size_buf), (u64)file.size)),
-		str8_spread(path));
+		str8_spread(entry.path));
 
 	pack->files[pack->file_count] = file;
-	pack->archive_size += file.size + path_len;
+	pack->data_size += file.size;
+	pack->paths_size += file.path_len;
 	pack->file_count++;
 
 	res = true;
@@ -216,8 +232,10 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 	b32 res                      = false;
 	struct pck_w pack            = {0};
 	struct str8_list paths       = {0};
+	struct pck_w_entry *entries  = NULL;
 	struct alloc scratch         = {0};
 	struct marena scratch_marena = {0};
+	u8 zero                      = 0;
 	ssize total_size;
 	ssize i;
 
@@ -236,25 +254,54 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 		pck_collect_paths(alloc, &paths, input_path, str8_lit(""), scratch),
 		LOG_ID,
 		"failed collecting paths");
-	pack.files = alloc_arr(alloc, pack.files, paths.node_count);
 
-	for(struct str8_node *node = paths.first; node != NULL; node = node->next) {
+	pack.files = alloc_arr(alloc, pack.files, paths.node_count);
+	entries    = alloc_arr(alloc, entries, paths.node_count);
+
+	dbg_check(pack.files && entries, LOG_ID, "failed alloc for %d paths", (int)paths.node_count);
+
+	i = 0;
+	for(
+		struct str8_node *node = paths.first;
+		node != NULL;
+		node = node->next) {
+		str8 path = node->str;
+		if(prefix.size > 0) {
+			path = str8_fmt_push(alloc, "%.*s/%.*s", str8_spread(prefix), str8_spread(node->str));
+		}
+		entries[i++] = (struct pck_w_entry){.rel = node->str, .path = path};
+	}
+
+	qsort(entries, (size_t)paths.node_count, sizeof(*entries), pck_entry_cmp);
+
+	// File data, back to back
+	for(i = 0; i < (ssize)paths.node_count; ++i) {
 		void *reset_p = scratch_marena.p;
-		dbg_check(pck_pack_file(&pack, input_path, node->str, prefix, scratch), LOG_ID, "failed packing %.*s", str8_spread(node->str));
+		dbg_check(pck_pack_file(&pack, input_path, entries[i], scratch), LOG_ID, "failed packing %.*s", str8_spread(entries[i].path));
 		marena_reset_to(&scratch_marena, reset_p);
 	}
 
-	total_size = pack.archive_size + PCK_HEADER_SIZE;
+	// Path table, same order as the data and the index
+	for(i = 0; i < pack.file_count; ++i) {
+		str8 path = entries[i].path;
+		dbg_check(sys_file_w(pack.file, path.str, (u32)path.size) == (ssize)path.size, LOG_ID, "failed writing path %.*s", str8_spread(path));
+		dbg_check(sys_file_w(pack.file, &zero, 1) == 1, LOG_ID, "failed writing path null");
+	}
+
+	total_size = pack.data_size + pack.paths_size + PCK_HEADER_SIZE;
 	for(i = 0; i < pack.file_count; ++i) {
 		pck_u64w(pack.files[i].hash, pack.file);
 		pck_u32w((u32)pack.files[i].offset, pack.file);
 		pck_u32w((u32)pack.files[i].size, pack.file);
 		pck_u32w((u32)pack.files[i].base_size, pack.file);
+		pck_u32w((u32)pack.files[i].path_off, pack.file);
 		pck_u16w(pack.files[i].path_len, pack.file);
 		pck_u16w(pack.files[i].flags, pack.file);
+		pck_u32w(pack.files[i].tags, pack.file);
 		total_size += PCK_INDEX_SIZE;
 	}
 
+	pck_u32w((u32)pack.paths_size, pack.file);
 	pck_u32w((u32)pack.file_count, pack.file);
 	pck_u32w((u32)total_size, pack.file);
 	pck_u32w(PCK_MAGIC, pack.file);

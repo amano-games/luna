@@ -42,11 +42,12 @@ assets_pck_ini(struct alloc scratch, str8 path)
 	dbg_check(pck_path.str, "assets", "pck path copy failed");
 
 	ASSETS.pck_watch = sys_file_watch_ini(pck_path);
-	dbg_check(pck_open(pack, &ASSETS.pck) != 0, "assets", "pck open failed");
+	ASSETS.pck = pck_open(pack);
+	dbg_check(sys_file_is_valid(ASSETS.pck.fh), "assets", "pck open failed");
 
-	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.ht_size);
-	dbg_check(ASSETS.pck_ht, "assets", "pck ht alloc failed");
-	dbg_check(pck_read_index(&ASSETS.pck, ASSETS.pck_ht) != 0, "assets", "pck index failed");
+	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.mem_size);
+	dbg_check(ASSETS.pck_ht, "assets", "pck index alloc failed");
+	dbg_check(pck_read_index(scratch, &ASSETS.pck, ASSETS.pck_ht) != 0, "assets", "pck index failed");
 error:;
 }
 
@@ -112,7 +113,8 @@ asset_stream_open(struct asset_stream *s, struct asset_handle handle)
 	dbg_check(f, "assets", "stream find failed hash %016zx", (size_t)handle.path_hash);
 	dbg_assert(!(f->flags & PCK_FLAG_COMPRESSED_LZ4));
 	dbg_check(ASSETS.pck_watch.path.size, "assets", "pack path missing");
-	dbg_check(pck_open(ASSETS.pck_watch.path, &s->pck) != 0, "assets", "stream pck open failed");
+	s->pck = pck_open(ASSETS.pck_watch.path);
+	dbg_check(sys_file_is_valid(s->pck.fh), "assets", "stream pck open failed");
 
 	s->pck.ht     = ASSETS.pck.ht;
 	s->pck.ht_len = ASSETS.pck.ht_len;
