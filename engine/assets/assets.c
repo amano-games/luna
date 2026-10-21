@@ -209,6 +209,7 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 {
 	struct tex res           = {0};
 	struct tex_header header = {0};
+	u8 *data                 = NULL;
 	u8 *px_src               = NULL;
 	i32 n                    = 0;
 	ssize header_size        = (ssize)sizeof(struct tex_header);
@@ -219,8 +220,13 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 	dbg_assert(f->size == f->base_size);
 	dbg_check(f->size >= header_size, "assets", "tex too small hash %016zx", (size_t)f->hash);
 
-	n = pck_read_ex(&ASSETS.pck, f, (u8 *)&header, 0, header_size);
-	dbg_check(n == (i32)header_size, "assets", "tex header read failed hash %016zx", (size_t)f->hash);
+	data = mem_alloc_size(scratch, (usize)f->size);
+	dbg_check(data, "assets", "scratch too small for tex: %016zx", (size_t)f->hash);
+
+	n = pck_read(&ASSETS.pck, f, data);
+	dbg_check(n == (i32)f->size, "assets", "tex read failed: %016zx", (size_t)f->hash);
+
+	mcpy(&header, data, header_size);
 	dbg_check(header.fmt == TEX_FMT_1B_OPAQUE || header.fmt == TEX_FMT_1B_MASK || header.fmt == TEX_FMT_8B_INDEX,
 		"assets",
 		"invalid tex fmt %" PRIu32 " hash %016zx",
@@ -245,17 +251,13 @@ asset_tex_from_pck(struct alloc alloc, struct alloc scratch, struct pck_file *f)
 	packed_len = f->size - header_size;
 	dbg_check(packed_len > 0, "assets", "tex pixels missing hash %016zx", (size_t)f->hash);
 
+	px_src = data + header_size;
 	if(header.flags & TEX_FLAG_LZ4) {
-		px_src = mem_alloc_size(scratch, (usize)packed_len);
-		dbg_check(px_src, "assets", "scratch too small for packed tex hash %016zx", (size_t)f->hash);
-		n = pck_read_ex(&ASSETS.pck, f, px_src, header_size, packed_len);
-		dbg_check(n == (i32)packed_len, "assets", "tex packed read failed hash %016zx", (size_t)f->hash);
 		n = sys_lz4_decompress(px_src, res.px1b, packed_len, tex_size);
 		dbg_check(n == (int)tex_size, "assets", "tex lz4 decode failed hash %016zx", (size_t)f->hash);
 	} else {
 		dbg_check(packed_len >= tex_size, "assets", "tex truncated hash %016zx", (size_t)f->hash);
-		n = pck_read_ex(&ASSETS.pck, f, (u8 *)res.px1b, header_size, tex_size);
-		dbg_check(n == (i32)tex_size, "assets", "tex pixels read failed hash %016zx", (size_t)f->hash);
+		mcpy(res.px1b, px_src, tex_size);
 	}
 
 error:;
