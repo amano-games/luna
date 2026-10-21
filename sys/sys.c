@@ -104,7 +104,8 @@ sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 		sys_mem->app_mem.buffer);
 
 #if BUILD_DEBUG
-	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, sys_mem->app_mem.size);
+	// Skip poison on debug region
+	mset(sys_mem->app_mem.buffer, SYS_MEM_POISON_PATTERN, permanent_aligned + transient_aligned);
 #endif
 
 	res.permanent.size   = permanent_aligned;
@@ -225,8 +226,11 @@ sys_internal_init(void)
 	}
 
 	if(SYS.app.is_valid) { SYS.app.init(SYS_MAX_MEM); }
+
 	SYS.initialized = true;
 	sys_timing_reset();
+	// Tick on the first callback
+	SYS.timing.acc_us = SYS.timing.dt_us;
 }
 
 // there are some frame skips when using the exact delta time and evaluating
