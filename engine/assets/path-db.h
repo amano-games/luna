@@ -6,5 +6,10 @@
 
 #define ADB_EXT "adb"
 
-void path_db_write(struct ser_writer *w, str8 *paths);
-str8 *path_db_read(struct ser_reader *r, struct alloc alloc);
+struct path_db {
+	str8 *paths;
+	u32 *tags;
+};
+
+void path_db_write(struct ser_writer *w, struct path_db db);
+struct path_db path_db_read(struct ser_reader *r, struct alloc alloc);

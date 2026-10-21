@@ -421,6 +421,10 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 	str8 json = {0};
 	json_load(in_path, scratch, &json);
 	str8 *paths = tsj_handle_json(in_path, json, src_root, dest_root, alloc, scratch);
+	u32 *tags   = arr_new(alloc, tags, arr_len(paths));
+	for(ssize i = 0; i < arr_len(paths); ++i) {
+		arr_push(tags, 0);
+	}
 
 	sys_file out_file = sys_file_open_w(out_file_path);
 	if(!sys_file_is_valid(out_file)) {
@@ -429,7 +433,7 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 	}
 
 	struct ser_writer w = {.f = out_file};
-	path_db_write(&w, paths);
+	path_db_write(&w, (struct path_db){.paths = paths, .tags = tags});
 
 	sys_file_close(out_file);
 
