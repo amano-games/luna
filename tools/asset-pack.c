@@ -4,12 +4,14 @@
 #include "base/cmd-line.h"
 #include "base/dbg.h"
 #include "base/hash.h"
+#include "base/ht.h"
 #include "sys/sys-log.h"
 #include "sys/sys-printf.h"
 #include "base/marena.h"
 #include "base/mem.h"
 #include "base/path.h"
 #include "base/str.h"
+#include "engine/assets/path-db.h"
 #include "engine/assets/pck.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
@@ -25,6 +27,7 @@
 #include "base/str.c"
 #include "base/cmd-line.c"
 #include "base/path.c"
+#include "engine/assets/path-db.c"
 
 #define LOG_ID           "asset-pack"
 #define DEFAULT_OUT_FILE "assets." PCK_EXT
@@ -40,6 +43,7 @@ struct pck_w {
 struct pck_w_entry {
 	str8 rel;  // relative to the input folder, for reading from disk
 	str8 path; // packed path, with the prefix
+	u32 tags;
 };
 
 static void
@@ -190,6 +194,39 @@ pck_entry_cmp(const void *pa, const void *pb)
 	return res;
 }
 
+static void
+pck_tags_set_from_adb(
+	struct pck_w_entry *entries,
+	struct ht_u32 *entry_ht,
+	str8 root,
+	struct pck_w_entry adb,
+	str8 prefix,
+	struct alloc scratch)
+{
+	str8 disk_path               = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(root), str8_spread(adb.rel));
+	struct sys_full_file_res res = sys_load_full_file(scratch, disk_path);
+	dbg_check(res.data, LOG_ID, "failed to read %.*s", str8_spread(disk_path));
+
+	struct ser_reader r = {.data = res.data, .len = (int)res.size};
+	struct path_db db   = path_db_read(&r, scratch);
+
+	for(ssize i = 0; i < arr_len(db.paths); ++i) {
+		str8 path = db.paths[i];
+		if(prefix.size > 0) {
+			path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(prefix), str8_spread(path));
+		}
+		u32 idx = ht_get_u32(entry_ht, hash_fnv1a_str8(path));
+
+		if(idx == 0) {
+			log_warn(LOG_ID, "%.*s lists %.*s, which isn't packed", str8_spread(adb.path), str8_spread(path));
+			continue;
+		}
+		entries[idx - 1].tags |= db.tags[i];
+	}
+
+error:;
+}
+
 static b32
 pck_pack_file(struct pck_w *pack, str8 root, struct pck_w_entry entry, struct alloc scratch)
 {
@@ -205,7 +242,7 @@ pck_pack_file(struct pck_w *pack, str8 root, struct pck_w_entry entry, struct al
 	file.offset   = pack->data_size;
 	file.path_off = pack->paths_size;
 	file.path_len = (u16)(entry.path.size + 1);
-	file.tags     = 0;
+	file.tags     = entry.tags;
 
 	log_info(
 		LOG_ID,
@@ -273,6 +310,24 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 	}
 
 	qsort(entries, (size_t)paths.node_count, sizeof(*entries), pck_entry_cmp);
+
+	{
+		struct ht_u32 entry_ht = ht_new_u32(ht_exp_from_count(paths.node_count), alloc);
+		dbg_check(entry_ht.ht, LOG_ID, "failed alloc for path table");
+		for(i = 0; i < (ssize)paths.node_count; ++i) {
+			u32 idx = ht_set_u32(&entry_ht, hash_fnv1a_str8(entries[i].path), (u32)(i + 1));
+			dbg_check(idx == (u32)(i + 1), LOG_ID, "duplicate path hash %.*s", str8_spread(entries[i].path));
+		}
+
+		// NOTE: Set tags from adb, should this be handled by asset-pack or by the game runtime?
+		for(i = 0; i < (ssize)paths.node_count; ++i) {
+			if(str8_match(pck_path_ext(entries[i].path), str8_lit(ADB_EXT), 0)) {
+				void *reset_p = scratch_marena.p;
+				pck_tags_set_from_adb(entries, &entry_ht, input_path, entries[i], prefix, scratch);
+				marena_reset_to(&scratch_marena, reset_p);
+			}
+		}
+	}
 
 	// File data, back to back
 	for(i = 0; i < (ssize)paths.node_count; ++i) {
