@@ -28,8 +28,10 @@ dbg_static_assert(SYS_DEFAULT_FPS <= SYS_DEFAULT_UPS, sys_fps_not_above_ups);
 
 #if BUILD_DEBUG
 #define SYS_MAX_MEM MGIGABYTE(1)
-#else
+#elif OS_PLAYDATE
 #define SYS_MAX_MEM MMEGABYTE(14)
+#else
+#define SYS_MAX_MEM MMEGABYTE(64)
 #endif
 
 struct mem_block {
