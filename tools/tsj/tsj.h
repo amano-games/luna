@@ -5,7 +5,6 @@
 
 struct tsj_tile_res {
 	usize token_count;
-	str8 path;
 	struct animation_clip *clips;
 	struct tex_atlas atlas;
 	v2_i32 tex_size;

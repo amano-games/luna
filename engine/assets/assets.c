@@ -42,7 +42,7 @@ assets_pck_ini(struct alloc scratch, str8 path)
 	dbg_check(pck_path.str, "assets", "pck path copy failed");
 
 	ASSETS.pck_watch = sys_file_watch_ini(pck_path);
-	ASSETS.pck = pck_open(pack);
+	ASSETS.pck       = pck_open(pack);
 	dbg_check(sys_file_is_valid(ASSETS.pck.fh), "assets", "pck open failed");
 
 	ASSETS.pck_ht = mem_alloc_size(ASSETS.alloc, ASSETS.pck.mem_size);
