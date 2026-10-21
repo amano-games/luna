@@ -89,6 +89,7 @@ typedef ptrdiff_t ssize;
 
 #define mset                 memset
 #define mmov                 memmove
+#define mcmp                 memcmp
 #define mcpy(dst, src, size) mmov((dst), (src), (size))
 #define mclr(dst, size)      mset((dst), (0), (size))
 #define mclr_struct(s)       mclr((s), sizeof(*(s)))

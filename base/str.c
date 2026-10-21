@@ -182,6 +182,41 @@ str8_match(str8 a, str8 b, str_match_flags flags)
 	return (result);
 }
 
+i32
+str8_cmp(str8 a, str8 b, str_match_flags flags)
+{
+	b32 case_insensitive  = (flags & str_match_flag_case_insensitive);
+	b32 slash_insensitive = (flags & str_match_flag_slash_insensitive);
+	u64 size              = MIN(a.size, b.size);
+	i32 res               = 0;
+
+	if(case_insensitive || slash_insensitive) {
+		for(u64 i = 0; i < size && res == 0; i += 1) {
+			u8 at = a.str[i];
+			u8 bt = b.str[i];
+			if(case_insensitive) {
+				at = char_to_lower(at);
+				bt = char_to_lower(bt);
+			}
+			if(slash_insensitive) {
+				at = char_to_correct_slash(at);
+				bt = char_to_correct_slash(bt);
+			}
+			res = (i32)at - (i32)bt;
+		}
+	} else if(size > 0) {
+		res = mcmp(a.str, b.str, size);
+	}
+
+	res = res > 0 ? 1 : res < 0 ? -1
+								: 0;
+	if(res == 0) {
+		res = a.size < b.size ? -1 : a.size > b.size ? 1
+													 : 0;
+	}
+	return res;
+}
+
 inline void
 str8_cpy(str8 *src, str8 *dst)
 {
