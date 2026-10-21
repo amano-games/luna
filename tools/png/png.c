@@ -34,10 +34,8 @@ png_to_tex_blob(
 	struct tex t                   = {0};
 	if(col_map->ht.ht == NULL) {
 		t = tex_1b_from_rgb(scratch, in_data, w, h);
-	} else if(col_map->out.len > 3) {
-		t = tex_u8_from_rgba(scratch, in_data, w, h, col_map);
 	} else {
-		t = tex_1b_from_rgb_lut(scratch, in_data, w, h, col_map);
+		t = tex_from_rgba_lut(scratch, in_data, w, h, col_map);
 	}
 	dbg_check(t.pxu8 != NULL, "png", "Failed to convert image with path %.*s", str8_spread(in_path));
 	res = tex_to_blob(scratch, alloc, t, out, flag);

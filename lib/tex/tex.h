@@ -59,5 +59,6 @@ void tex_mask_to_pdi(struct tex tex, u8 *px_out, u8 *mask_out, i32 w, i32 h, i32
 
 void tex_cpy(struct tex *dst, struct tex *src);
 struct tex tex_1b_from_rgb(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h);
-struct tex tex_1b_from_rgb_lut(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h, struct gfx_col_lut *lut);
-struct tex tex_u8_from_rgba(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h, struct gfx_col_lut *lut);
+struct tex tex_1b_from_rgba_lut(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h, struct gfx_col_lut *lut, b32 mask);
+struct tex tex_8b_from_rgba_lut(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h, struct gfx_col_lut *lut);
+struct tex tex_from_rgba_lut(struct alloc alloc, const struct pixel_u8 *in_data, i32 w, i32 h, struct gfx_col_lut *lut);

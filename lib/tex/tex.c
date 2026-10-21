@@ -452,38 +452,49 @@ error:;
 	return t;
 }
 
+static u32
+tex_lut_out_idx(struct gfx_col_lut *lut, struct pixel_u8 pixel)
+{
+	if(pixel.a == 0) { return GFX_COL_CLEAR; }
+
+	u32 color   = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
+	u64 key     = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
+	u32 out_idx = ht_get_u32(&lut->ht, key);
+
+	if(out_idx == 0) {
+		// TODO: convert all colors to oklab
+		if(lut->out.len > 3) {
+			out_idx = (u32)color_map_find_closest_color(lut->out.colors + 1, lut->out.len - 1, color) + 1;
+		} else {
+			u32 in_idx = (u32)color_map_find_closest_color(lut->in.colors + 1, lut->in.len - 1, color) + 1;
+			dbg_assert((ssize)in_idx < lut->map.len);
+			out_idx = lut->map.colors[in_idx];
+		}
+		ht_set_u32(&lut->ht, key, out_idx);
+	}
+	dbg_assert(out_idx > 0 && (ssize)out_idx < lut->out.len);
+	return out_idx;
+}
+
 struct tex
-tex_1b_from_rgb_lut(
+tex_1b_from_rgba_lut(
 	struct alloc alloc,
 	const struct pixel_u8 *in_data,
 	i32 w,
 	i32 h,
-	struct gfx_col_lut *lut)
+	struct gfx_col_lut *lut,
+	b32 mask)
 {
 	dbg_assert(lut->ht.ht);
-	dbg_assert(lut->out.len == 3);
-	dbg_assert(lut->in.len > 1 && lut->in.len == lut->map.len);
 
 	struct tex t  = {0};
-	b32 opaque    = true;
 	u32 *dst      = NULL;
 	i32 w_aligned = 0;
 	ssize bit_idx = 0;
 	u32 color_row = 0;
 	u32 mask_row  = 0;
 
-	// Any pixel with alpha == 0 makes this a mask tex.
-	for(i32 y = 0; y < h && opaque; ++y) {
-		const struct pixel_u8 *row = in_data + y * w;
-		for(i32 x = 0; x < w; ++x) {
-			if(row[x].a == 0) {
-				opaque = false;
-				break;
-			}
-		}
-	}
-
-	t = tex_create(alloc, w, h, opaque ? TEX_FMT_1B_OPAQUE : TEX_FMT_1B_MASK);
+	t = tex_create(alloc, w, h, mask ? TEX_FMT_1B_MASK : TEX_FMT_1B_OPAQUE);
 	dbg_check_mem(t.px1b, "tex");
 
 	dst       = t.px1b;
@@ -493,36 +504,16 @@ tex_1b_from_rgb_lut(
 		const struct pixel_u8 *row = in_data + y * w;
 
 		for(i32 x = 0; x < w_aligned; ++x) {
-			struct pixel_u8 pixel = {0};
-			if(x < w) {
-				pixel = row[x];
-			}
-
-			u32 color_rgba = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
-			u64 key        = (u64)color_rgba + 1; // Reserve zero for empty keys and cache misses, including transparent black.
-			u32 in_idx     = ht_get_u32(&lut->ht, key);
-
-			if(in_idx == 0) {
-				// TODO: convert all colors to oklab
-				in_idx = (u32)color_map_find_closest_color(lut->in.colors + 1, lut->in.len - 1, color_rgba) + 1;
-				ht_set_u32(&lut->ht, key, in_idx);
-			}
-			dbg_assert((ssize)in_idx < lut->map.len);
-			u32 out_idx = lut->map.colors[in_idx];
-			dbg_assert(out_idx > 0 && (ssize)out_idx < lut->out.len);
-
-			u32 out_rgba = lut->out.colors[out_idx];
-			i32 color    = (((out_rgba >> 24) & 0xFF) + ((out_rgba >> 16) & 0xFF) + ((out_rgba >> 8) & 0xFF)) > (3 * 127);
-
-			i32 alpha      = pixel.a != 0;
+			u32 out_idx    = x < w ? tex_lut_out_idx(lut, row[x]) : GFX_COL_CLEAR;
 			u32 pixel_mask = (1u << (31 - bit_idx));
+			dbg_assert(out_idx <= GFX_COL_WHITE);
 
-			if(color) { color_row |= pixel_mask; }
-			if(alpha) { mask_row |= pixel_mask; }
+			if(out_idx == GFX_COL_WHITE) { color_row |= pixel_mask; }
+			if(out_idx != GFX_COL_CLEAR) { mask_row |= pixel_mask; }
 
 			if(++bit_idx == 32) {
 				*dst++ = bswap_u32(color_row);
-				if(!opaque) {
+				if(mask) {
 					*dst++ = bswap_u32(mask_row);
 				}
 
@@ -535,7 +526,7 @@ tex_1b_from_rgb_lut(
 		// Flush leftover bits when width is not a multiple of 32.
 		if(bit_idx > 0) {
 			*dst++ = bswap_u32(color_row);
-			if(!opaque) {
+			if(mask) {
 				*dst++ = bswap_u32(mask_row);
 			}
 
@@ -550,7 +541,7 @@ error:;
 }
 
 struct tex
-tex_u8_from_rgba(
+tex_8b_from_rgba_lut(
 	struct alloc alloc,
 	const struct pixel_u8 *in_data,
 	i32 w,
@@ -558,35 +549,50 @@ tex_u8_from_rgba(
 	struct gfx_col_lut *lut)
 {
 	dbg_assert(lut->ht.ht);
-	// lut->out[0] is always transparent
-	dbg_static_assert(GFX_COL_CLEAR == 0, asset_gen_clear_is_gfx_col_clear);
 
 	struct tex t = tex_create(alloc, w, h, TEX_FMT_8B_INDEX);
-	if(!t.pxu8) { return t; }
+	dbg_check_mem(t.pxu8, "tex");
 
 	ssize stride = (ssize)t.wword * sizeof(u32);
 	mset(t.pxu8, 0, stride * h);
-
 	for(ssize y = 0; y < h; ++y) {
 		const struct pixel_u8 *row = in_data + y * w;
 		for(i32 x = 0; x < w; ++x) {
-			struct pixel_u8 pixel = row[x];
-			if(pixel.a == 0) {
-				t.pxu8[y * stride + x] = GFX_COL_CLEAR;
-				continue;
-			}
-			u32 color = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
-			u64 key   = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
-			// Cached value is the slot in lut->out (>= 1), zero means cache miss
-			u32 out_idx = ht_get_u32(&lut->ht, key);
-			if(out_idx == 0) {
-				// TODO: convert all colors to oklab
-				out_idx = (u32)color_map_find_closest_color(lut->out.colors + 1, lut->out.len - 1, color) + 1;
-				ht_set_u32(&lut->ht, key, out_idx);
-			}
-			dbg_assert((ssize)out_idx < lut->out.len);
-			t.pxu8[y * stride + x] = (u8)out_idx;
+			t.pxu8[y * stride + x] = (u8)tex_lut_out_idx(lut, row[x]);
 		}
 	}
+
+error:;
 	return t;
+}
+
+// Picks the smallest format that fits the image:
+// 1-bit if every pixel resolves to the first 2 out colors, with a mask if any pixel is transparent,
+// 8-bit index otherwise.
+struct tex
+tex_from_rgba_lut(
+	struct alloc alloc,
+	const struct pixel_u8 *in_data,
+	i32 w,
+	i32 h,
+	struct gfx_col_lut *lut)
+{
+	dbg_assert(lut->ht.ht);
+	dbg_assert(lut->out.len >= 3);
+	dbg_assert(lut->out.len > 3 || (lut->in.len > 1 && lut->in.len == lut->map.len));
+	dbg_static_assert(GFX_COL_CLEAR == 0, asset_gen_clear_is_gfx_col_clear);
+
+	b32 is_1b    = true;
+	b32 has_mask = false;
+
+	for(ssize i = 0, n = (ssize)w * h; i < n && is_1b; ++i) {
+		u32 out_idx = tex_lut_out_idx(lut, in_data[i]);
+		if(out_idx == GFX_COL_CLEAR) { has_mask = true; }
+		if(out_idx > GFX_COL_WHITE) { is_1b = false; }
+	}
+
+	if(is_1b) {
+		return tex_1b_from_rgba_lut(alloc, in_data, w, h, lut, has_mask);
+	}
+	return tex_8b_from_rgba_lut(alloc, in_data, w, h, lut);
 }
