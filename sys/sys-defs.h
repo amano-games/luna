@@ -114,6 +114,13 @@ struct app_code {
 	};
 };
 
+struct sys_prof_state {
+	b16 record;
+	b16 save;
+	b32 quit;
+	struct alloc scratch;
+};
+
 struct sys_data {
 	b32 initialized;
 	struct app_code app;
@@ -125,7 +132,7 @@ struct sys_data {
 
 	struct sys_timing timing;
 
-	b32 prof_record_data;
+	struct sys_prof_state prof_state;
 	struct sys_mem mem;
 };
 

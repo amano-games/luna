@@ -383,7 +383,16 @@ sys_internal_update(void)
 		//  so the upd function and its zones are cost of this present not cost of tick
 		//  Should show as count 2 and the average should show as well so maybe not a big issue
 
-		prof_upd(sys->prof_record_data);
+		prof_upd(sys->prof_state.record);
+
+		if(sys->prof_state.save) {
+			sys->prof_state.save = false;
+			prof_csv_save(
+				sys->prof_state.scratch,
+				str8_lit(SYS_APP_NAME),
+				str8_lit(SYS_ORG_NAME));
+			if(sys->prof_state.quit) { sys_quit(); }
+		}
 	}
 
 	return should_render;
@@ -578,13 +587,21 @@ sys_blit_text(struct sys_data *sys, char *str, i32 tile_x, i32 tile_y)
 void
 sys_prof_pause(void)
 {
-	SYS.prof_record_data = false;
+	SYS.prof_state.record = false;
 }
 
 void
 sys_prof_resume(void)
 {
-	SYS.prof_record_data = true;
+	SYS.prof_state.record = true;
+}
+
+void
+sys_prof_save_request(struct alloc alloc, b32 quit)
+{
+	SYS.prof_state.save    = true;
+	SYS.prof_state.quit    = quit;
+	SYS.prof_state.scratch = alloc;
 }
 
 void
