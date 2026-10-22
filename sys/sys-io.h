@@ -33,7 +33,7 @@ struct sys_file_props {
 struct sys_file_watch {
 	str8 path;
 	struct sys_file_props props;
-	u32 poll_last_us;
+	u64 poll_last_us;
 };
 
 // Opaque OS file handle (FILE* / SDFile* stored in u64[0]).

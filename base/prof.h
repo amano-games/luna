@@ -157,7 +157,7 @@ struct prof_frame {
 	u16 anchor_idx;
 	u16 parent_idx;
 
-	u32 us_start;
+	u64 us_start;
 	u32 prev_us_inclusive;
 
 	const char *label;
@@ -171,9 +171,9 @@ struct prof {
 	u8 smooth_slot; // For report
 
 	u32 update_idx; // 2^31 at 100fps = 280 days
-	u32 last_upd_us;
-	u32 frame_dt_us;
-	u32 frame_sum_us;
+	u64 last_upd_us;
+	u64 frame_dt_us;
+	u64 frame_sum_us;
 
 	const char *anchor_labels[PROF_ANCHORS_SIZE];
 	struct prof_anchor anchors[PROF_ANCHORS_SIZE];
@@ -189,12 +189,12 @@ struct prof {
 	// N/s; 0 means the first window has not closed yet (title shows 0).
 	u16 present_counter;   // presents in the current 1s window
 	u16 present_per_s;     // presents in the last completed 1s window
-	u32 present_window_us; // accumulated dt_us toward 1s
+	u64 present_window_us; // accumulated dt_us toward 1s
 
 	u16 anchor_count;
 	u16 frame_count;
 
-	u32 timer_call_us;
+	u64 timer_call_us;
 
 	u16 history_idx; // next write; also oldest slot (iProf history_index)
 
@@ -270,15 +270,15 @@ prof_next_block_idx(void)
 	return prof->next_anchor++;
 }
 
-static inline u32
+static inline u64
 prof_calibrate_timer_us(void)
 {
-	u32 t0 = sys_time_us();
+	u64 t0 = sys_time_us();
 	for(i32 i = 0; i < PROF_CALIBRATE_LOOP_COUNT; ++i) {
 		(void)sys_time_us();
 	}
-	u32 t1 = sys_time_us();
-	return (t1 - t0) / (u32)PROF_CALIBRATE_LOOP_COUNT;
+	u64 t1 = sys_time_us();
+	return (t1 - t0) / (u64)PROF_CALIBRATE_LOOP_COUNT;
 }
 
 #if PROF
@@ -348,8 +348,8 @@ prof_upd(b32 record_data)
 	dbg_assert(prof->parent_idx == 0);
 
 	prof_block_start("_prof", PROF_ANCHOR_SYS_PROF);
-	u32 now_us = prof->frames[prof->frame_count - 1].us_start;
-	u32 dt_us  = 0;
+	u64 now_us = prof->frames[prof->frame_count - 1].us_start;
+	u64 dt_us  = 0;
 
 	if(prof->update_idx > 0) {
 		dt_us = now_us - prof->last_upd_us;
@@ -433,7 +433,7 @@ prof_upd(b32 record_data)
 		}
 
 		if(hist_slot) {
-			hist_slot->dt_us  = dt_us;
+			hist_slot->dt_us  = (u32)dt_us;
 			prof->history_idx = (u16)((prof->history_idx + 1) % PROF_HISTORY_SIZE);
 			++prof->capture_n;
 		}
@@ -641,13 +641,13 @@ prof_graph_drw(
 static inline void
 prof_block_end_internal(void)
 {
-	u32 now_us        = sys_time_us();
+	u64 now_us        = sys_time_us();
 	struct prof *prof = &PROFILER;
 	if(prof->frame_count == 0) { return; } // if we just initialized in the middle a profiler then ignore this block
 
 	struct prof_frame *frame = &prof->frames[--prof->frame_count];
 
-	u32 elapsed      = now_us - frame->us_start;
+	u32 elapsed      = (u32)(now_us - frame->us_start);
 	prof->parent_idx = frame->parent_idx;
 
 	struct prof_anchor *parent = prof->anchors + frame->parent_idx;

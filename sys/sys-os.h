@@ -19,10 +19,12 @@ void sys_free(void *ptr);
 struct alloc sys_allocator(void);
 
 // @per_os_impl Time
+// https://randomascii.wordpress.com/2012/02/13/dont-store-that-in-a-float/
+// https://tomforsyth1000.github.io/blog.wiki.html#%5B%5BA%20matter%20of%20precision%5D%5D
 f32 sys_time_elapsed(void);
 void sys_time_elapsed_reset(void);
-u32 sys_time_ms(void);
-u32 sys_time_us(void);
+u64 sys_time_ms(void);
+u64 sys_time_us(void);
 void sys_sleep_ms(u32 ms);
 u32 sys_epoch_2000(u32 *milliseconds);
 

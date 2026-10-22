@@ -38,8 +38,8 @@ struct pd_menu {
 };
 
 struct pd_state {
-	u32 us_monotonic;
-	u32 us_elapsed;
+	u64 us_monotonic;
+	u64 us_elapsed;
 	PDButtons b;
 	b32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
@@ -215,7 +215,7 @@ int
 sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len)
 {
 #if PROF
-	u32 t0 = sys_time_us();
+	u64 t0 = sys_time_us();
 #endif
 	sys_internal_audio(lbuf, rbuf, len);
 #if PROF
@@ -273,7 +273,7 @@ sys_time_elapsed(void)
 {
 	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
 	u32 partial = sys_pd_sec_to_us(sec);
-	u32 total   = PD_STATE.us_elapsed + partial;
+	u64 total   = PD_STATE.us_elapsed + partial;
 	return (f32)total * 1e-6f;
 }
 
@@ -284,7 +284,7 @@ sys_time_elapsed_reset(void)
 }
 
 // Microseconds
-u32
+u64
 sys_time_us(void)
 {
 	/*
@@ -308,7 +308,7 @@ sys_sleep_ms(u32 ms)
 }
 
 // Milliseconds
-u32
+u64
 sys_time_ms(void)
 {
 	return sys_time_us() / 1000u;

@@ -158,19 +158,19 @@ sys_fps_target_get(void)
 	return SYS.timing.fps_target;
 }
 
-u32
+u64
 sys_dt_us_target_get(void)
 {
 	return SYS.timing.dt_us;
 }
 
 void
-sys_dt_cap_us_set(u32 value)
+sys_dt_cap_us_set(u64 value)
 {
 	SYS.timing.dt_cap_us = value;
 }
 
-u32
+u64
 sys_dt_cap_us_get(void)
 {
 	return SYS.timing.dt_cap_us;
@@ -242,8 +242,8 @@ i32
 sys_internal_update(void)
 {
 	struct sys_data *sys = &SYS;
-	u32 now              = sys_time_us();
-	u32 time_delta       = now - sys->last_time_us;
+	u64 now              = sys_time_us();
+	u64 time_delta       = now - sys->last_time_us;
 	sys->last_time_us    = now;
 	sys->timing.acc_us += time_delta;
 	sys->timing.render_acc_us += time_delta;
@@ -253,7 +253,7 @@ sys_internal_update(void)
 	}
 
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-	u32 tu1   = sys_time_us();
+	u64 tu1   = sys_time_us();
 	u32 ticks = 0;
 #endif
 
@@ -280,7 +280,7 @@ sys_internal_update(void)
 	if(sys->timing.render_dt_us <= sys->timing.render_acc_us) {
 		sys->timing.render_acc_us -= sys->timing.render_dt_us;
 		// only the newest frame is ever presented
-		// A render backlog is meaningless drop it rather than letting render_acc_us run to u32 wrap (~71.6 min)
+		// A render backlog is meaningless, drop it
 		if(sys->timing.render_dt_us < sys->timing.render_acc_us) {
 			sys->timing.render_acc_us = 0;
 		}
@@ -288,13 +288,13 @@ sys_internal_update(void)
 	}
 
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-	u32 tu2 = sys_time_us();
+	u64 tu2 = sys_time_us();
 	sys->timing.cpu_time_acc_us += tu2 - tu1;
 #endif
 
 	if(should_render) {
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-		u32 tf1 = sys_time_us();
+		u64 tf1 = sys_time_us();
 #endif
 
 		prof_block_start("drw", PROF_ANCHOR_SYS_DRW);
@@ -303,7 +303,7 @@ sys_internal_update(void)
 
 #if SYS_SHOW_FPS
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-		u32 tf2 = sys_time_us();
+		u64 tf2 = sys_time_us();
 		sys->timing.drw_dt_acc_us += tf2 - tf1;
 #endif
 		sys->timing.drw_counter++;
@@ -312,8 +312,8 @@ sys_internal_update(void)
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
 		u32 ups        = MIN((u32)sys->timing.ups, 99u);
 		u32 miss       = MIN((u32)sys->timing.miss, 99u);
-		u32 upd_ms     = MIN(sys->timing.ups_avg_cpu_us / 1000u, 99u);
-		u32 drw_ms     = MIN(sys->timing.drw_avg_cpu_us / 1000u, 99u);
+		u32 upd_ms     = (u32)MIN(sys->timing.ups_avg_cpu_us / 1000u, 99u);
+		u32 drw_ms     = (u32)MIN(sys->timing.drw_avg_cpu_us / 1000u, 99u);
 		char overlay[] = {
 			(char)('0' + (fps / 10)),
 			(char)('0' + (fps % 10)),
@@ -400,11 +400,11 @@ sys_internal_update(void)
 
 #if PROF
 static void
-sys_prof_anchor_add(enum prof_anchor_sys idx, const char *label, u32 dt)
+sys_prof_anchor_add(enum prof_anchor_sys idx, const char *label, u64 dt)
 {
 	struct prof_anchor *a = &PROFILER.anchors[idx];
-	a->us_exclusive += dt;
-	a->us_inclusive += dt;
+	a->us_exclusive += (u32)dt;
+	a->us_inclusive += (u32)dt;
 	++a->hit_count;
 	PROFILER.anchor_labels[idx] = label;
 	PROFILER.anchor_count       = MAX(PROFILER.anchor_count, (u16)(idx + 1));
@@ -415,7 +415,7 @@ void
 sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 {
 #if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-	u32 tu1 = sys_time_us();
+	u64 tu1 = sys_time_us();
 #endif
 
 	sys_audio_lock();
@@ -433,8 +433,8 @@ sys_internal_audio(i16 *lbuf, i16 *rbuf, i32 len)
 #endif
 
 #if PROF || SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
-	u32 tu2 = sys_time_us();
-	u32 dt  = tu2 - tu1;
+	u64 tu2 = sys_time_us();
+	u64 dt  = tu2 - tu1;
 #endif
 
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL
@@ -609,7 +609,7 @@ sys_prof_save_request(struct alloc alloc, b32 quit)
 }
 
 void
-sys_prof_aud_cb_add(u32 dt)
+sys_prof_aud_cb_add(u64 dt)
 {
 #if PROF
 	sys_prof_anchor_add(PROF_ANCHOR_SYS_AUD_CB, "aud cb", dt);

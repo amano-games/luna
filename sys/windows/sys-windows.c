@@ -209,10 +209,10 @@ sys_time_elapsed_reset(void)
 	OS_STATE.tick_elapsed = stm_now();
 }
 
-u32
+u64
 sys_time_us(void)
 {
-	return (u32)(u64)(stm_us(stm_since(OS_STATE.tick_start)));
+	return (u64)stm_us(stm_since(OS_STATE.tick_start));
 }
 
 void
@@ -221,10 +221,10 @@ sys_sleep_ms(u32 ms)
 	Sleep(ms);
 }
 
-u32
+u64
 sys_time_ms(void)
 {
-	return (u32)(u64)(stm_ms(stm_since(OS_STATE.tick_start)));
+	return (u64)stm_ms(stm_since(OS_STATE.tick_start));
 }
 
 void *

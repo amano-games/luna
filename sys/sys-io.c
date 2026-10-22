@@ -187,9 +187,8 @@ sys_file_watch_ini(str8 path)
 b32
 sys_file_watch_changed(struct sys_file_watch *w, b32 throttle)
 {
-	u32 now = sys_time_us();
+	u64 now = sys_time_us();
 
-	// NOTE: u32 wrap (~71 min)
 	if(throttle && now - w->poll_last_us < SYS_FILE_WATCH_POLL_US) { return false; }
 
 	w->poll_last_us = now;

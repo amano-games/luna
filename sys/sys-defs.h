@@ -62,25 +62,25 @@ struct sys_timing {
 
 	u16 fps_target; // target frames/sec
 	u16 fps;        // mesured frames/sec
-	u32 render_dt_us;
+	u64 render_dt_us;
 
-	u32 dt_us;     // microseconds per update
-	u32 dt_cap_us; // max delta clamp
+	u64 dt_us;     // microseconds per update
+	u64 dt_cap_us; // max delta clamp
 
-	u32 acc_us; // fixed timestep delta accumulator
-	u32 render_acc_us;
-	u32 stats_time_acc_us; // Accumulates time to measure 1 second window
+	u64 acc_us; // fixed timestep delta accumulator
+	u64 render_acc_us;
+	u64 stats_time_acc_us; // Accumulates time to measure 1 second window
 
-	u32 cpu_time_acc_us; // acc us spent in upd + audio over the current stats window
-	u32 drw_dt_acc_us;   // acc us spent in rendering (draw calls)
+	u64 cpu_time_acc_us; // acc us spent in upd + audio over the current stats window
+	u64 drw_dt_acc_us;   // acc us spent in rendering (draw calls)
 
 	u16 ups_counter;  // update ticks executed in the current stats window(per second)
 	u16 drw_counter;  // frames drawn in the current stats window (per second)
 	u16 miss;         // callbacks in the last window that ran != 1 tick
 	u16 miss_counter; // current window
 
-	u32 ups_avg_cpu_us; // avg us per update tick (includes update + audio)
-	u32 drw_avg_cpu_us; // avg us per frame (render/draw)
+	u64 ups_avg_cpu_us; // avg us per update tick (includes update + audio)
+	u64 drw_avg_cpu_us; // avg us per frame (render/draw)
 };
 
 #define APP_INIT(name)  void name(usize mem_max)
@@ -128,7 +128,7 @@ struct sys_data {
 	void *frame_buffer;
 
 	u32 tick;
-	u32 last_time_us;
+	u64 last_time_us;
 
 	struct sys_timing timing;
 

@@ -596,7 +596,7 @@ sokol_stream_cb(f32 *buffer, int num_frames, int num_channels)
 {
 #if !defined(SOKOL_DISABLE_AUDIO)
 #if PROF
-	u32 t0 = sys_time_us();
+	u64 t0 = sys_time_us();
 #endif
 
 	if(SOKOL_STATE.status == SOKOL_STATUS_INI) {
