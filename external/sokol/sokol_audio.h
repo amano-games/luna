@@ -1486,7 +1486,10 @@ _SOKOL_PRIVATE void _saudio_alsa_backend_shutdown(void) {
     SOKOL_ASSERT(_saudio.backend.device);
     _saudio.backend.thread_stop = true;
     pthread_join(_saudio.backend.thread, 0);
-    snd_pcm_drain(_saudio.backend.device);
+    // afk~ NOTE: drop instead of drain,
+    // snd_pcm_drain() blocks forever on pipewire-alsa
+    // once the writer thread has stopped, hanging the app on quit
+    snd_pcm_drop(_saudio.backend.device);
     snd_pcm_close(_saudio.backend.device);
     _saudio_free(_saudio.backend.buffer);
 }
