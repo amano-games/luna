@@ -9,28 +9,8 @@
 #include "base/ht.h"
 #include "sys/sys-log.h"
 
-// Intern path and return its path_table index. Index 0 is the empty sentinel.
-static u32
-path_id_intern(struct asset_db *db, str8 path)
-{
-	u32 id;
-
-	asset_db_path_push(db, path, 0);
-	id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
-	dbg_assert(id != 0);
-	return id;
-}
-
-static str8
-path_from_id(struct asset_db *db, u32 path_id)
-{
-	str8 res = {0};
-
-	dbg_assert(path_id > 0);
-	dbg_assert((ssize)path_id < arr_len(db->paths.arr));
-	res = db->paths.arr[path_id];
-	return res;
-}
+static u32 path_id_intern(struct asset_db *db, str8 path);
+static str8 path_from_id(struct asset_db *db, u32 path_id);
 
 void
 asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc alloc)
@@ -47,7 +27,6 @@ asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc al
 		(uint)counts.snds,
 		(uint)counts.bets);
 
-	// Index 0 is the empty sentinel so ht miss (0) is never a real row.
 	db->animations.ht   = ht_new_u32(ht_exp_from_count(counts.slices), alloc);
 	db->animations.data = arr_new(alloc, db->animations.data, counts.clips + 1);
 	db->animations.arr  = arr_new(alloc, db->animations.arr, counts.slices + 1);
@@ -83,22 +62,11 @@ asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc al
 	db->initialized = true;
 }
 
-struct asset_handle
-asset_db_handle_from_path(str8 path, enum asset_type type)
-{
-	return (struct asset_handle){
-		.path_hash = hash_fnv1a_str8(path),
-		.type      = type,
-	};
-}
-
 str8
-asset_db_path_push(struct asset_db *db, str8 path, u64 tags)
+asset_db_path_push(struct asset_db *db, str8 path, u32 tags)
 {
 	dbg_assert(path.size > 0);
 	struct path_table *table = &db->paths;
-	usize table_len          = arr_len(table->data);
-	usize table_cap          = arr_cap(table->data);
 
 	u64 key     = hash_fnv1a_str8(path);
 	u32 value   = ht_get_u32(&table->ht, key);
@@ -109,17 +77,18 @@ asset_db_path_push(struct asset_db *db, str8 path, u64 tags)
 		return table->arr[value];
 	}
 
-	// Path bytes plus the trailing NUL pushed below.
-	dbg_check(table_len + path.size + 1 <= table_cap, "AssetsDB", "Out of memory");
-	dbg_check(arr_len(table->tags) < arr_cap(table->tags), "AssetsDB", "Out of memory");
+	// Path bytes plus the trailing null
+	usize data_len = arr_len(table->data);
+	dbg_check(data_len + path.size + 1 <= (usize)arr_cap(table->data), "AssetsDB", "Out of path memory: %.*s", str8_spread(path));
+	dbg_check(arr_len(table->arr) < arr_cap(table->arr), "AssetsDB", "Out of path slots: %.*s", str8_spread(path));
 
-	str8 res = (str8){.str = (u8 *)table->data + table_len, .size = path.size};
-	value    = arr_len(table->arr);
-	ht_set_u32(&table->ht, key, value);
-	memcpy(table->data + arr_len(table->data), path.str, path.size);
-	struct arr_header *header = arr_header(table->data);
-	header->len += path.size;
+	str8 res = (str8){.str = (u8 *)table->data + data_len, .size = path.size};
+	mcpy(res.str, path.str, path.size);
+	arr_header(table->data)->len += path.size;
 	arr_push(table->data, '\0');
+
+	value = arr_len(table->arr);
+	ht_set_u32(&table->ht, key, value);
 	arr_push(table->arr, res);
 	arr_push(table->tags, tags);
 
@@ -144,7 +113,7 @@ error:
 }
 
 b32
-asset_db_is_path_tagged(struct asset_db *db, str8 path, u64 tag)
+asset_db_is_path_tagged(struct asset_db *db, str8 path, u32 tag)
 {
 	b32 res = false;
 	u32 id  = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
@@ -157,7 +126,7 @@ asset_db_is_path_tagged(struct asset_db *db, str8 path, u64 tag)
 }
 
 void
-asset_db_path_tag_set(struct asset_db *db, str8 path, u64 tag)
+asset_db_path_tag_set(struct asset_db *db, str8 path, u32 tag)
 {
 	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
 
@@ -168,7 +137,7 @@ error:;
 }
 
 void
-asset_db_path_tag_clear(struct asset_db *db, str8 path, u64 tag)
+asset_db_path_tag_clear(struct asset_db *db, str8 path, u32 tag)
 {
 	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
 
@@ -176,6 +145,37 @@ asset_db_path_tag_clear(struct asset_db *db, str8 path, u64 tag)
 	db->paths.tags[id] &= ~tag;
 
 error:;
+}
+
+static u32
+path_id_intern(struct asset_db *db, str8 path)
+{
+	u32 id;
+
+	asset_db_path_push(db, path, 0);
+	id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+	dbg_assert(id != 0);
+	return id;
+}
+
+static str8
+path_from_id(struct asset_db *db, u32 path_id)
+{
+	str8 res = {0};
+
+	dbg_assert(path_id > 0);
+	dbg_assert((ssize)path_id < arr_len(db->paths.arr));
+	res = db->paths.arr[path_id];
+	return res;
+}
+
+struct asset_handle
+asset_db_handle_from_path(str8 path, enum asset_type type)
+{
+	return (struct asset_handle){
+		.path_hash = hash_fnv1a_str8(path),
+		.type      = type,
+	};
 }
 
 i32

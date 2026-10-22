@@ -69,7 +69,7 @@ struct asset_bet {
 struct path_table {
 	struct ht_u32 ht;
 	str8 *arr;
-	u64 *tags;
+	u32 *tags;
 	char *data;
 };
 
@@ -129,11 +129,11 @@ struct asset_db_counts {
 void asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc alloc);
 struct asset_handle asset_db_handle_from_path(str8 path, enum asset_type type);
 
-str8 asset_db_path_push(struct asset_db *db, str8 path, u64 tags);
+str8 asset_db_path_push(struct asset_db *db, str8 path, u32 tags);
 str8 asset_db_path_get(struct asset_db *db, struct asset_handle handle);
-b32 asset_db_is_path_tagged(struct asset_db *db, str8 path, u64 tag);
-void asset_db_path_tag_set(struct asset_db *db, str8 path, u64 tag);
-void asset_db_path_tag_clear(struct asset_db *db, str8 path, u64 tag);
+b32 asset_db_is_path_tagged(struct asset_db *db, str8 path, u32 tag);
+void asset_db_path_tag_set(struct asset_db *db, str8 path, u32 tag);
+void asset_db_path_tag_clear(struct asset_db *db, str8 path, u32 tag);
 
 i32 asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex);
 i32 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle);

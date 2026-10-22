@@ -329,8 +329,16 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 		}
 	}
 
-	// File data, back to back
+	// .adb files are only read for tags here; the game doesn't need them
+	ssize count = 0;
 	for(i = 0; i < (ssize)paths.node_count; ++i) {
+		if(!str8_match(pck_path_ext(entries[i].path), str8_lit(ADB_EXT), 0)) {
+			entries[count++] = entries[i];
+		}
+	}
+
+	// File data, back to back
+	for(i = 0; i < count; ++i) {
 		void *reset_p = scratch_marena.p;
 		dbg_check(pck_pack_file(&pack, input_path, entries[i], scratch), LOG_ID, "failed packing %.*s", str8_spread(entries[i].path));
 		marena_reset_to(&scratch_marena, reset_p);
