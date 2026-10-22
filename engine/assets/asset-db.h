@@ -18,6 +18,9 @@ enum asset_type {
 	ASSET_TYPE_SOUND,
 	ASSET_TYPE_FONT,
 	ASSET_TYPE_BET,
+	ASSET_TYPE_TEX_ATLAS,
+
+	ASSET_TYPE_NUM_COUNT,
 };
 
 struct asset_handle {

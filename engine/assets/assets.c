@@ -579,10 +579,12 @@ asset_tex_patch(i32 id, i32 x, i32 y, i32 w, i32 h, i32 ml, i32 mr, i32 mt, i32 
 enum asset_type
 asset_path_get_type(str8 path)
 {
-	str8 tex_ext = str8_lit(".tex");
-	str8 snd_ext = str8_lit(".snd");
-	str8 fnt_ext = str8_lit(".fnt");
-	str8 bet_ext = str8_lit(".bet");
+	str8 tex_ext   = str8_lit(".tex");
+	str8 snd_ext   = str8_lit(".snd");
+	str8 fnt_ext   = str8_lit(".fnt");
+	str8 bet_ext   = str8_lit(".bet");
+	str8 ani_ext   = str8_lit("." ANI_EXT);
+	str8 atlas_ext = str8_lit("." ATLAS_EXT);
 
 	if(str8_ends_with(path, tex_ext, 0)) {
 		return ASSET_TYPE_TEXTURE;
@@ -592,6 +594,10 @@ asset_path_get_type(str8 path)
 		return ASSET_TYPE_FONT;
 	} else if(str8_ends_with(path, bet_ext, 0)) {
 		return ASSET_TYPE_BET;
+	} else if(str8_ends_with(path, ani_ext, 0)) {
+		return ASSET_TYPE_ANIMATION_SLICE;
+	} else if(str8_ends_with(path, atlas_ext, 0)) {
+		return ASSET_TYPE_TEX_ATLAS;
 	}
 
 	return 0;
