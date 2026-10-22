@@ -482,6 +482,10 @@ sys_restart(b32 new_code)
 		sys_audio_lock();
 		SYS.app = next;
 		sys_audio_unlock();
+
+#if PROF
+		PROFILER.next_anchor = 0;
+#endif
 	}
 #endif
 
