@@ -11,6 +11,20 @@ struct tick_ms {
 
 #define TICK_MS_ZERO ((struct tick_ms){0})
 
+// t + ms
+static inline struct tick_ms
+tick_ms_add(struct tick_ms t, i32 ms)
+{
+	return (struct tick_ms){t.ms + (u32)ms};
+}
+
+// a - b in ms, negative when a is before b
+static inline i32
+tick_ms_diff(struct tick_ms a, struct tick_ms b)
+{
+	return (i32)(a.ms - b.ms);
+}
+
 static inline i32
 tick_ms_round_sec(f32 sec)
 {
@@ -21,42 +35,42 @@ tick_ms_round_sec(f32 sec)
 static inline struct tick_ms
 tick_ms_add_sec(struct tick_ms t, f32 sec)
 {
-	return (struct tick_ms){t.ms + (u32)tick_ms_round_sec(sec)};
+	return tick_ms_add(t, tick_ms_round_sec(sec));
 }
 
 // a - b in seconds, negative when a is before b
 static inline f32
 tick_ms_sec_between(struct tick_ms a, struct tick_ms b)
 {
-	return (f32)(i32)(a.ms - b.ms) * 1e-3f;
+	return (f32)tick_ms_diff(a, b) * 1e-3f;
 }
 
 // a < b
 static inline b32
 tick_ms_lt(struct tick_ms a, struct tick_ms b)
 {
-	return (i32)(a.ms - b.ms) < 0;
+	return tick_ms_diff(a, b) < 0;
 }
 
 // a > b
 static inline b32
 tick_ms_gt(struct tick_ms a, struct tick_ms b)
 {
-	return (i32)(a.ms - b.ms) > 0;
+	return tick_ms_diff(a, b) > 0;
 }
 
 // a <= b
 static inline b32
 tick_ms_le(struct tick_ms a, struct tick_ms b)
 {
-	return (i32)(a.ms - b.ms) <= 0;
+	return tick_ms_diff(a, b) <= 0;
 }
 
 // a >= b
 static inline b32
 tick_ms_ge(struct tick_ms a, struct tick_ms b)
 {
-	return (i32)(a.ms - b.ms) >= 0;
+	return tick_ms_diff(a, b) >= 0;
 }
 
 static inline b32
