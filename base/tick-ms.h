@@ -65,7 +65,6 @@ tick_ms_eq(struct tick_ms a, struct tick_ms b)
 	return a.ms == b.ms;
 }
 
-// 0 is used as "not set" by callers
 static inline b32
 tick_ms_is_zero(struct tick_ms t)
 {
