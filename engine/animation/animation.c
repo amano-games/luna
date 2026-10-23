@@ -75,20 +75,6 @@ cleanup:
 	return res;
 }
 
-static inline u8
-animation_get_last_frame(struct animation_track *track)
-{
-
-	usize res = 0;
-	if(track->type == ANIMATION_TRACK_SPRITE_MODE && track->frames.len == 0) { goto cleanup; }
-	dbg_assert(track->frames.len > 0);
-	usize frame_index = track->frames.len - 1;
-	res               = track->frames.items[frame_index];
-
-cleanup:
-	return res;
-}
-
 usize
 animation_get_first_frame(struct animation_track *track)
 {
@@ -101,14 +87,15 @@ cleanup:
 	return res;
 }
 
-usize
+i32
 animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp)
 {
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
-	usize res                     = 0;
+	i32 res                       = 0;
 	usize track_index             = track_type - 1;
-	struct animation_track *track = &ani->clip.tracks[track_index];
+	struct animation_clip *clip   = &ani->clip;
+	struct animation_track *track = &clip->tracks[track_index];
 
 	if(track->frames.len == 0) {
 		res = 0;
@@ -116,20 +103,25 @@ animation_get_frame_index(struct animation *ani, enum animation_track_type track
 	}
 
 	if(!ani->is_playing) {
-		res = track->frames.len - 1;
+		res = (i32)track->frames.len - 1;
 		goto cleanup;
 	};
 
 	struct tick_ms start   = ani->timestamp_start;
 	struct tick_ms current = ani->is_paused ? ani->timestamp_pause : timestamp;
 	f32 delta              = tick_ms_sec_between(current, start);
-	b32 loop               = ani->clip.count <= 0;
+	b32 loop               = clip->count <= 0;
 
 	if(!loop) {
-		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
+		delta = min_f32(delta, clip->clip_duration * clip->count);
 	}
 
-	res = delta * ani->clip.frame_duration_inv;
+	res = (i32)(delta * clip->frame_duration_inv);
+	if(!loop) {
+		// delta == duration lands one past the last frame, keep it on the last one
+		res = min_i32(res, (i32)(track->frames.len * clip->count) - 1);
+	}
+	res = mod_euc_i32(res, track->frames.len);
 
 cleanup:
 	return res;
@@ -138,38 +130,9 @@ cleanup:
 u8
 animation_get_frame(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp)
 {
-	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
-
-	u8 res                        = 0;
-	usize track_index             = track_type - 1;
-	struct animation_clip *clip   = &ani->clip;
-	struct animation_track *track = &clip->tracks[track_index];
-	struct frames *frames         = &track->frames;
-
-	if(frames->len == 0) {
-		res = 0;
-		goto cleanup;
-	}
-	if(!ani->is_playing) {
-		res = animation_get_last_frame(track);
-		goto cleanup;
-	};
-
-	struct tick_ms start   = ani->timestamp_start;
-	struct tick_ms current = ani->is_paused ? ani->timestamp_pause : timestamp;
-	f32 delta              = tick_ms_sec_between(current, start);
-	b32 loop               = ani->clip.count <= 0;
-
-	if(!loop) {
-		delta = min_f32(delta, clip->clip_duration * clip->count);
-	}
-
-	i32 frame_index = (i32)(delta * clip->frame_duration_inv);
-	frame_index     = mod_euc_i32(frame_index, frames->len);
-	res             = frames->items[(usize)frame_index];
-
-cleanup:
-	return res;
+	struct frames *frames = &ani->clip.tracks[track_type - 1].frames;
+	if(frames->len == 0) { return 0; }
+	return frames->items[animation_get_frame_index(ani, track_type, timestamp)];
 }
 
 f32

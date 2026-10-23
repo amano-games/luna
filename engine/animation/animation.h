@@ -49,7 +49,7 @@ void animation_init(struct animation *animation);
 void animation_clip_init(struct animation_clip *data);
 b32 animation_update(struct animation *ani, struct tick_ms timestamp);
 u8 animation_get_frame(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp);
-usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp);
+i32 animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp);
 void animation_start(struct animation *ani, struct tick_ms timestamp);
 void animation_pause(struct animation *ani, struct tick_ms timestamp);
 void animation_resume(struct animation *ani, struct tick_ms timestamp);
