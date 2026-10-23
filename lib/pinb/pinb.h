@@ -372,5 +372,6 @@ struct pinb_table {
 	struct pinb_table_props props;
 	ssize entities_count;
 	ssize entities_max_id;
+	u32 timestamp;
 	struct pinb_entity *entities;
 };
