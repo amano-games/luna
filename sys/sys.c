@@ -264,7 +264,7 @@ sys_internal_update(void)
 
 		prof_block_start("upd", PROF_ANCHOR_SYS_UPD);
 		sys_steam_tick();
-		if(sys->app.is_valid) { sys->app.tick((f32)sys->timing.dt_us * 1e-6f); }
+		if(sys->app.is_valid) { sys->app.tick(sys->timing.dt_us); }
 		prof_block_end();
 
 #if SYS_SHOW_FPS >= SYS_SHOW_FPS_FULL

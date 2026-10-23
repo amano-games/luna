@@ -26,20 +26,20 @@ void
 animation_init(struct animation *animation)
 {
 	animation->is_stopped      = true;
-	animation->timestamp_start = 0;
+	animation->timestamp_start = TICK_MS_ZERO;
 }
 
 void
-animation_start(struct animation *ani, f32 timestamp)
+animation_start(struct animation *ani, struct tick_ms timestamp)
 {
 	ani->is_stopped      = false;
 	ani->is_paused       = false;
 	ani->timestamp_start = timestamp;
-	ani->timestamp_pause = 0;
+	ani->timestamp_pause = TICK_MS_ZERO;
 }
 
 void
-animation_pause(struct animation *ani, f32 timestamp)
+animation_pause(struct animation *ani, struct tick_ms timestamp)
 {
 	if(!ani->is_paused) {
 		ani->is_paused       = true;
@@ -48,28 +48,27 @@ animation_pause(struct animation *ani, f32 timestamp)
 }
 
 void
-animation_resume(struct animation *ani, f32 timestamp)
+animation_resume(struct animation *ani, struct tick_ms timestamp)
 {
 	ani->is_paused       = false;
-	ani->timestamp_start = timestamp - (timestamp - ani->timestamp_pause);
-	ani->timestamp_pause = 0;
+	ani->timestamp_start = tick_ms_add_sec(timestamp, -tick_ms_sec_between(timestamp, ani->timestamp_pause));
+	ani->timestamp_pause = TICK_MS_ZERO;
 }
 
 b32 // finished?
-animation_update(struct animation *ani, f32 timestamp)
+animation_update(struct animation *ani, struct tick_ms timestamp)
 {
 	b32 res = false;
 	if(ani->is_stopped) { goto cleanup; }
 	if(ani->is_paused) { goto cleanup; }
 	if(ani->clip.count <= 0) { goto cleanup; }
 
-	f32 duration    = ani->clip.clip_duration * ani->clip.count;
-	f32 start       = ani->timestamp_start;
-	f32 current     = timestamp;
-	f32 delta       = current - start;
-	f32 end         = start + duration;
-	ani->is_stopped = current > end;
-	res             = ani->is_stopped;
+	f32 duration           = ani->clip.clip_duration * ani->clip.count;
+	struct tick_ms start   = ani->timestamp_start;
+	struct tick_ms current = timestamp;
+	f32 delta              = tick_ms_sec_between(current, start);
+	ani->is_stopped        = delta > duration;
+	res                    = ani->is_stopped;
 
 cleanup:
 	return res;
@@ -102,7 +101,7 @@ cleanup:
 }
 
 usize
-animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
+animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp)
 {
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
@@ -120,10 +119,10 @@ animation_get_frame_index(struct animation *ani, enum animation_track_type track
 		goto cleanup;
 	};
 
-	f32 start   = ani->timestamp_start;
-	f32 current = ani->is_paused ? ani->timestamp_pause : timestamp;
-	f32 delta   = current - start;
-	b32 loop    = ani->clip.count <= 0;
+	struct tick_ms start   = ani->timestamp_start;
+	struct tick_ms current = ani->is_paused ? ani->timestamp_pause : timestamp;
+	f32 delta              = tick_ms_sec_between(current, start);
+	b32 loop               = ani->clip.count <= 0;
 
 	if(!loop) {
 		delta = min_f32(delta, ani->clip.clip_duration * ani->clip.count);
@@ -136,7 +135,7 @@ cleanup:
 }
 
 u8
-animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp)
+animation_get_frame(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp)
 {
 	dbg_assert(track_type == ANIMATION_TRACK_FRAME || track_type == ANIMATION_TRACK_SPRITE_MODE);
 
@@ -155,10 +154,10 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 		goto cleanup;
 	};
 
-	f32 start   = ani->timestamp_start;
-	f32 current = ani->is_paused ? ani->timestamp_pause : timestamp;
-	f32 delta   = current - start;
-	b32 loop    = ani->clip.count <= 0;
+	struct tick_ms start   = ani->timestamp_start;
+	struct tick_ms current = ani->is_paused ? ani->timestamp_pause : timestamp;
+	f32 delta              = tick_ms_sec_between(current, start);
+	b32 loop               = ani->clip.count <= 0;
 
 	if(!loop) {
 		delta = min_f32(delta, clip->clip_duration * clip->count);

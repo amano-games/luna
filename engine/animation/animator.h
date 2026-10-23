@@ -14,14 +14,14 @@ struct animator {
 	u8 transitions[ANIMATOR_TRANSITIONS_MAX];
 };
 
-void animator_init(struct animator *animator, f32 timestamp);
-b32 animator_update(struct animator *animator, f32 timestamp);
-void animator_animation_play(struct animator *animator, usize index, f32 timestamp);
-void animator_animation_pause(struct animator *animator, f32 timestamp);
-void animator_animation_resume(struct animator *animator, f32 timestamp);
+void animator_init(struct animator *animator, struct tick_ms timestamp);
+b32 animator_update(struct animator *animator, struct tick_ms timestamp);
+void animator_animation_play(struct animator *animator, usize index, struct tick_ms timestamp);
+void animator_animation_pause(struct animator *animator, struct tick_ms timestamp);
+void animator_animation_resume(struct animator *animator, struct tick_ms timestamp);
 
 static inline u8
-animator_get_frame(struct animator *animator, enum animation_track_type type, f32 timestamp)
+animator_get_frame(struct animator *animator, enum animation_track_type type, struct tick_ms timestamp)
 {
 	return animation_get_frame(&animator->animation, type, timestamp);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/types.h"
+#include "base/tick-ms.h"
 
 #define ANIMATION_MAX_FRAMES 50
 
@@ -39,18 +40,18 @@ struct animation_clip {
 struct animation {
 	u16 is_stopped;
 	u16 is_paused;
-	f32 timestamp_start;
-	f32 timestamp_pause;
+	struct tick_ms timestamp_start;
+	struct tick_ms timestamp_pause;
 	struct animation_clip clip;
 };
 
 void animation_init(struct animation *animation);
 void animation_clip_init(struct animation_clip *data);
-b32 animation_update(struct animation *ani, f32 timestamp);
-u8 animation_get_frame(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
-usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, f32 timestamp);
-void animation_start(struct animation *ani, f32 timestamp);
-void animation_pause(struct animation *ani, f32 timestamp);
-void animation_resume(struct animation *ani, f32 timestamp);
+b32 animation_update(struct animation *ani, struct tick_ms timestamp);
+u8 animation_get_frame(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp);
+usize animation_get_frame_index(struct animation *ani, enum animation_track_type track_type, struct tick_ms timestamp);
+void animation_start(struct animation *ani, struct tick_ms timestamp);
+void animation_pause(struct animation *ani, struct tick_ms timestamp);
+void animation_resume(struct animation *ani, struct tick_ms timestamp);
 
 f32 animation_data_get_clip_duration(struct animation_clip *data);

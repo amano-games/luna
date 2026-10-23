@@ -84,7 +84,7 @@ struct sys_timing {
 };
 
 #define APP_INIT(name)  void name(usize mem_max)
-#define APP_TICK(name)  void name(f32 dt)
+#define APP_TICK(name)  void name(u64 dt_us)
 #define APP_DRAW(name)  void name(void)
 #define APP_AUDIO(name) void name(i16 *lbuf, i16 *rbuf, i32 len)
 #define APP_VOID(name)  void name(void)

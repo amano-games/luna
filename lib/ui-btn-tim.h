@@ -2,6 +2,7 @@
 
 #include "engine/input.h"
 #include "base/types.h"
+#include "base/tick-ms.h"
 
 #define UI_BTN_TIM_M_COUNT 5
 #define UI_BTN_TIM_L_COUNT 10
@@ -11,7 +12,7 @@
 
 struct ui_btn_tim {
 	usize count;
-	f32 timestamp;
+	struct tick_ms timestamp;
 	u8 btn;
 };
 
@@ -30,7 +31,7 @@ ui_btn_tim_get_rate(struct ui_btn_tim *tmr)
 }
 
 b32
-ui_btn_tim_upd(struct ui_btn_tim *tim, f32 timestamp)
+ui_btn_tim_upd(struct ui_btn_tim *tim, struct tick_ms timestamp)
 {
 	b32 res = false;
 	if(inp_just_pressed(tim->btn)) {
@@ -41,7 +42,7 @@ ui_btn_tim_upd(struct ui_btn_tim *tim, f32 timestamp)
 
 	if(inp_pressed(tim->btn)) {
 		f32 rate = ui_btn_tim_get_rate(tim);
-		if(tim->timestamp + rate < timestamp) {
+		if(tick_ms_lt(tick_ms_add_sec(tim->timestamp, rate), timestamp)) {
 			res            = true;
 			tim->timestamp = timestamp;
 			tim->count++;

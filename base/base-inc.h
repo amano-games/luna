@@ -12,6 +12,7 @@
 #include "sys/sys-log.h"
 #include "base/dbg.h"
 #include "base/date-time.h"
+#include "base/tick-ms.h"
 #include "base/str.h"
 #include "base/hash.h"
 #include "base/marena.h"

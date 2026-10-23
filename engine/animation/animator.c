@@ -8,7 +8,7 @@
 static inline void animator_animation_set(struct animator *animator, usize index);
 
 void
-animator_init(struct animator *animator, f32 timestamp)
+animator_init(struct animator *animator, struct tick_ms timestamp)
 {
 	struct animation *animation = &animator->animation;
 
@@ -19,7 +19,7 @@ animator_init(struct animator *animator, f32 timestamp)
 }
 
 b32
-animator_update(struct animator *animator, f32 timestamp)
+animator_update(struct animator *animator, struct tick_ms timestamp)
 {
 	b32 res              = false;
 	u8 current_animation = animator->index;
@@ -28,7 +28,7 @@ animator_update(struct animator *animator, f32 timestamp)
 }
 
 void
-animator_animation_play(struct animator *animator, usize index, f32 timestamp)
+animator_animation_play(struct animator *animator, usize index, struct tick_ms timestamp)
 {
 	dbg_assert(index > 0);
 	dbg_assert(index <= ARRLEN(animator->clips));
@@ -39,13 +39,13 @@ animator_animation_play(struct animator *animator, usize index, f32 timestamp)
 }
 
 void
-animator_animation_pause(struct animator *animator, f32 timestamp)
+animator_animation_pause(struct animator *animator, struct tick_ms timestamp)
 {
 	animation_pause(&animator->animation, timestamp);
 }
 
 void
-animator_animation_resume(struct animator *animator, f32 timestamp)
+animator_animation_resume(struct animator *animator, struct tick_ms timestamp)
 {
 	animation_resume(&animator->animation, timestamp);
 }
