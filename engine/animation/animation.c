@@ -50,8 +50,9 @@ animation_pause(struct animation *ani, struct tick_ms timestamp)
 void
 animation_resume(struct animation *ani, struct tick_ms timestamp)
 {
+	if(!ani->is_paused) { return; }
 	ani->is_paused       = false;
-	ani->timestamp_start = tick_ms_add_sec(timestamp, -tick_ms_sec_between(timestamp, ani->timestamp_pause));
+	ani->timestamp_start = tick_ms_add(ani->timestamp_start, tick_ms_diff(timestamp, ani->timestamp_pause));
 	ani->timestamp_pause = TICK_MS_ZERO;
 }
 
