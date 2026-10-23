@@ -44,7 +44,6 @@ static struct {
 	struct alloc scratch;
 	struct sys_process_info process_info;
 	u64 tick_start;
-	u64 tick_elapsed;
 } OS_STATE;
 
 // NOLINTNEXTLINE(readability-identifier-naming)
@@ -128,7 +127,6 @@ sys_os_init(void)
 
 	stm_setup();
 	OS_STATE.tick_start   = stm_now();
-	OS_STATE.tick_elapsed = OS_STATE.tick_start;
 
 #if SYS_GFX
 	sys_os_gamepad_ini();
@@ -188,18 +186,6 @@ sys_epoch_2000(u32 *milliseconds)
 	}
 
 	return (u32)seconds;
-}
-
-f32
-sys_time_elapsed(void)
-{
-	return stm_sec(stm_since(OS_STATE.tick_elapsed));
-}
-
-void
-sys_time_elapsed_reset(void)
-{
-	OS_STATE.tick_elapsed = stm_now();
 }
 
 u64

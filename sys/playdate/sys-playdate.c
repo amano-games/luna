@@ -39,7 +39,6 @@ struct pd_menu {
 
 struct pd_state {
 	u64 us_monotonic;
-	u64 us_elapsed;
 	PDButtons b;
 	b32 acc_active;
 	u8 keyboard_keys[SYS_KEYS_LEN];
@@ -197,7 +196,6 @@ sys_pd_update(void *pd)
 	u32 delta_us = sys_pd_sec_to_us(sec);
 
 	PD_STATE.us_monotonic += delta_us;
-	PD_STATE.us_elapsed += delta_us;
 
 	PD_SYS_RESET_ELAPSED_TIME();
 
@@ -266,21 +264,6 @@ f32
 sys_mouse_y(void)
 {
 	return 0;
-}
-
-f32
-sys_time_elapsed(void)
-{
-	f32 sec     = PD_SYS_GET_ELAPSED_TIME();
-	u32 partial = sys_pd_sec_to_us(sec);
-	u64 total   = PD_STATE.us_elapsed + partial;
-	return (f32)total * 1e-6f;
-}
-
-void
-sys_time_elapsed_reset(void)
-{
-	PD_STATE.us_elapsed = 0;
 }
 
 // Microseconds

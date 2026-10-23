@@ -19,8 +19,8 @@ enum SYS_PAUSE_MENU_TYPE {
 };
 
 struct sys_pause_state {
-	f32 timestamp_start;
-	f32 timestamp_end;
+	u64 timestamp_start;
+	u64 timestamp_end;
 	i32 x_offset;
 	struct tex frame_tex;
 	struct tex menu_tex;
@@ -100,7 +100,7 @@ static void
 sys_pause_start(
 	struct sys_pause_state *pause,
 	struct tex tex,
-	f32 timestamp)
+	u64 timestamp)
 {
 	pause->timestamp_start = timestamp;
 	pause->timestamp_end   = 0;
@@ -108,7 +108,7 @@ sys_pause_start(
 }
 
 static void
-sys_pause_end(struct sys_pause_state *pause, f32 timestamp)
+sys_pause_end(struct sys_pause_state *pause, u64 timestamp)
 {
 	pause->timestamp_end = timestamp;
 }
@@ -117,21 +117,21 @@ b32
 sys_pause_drw(
 	struct sys_pause_state *pause,
 	struct gfx_ctx ctx,
-	f32 timestamp)
+	u64 timestamp)
 {
 	v2_i32 sys_resolution = sys_resolution_get();
 	tex_clr(ctx.dst, GFX_COL_BLACK);
 	i32 ani_direction        = pause->timestamp_end == 0 ? 1 : -1;
-	f32 ani_timestamp        = pause->timestamp_end == 0 ? pause->timestamp_start : pause->timestamp_end;
+	u64 ani_timestamp        = pause->timestamp_end == 0 ? pause->timestamp_start : pause->timestamp_end;
 	b32 res                  = false;
 	f32 duration             = 0.2f;
-	f32 elapsed              = timestamp - ani_timestamp;
+	f32 elapsed              = (f32)(timestamp - ani_timestamp) * 1e-6f;
 	enum ease_type ease_type = ani_direction == 1 ? EASE_TYPE_QUAD_OUT : EASE_TYPE_QUAD_IN;
 	f32 t                    = ease(clamp_f32(elapsed / duration, 0.0f, 1.0f), ease_type);
 	t                        = ani_direction == 1 ? t : 1.0f - t;
 
 	if(ani_direction == -1) {
-		res = (timestamp - pause->timestamp_end) > duration;
+		res = (f32)(timestamp - pause->timestamp_end) * 1e-6f > duration;
 	}
 
 	{

@@ -6,7 +6,6 @@
 layout(binding=2) uniform s_params {
   // Matches enum sys_video_filter ordinals in sys-opts.h
   int filter_mode;
-  float time;
 };
 layout(binding=3) uniform s_colors {
   vec4 app_colors[256];

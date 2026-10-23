@@ -675,10 +675,9 @@ void
 sokol_frame(void)
 {
 	v2_i32 sys_resolution           = sys_resolution_get();
-	f32 time                        = sys_time_elapsed();
 	f32 win_w                       = sapp_widthf();
 	f32 win_h                       = sapp_heightf();
-	s_params_t params               = {.time = time};
+	s_params_t params               = {0};
 	s_buffer_params_t buffer_params = sokol_get_buffer_params(win_w, win_h);
 	s_colors_t colors               = {0};
 	sokol_gamepad_ev();
@@ -726,7 +725,7 @@ sokol_frame(void)
 		}
 #endif
 	} else if(SOKOL_STATE.status == SOKOL_STATUS_PAUSED) {
-		b32 is_finished = sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx, time);
+		b32 is_finished = sys_pause_drw(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx, sys_time_us());
 		if(is_finished) {
 			sokol_resume();
 		}
@@ -978,7 +977,7 @@ sokol_pause_start(void)
 {
 	if(SOKOL_STATE.status != SOKOL_STATUS_PAUSED) {
 		SOKOL_STATE.status = SOKOL_STATUS_PAUSED;
-		sys_pause_start(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx.dst, sys_time_elapsed());
+		sys_pause_start(&SOKOL_STATE.pause, SOKOL_STATE.frame_ctx.dst, sys_time_us());
 		sys_internal_pause();
 	}
 }
@@ -987,7 +986,7 @@ void
 sokol_pause_end(void)
 {
 	if(SOKOL_STATE.pause.timestamp_end == 0) {
-		sys_pause_end(&SOKOL_STATE.pause, sys_time_elapsed());
+		sys_pause_end(&SOKOL_STATE.pause, sys_time_us());
 	}
 }
 

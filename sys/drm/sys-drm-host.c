@@ -1405,7 +1405,7 @@ drm_host_pause_end(void)
 {
 	drm_host_menu_trace("close requested");
 	if(DRM_HOST.pause.timestamp_end == 0) {
-		sys_pause_end(&DRM_HOST.pause, sys_time_elapsed());
+		sys_pause_end(&DRM_HOST.pause, sys_time_us());
 	}
 }
 
@@ -1417,7 +1417,7 @@ drm_host_toggle_pause(void)
 		drm_host_pause_end();
 	} else {
 		DRM_HOST.paused = true;
-		sys_pause_start(&DRM_HOST.pause, DRM_HOST.frame_ctx.dst, sys_time_elapsed());
+		sys_pause_start(&DRM_HOST.pause, DRM_HOST.frame_ctx.dst, sys_time_us());
 		sys_internal_pause();
 		drm_host_menu_trace("opened");
 	}
@@ -1744,7 +1744,7 @@ main(int argc, char **argv)
 		drm_host_evdev_poll();
 		drm_host_gamepad_poll();
 		if(DRM_HOST.paused) {
-			b32 is_finished = sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx, sys_time_elapsed());
+			b32 is_finished = sys_pause_drw(&DRM_HOST.pause, DRM_HOST.frame_ctx, sys_time_us());
 			if(is_finished) {
 				drm_host_resume();
 			}
