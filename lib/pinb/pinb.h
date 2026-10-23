@@ -234,6 +234,7 @@ struct pinb_ball_saver {
 	b32 is_enabled;
 	f32 duration;
 	f32 save_delay;
+	u32 timestamp;
 };
 
 struct pinb_mover {
