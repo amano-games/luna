@@ -674,10 +674,14 @@ pinb_animator_write(struct ser_writer *w, struct pinb_animator *value)
 	dbg_assert(value != NULL);
 	ser_write_object(w);
 
-	ser_write_string(w, str8_lit("play_on_start"));
-	ser_write_i32(w, value->play_on_start);
 	ser_write_string(w, str8_lit("initial_animation"));
 	ser_write_i32(w, value->initial_animation);
+	ser_write_string(w, str8_lit("is_playing"));
+	ser_write_i32(w, value->is_playing);
+	ser_write_string(w, str8_lit("is_paused"));
+	ser_write_i32(w, value->is_paused);
+	ser_write_string(w, str8_lit("position_ms"));
+	ser_write_i32(w, value->position_ms);
 
 	if(value->transitions.len > 0) {
 		ser_write_string(w, str8_lit("transitions"));
@@ -1726,10 +1730,14 @@ pinb_animator_read(struct alloc alloc, struct ser_reader *r, struct ser_value ob
 
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
-		if(str8_match(key.str, str8_lit("play_on_start"), 0)) {
-			res.play_on_start = ser_get_i32(value);
-		} else if(str8_match(key.str, str8_lit("initial_animation"), 0)) {
+		if(str8_match(key.str, str8_lit("initial_animation"), 0)) {
 			res.initial_animation = ser_get_i32(value);
+		} else if(str8_match(key.str, str8_lit("is_playing"), 0)) {
+			res.is_playing = ser_get_i32(value);
+		} else if(str8_match(key.str, str8_lit("is_paused"), 0)) {
+			res.is_paused = ser_get_i32(value);
+		} else if(str8_match(key.str, str8_lit("position_ms"), 0)) {
+			res.position_ms = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("transitions"), 0)) {
 			dbg_assert(value.type == SER_TYPE_OBJECT);
 			res.transitions = pinb_animator_transitions_read(r, value, alloc);

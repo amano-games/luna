@@ -107,8 +107,11 @@ struct pinb_animator_transitions {
 };
 
 struct pinb_animator {
-	b32 play_on_start;
 	i32 initial_animation;
+	// FLAGS?
+	b32 is_playing;
+	b32 is_paused;
+	i32 position_ms;
 	struct pinb_animator_transitions transitions;
 };
 

@@ -25,14 +25,14 @@ animation_clip_init(struct animation_clip *data)
 void
 animation_init(struct animation *animation)
 {
-	animation->is_stopped      = true;
+	animation->is_playing      = false;
 	animation->timestamp_start = TICK_MS_ZERO;
 }
 
 void
 animation_start(struct animation *ani, struct tick_ms timestamp)
 {
-	ani->is_stopped      = false;
+	ani->is_playing      = true;
 	ani->is_paused       = false;
 	ani->timestamp_start = timestamp;
 	ani->timestamp_pause = TICK_MS_ZERO;
@@ -60,7 +60,7 @@ b32 // finished?
 animation_update(struct animation *ani, struct tick_ms timestamp)
 {
 	b32 res = false;
-	if(ani->is_stopped) { goto cleanup; }
+	if(!ani->is_playing) { goto cleanup; }
 	if(ani->is_paused) { goto cleanup; }
 	if(ani->clip.count <= 0) { goto cleanup; }
 
@@ -68,8 +68,8 @@ animation_update(struct animation *ani, struct tick_ms timestamp)
 	struct tick_ms start   = ani->timestamp_start;
 	struct tick_ms current = timestamp;
 	f32 delta              = tick_ms_sec_between(current, start);
-	ani->is_stopped        = delta > duration;
-	res                    = ani->is_stopped;
+	ani->is_playing        = delta <= duration;
+	res                    = !ani->is_playing;
 
 cleanup:
 	return res;
@@ -115,7 +115,7 @@ animation_get_frame_index(struct animation *ani, enum animation_track_type track
 		goto cleanup;
 	}
 
-	if(ani->is_stopped) {
+	if(!ani->is_playing) {
 		res = track->frames.len - 1;
 		goto cleanup;
 	};
@@ -150,7 +150,7 @@ animation_get_frame(struct animation *ani, enum animation_track_type track_type,
 		res = 0;
 		goto cleanup;
 	}
-	if(ani->is_stopped) {
+	if(!ani->is_playing) {
 		res = animation_get_last_frame(track);
 		goto cleanup;
 	};

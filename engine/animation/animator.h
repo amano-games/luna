@@ -8,14 +8,13 @@
 #define ANIMATOR_TRANSITIONS_MAX 11
 
 struct animator {
-	b8 play_on_start;
-	u8 index;
+	u8 idx;
 	struct animation animation;
 	struct animation_clip clips[ANIMATOR_TRANSITIONS_MAX];
 	u8 transitions[ANIMATOR_TRANSITIONS_MAX];
 };
 
-void animator_init(struct animator *animator, struct tick_ms timestamp);
+void animator_ini(struct animator *animator);
 b32 animator_update(struct animator *animator, struct tick_ms timestamp);
 void animator_animation_play(struct animator *animator, usize index, struct tick_ms timestamp);
 void animator_animation_pause(struct animator *animator, struct tick_ms timestamp);
@@ -31,7 +30,7 @@ static inline b32
 animator_clips_set(struct animator *animator, struct asset_handle clips_handle)
 {
 	struct animation_slice slice = asset_db_animation_slice_get(&ASSETS.db, clips_handle);
-	dbg_assert((u32)animator->index <= slice.size);
+	dbg_assert((u32)animator->idx <= slice.size);
 	dbg_assert(slice.size < (ssize)ARRLEN(animator->clips));
 	for(ssize i = 0; i < (ssize)slice.size; ++i) {
 		mcpy_struct(&animator->clips[i], slice.clip + i);

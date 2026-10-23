@@ -185,7 +185,7 @@ pinbtjson_handle_animator(str8 json, jsmntok_t *tokens, i32 index, struct alloc 
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("play_on_start")) == 0) {
-			res.animator.play_on_start = json_parse_bool32(json, value);
+			res.animator.is_playing = json_parse_bool32(json, value);
 		} else if(json_eq(json, key, str8_lit("initial_animation")) == 0) {
 			res.animator.initial_animation = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("transitions")) == 0) {

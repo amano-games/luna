@@ -38,7 +38,7 @@ struct animation_clip {
 };
 
 struct animation {
-	u16 is_stopped;
+	u16 is_playing;
 	u16 is_paused;
 	struct tick_ms timestamp_start;
 	struct tick_ms timestamp_pause;
