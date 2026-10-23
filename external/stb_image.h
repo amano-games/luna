@@ -1,4 +1,6 @@
+#ifndef __TINYC__
 #pragma GCC system_header
+#endif
 /* stb_image - v2.29 - public domain image loader - http://nothings.org/stb
                                   no warranty implied; use at your own risk
 
