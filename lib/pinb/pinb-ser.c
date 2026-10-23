@@ -584,8 +584,8 @@ pinb_ball_saver_write(struct ser_writer *w, struct pinb_ball_saver *value)
 	ser_write_string(w, str8_lit("save_delay"));
 	ser_write_f32(w, value->save_delay);
 
-	ser_write_string(w, str8_lit("timestamp"));
-	ser_write_u32(w, value->timestamp);
+	ser_write_string(w, str8_lit("elapsed_ms"));
+	ser_write_i32(w, value->elapsed_ms);
 
 	ser_write_end(w);
 }
@@ -1412,8 +1412,8 @@ pinb_ball_saver_read(struct ser_reader *r, struct ser_value obj)
 			res.duration = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("save_delay"), 0)) {
 			res.save_delay = ser_get_f32(value);
-		} else if(str8_match(key.str, str8_lit("timestamp"), 0)) {
-			res.timestamp = ser_get_u32(value);
+		} else if(str8_match(key.str, str8_lit("elapsed_ms"), 0)) {
+			res.elapsed_ms = ser_get_i32(value);
 		}
 	}
 	return res;
