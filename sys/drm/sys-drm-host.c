@@ -1386,7 +1386,7 @@ static void
 drm_host_opts_save(void)
 {
 	struct marena_tmp tmp = marena_tmp_start(&DRM_HOST.scratch_arena);
-	b32 saved             = sys_opts_write(DRM_HOST.scratch, &DRM_HOST.opts, str8_lit(DRM_HOST_ORG), str8_lit(DRM_HOST_NAME));
+	b32 saved             = sys_opts_write(DRM_HOST.scratch, &DRM_HOST.opts, str8_lit(SYS_OPTS_DEFAULT_FILENAME), str8_lit(DRM_HOST_ORG), str8_lit(DRM_HOST_NAME));
 	log_info("drm-menu", "settings save success=%d scaling=%d filter=%d", (int)saved, (int)DRM_HOST.opts.video.scaling, (int)DRM_HOST.opts.video.filter);
 	marena_tmp_end(tmp);
 }
@@ -1632,7 +1632,7 @@ main(int argc, char **argv)
 	DRM_HOST.opts = sys_opts_load(
 		DRM_HOST.scratch,
 		DRM_HOST.scratch,
-		str8_lit("settings-luna.json"),
+		str8_lit(SYS_OPTS_DEFAULT_FILENAME),
 		str8_lit(DRM_HOST_ORG),
 		str8_lit(DRM_HOST_NAME));
 

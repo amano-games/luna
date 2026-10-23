@@ -224,12 +224,12 @@ sys_opts_palette_json(struct alloc alloc, const struct gfx_col_palette *palette)
 }
 
 b32
-sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8 name)
+sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 path, str8 org, str8 name)
 {
-	b32 res       = false;
-	sys_file file = sys_file_zero();
-	str8 path     = sys_path_to_config_path(scratch, str8_lit("settings.json"), org, name);
-	str8 path_new = str8_fmt_push(scratch, "%.*s.new", str8_spread(path));
+	b32 res        = false;
+	sys_file file  = sys_file_zero();
+	str8 full_path = sys_path_to_config_path(scratch, path, org, name);
+	str8 path_new  = str8_fmt_push(scratch, "%.*s.new", str8_spread(full_path));
 
 	dbg_check_warn(opts->video.scaling > SYS_VIDEO_SCALING_NONE && opts->video.scaling < SYS_VIDEO_SCALING_NUM_COUNT,
 		"sys-opts",
@@ -303,9 +303,9 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 org, str8
 	file       = sys_file_zero();
 	dbg_check_warn(closed, "sys-opts", "failed to close: %.*s", str8_spread(path_new));
 
-	dbg_check_warn(sys_file_replace(path_new, path), "sys-opts", "failed to replace: %.*s", str8_spread(path));
+	dbg_check_warn(sys_file_replace(path_new, full_path), "sys-opts", "failed to replace: %.*s", str8_spread(full_path));
 
-	log_info("sys-opts", "saved: %.*s", str8_spread(path));
+	log_info("sys-opts", "saved: %.*s", str8_spread(full_path));
 	res = true;
 
 error:;

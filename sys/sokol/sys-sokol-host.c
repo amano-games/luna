@@ -210,7 +210,7 @@ sokol_main(i32 argc, char **argv)
 
 	{
 		struct sys_opts *opts = &SOKOL_STATE.opts;
-		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit("settings-luna.json"), str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
+		*opts                 = sys_opts_load(SOKOL_STATE.alloc, SOKOL_STATE.scratch, str8_lit(SYS_OPTS_DEFAULT_FILENAME), str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
 	}
 
 	SOKOL_STATE.resolution = SOKOL_STATE.opts.video.resolution;
@@ -1259,7 +1259,7 @@ static void
 sokol_opts_save(void)
 {
 	struct marena_tmp tmp = marena_tmp_start(&SOKOL_STATE.scratch_marena);
-	sys_opts_write(SOKOL_STATE.scratch, &SOKOL_STATE.opts, str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
+	sys_opts_write(SOKOL_STATE.scratch, &SOKOL_STATE.opts, str8_lit(SYS_OPTS_DEFAULT_FILENAME), str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
 	marena_tmp_end(tmp);
 }
 
