@@ -290,13 +290,6 @@ sys_sleep_ms(u32 ms)
 {
 }
 
-// Milliseconds
-u64
-sys_time_ms(void)
-{
-	return sys_time_us() / 1000u;
-}
-
 u32
 sys_epoch_2000(u32 *milliseconds)
 {

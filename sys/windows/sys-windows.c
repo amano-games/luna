@@ -207,12 +207,6 @@ sys_sleep_ms(u32 ms)
 	Sleep(ms);
 }
 
-u64
-sys_time_ms(void)
-{
-	return (u64)stm_ms(stm_since(OS_STATE.tick_start));
-}
-
 void *
 sys_alloc_raw(ssize size)
 {
