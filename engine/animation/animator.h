@@ -3,6 +3,7 @@
 #include "engine/assets/asset-db.h"
 #include "engine/animation/animation.h"
 #include "engine/assets/assets.h"
+#include "base/tick-ms.h"
 
 #define ANIMATOR_TRANSITIONS_MAX 11
 
