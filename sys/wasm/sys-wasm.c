@@ -85,7 +85,7 @@ sys_os_init(void)
 	info->initial_path            = sys_get_current_path(alloc_sys);
 
 	stm_setup();
-	OS_STATE.tick_start   = stm_now();
+	OS_STATE.tick_start = stm_now();
 
 #if SYS_GFX
 	sys_os_gamepad_ini();

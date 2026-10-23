@@ -126,7 +126,7 @@ sys_os_init(void)
 	}
 
 	stm_setup();
-	OS_STATE.tick_start   = stm_now();
+	OS_STATE.tick_start = stm_now();
 
 #if SYS_GFX
 	sys_os_gamepad_ini();
