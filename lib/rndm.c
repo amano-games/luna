@@ -84,10 +84,9 @@ rndm_point_out_rec(struct rndm *rndm, i32 x, i32 y, i32 w, i32 h)
 v2
 rndm_point_in_rec(struct rndm *rndm, i32 x, i32 y, i32 w, i32 h)
 {
-	v2 res = {
-		.x = rndm_range_f32(rndm, x, x + w),
-		.y = rndm_range_f32(rndm, y, y + h),
-	};
+	f32 px = rndm_range_f32(rndm, x, x + w);
+	f32 py = rndm_range_f32(rndm, y, y + h);
+	v2 res = {px, py};
 	return res;
 }
 
