@@ -13,9 +13,11 @@ ASSETS_SRC := $(shell find "$(ASSETS_DIR)" -not -name '*.tiled-session' | sed 's
 
 HOSTCC ?= clang
 
-# Grouped target (&:)
-$(ASSETS_BIN) $(ASSETS_PACK_BIN) &: $(LUNA_C_H)
+$(ASSETS_BIN): $(LUNA_C_H)
 	$(MAKE) -f "$(LUNA_DIR)/tools.mk" tools BUILD_DEBUG_TOOLS=0 CC="$(HOSTCC)"
+
+$(ASSETS_PACK_BIN): $(ASSETS_BIN)
+	@:
 
 .PHONY: assets
 
