@@ -2,6 +2,7 @@
 
 #include "base/mem.h"
 #include "base/types.h"
+#include "lib/rndm.h"
 
 #define MAX_BET_CHILDREN   10
 #define MAX_BET_NODE_PROPS 5
@@ -135,6 +136,7 @@ struct bet_ctx {
 
 	ssize count;
 	struct bet_node_ctx *bet_node_ctx;
+	struct rndm *rndm;
 	void (*action_init)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 	enum bet_res (*action_do)(struct bet *bet, struct bet_ctx *ctx, struct bet_node *node, void *userdata);
 };
