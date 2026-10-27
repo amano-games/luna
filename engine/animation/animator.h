@@ -5,7 +5,7 @@
 #include "engine/assets/assets.h"
 #include "base/tick-ms.h"
 
-#define ANIMATOR_TRANSITIONS_MAX 11
+#define ANIMATOR_TRANSITIONS_MAX 12
 
 struct animator {
 	u8 idx;
