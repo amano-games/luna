@@ -59,7 +59,7 @@ usize cstr8_len(u8 *c);
 usize cstr16_len(u16 *c);
 
 // String Constructors
-#define str8_lit(S)         string8((u8 *)(S), sizeof(S) - 1)
+#define str8_lit(S)         ((str8){(u8 *)(S), sizeof(S) - 1})
 #define str8_lit_comp(S)    {(u8 *)(S), sizeof(S) - 1}
 #define str8_array(S, C)    string8((u8 *)(S), sizeof(*(S)) * (C))
 #define str8_array_fixed(S) string8((u8 *)(S), sizeof(S))

@@ -1,17 +1,11 @@
 #include "base/dbg.h"
 #include "marena.h"
 
-#if MARENA_DEBUG
 static void marena_table_register(struct marena *m);
-#endif
 
 struct marena_table MARENA_TABLE = {0};
 
-#if MARENA_ASAN
-#define MARENA_POISONS(m) (!((m)->flags & MARENA_FLAG_LOCAL))
-#else
-#define MARENA_POISONS(m) 0
-#endif
+#define MARENA_POISONS(m) (BUILD_ASAN && !((m)->flags & MARENA_FLAG_LOCAL))
 
 void
 marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, str8 name, const char *file, i32 line)
@@ -21,19 +15,16 @@ marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, str8
 	m->buf      = buf;
 	m->buf_size = buf_size;
 
-#if MARENA_DEBUG
 	m->peak   = 0;
 	m->flags  = flags;
 	m->name   = name;
 	m->file   = file;
 	m->line   = line;
 	m->parent = NULL;
-	if(!(flags & MARENA_FLAG_LOCAL)) {
+	if(MARENA_TRACK && !(flags & MARENA_FLAG_LOCAL)) {
 		marena_table_register(m);
 	}
-#endif
 
-	// p may be stale or garbage here, the reset must not poison from it
 	m->p = m->buf;
 	if(MARENA_POISONS(m)) { MARENA_POISON(m->buf, m->buf_size); }
 	marena_reset(m);
@@ -43,18 +34,8 @@ error:
 }
 
 void
-marena_set_name(struct marena *m, str8 name)
-{
-#if MARENA_DEBUG
-	m->name = name;
-#endif
-}
-
-// For an arena that dies before the program ends
-void
 marena_unregister(struct marena *m)
 {
-#if MARENA_DEBUG
 	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
 		if(MARENA_TABLE.arenas[i] != m) { continue; }
 		MARENA_TABLE.arenas[i] = MARENA_TABLE.arenas[--MARENA_TABLE.count];
@@ -65,7 +46,6 @@ marena_unregister(struct marena *m)
 			MARENA_TABLE.arenas[i]->parent = NULL;
 		}
 	}
-#endif
 }
 
 void *
@@ -88,9 +68,7 @@ marena_alloc(struct marena *m, ssize size, ssize align)
 	// Alignment padding stays poisoned
 	if(MARENA_POISONS(m)) { MARENA_UNPOISON((void *)aligned, mem_size); }
 
-#if MARENA_DEBUG
-	m->peak = MAX(m->peak, m->buf_size - m->rem);
-#endif
+	if(MARENA_TRACK) { m->peak = MAX(m->peak, m->buf_size - m->rem); }
 
 	return (void *)aligned;
 }
@@ -130,9 +108,7 @@ marena_alloc_rem(struct marena *m, ssize *s)
 	m->p += m->rem;
 	m->rem = 0;
 
-#if MARENA_DEBUG
-	m->peak = m->buf_size;
-#endif
+	if(MARENA_TRACK) { m->peak = m->buf_size; }
 
 	return mem;
 }
@@ -163,7 +139,6 @@ marena_tmp_end(struct marena_tmp tmp)
 	marena_reset_to(tmp.arena, tmp.p);
 }
 
-#if MARENA_DEBUG
 static b32
 marena_is_ancestor(struct marena *m, struct marena *of)
 {
@@ -214,4 +189,3 @@ marena_table_register(struct marena *m)
 
 	m->parent = marena_table_parent_find(m);
 }
-#endif
