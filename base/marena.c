@@ -189,3 +189,106 @@ marena_table_register(struct marena *m)
 
 	m->parent = marena_table_parent_find(m);
 }
+
+static i32
+marena_table_idx(struct marena *m)
+{
+	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
+		if(MARENA_TABLE.arenas[i] == m) { return (i32)i; }
+	}
+	return -1;
+}
+
+static void
+marena_report_entry_push(struct marena_report *report, struct marena *m, i32 depth)
+{
+	struct marena_report_entry *e = &report->entries[report->entry_count++];
+	e->arena                      = m;
+	e->name                       = m->name;
+	e->parent_name                = m->parent ? m->parent->name : (str8){0};
+	e->file                       = m->file;
+	e->line                       = m->line;
+	e->depth                      = depth;
+	e->used                       = marena_size_used(m);
+	e->peak                       = m->peak;
+	e->size                       = m->buf_size;
+}
+
+struct marena_report *
+marena_report_create(struct alloc alloc)
+{
+	struct marena_report *res = alloc_struct_clr(alloc, res);
+
+	if(!res) { return NULL; }
+
+	ssize count                 = MARENA_TABLE.count;
+	b8 pushed[MARENA_TABLE_CAP] = {0};
+	i32 parents[MARENA_TABLE_CAP];
+
+	for(ssize i = 0; i < count; ++i) {
+		struct marena *parent = MARENA_TABLE.arenas[i]->parent;
+		parents[i]            = parent ? marena_table_idx(parent) : -1;
+	}
+
+	// Tree order: each root in table order, followed by its children depth first.
+	// The stack holds table indices; children are pushed in reverse so they pop in table order
+	i32 stack[MARENA_TABLE_CAP];
+	i32 depths[MARENA_TABLE_CAP];
+
+	for(ssize root = 0; root < count; ++root) {
+
+		if(parents[root] != -1) { continue; }
+
+		ssize top     = 0;
+		stack[top]    = (i32)root;
+		depths[top++] = 0;
+
+		while(top > 0) {
+			--top;
+			i32 i     = stack[top];
+			i32 depth = depths[top];
+
+			if(pushed[i]) { continue; }
+
+			pushed[i] = true;
+			marena_report_entry_push(res, MARENA_TABLE.arenas[i], depth);
+
+			for(ssize child = count - 1; child >= 0; --child) {
+
+				if(parents[child] != i || pushed[child] || top >= MARENA_TABLE_CAP) { continue; }
+
+				stack[top]    = (i32)child;
+				depths[top++] = depth + 1;
+			}
+		}
+	}
+
+	for(ssize i = 0; i < count; ++i) {
+		if(!pushed[i]) { marena_report_entry_push(res, MARENA_TABLE.arenas[i], 0); }
+	}
+
+	for(u32 i = 0; i < res->entry_count; ++i) {
+		struct marena_report_entry *e = &res->entries[i];
+		if(e->depth != 0) { continue; }
+		res->total_used += e->used;
+		res->total_peak += e->peak;
+		res->total_size += e->size;
+	}
+
+	{
+		char used_b[STR_BYTES_CAP], peak_b[STR_BYTES_CAP], size_b[STR_BYTES_CAP];
+		str8 used = str8_from_bytes_buf(used_b, sizeof(used_b), (u64)res->total_used);
+		str8 peak = str8_from_bytes_buf(peak_b, sizeof(peak_b), (u64)res->total_peak);
+		str8 size = str8_from_bytes_buf(size_b, sizeof(size_b), (u64)res->total_size);
+
+		res->titles[0] = str8_fmt_push(alloc, "arenas %d/%d", (i32)count, (i32)MARENA_TABLE_CAP);
+		res->titles[1] = str8_fmt_push(alloc, "used %.*s peak %.*s size %.*s", str8_spread(used), str8_spread(peak), str8_spread(size));
+
+		res->headers[0] = str8_lit("arena");
+		res->headers[1] = str8_lit("used");
+		res->headers[2] = str8_lit("peak");
+		res->headers[3] = str8_lit("size");
+	}
+
+	return res;
+}

@@ -51,6 +51,40 @@ struct marena_table {
 
 extern struct marena_table MARENA_TABLE;
 
+#define MARENA_REPORT_NUM_VALUES 3
+#define MARENA_REPORT_NUM_TITLES 2
+#define MARENA_REPORT_NUM_HEADER (MARENA_REPORT_NUM_VALUES + 1)
+
+struct marena_report_entry {
+	struct marena *arena;
+	str8 name;
+	str8 parent_name;
+	const char *file;
+	i32 line;
+	i32 depth;
+	union {
+		struct {
+			ssize used;
+			ssize peak;
+			ssize size;
+		};
+		ssize values[MARENA_REPORT_NUM_VALUES];
+	};
+};
+
+// Title 0: arenas <count>/<cap>
+// Title 1: totals of the root arenas, children are counted inside their parents
+// Header is arena used peak size, entries are in tree order
+struct marena_report {
+	str8 titles[MARENA_REPORT_NUM_TITLES];
+	str8 headers[MARENA_REPORT_NUM_HEADER];
+	ssize total_used;
+	ssize total_peak;
+	ssize total_size;
+	u32 entry_count;
+	struct marena_report_entry entries[MARENA_TABLE_CAP];
+};
+
 struct marena_tmp {
 	struct marena *arena;
 	void *p;
@@ -80,6 +114,8 @@ ssize marena_size_used(struct marena *m);
 
 struct marena_tmp marena_tmp_start(struct marena *arena);
 void marena_tmp_end(struct marena_tmp tmp);
+
+struct marena_report *marena_report_create(struct alloc alloc);
 
 static inline void
 marena_set_name(struct marena *m, str8 name)
