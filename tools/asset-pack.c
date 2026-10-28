@@ -280,7 +280,7 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 		usize mem_size = MMEGABYTE(4);
 		void *mem      = mem_alloc_size(sys_allocator(), mem_size);
 		dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
-		marena_init(&scratch_marena, mem, mem_size);
+		marena_init_local(&scratch_marena, mem, mem_size);
 		scratch = marena_allocator(&scratch_marena);
 	}
 

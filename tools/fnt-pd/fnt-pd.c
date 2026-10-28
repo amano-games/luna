@@ -152,7 +152,7 @@ handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
 	u8 *mem_buffer         = mem_alloc_size(alloc_sys, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
-	marena_init(&marena, mem_buffer, mem_size);
+	marena_init_local(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 
 	str8 data = {0};

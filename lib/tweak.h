@@ -60,7 +60,7 @@ tweak_look_up_value_f32(
 	sys_file f     = sys_file_zero();
 	dbg_check_warn(mem, "tweak", "failed to get memory");
 	struct marena marena = {0};
-	marena_init(&marena, mem, mem_size);
+	marena_init_local(&marena, mem, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 	str8 exe_path      = sys_exe_path();
 	str8 project_root  = str8_chop_last_slash(str8_chop_last_slash(str8_chop_last_slash(exe_path)));

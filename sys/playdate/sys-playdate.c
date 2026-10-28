@@ -831,7 +831,7 @@ sys_pd_serial_msg(const char *data)
 			log_error("prof", "csv save alloc failed");
 			return;
 		}
-		marena_init(&arena, mem, PD_PROF_CSV_MEM_SIZE);
+		marena_init_local(&arena, mem, PD_PROF_CSV_MEM_SIZE);
 		alloc = marena_allocator(&arena);
 		prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
 		sys_free_raw(mem);

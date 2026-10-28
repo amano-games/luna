@@ -2,23 +2,33 @@
 #include "marena.h"
 
 void
-marena_init(struct marena *m, void *buf, ssize buf_size)
+marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, const char *name, const char *file, i32 line)
 {
 	dbg_check_mem(buf, "Marena");
-#if 0
-	mspan sp    = {buf, bufsize};
-	sp          = mspan_align(sp);
-	m->buf      = sp.p;
-	m->buf_size = sp.size;
-#else
+
 	m->buf      = buf;
 	m->buf_size = buf_size;
+
+#if MARENA_DEBUG
+	m->peak  = 0;
+	m->flags = flags;
+	m->name  = name;
+	m->file  = file;
+	m->line  = line;
 #endif
 
 	marena_reset(m);
 
 error:
 	return;
+}
+
+void
+marena_set_name(struct marena *m, const char *name)
+{
+#if MARENA_DEBUG
+	m->name = name;
+#endif
 }
 
 void *
@@ -37,6 +47,10 @@ marena_alloc(struct marena *m, ssize size, ssize align)
 
 	m->p = (void *)(aligned + mem_size);
 	m->rem -= padding + mem_size;
+
+#if MARENA_DEBUG
+	m->peak = MAX(m->peak, m->buf_size - m->rem);
+#endif
 
 	return (void *)aligned;
 }
@@ -72,6 +86,11 @@ marena_alloc_rem(struct marena *m, ssize *s)
 	void *mem = m->p;
 	m->p += m->rem;
 	m->rem = 0;
+
+#if MARENA_DEBUG
+	m->peak = m->buf_size;
+#endif
+
 	return mem;
 }
 
@@ -79,6 +98,12 @@ ssize
 marena_size_rem(struct marena *m)
 {
 	return m->rem;
+}
+
+ssize
+marena_size_used(struct marena *m)
+{
+	return m->buf_size - m->rem;
 }
 
 struct marena_tmp

@@ -1461,14 +1461,14 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 	void *mem_buffer       = mem_alloc_size(sys_alloc, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
-	marena_init(&marena, mem_buffer, mem_size);
+	marena_init_local(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 
 	usize scratch_mem_size = MMEGABYTE(10);
 	u8 *scratch_mem_buffer = mem_alloc_size(sys_alloc, scratch_mem_size);
 	dbg_assert(scratch_mem_buffer != NULL);
 	struct marena scratch_marena = {0};
-	marena_init(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
+	marena_init_local(&scratch_marena, scratch_mem_buffer, scratch_mem_size);
 	struct alloc scratch = marena_allocator(&scratch_marena);
 
 	str8 json = {0};
