@@ -1,6 +1,10 @@
 #include "base/dbg.h"
 #include "marena.h"
 
+static void marena_table_register(struct marena *m);
+
+struct marena_table MARENA_TABLE = {0};
+
 void
 marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, const char *name, const char *file, i32 line)
 {
@@ -10,11 +14,15 @@ marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, cons
 	m->buf_size = buf_size;
 
 #if MARENA_DEBUG
-	m->peak  = 0;
-	m->flags = flags;
-	m->name  = name;
-	m->file  = file;
-	m->line  = line;
+	m->peak   = 0;
+	m->flags  = flags;
+	m->name   = name;
+	m->file   = file;
+	m->line   = line;
+	m->parent = NULL;
+	if(!(flags & MARENA_FLAG_LOCAL)) {
+		marena_table_register(m);
+	}
 #endif
 
 	marena_reset(m);
@@ -28,6 +36,24 @@ marena_set_name(struct marena *m, const char *name)
 {
 #if MARENA_DEBUG
 	m->name = name;
+#endif
+}
+
+// For an arena that dies before the program ends
+void
+marena_unregister(struct marena *m)
+{
+#if MARENA_DEBUG
+	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
+		if(MARENA_TABLE.arenas[i] != m) { continue; }
+		MARENA_TABLE.arenas[i] = MARENA_TABLE.arenas[--MARENA_TABLE.count];
+		break;
+	}
+	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
+		if(MARENA_TABLE.arenas[i]->parent == m) {
+			MARENA_TABLE.arenas[i]->parent = NULL;
+		}
+	}
 #endif
 }
 
@@ -118,4 +144,55 @@ void
 marena_tmp_end(struct marena_tmp tmp)
 {
 	marena_reset_to(tmp.arena, tmp.p);
+}
+
+static b32
+marena_is_ancestor(struct marena *m, struct marena *of)
+{
+	for(struct marena *p = of->parent; p; p = p->parent) {
+		if(p == m) { return true; }
+	}
+	return false;
+}
+
+static struct marena *
+marena_table_parent_find(struct marena *m)
+{
+	struct marena *res = NULL;
+	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
+		struct marena *other = MARENA_TABLE.arenas[i];
+		if(other == m) { continue; }
+		if(m->buf < other->buf || m->buf + m->buf_size > other->buf + other->buf_size) { continue; }
+		if(marena_is_ancestor(m, other)) { continue; }
+		if(res == NULL || other->buf_size <= res->buf_size) {
+			res = other;
+		}
+	}
+	return res;
+}
+
+static void
+marena_table_register(struct marena *m)
+{
+	b32 found = false;
+	for(ssize i = 0; i < MARENA_TABLE.count; ++i) {
+		if(MARENA_TABLE.arenas[i] == m) {
+			found = true;
+			break;
+		}
+	}
+
+	if(!found) {
+		if(MARENA_TABLE.count >= MARENA_TABLE_CAP) {
+			static b32 warned = false;
+			if(!warned) {
+				warned = true;
+				log_warn("marena", "arena table full, %s is not tracked", m->name);
+			}
+			return;
+		}
+		MARENA_TABLE.arenas[MARENA_TABLE.count++] = m;
+	}
+
+	m->parent = marena_table_parent_find(m);
 }

@@ -28,8 +28,22 @@ struct marena {
 	const char *name;
 	const char *file;
 	i32 line;
+	struct marena *parent;
 #endif
 };
+
+#if MARENA_DEBUG
+#define MARENA_TABLE_CAP 64
+#else
+#define MARENA_TABLE_CAP 1
+#endif
+
+struct marena_table {
+	struct marena *arenas[MARENA_TABLE_CAP];
+	ssize count;
+};
+
+extern struct marena_table MARENA_TABLE;
 
 struct marena_tmp {
 	struct marena *arena;
@@ -46,6 +60,7 @@ struct marena_tmp {
 
 void marena_ini_internal(struct marena *m, void *buf, ssize bufsize, u32 flags, const char *name, const char *file, i32 line);
 void marena_set_name(struct marena *m, const char *name);
+void marena_unregister(struct marena *m);
 void *marena_alloc(struct marena *m, ssize size, ssize align);
 void *marena_state(struct marena *m);
 void marena_reset_to(struct marena *m, void *p);
