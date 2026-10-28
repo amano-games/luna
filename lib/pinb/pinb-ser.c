@@ -101,12 +101,14 @@ pinb_entity_write(struct ser_writer *w, struct pinb_entity *entity)
 		pinb_entity_bet_write(w, &entity->bet);
 	}
 
-	if(entity->body.shapes.count > 0) {
+	if(entity->body.col_shapes.len > 0) {
 		ser_write_string(w, str8_lit("body"));
-		body_write(w, &entity->body);
+		body_write(w, &entity->body.body);
+		ser_write_string(w, str8_lit("collision_shapes"));
+		col_shapes_write(w, entity->body.col_shapes.items, entity->body.col_shapes.len);
 	}
 
-	if(entity->sensor.shapes.count > 0) {
+	if(entity->sensor.col_shapes.len > 0) {
 		ser_write_string(w, str8_lit("sensor"));
 		pinb_sensor_write(w, &entity->sensor);
 	}
@@ -274,6 +276,7 @@ pinb_entity_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct pinb_entity res = {0};
+	b32 has_body           = false;
 	struct ser_value key, value;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
@@ -310,9 +313,12 @@ pinb_entity_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("ball_saver"), 0)) {
 			res.ball_saver = pinb_ball_saver_read(r, value);
 		} else if(str8_match(key.str, str8_lit("body"), 0)) {
-			res.body = body_read(r, value);
+			res.body.body = body_read(r, value);
+			has_body      = true;
+		} else if(str8_match(key.str, str8_lit("collision_shapes"), 0)) {
+			res.body.col_shapes.items = col_shapes_read(alloc, r, value, &res.body.col_shapes.len);
 		} else if(str8_match(key.str, str8_lit("sensor"), 0)) {
-			res.sensor = pinb_sensor_read(r, value);
+			res.sensor = pinb_sensor_read(alloc, r, value);
 		} else if(str8_match(key.str, str8_lit("switch_value"), 0)) {
 			res.switch_value = pinb_switch_value_read(r, value);
 		} else if(str8_match(key.str, str8_lit("entity_list"), 0)) {
@@ -357,6 +363,7 @@ pinb_entity_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 			res.custom_data = pinb_custom_data_read(alloc, r, value);
 		}
 	}
+	dbg_assert(has_body == (res.body.col_shapes.len > 0));
 	return res;
 }
 
@@ -397,7 +404,7 @@ pinb_sensor_write(struct ser_writer *w, struct pinb_sensor *value)
 	ser_write_f32(w, value->angle_rad);
 
 	ser_write_string(w, str8_lit("shapes"));
-	col_shapes_write(w, &value->shapes);
+	col_shapes_write(w, value->col_shapes.items, value->col_shapes.len);
 
 	ser_write_end(w);
 }
@@ -1748,7 +1755,7 @@ pinb_animator_read(struct alloc alloc, struct ser_reader *r, struct ser_value ob
 }
 
 struct pinb_sensor
-pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
+pinb_sensor_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj)
 {
 	struct pinb_sensor res = {0};
 	struct ser_value key, value;
@@ -1759,7 +1766,7 @@ pinb_sensor_read(struct ser_reader *r, struct ser_value obj)
 		} else if(str8_match(key.str, str8_lit("angle_rad"), 0)) {
 			res.angle_rad = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
-			res.shapes = col_shapes_read(r, value);
+			res.col_shapes.items = col_shapes_read(alloc, r, value, &res.col_shapes.len);
 		}
 	}
 

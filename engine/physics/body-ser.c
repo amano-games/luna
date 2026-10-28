@@ -4,7 +4,6 @@
 #include "base/str.h"
 
 #include "lib/serialize/serialize.h"
-#include "engine/collisions/collisions-ser.h"
 
 void
 body_write(struct ser_writer *w, struct body *body)
@@ -37,10 +36,6 @@ body_write(struct ser_writer *w, struct body *body)
 	ser_write_f32(w, body->linear_damping);
 	ser_write_string(w, str8_lit("ang_damping"));
 	ser_write_f32(w, body->ang_damping);
-
-	dbg_assert(body->shapes.count > 0);
-	ser_write_string(w, str8_lit("shapes"));
-	col_shapes_write(w, &body->shapes);
 
 	ser_write_end(w);
 }
@@ -77,8 +72,6 @@ body_read(struct ser_reader *r, struct ser_value obj)
 			res.linear_damping = ser_get_f32(value);
 		} else if(str8_match(key.str, str8_lit("ang_damping"), 0)) {
 			res.ang_damping = ser_get_f32(value);
-		} else if(str8_match(key.str, str8_lit("shapes"), 0)) {
-			res.shapes = col_shapes_read(r, value);
 		}
 	}
 

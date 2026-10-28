@@ -140,10 +140,20 @@ struct pinb_entity_list {
 	i32 prev;
 };
 
+struct pinb_col_shapes {
+	struct col_shape *items;
+	ssize len;
+};
+
+struct pinb_body {
+	struct body body;
+	struct pinb_col_shapes col_shapes;
+};
+
 struct pinb_sensor {
 	u32 flags;
 	f32 angle_rad;
-	struct col_shapes shapes;
+	struct pinb_col_shapes col_shapes;
 };
 
 struct pinb_gravity {
@@ -309,7 +319,7 @@ struct pinb_entity {
 	struct pinb_ball ball;
 	struct pinb_spr spr;
 	struct pinb_bet bet;
-	struct body body;
+	struct pinb_body body;
 	struct pinb_plunger plunger;
 	struct pinb_charged_impulse charged_impulse;
 	struct pinb_spinner spinner;

@@ -43,11 +43,9 @@ struct body {
 	f32 linear_damping;
 	f32 torque;
 	f32 ang_damping;
-
-	struct col_shapes shapes;
 };
 
-void body_init(struct body *body);
+void body_init(struct body *body, const struct col_shape *shapes, ssize shapes_count);
 
 void body_integrate(struct physics *physics, struct body *body);
 void body_integrate_linear(struct physics *physics, struct body *body);

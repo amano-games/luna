@@ -18,10 +18,10 @@
 //  - Solve positional constraints (penetration correction).
 
 void
-body_init(struct body *body)
+body_init(struct body *body, const struct col_shape *shapes, ssize shapes_count)
 {
-	for(ssize i = 0; i < body->shapes.count; ++i) {
-		struct col_shape *shape = body->shapes.items + i;
+	for(ssize i = 0; i < shapes_count; ++i) {
+		const struct col_shape *shape = shapes + i;
 		switch(shape->type) {
 		case COL_TYPE_POLY: {
 			v2 verts[COL_MAX_POLYGON_VERTS];

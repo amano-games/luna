@@ -23,7 +23,7 @@ void pinb_counter_write(struct ser_writer *w, struct pinb_counter *value);
 struct pinb_counter pinb_counter_read(struct ser_reader *r, struct ser_value obj);
 
 void pinb_sensor_write(struct ser_writer *w, struct pinb_sensor *value);
-struct pinb_sensor pinb_sensor_read(struct ser_reader *r, struct ser_value obj);
+struct pinb_sensor pinb_sensor_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj);
 
 void pinb_reactive_impulse_write(struct ser_writer *w, struct pinb_reactive_impulse *value);
 struct pinb_reactive_impulse pinb_reactive_impulse_read(struct ser_reader *r, struct ser_value obj);

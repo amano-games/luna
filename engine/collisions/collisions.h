@@ -5,7 +5,6 @@
 #include "base/types.h"
 
 #define COL_MAX_POLYGON_VERTS 8
-#define COL_SHAPES_MAX        10
 #define COL_AABB_UNPACK(a)    a.min.x, a.min.y, a.max.x, a.max.y
 
 #if COL_MAX_POLYGON_VERTS != C2_MAX_POLYGON_VERTS
@@ -104,11 +103,6 @@ struct col_shape {
 	};
 };
 
-struct col_shapes {
-	ssize count;
-	struct col_shape items[COL_SHAPES_MAX];
-};
-
 static inline struct col_transform
 col_transform_identity(void)
 {
@@ -173,7 +167,7 @@ col_aabb_from_rec_i32(rec_i32 rec)
 struct col_cir col_merge_circles(struct col_cir a, struct col_cir b);
 void col_poly_init(col_poly *p);
 struct col_cir col_capsule_get_circle_col(struct col_capsule capsule, f32 x, f32 y);
-struct col_aabb col_shapes_get_bounding_box(const struct col_shapes *shapes);
+struct col_aabb col_shapes_get_bounding_box(const struct col_shape *shapes, ssize shapes_count);
 struct col_aabb col_shape_get_bounding_box(const struct col_shape *shape);
 
 void col_point_to_line(v2 c, v2 a, v2 b, f32 *t, v2 *d);

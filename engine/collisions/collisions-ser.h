@@ -1,12 +1,13 @@
 #pragma once
 
+#include "base/mem.h"
 #include "lib/serialize/serialize.h"
 #include "engine/collisions/collisions.h"
 
-void col_shapes_write(struct ser_writer *w, struct col_shapes *shapes);
-struct col_shapes col_shapes_read(struct ser_reader *r, struct ser_value obj);
+void col_shapes_write(struct ser_writer *w, const struct col_shape *shapes, ssize shapes_count);
+struct col_shape *col_shapes_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj, ssize *shapes_count);
 
-void col_shape_write(struct ser_writer *w, struct col_shape *shape);
+void col_shape_write(struct ser_writer *w, const struct col_shape *shape);
 struct col_shape col_shape_read(struct ser_reader *r, struct ser_value obj);
 
 void col_cir_write(struct ser_writer *w, struct col_cir col);

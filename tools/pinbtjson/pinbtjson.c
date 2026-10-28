@@ -797,48 +797,52 @@ pinbtjson_handle_col_shape(str8 json, jsmntok_t *tokens, i32 index, struct alloc
 				}
 			} else {
 				mesh = poly_decomp(verts, vert_count, scratch, scratch);
-				dbg_assert(mesh.count <= (ssize)ARRLEN(res.col_shapes.items));
 			}
 
-			res.col_shapes.count = mesh.count;
+			res.body.col_shapes.len   = mesh.count;
+			res.body.col_shapes.items = alloc_arr_clr(alloc, res.body.col_shapes.items, mesh.count);
 			for(ssize j = 0; j < mesh.count; ++j) {
-				struct poly poly                   = mesh.items[j];
-				res.col_shapes.items[j].type       = COL_TYPE_POLY;
-				res.col_shapes.items[j].poly.count = poly.count;
-				mcpy_array(res.col_shapes.items[j].poly.verts, poly.verts);
+				struct poly poly                        = mesh.items[j];
+				res.body.col_shapes.items[j].type       = COL_TYPE_POLY;
+				res.body.col_shapes.items[j].poly.count = poly.count;
+				mcpy_array(res.body.col_shapes.items[j].poly.verts, poly.verts);
 				dbg_assert(poly_is_convex(poly.verts, poly.count));
 			}
 
 		} else if(json_eq(json, key, str8_lit("aabb")) == 0) {
 			i++;
-			struct pinbtjson_res item_res = pinbtjson_handle_col_aabb(json, tokens, i);
-			res.col_shapes.count          = 1;
-			res.col_shapes.items[0].type  = COL_TYPE_AABB;
-			res.col_shapes.items[0].aabb  = item_res.aabb;
+			struct pinbtjson_res item_res     = pinbtjson_handle_col_aabb(json, tokens, i);
+			res.body.col_shapes.len           = 1;
+			res.body.col_shapes.items         = alloc_arr_clr(alloc, res.body.col_shapes.items, 1);
+			res.body.col_shapes.items[0].type = COL_TYPE_AABB;
+			res.body.col_shapes.items[0].aabb = item_res.aabb;
 			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("cir")) == 0) {
 			i++;
-			struct pinbtjson_res item_res = pinbtjson_handle_col_cir(json, tokens, i);
-			res.col_shapes.count          = 1;
-			res.col_shapes.items[0].type  = COL_TYPE_CIR;
-			res.col_shapes.items[0].cir   = item_res.cir;
+			struct pinbtjson_res item_res     = pinbtjson_handle_col_cir(json, tokens, i);
+			res.body.col_shapes.len           = 1;
+			res.body.col_shapes.items         = alloc_arr_clr(alloc, res.body.col_shapes.items, 1);
+			res.body.col_shapes.items[0].type = COL_TYPE_CIR;
+			res.body.col_shapes.items[0].cir  = item_res.cir;
 			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("ellipsis")) == 0) {
 			i++;
-			struct pinbtjson_res item_res    = pinbtjson_handle_col_ellipsis(json, tokens, i);
-			res.col_shapes.count             = 1;
-			res.col_shapes.items[0].type     = COL_TYPE_ELLIPSIS;
-			res.col_shapes.items[0].ellipsis = item_res.ellipsis;
+			struct pinbtjson_res item_res         = pinbtjson_handle_col_ellipsis(json, tokens, i);
+			res.body.col_shapes.len               = 1;
+			res.body.col_shapes.items             = alloc_arr_clr(alloc, res.body.col_shapes.items, 1);
+			res.body.col_shapes.items[0].type     = COL_TYPE_ELLIPSIS;
+			res.body.col_shapes.items[0].ellipsis = item_res.ellipsis;
 			i += item_res.token_count;
 		} else if(json_eq(json, key, str8_lit("capsule")) == 0) {
 			dbg_assert(value->type == JSMN_ARRAY);
 			i += 2;
-			res.col_shapes.count         = 1;
-			res.col_shapes.items[0].type = COL_TYPE_CAPSULE;
+			res.body.col_shapes.len           = 1;
+			res.body.col_shapes.items         = alloc_arr_clr(alloc, res.body.col_shapes.items, 1);
+			res.body.col_shapes.items[0].type = COL_TYPE_CAPSULE;
 			for(i32 j = 0; j < value->size; j++) {
-				jsmntok_t *item                         = tokens + i;
-				struct pinbtjson_res item_res           = pinbtjson_handle_col_cir(json, tokens, i);
-				res.col_shapes.items[0].capsule.cirs[j] = item_res.cir;
+				jsmntok_t *item                              = tokens + i;
+				struct pinbtjson_res item_res                = pinbtjson_handle_col_cir(json, tokens, i);
+				res.body.col_shapes.items[0].capsule.cirs[j] = item_res.cir;
 				i += item_res.token_count;
 			}
 		}
@@ -858,27 +862,26 @@ pinbtjson_handle_rigid_body(str8 json, jsmntok_t *tokens, i32 index, struct allo
 		jsmntok_t *key   = tokens + i;
 		jsmntok_t *value = tokens + i + 1;
 		if(json_eq(json, key, str8_lit("flags")) == 0) {
-			res.body.flags = json_parse_i32(json, value);
+			res.body.body.flags = json_parse_i32(json, value);
 		} else if(json_eq(json, key, str8_lit("angular_damping")) == 0) {
-			res.body.ang_damping = json_parse_f32(json, value);
+			res.body.body.ang_damping = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("linear_damping")) == 0) {
-			res.body.linear_damping = json_parse_f32(json, value);
+			res.body.body.linear_damping = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("dynamic_friction")) == 0) {
-			res.body.dynamic_friction = json_parse_f32(json, value);
+			res.body.body.dynamic_friction = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("mass")) == 0) {
-			res.body.mass = json_parse_f32(json, value);
+			res.body.body.mass = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("restitution")) == 0) {
-			res.body.restitution = json_parse_f32(json, value);
+			res.body.body.restitution = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("static_friction")) == 0) {
-			res.body.static_friction = json_parse_f32(json, value);
+			res.body.body.static_friction = json_parse_f32(json, value);
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
 			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, alloc, scratch);
-			res.body.shapes.count         = item_res.col_shapes.count;
-			mcpy_array(res.body.shapes.items, item_res.col_shapes.items);
+			res.body.col_shapes           = item_res.body.col_shapes;
 			i += item_res.token_count - 1;
 		}
 	}
-	body_init(&res.body);
+	body_init(&res.body.body, res.body.col_shapes.items, res.body.col_shapes.len);
 	return res;
 }
 
@@ -900,8 +903,7 @@ pinbtjson_handle_sensor(str8 json, jsmntok_t *tokens, i32 index, struct alloc al
 			res.sensor.angle_rad = json_parse_f32(json, value) * DEG_TO_RAD;
 		} else if(json_eq(json, key, str8_lit("collision_shape")) == 0) {
 			struct pinbtjson_res item_res = pinbtjson_handle_col_shape(json, tokens, i + 1, alloc, scratch);
-			res.sensor.shapes.count       = item_res.col_shapes.count;
-			mcpy_array(res.sensor.shapes.items, item_res.col_shapes.items);
+			res.sensor.col_shapes         = item_res.body.col_shapes;
 			i += item_res.token_count - 1;
 		}
 	}

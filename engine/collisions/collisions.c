@@ -482,7 +482,7 @@ col_point_to_tri(f32 x, f32 y, f32 xa, f32 ya, f32 xb, f32 yb, f32 xc, f32 yc)
 }
 
 struct col_aabb
-col_shapes_get_bounding_box(const struct col_shapes *shapes)
+col_shapes_get_bounding_box(const struct col_shape *shapes, ssize shapes_count)
 {
 	struct col_aabb res = {
 		.min.x = F32_MAX,
@@ -491,8 +491,8 @@ col_shapes_get_bounding_box(const struct col_shapes *shapes)
 		.max.y = F32_MIN,
 	};
 
-	for(ssize i = 0; i < shapes->count; ++i) {
-		struct col_aabb aabb = col_shape_get_bounding_box(shapes->items + i);
+	for(ssize i = 0; i < shapes_count; ++i) {
+		struct col_aabb aabb = col_shape_get_bounding_box(shapes + i);
 		res.min.x            = min_f32(res.min.x, aabb.min.x);
 		res.min.y            = min_f32(res.min.y, aabb.min.y);
 		res.max.x            = max_f32(res.max.x, aabb.max.x);

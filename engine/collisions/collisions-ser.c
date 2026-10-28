@@ -8,17 +8,18 @@
 #define DBG_ONLY_W_FIRST
 
 void
-col_shapes_write(struct ser_writer *w, struct col_shapes *shapes)
+col_shapes_write(struct ser_writer *w, const struct col_shape *shapes, ssize shapes_count)
 {
 	ser_write_object(w);
 
+	// count goes first so the reader can allocate before the items
 	ser_write_string(w, str8_lit("count"));
-	ser_write_i32(w, shapes->count);
+	ser_write_i32(w, shapes_count);
 
 	ser_write_string(w, str8_lit("items"));
 	ser_write_array(w);
-	for(ssize i = 0; i < shapes->count; ++i) {
-		col_shape_write(w, shapes->items + i);
+	for(ssize i = 0; i < shapes_count; ++i) {
+		col_shape_write(w, shapes + i);
 	}
 	ser_write_end(w);
 
@@ -26,7 +27,7 @@ col_shapes_write(struct ser_writer *w, struct col_shapes *shapes)
 }
 
 void
-col_shape_write(struct ser_writer *w, struct col_shape *shape)
+col_shape_write(struct ser_writer *w, const struct col_shape *shape)
 {
 	ser_write_object(w);
 
@@ -117,26 +118,32 @@ col_capsule_write(struct ser_writer *w, struct col_capsule col)
 	ser_write_end(w);
 }
 
-struct col_shapes
-col_shapes_read(struct ser_reader *r, struct ser_value obj)
+struct col_shape *
+col_shapes_read(struct alloc alloc, struct ser_reader *r, struct ser_value obj, ssize *shapes_count)
 {
-	struct col_shapes res = {0};
+	struct col_shape *res = NULL;
+	ssize count           = -1;
+	ssize len             = 0;
 	dbg_assert(obj.type == SER_TYPE_OBJECT);
 	struct ser_value key, value;
-	ssize count = 0;
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_assert(key.type == SER_TYPE_STRING);
 		if(str8_match(key.str, str8_lit("count"), 0)) {
 			count = ser_get_i32(value);
+			dbg_assert(count >= 0);
+			if(count > 0) { res = alloc_arr(alloc, res, count); }
 		} else if(str8_match(key.str, str8_lit("items"), 0)) {
 			dbg_assert(value.type == SER_TYPE_ARRAY);
+			dbg_assert(count >= 0); // count must come before items
 			struct ser_value item_value;
 			while(ser_iter_array(r, value, &item_value)) {
-				res.items[res.count++] = col_shape_read(r, item_value);
+				dbg_assert(len < count);
+				res[len++] = col_shape_read(r, item_value);
 			}
 		}
 	}
-	dbg_assert(count == res.count);
+	dbg_assert(count == len);
+	*shapes_count = len;
 	return res;
 }
 

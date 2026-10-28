@@ -3,16 +3,11 @@
 #include "base/types.h"
 #include "lib/pinb/pinb.h"
 
-struct pinb_col_shapes {
-	usize count;
-	struct col_shape items[10];
-};
-
 struct pinbtjson_res {
 	usize token_count;
 	union {
 		struct pinb_entity entity;
-		struct body body;
+		struct pinb_body body;
 		struct col_cir cir;
 		struct col_ellipsis ellipsis;
 		struct col_line line;
@@ -21,7 +16,6 @@ struct pinbtjson_res {
 		struct pinb_physics_props physics_props;
 		struct pinb_flippers_props flipper_props;
 		struct pinb_table_props table_props;
-		struct pinb_col_shapes col_shapes;
 		struct pinb_spr spr;
 		struct pinb_bet bet;
 		struct pinb_flip flip;
