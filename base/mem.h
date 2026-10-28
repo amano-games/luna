@@ -41,6 +41,6 @@ static inline void *
 alloc_size_aligned(struct alloc alloc, ssize mem_size, ssize align, b32 clr)
 {
 	void *mem = alloc.allocf(alloc.ctx, mem_size, align);
-	if(clr) { mclr(mem, mem_size); };
+	if(clr && mem) { mclr(mem, mem_size); };
 	return mem;
 }
