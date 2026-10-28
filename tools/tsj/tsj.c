@@ -420,7 +420,7 @@ handle_tsj(str8 in_path, str8 out_path, str8 src_root, str8 dest_root, struct al
 	u8 *mem_buffer         = mem_alloc_size(alloc_sys, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marean = {0};
-	marena_init_local(&marean, mem_buffer, mem_size);
+	marena_ini_local(&marean, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marean);
 
 	str8 out_file_path = path_make_file_name_with_ext(scratch, out_path, str8_lit(ADB_EXT));

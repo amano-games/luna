@@ -25,7 +25,7 @@ struct marena {
 #if MARENA_DEBUG
 	ssize peak;
 	u32 flags;
-	const char *name;
+	str8 name;
 	const char *file;
 	i32 line;
 	struct marena *parent;
@@ -53,13 +53,13 @@ struct marena_tmp {
 #define marena_stack(name, size) \
 	alignas(MEM_ALIGN_DEFAULT) u8 name##_mem[(size)] = {0}; \
 	struct marena name                               = {0}; \
-	marena_ini_internal(&name, name##_mem, (size), MARENA_FLAG_LOCAL, #name, __FILE__, __LINE__)
+	marena_ini_internal(&name, name##_mem, (size), MARENA_FLAG_LOCAL, str8_lit(#name), __FILE__, __LINE__)
 
-#define marena_init(m, buf, size)       marena_ini_internal((m), (buf), (size), 0, #m, __FILE__, __LINE__)
-#define marena_init_local(m, buf, size) marena_ini_internal((m), (buf), (size), MARENA_FLAG_LOCAL, #m, __FILE__, __LINE__)
+#define marena_ini(m, buf, size)       marena_ini_internal((m), (buf), (size), 0, str8_lit(#m), __FILE__, __LINE__)
+#define marena_ini_local(m, buf, size) marena_ini_internal((m), (buf), (size), MARENA_FLAG_LOCAL, str8_lit(#m), __FILE__, __LINE__)
 
-void marena_ini_internal(struct marena *m, void *buf, ssize bufsize, u32 flags, const char *name, const char *file, i32 line);
-void marena_set_name(struct marena *m, const char *name);
+void marena_ini_internal(struct marena *m, void *buf, ssize bufsize, u32 flags, str8 name, const char *file, i32 line);
+void marena_set_name(struct marena *m, str8 name);
 void marena_unregister(struct marena *m);
 void *marena_alloc(struct marena *m, ssize size, ssize align);
 void *marena_state(struct marena *m);

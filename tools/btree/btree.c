@@ -247,7 +247,7 @@ handle_btree(str8 in_path, str8 out_path, struct alloc scratch)
 	void *mem_buffer       = mem_alloc_size(sys_alloc, mem_size);
 	dbg_assert(mem_buffer != NULL);
 	struct marena marena = {0};
-	marena_init_local(&marena, mem_buffer, mem_size);
+	marena_ini_local(&marena, mem_buffer, mem_size);
 	struct alloc alloc = marena_allocator(&marena);
 
 	str8 json = {0};

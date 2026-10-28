@@ -1,12 +1,14 @@
 #include "base/dbg.h"
 #include "marena.h"
 
+#if MARENA_DEBUG
 static void marena_table_register(struct marena *m);
+#endif
 
 struct marena_table MARENA_TABLE = {0};
 
 void
-marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, const char *name, const char *file, i32 line)
+marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, str8 name, const char *file, i32 line)
 {
 	dbg_check_mem(buf, "Marena");
 
@@ -32,7 +34,7 @@ error:
 }
 
 void
-marena_set_name(struct marena *m, const char *name)
+marena_set_name(struct marena *m, str8 name)
 {
 #if MARENA_DEBUG
 	m->name = name;
@@ -146,6 +148,7 @@ marena_tmp_end(struct marena_tmp tmp)
 	marena_reset_to(tmp.arena, tmp.p);
 }
 
+#if MARENA_DEBUG
 static b32
 marena_is_ancestor(struct marena *m, struct marena *of)
 {
@@ -187,7 +190,7 @@ marena_table_register(struct marena *m)
 			static b32 warned = false;
 			if(!warned) {
 				warned = true;
-				log_warn("marena", "arena table full, %s is not tracked", m->name);
+				log_warn("marena", "arena table full, %.*s is not tracked", str8_spread(m->name));
 			}
 			return;
 		}
@@ -196,3 +199,4 @@ marena_table_register(struct marena *m)
 
 	m->parent = marena_table_parent_find(m);
 }
+#endif

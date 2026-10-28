@@ -204,7 +204,7 @@ main(int argc, char *argv[])
 	void *mem      = mem_alloc_size(alloc_sys, mem_size);
 	dbg_check_warn(mem, "asset-gen", "Failed to get scratch memory");
 	struct marena scratch_arena = {0};
-	marena_init(&scratch_arena, mem, mem_size);
+	marena_ini(&scratch_arena, mem, mem_size);
 	struct alloc scratch = marena_allocator(&scratch_arena);
 
 	struct cmd_line cmd  = cmd_line_from_argcv(scratch, argc, argv);
