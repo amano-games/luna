@@ -10,6 +10,20 @@
 #define MARENA_DEBUG BUILD_DEBUG
 #endif
 
+#if BUILD_ASAN && MARENA_DEBUG
+#define MARENA_ASAN 1
+// NOLINTBEGIN(readability-identifier-naming)
+void __asan_poison_memory_region(void const volatile *addr, size_t size);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+// NOLINTEND(readability-identifier-naming)
+#define MARENA_POISON(p, s)   __asan_poison_memory_region((p), (size_t)(s))
+#define MARENA_UNPOISON(p, s) __asan_unpoison_memory_region((p), (size_t)(s))
+#else
+#define MARENA_ASAN           0
+#define MARENA_POISON(p, s)   ((void)(p), (void)(s))
+#define MARENA_UNPOISON(p, s) ((void)(p), (void)(s))
+#endif
+
 enum marena_flag {
 	MARENA_FLAG_NONE,
 

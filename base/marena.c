@@ -7,6 +7,12 @@ static void marena_table_register(struct marena *m);
 
 struct marena_table MARENA_TABLE = {0};
 
+#if MARENA_ASAN
+#define MARENA_POISONS(m) (!((m)->flags & MARENA_FLAG_LOCAL))
+#else
+#define MARENA_POISONS(m) 0
+#endif
+
 void
 marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, str8 name, const char *file, i32 line)
 {
@@ -27,6 +33,9 @@ marena_ini_internal(struct marena *m, void *buf, ssize buf_size, u32 flags, str8
 	}
 #endif
 
+	// p may be stale or garbage here, the reset must not poison from it
+	m->p = m->buf;
+	if(MARENA_POISONS(m)) { MARENA_POISON(m->buf, m->buf_size); }
 	marena_reset(m);
 
 error:
@@ -76,6 +85,9 @@ marena_alloc(struct marena *m, ssize size, ssize align)
 	m->p = (void *)(aligned + mem_size);
 	m->rem -= padding + mem_size;
 
+	// Alignment padding stays poisoned
+	if(MARENA_POISONS(m)) { MARENA_UNPOISON((void *)aligned, mem_size); }
+
 #if MARENA_DEBUG
 	m->peak = MAX(m->peak, m->buf_size - m->rem);
 #endif
@@ -92,17 +104,19 @@ marena_state(struct marena *m)
 void
 marena_reset_to(struct marena *m, void *p)
 {
+	char *prev = m->p;
 	m->p       = (char *)p;
 	ssize offs = ((char *)p - (char *)m->buf);
 
 	m->rem = m->buf_size - offs;
+
+	if(MARENA_POISONS(m) && prev > m->p) { MARENA_POISON(m->p, prev - m->p); }
 }
 
 void
 marena_reset(struct marena *m)
 {
-	m->p   = (char *)m->buf;
-	m->rem = m->buf_size;
+	marena_reset_to(m, m->buf);
 }
 
 void *
@@ -112,6 +126,7 @@ marena_alloc_rem(struct marena *m, ssize *s)
 	if(s) *s = m->rem;
 
 	void *mem = m->p;
+	if(MARENA_POISONS(m)) { MARENA_UNPOISON(mem, m->rem); }
 	m->p += m->rem;
 	m->rem = 0;
 
