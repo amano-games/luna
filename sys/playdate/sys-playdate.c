@@ -834,6 +834,8 @@ sys_pd_serial_msg(const char *data)
 		marena_ini_local(&arena, mem, PD_PROF_CSV_MEM_SIZE);
 		alloc = marena_allocator(&arena);
 		prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
+		marena_reset(&arena);
+		marena_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
 		sys_free_raw(mem);
 	}
 }

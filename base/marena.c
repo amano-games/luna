@@ -1,5 +1,6 @@
 #include "base/dbg.h"
 #include "marena.h"
+#include "lib/csv.h"
 
 static void marena_table_register(struct marena *m);
 
@@ -291,4 +292,69 @@ marena_report_create(struct alloc alloc)
 	}
 
 	return res;
+}
+
+str8
+marena_csv(struct alloc alloc)
+{
+	str8 alloc_name = {0};
+
+	if(alloc.allocf == marena_alloc_func || marena_table_idx((struct marena *)alloc.ctx) >= 0) {
+		alloc_name = ((struct marena *)alloc.ctx)->name;
+	}
+
+	struct marena_report *report = marena_report_create(alloc);
+
+	if(!report) { return (str8){0}; }
+
+	struct str8_list list = {0};
+	str8_list_pushf(
+		alloc,
+		&list,
+		"# arenas=%u cap=%d marena_track=%d alloc=%.*s used=%" PRIi64 " peak=%" PRIi64 " size=%" PRIi64 "\n",
+		report->entry_count,
+		(i32)MARENA_TABLE_CAP,
+		(i32)MARENA_TRACK,
+		str8_spread(alloc_name),
+		(i64)report->total_used,
+		(i64)report->total_peak,
+		(i64)report->total_size);
+
+	str8_list_pushf(alloc, &list, "name,parent,depth,used,peak,size,used_pct,peak_pct,file,line\n");
+
+	for(u32 i = 0; i < report->entry_count; ++i) {
+		struct marena_report_entry *e = &report->entries[i];
+		str8 name                     = csv_quote_push(alloc, e->name);
+		str8 parent                   = csv_quote_push(alloc, e->parent_name);
+		str8 file                     = csv_quote_push(alloc, e->file ? str8_cstr((char *)e->file) : (str8){0});
+		str8 used_pct                 = csv_perc_push(alloc, e->used, e->size);
+		str8 peak_pct                 = csv_perc_push(alloc, e->peak, e->size);
+		str8_list_pushf(
+			alloc,
+			&list,
+			"%.*s,%.*s,%d,%" PRIi64 ",%" PRIi64 ",%" PRIi64 ",%.*s,%.*s,%.*s,%d\n",
+			str8_spread(name),
+			str8_spread(parent),
+			e->depth,
+			(i64)e->used,
+			(i64)e->peak,
+			(i64)e->size,
+			str8_spread(used_pct),
+			str8_spread(peak_pct),
+			str8_spread(file),
+			e->line);
+	}
+
+	return str8_list_join(alloc, &list, NULL);
+}
+
+b32
+marena_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
+{
+	if(!MARENA_TRACK) { return false; }
+	str8 csv = marena_csv(alloc);
+	str8 path = csv_save(alloc, csv, str8_lit("mem"), app_name, app_org);
+	if(path.size == 0) { return false; }
+	log_info("marena", "mem csv saved: %.*s", str8_spread(path));
+	return true;
 }

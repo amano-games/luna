@@ -2,6 +2,7 @@
 
 #include "sys/sys.h"
 #include "base/mem.h"
+#include "base/marena.h"
 #include "base/prof.h"
 #include "engine/dbg-drw/dbg-drw.h"
 #include "engine/gfx/gfx.h"
@@ -388,6 +389,10 @@ sys_internal_update(void)
 		if(sys->prof_state.save) {
 			sys->prof_state.save = false;
 			prof_csv_save(
+				sys->prof_state.scratch,
+				str8_lit(SYS_APP_NAME),
+				str8_lit(SYS_ORG_NAME));
+			marena_csv_save(
 				sys->prof_state.scratch,
 				str8_lit(SYS_APP_NAME),
 				str8_lit(SYS_ORG_NAME));

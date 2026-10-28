@@ -116,6 +116,8 @@ struct marena_tmp marena_tmp_start(struct marena *arena);
 void marena_tmp_end(struct marena_tmp tmp);
 
 struct marena_report *marena_report_create(struct alloc alloc);
+str8 marena_csv(struct alloc alloc);
+b32 marena_csv_save(struct alloc alloc, str8 app_name, str8 app_org);
 
 static inline void
 marena_set_name(struct marena *m, str8 name)

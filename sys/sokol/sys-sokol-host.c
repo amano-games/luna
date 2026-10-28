@@ -1229,6 +1229,8 @@ sokol_prof_csv_save(void)
 	marena_reset(&SOKOL_STATE.scratch_marena);
 	struct alloc alloc = SOKOL_STATE.scratch;
 	prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
+	marena_reset(&SOKOL_STATE.scratch_marena);
+	marena_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 }
 
 static void

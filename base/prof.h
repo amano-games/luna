@@ -9,6 +9,7 @@
 
 #include "base/utils.h"
 #include "base/str.h"
+#include "lib/csv.h"
 #include "sys/sys-io.h"
 #include "sys/sys.h"
 #include "base/dbg.h"
@@ -1025,37 +1026,6 @@ prof_rec_fill(struct gfx_ctx ctx, i32 x, i32 y, i32 w, i32 h, enum prim_mode mod
 	}
 }
 
-static inline i32
-prof_csv_append(char *row, i32 cap, i32 used, const char *fmt, ...)
-{
-	va_list args;
-	int w;
-	i32 left;
-
-	used = clamp_i32(used, 0, cap - 1);
-	left = cap - used;
-	va_start(args, fmt);
-	w = sys_vsnprintf(row + used, left, fmt, args);
-	va_end(args);
-
-	if(w < 0) {
-		return used;
-	}
-	if(w >= left) {
-		return cap - 1;
-	}
-
-	return used + w;
-}
-
-static inline void
-prof_csv_push_row(struct alloc alloc, struct str8_list *list, char *row, i32 n, i32 cap)
-{
-	n      = clamp_i32(n, 0, cap - 1);
-	row[n] = 0;
-	str8_list_pushf(alloc, list, "%s\n", row);
-}
-
 static inline str8
 prof_csv(struct alloc alloc, u32 max_records)
 {
@@ -1115,15 +1085,15 @@ prof_csv(struct alloc alloc, u32 max_records)
 
 	n = sys_snprintf(row, cap, "zone,id,exclusive,inclusive,count,inclusive_min,inclusive_max");
 	if(PROF_HISTORY == PROF_HISTORY_FRAME) {
-		n = prof_csv_append(row, cap, n, ",tot_exc,tot_inc,tot_hits");
+		n = csv_row_append(row, cap, n, ",tot_exc,tot_inc,tot_hits");
 	}
 	if(PROF_HISTORY) {
 		for(ssize i = 0; i < (ssize)ARRLEN(hist_sum); ++i) {
-			n = prof_csv_append(row, cap, n, ",%u", (u32)i);
+			n = csv_row_append(row, cap, n, ",%u", (u32)i);
 		}
 	}
 	mclr_array(hist_sum);
-	prof_csv_push_row(alloc, &list, row, n, cap);
+	csv_row_push(alloc, &list, row, n, cap);
 
 	for(u32 i = 0; i < record_count; ++i) {
 		u8 buf[64];
@@ -1135,21 +1105,21 @@ prof_csv(struct alloc alloc, u32 max_records)
 		n = sys_snprintf(row, cap, "%s,%" PRIu32, r->label, (u32)r->zone);
 		for(ssize j = 0; j < (ssize)ARRLEN(r->values); ++j) {
 			str = prof_f32_to_str8(buf, r->values[j], j == 2 ? 2 : precision);
-			n   = prof_csv_append(row, cap, n, ",%.*s", str8_spread(str));
+			n   = csv_row_append(row, cap, n, ",%.*s", str8_spread(str));
 		}
 		if(PROF_HISTORY == PROF_HISTORY_FRAME) {
 			struct prof_anchor_totals *t = &prof->totals[r->zone];
-			n                            = prof_csv_append(row, cap, n, ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, t->sum_exc, t->sum_inc, t->sum_hits);
+			n                            = csv_row_append(row, cap, n, ",%" PRIu64 ",%" PRIu64 ",%" PRIu64, t->sum_exc, t->sum_inc, t->sum_hits);
 		}
 
 		if(PROF_HISTORY) {
 			for(ssize h = 0; h < (ssize)ARRLEN(hist_sum); ++h) {
 				u32 excl = prof_zone_excl_at(r->zone, (u16)h);
 				hist_sum[h] += excl;
-				n = prof_csv_append(row, cap, n, ",%u", excl);
+				n = csv_row_append(row, cap, n, ",%u", excl);
 			}
 		}
-		prof_csv_push_row(alloc, &list, row, n, cap);
+		csv_row_push(alloc, &list, row, n, cap);
 	}
 
 	empty_n = 6; // id + 5 ema columns
@@ -1157,25 +1127,25 @@ prof_csv(struct alloc alloc, u32 max_records)
 		empty_n += 3; // tot_*
 		n = sys_snprintf(row, cap, "__dt");
 		for(i32 e = 0; e < empty_n; ++e) {
-			n = prof_csv_append(row, cap, n, ",");
+			n = csv_row_append(row, cap, n, ",");
 		}
 		for(ssize h = 0; h < (ssize)ARRLEN(hist_sum); ++h) {
 			const struct prof_hist_slot *slot = prof_history_logical_at((u16)h);
 			u32 dt                            = slot ? slot->dt_us : 0;
-			n                                 = prof_csv_append(row, cap, n, ",%u", dt);
+			n                                 = csv_row_append(row, cap, n, ",%u", dt);
 		}
-		prof_csv_push_row(alloc, &list, row, n, cap);
+		csv_row_push(alloc, &list, row, n, cap);
 	}
 
 	if(PROF_HISTORY) {
 		n = sys_snprintf(row, cap, "__sum");
 		for(i32 e = 0; e < empty_n; ++e) {
-			n = prof_csv_append(row, cap, n, ",");
+			n = csv_row_append(row, cap, n, ",");
 		}
 		for(ssize h = 0; h < (ssize)ARRLEN(hist_sum); ++h) {
-			n = prof_csv_append(row, cap, n, ",%" PRIu64, hist_sum[h]);
+			n = csv_row_append(row, cap, n, ",%" PRIu64, hist_sum[h]);
 		}
-		prof_csv_push_row(alloc, &list, row, n, cap);
+		csv_row_push(alloc, &list, row, n, cap);
 	}
 
 	return str8_list_join(alloc, &list, NULL);
@@ -1185,29 +1155,9 @@ static b32
 prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 {
 	if(!PROF) { return false; }
-	b32 res   = false;
-	str8 csv  = prof_csv(alloc, 0);
-	str8 path = str8_fmt_push(
-		alloc,
-		"%.*s-%s-prof.csv",
-		str8_spread(app_name),
-		sys_path_timestamp(alloc).str);
-	str8 dir = sys_path_to_cache_path(alloc, str8_lit(""), app_org, app_name);
-	if(dir.size > 0) {
-		sys_make_dir(dir);
-	}
-	str8 full_path = sys_path_to_cache_path(alloc, path, app_org, app_name);
-	sys_file f     = sys_file_open_w(full_path);
-
-	if(!sys_file_is_valid(f)) {
-		log_error("prof", "csv save failed: %.*s", str8_spread(full_path));
-		return res;
-	}
-	if(csv.size > 0) {
-		sys_file_w(f, csv.str, (u32)csv.size);
-	}
-	sys_file_close(f);
-	res = true;
-	log_info("prof", "prof csv saved: %.*s", str8_spread(full_path));
-	return res;
+	str8 csv = prof_csv(alloc, 0);
+	str8 path = csv_save(alloc, csv, str8_lit("prof"), app_name, app_org);
+	if(path.size == 0) { return false; }
+	log_info("prof", "prof csv saved: %.*s", str8_spread(path));
+	return true;
 }
