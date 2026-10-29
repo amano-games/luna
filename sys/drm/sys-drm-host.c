@@ -45,6 +45,7 @@
 #include <linux/input.h>
 #include <alsa/asoundlib.h>
 #pragma GCC diagnostic pop
+#include "base/mem-prof.h"
 
 #if !defined(DRM_PLANE_ROT_DEG)
 #define DRM_PLANE_ROT_DEG 270
@@ -1617,7 +1618,7 @@ main(int argc, char **argv)
 
 	mem = sys_alloc(NULL, DRM_HOST_SCRATCH_SIZE, MEM_ALIGN_DEFAULT);
 	dbg_check(mem, "drm", "host scratch");
-	marena_ini(&DRM_HOST.scratch_arena, mem, DRM_HOST_SCRATCH_SIZE, "drm-scratch");
+	marena_ini_track(&DRM_HOST.scratch_arena, mem, DRM_HOST_SCRATCH_SIZE, "drm-scratch");
 	DRM_HOST.scratch = marena_allocator(&DRM_HOST.scratch_arena);
 
 	{
@@ -1647,7 +1648,7 @@ main(int argc, char **argv)
 		ssize mem_size = MAX((ssize)MMEGABYTE(1), frame_bytes + MKILOBYTE(64));
 		mem            = sys_alloc(NULL, mem_size, MEM_ALIGN_PD_CACHE);
 		dbg_check(mem, "drm", "host arena");
-		marena_ini(&DRM_HOST.arena, mem, mem_size, "drm");
+		marena_ini_track(&DRM_HOST.arena, mem, mem_size, "drm");
 		DRM_HOST.alloc                      = marena_allocator(&DRM_HOST.arena);
 		DRM_HOST.opts.recording.save_path   = str8_cpy_push(DRM_HOST.alloc, DRM_HOST.opts.recording.save_path);
 		DRM_HOST.opts.screentshot.save_path = str8_cpy_push(DRM_HOST.alloc, DRM_HOST.opts.screentshot.save_path);

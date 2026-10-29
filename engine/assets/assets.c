@@ -17,6 +17,7 @@
 #include "lib/tex/tex.h"
 #include "sys/sys-lz4.h"
 #include "sys/sys.h"
+#include "base/mem-prof.h"
 
 struct assets ASSETS;
 
@@ -27,7 +28,7 @@ assets_ini(struct alloc alloc, usize size)
 {
 	log_info("assets", "init");
 	void *mem = mem_alloc_size(alloc, size);
-	marena_ini(&ASSETS.marena, mem, size, "assets");
+	marena_ini_track(&ASSETS.marena, mem, size, "assets");
 	ASSETS.alloc = (struct alloc){asset_allocf, (void *)&ASSETS};
 	mclr_struct(&ASSETS.db);
 }

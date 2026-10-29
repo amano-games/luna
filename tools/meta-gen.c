@@ -10,6 +10,7 @@
 #include "lib/tex/tex.c"
 
 #include "base/marena.c"
+#include "base/mem-prof.c"
 #include "base/str.c"
 #include "base/cmd-line.c"
 #include "base/path.c"
@@ -367,7 +368,7 @@ main(i32 argc, char *argv[])
 	struct marena arena = {0};
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 
-	marena_ini(&arena, mem, mem_size, "meta-gen");
+	marena_ini(&arena, mem, mem_size);
 	log_info(LOG_ID, "Processing C from %.*s -> %.*s", str8_spread(in_path), str8_spread(in_path));
 	gen_tables_recursive(in_path, &arena);
 

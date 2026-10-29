@@ -5,6 +5,7 @@
 #include "sys/sys-inc.c"
 
 #include "base/marena.c"
+#include "base/mem-prof.c"
 #include "base/path.c"
 #include "base/str.c"
 #include "base/cmd-line.c"

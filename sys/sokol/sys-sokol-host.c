@@ -52,6 +52,7 @@
 #include "sokol/sokol_glue.h"
 #include "sokol/sokol_audio.h"
 #include "shaders/sokol_shader.h"
+#include "base/mem-prof.h"
 
 #define SOKOL_TOUCH_INVALID U8_MAX
 #if OS_WINDOWS
@@ -175,7 +176,7 @@ sokol_main(i32 argc, char **argv)
 	{
 		usize mem_size = MMEGABYTE(2);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
-		marena_ini(&SOKOL_STATE.scratch_marena, mem, mem_size, "sokol-scratch");
+		marena_ini_track(&SOKOL_STATE.scratch_marena, mem, mem_size, "sokol-scratch");
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 
@@ -199,7 +200,7 @@ sokol_main(i32 argc, char **argv)
 			log_error("sokol", "Failed to allocate host arena");
 			return (sapp_desc){0};
 		}
-		marena_ini(&SOKOL_STATE.marena, mem, mem_size, "sokol");
+		marena_ini_track(&SOKOL_STATE.marena, mem, mem_size, "sokol");
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
 
@@ -1230,7 +1231,7 @@ sokol_prof_csv_save(void)
 	struct alloc alloc = SOKOL_STATE.scratch;
 	prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	marena_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
+	mem_prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 }
 
 static void

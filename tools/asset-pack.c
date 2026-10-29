@@ -24,6 +24,7 @@
 #include "lib/tex/tex.c"
 
 #include "base/marena.c"
+#include "base/mem-prof.c"
 #include "base/str.c"
 #include "base/cmd-line.c"
 #include "base/path.c"
@@ -402,7 +403,7 @@ main(int argc, char *argv[])
 		usize mem_size = MMEGABYTE(4);
 		void *mem      = mem_alloc_size(alloc_sys, mem_size);
 		dbg_check_warn(mem, LOG_ID, "Failed to get arena memory");
-		marena_ini(&marena, mem, mem_size, "asset-pack");
+		marena_ini(&marena, mem, mem_size);
 	}
 
 	alloc               = marena_allocator(&marena);

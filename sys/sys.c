@@ -3,6 +3,7 @@
 #include "sys/sys.h"
 #include "base/mem.h"
 #include "base/marena.h"
+#include "base/mem-prof.h"
 #include "base/prof.h"
 #include "engine/dbg-drw/dbg-drw.h"
 #include "engine/gfx/gfx.h"
@@ -392,7 +393,7 @@ sys_internal_update(void)
 				sys->prof_state.scratch,
 				str8_lit(SYS_APP_NAME),
 				str8_lit(SYS_ORG_NAME));
-			marena_csv_save(
+			mem_prof_csv_save(
 				sys->prof_state.scratch,
 				str8_lit(SYS_APP_NAME),
 				str8_lit(SYS_ORG_NAME));
@@ -457,7 +458,7 @@ sys_internal_close(void)
 	if(SYS.initialized) {
 		if(SYS.app.is_valid) { SYS.app.close(); }
 		if(SYS.mem.app_mem.buffer) {
-			marena_unregister_in_memory(SYS.mem.app_mem.buffer, SYS.mem.app_mem.size);
+			mem_prof_untrack_in_memory(SYS.mem.app_mem.buffer, SYS.mem.app_mem.size);
 			sys_free(SYS.mem.app_mem.buffer);
 		}
 		SYS.mem.app_mem.buffer = NULL;

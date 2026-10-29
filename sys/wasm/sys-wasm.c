@@ -27,6 +27,7 @@
 
 #define SOKOL_TIME_IMPL
 #include "sokol/sokol_time.h"
+#include "base/mem-prof.h"
 
 #define SECONDS_BETWEEN_1970_AND_2000 946684800LL
 #define OS_ARENA_SIZE                 MMEGABYTE(1)
@@ -69,12 +70,12 @@ sys_os_init(void)
 	struct alloc alloc_sys = sys_allocator();
 	{
 		void *mem = mem_alloc_size(alloc_sys, OS_ARENA_SIZE);
-		marena_ini(&OS_STATE.arena, mem, OS_ARENA_SIZE, "os");
+		marena_ini_track(&OS_STATE.arena, mem, OS_ARENA_SIZE, "os");
 		OS_STATE.alloc = marena_allocator(&OS_STATE.arena);
 	}
 	{
 		void *mem = mem_alloc_size(alloc_sys, OS_SCRATCH_SIZE);
-		marena_ini(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE, "os-scratch");
+		marena_ini_track(&OS_STATE.scratch_arena, mem, OS_SCRATCH_SIZE, "os-scratch");
 		OS_STATE.scratch = marena_allocator(&OS_STATE.scratch_arena);
 	}
 

@@ -19,6 +19,7 @@
 #include "sys/playdate/sys-playdate.h"
 #include "base/prof.h"
 #include "base/marena.h"
+#include "base/mem-prof.h"
 #include "base/utils.h"
 
 #include <stdlib.h> // abort
@@ -835,7 +836,7 @@ sys_pd_serial_msg(const char *data)
 		alloc = marena_allocator(&arena);
 		prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
 		marena_reset(&arena);
-		marena_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
+		mem_prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
 		sys_free_raw(mem);
 	}
 }
