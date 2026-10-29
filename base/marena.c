@@ -50,7 +50,7 @@ marena_unregister(struct marena *m)
 }
 
 void
-marena_unregister_in(void *buf, ssize size)
+marena_unregister_in_memory(void *buf, ssize size)
 {
 	u8 *lo = (u8 *)buf;
 	u8 *hi = lo + size;
