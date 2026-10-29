@@ -1,13 +1,12 @@
 #include "base/dbg.h"
 #include "marena.h"
 #include "lib/csv.h"
-#include "base/mem-prof.h"
 #include <stdlib.h>
 
 static void marena_table_register(struct marena *m);
+static void marena_report_sort(struct marena_report *report, enum marena_sort sort);
 
 struct marena_table MARENA_TABLE = {0};
-struct mem_prof MEM_PROF         = {.cols = MEM_PROF_COL_ALL};
 
 #define MARENA_POISONS(m) (BUILD_ASAN && !((m)->flags & MARENA_FLAG_LOCAL))
 
@@ -231,7 +230,7 @@ marena_report_entry_push(struct marena_report *report, struct marena *m, i32 dep
 }
 
 struct marena_report *
-marena_report_create(struct alloc alloc)
+marena_report_create(struct alloc alloc, enum marena_sort sort)
 {
 	struct marena_report *res = alloc_struct_clr(alloc, res);
 
@@ -291,6 +290,7 @@ marena_report_create(struct alloc alloc)
 		res->total_size += e->size;
 	}
 
+	marena_report_sort(res, sort);
 	return res;
 }
 
@@ -335,7 +335,7 @@ marena_report_sort_size(const void *pa, const void *pb)
 	return res != 0 ? res : marena_report_order_cmp(a, b);
 }
 
-void
+static void
 marena_report_sort(struct marena_report *report, enum marena_sort sort)
 {
 	int (*cmp)(const void *, const void *) = NULL;
@@ -357,7 +357,7 @@ marena_csv(struct alloc alloc)
 		alloc_name = ((struct marena *)alloc.ctx)->name;
 	}
 
-	struct marena_report *report = marena_report_create(alloc);
+	struct marena_report *report = marena_report_create(alloc, MARENA_SORT_DEPTH);
 
 	if(!report) { return (str8){0}; }
 

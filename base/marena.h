@@ -120,8 +120,7 @@ ssize marena_size_used(struct marena *m);
 struct marena_tmp marena_tmp_start(struct marena *arena);
 void marena_tmp_end(struct marena_tmp tmp);
 
-struct marena_report *marena_report_create(struct alloc alloc);
-void marena_report_sort(struct marena_report *report, enum marena_sort sort);
+struct marena_report *marena_report_create(struct alloc alloc, enum marena_sort sort);
 str8 marena_csv(struct alloc alloc);
 b32 marena_csv_save(struct alloc alloc, str8 app_name, str8 app_org);
 
