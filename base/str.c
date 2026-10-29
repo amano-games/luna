@@ -303,12 +303,12 @@ str8_from_bytes_buf(char *buf, usize cap, u64 bytes)
 {
 	static char const *suffixes[] = {
 		"",
-		" Ki",
-		" Mi",
-		" Gi",
-		" Ti",
-		" Pi",
-		" Ei",
+		"Ki",
+		"Mi",
+		"Gi",
+		"Ti",
+		"Pi",
+		"Ei",
 	};
 
 	u32 suffix_idx = 0;
