@@ -1,10 +1,12 @@
 #include "base/dbg.h"
 #include "marena.h"
 #include "lib/csv.h"
+#include "base/mem-prof.h"
 
 static void marena_table_register(struct marena *m);
 
 struct marena_table MARENA_TABLE = {0};
+struct mem_prof MEM_PROF         = {.cols = MEM_PROF_COL_ALL};
 
 #define MARENA_POISONS(m) (BUILD_ASAN && !((m)->flags & MARENA_FLAG_LOCAL))
 
