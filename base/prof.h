@@ -1155,7 +1155,7 @@ static b32
 prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 {
 	if(!PROF) { return false; }
-	str8 csv = prof_csv(alloc, 0);
+	str8 csv  = prof_csv(alloc, 0);
 	str8 path = csv_save(alloc, csv, str8_lit("prof"), app_name, app_org);
 	if(path.size == 0) { return false; }
 	log_info("prof", "prof csv saved: %.*s", str8_spread(path));

@@ -276,21 +276,6 @@ marena_report_create(struct alloc alloc)
 		res->total_size += e->size;
 	}
 
-	{
-		char used_b[STR_BYTES_CAP], peak_b[STR_BYTES_CAP], size_b[STR_BYTES_CAP];
-		str8 used = str8_from_bytes_buf(used_b, sizeof(used_b), (u64)res->total_used);
-		str8 peak = str8_from_bytes_buf(peak_b, sizeof(peak_b), (u64)res->total_peak);
-		str8 size = str8_from_bytes_buf(size_b, sizeof(size_b), (u64)res->total_size);
-
-		res->titles[0] = str8_fmt_push(alloc, "arenas %d/%d", (i32)count, (i32)MARENA_TABLE_CAP);
-		res->titles[1] = str8_fmt_push(alloc, "used %.*s peak %.*s size %.*s", str8_spread(used), str8_spread(peak), str8_spread(size));
-
-		res->headers[0] = str8_lit("arena");
-		res->headers[1] = str8_lit("used");
-		res->headers[2] = str8_lit("peak");
-		res->headers[3] = str8_lit("size");
-	}
-
 	return res;
 }
 
@@ -352,7 +337,7 @@ b32
 marena_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
 {
 	if(!MARENA_TRACK) { return false; }
-	str8 csv = marena_csv(alloc);
+	str8 csv  = marena_csv(alloc);
 	str8 path = csv_save(alloc, csv, str8_lit("mem"), app_name, app_org);
 	if(path.size == 0) { return false; }
 	log_info("marena", "mem csv saved: %.*s", str8_spread(path));

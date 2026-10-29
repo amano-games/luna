@@ -367,7 +367,7 @@ main(i32 argc, char *argv[])
 	struct marena arena = {0};
 	dbg_check_warn(mem, LOG_ID, "Failed to get scratch memory");
 
-	marena_ini(&arena, mem, mem_size);
+	marena_ini(&arena, mem, mem_size, "meta-gen");
 	log_info(LOG_ID, "Processing C from %.*s -> %.*s", str8_spread(in_path), str8_spread(in_path));
 	gen_tables_recursive(in_path, &arena);
 

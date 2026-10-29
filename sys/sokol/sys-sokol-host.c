@@ -175,7 +175,7 @@ sokol_main(i32 argc, char **argv)
 	{
 		usize mem_size = MMEGABYTE(2);
 		void *mem      = sys_alloc(NULL, mem_size, MEM_ALIGN_DEFAULT);
-		marena_ini(&SOKOL_STATE.scratch_marena, mem, mem_size);
+		marena_ini(&SOKOL_STATE.scratch_marena, mem, mem_size, "sokol-scratch");
 		SOKOL_STATE.scratch = marena_allocator(&SOKOL_STATE.scratch_marena);
 	}
 
@@ -199,7 +199,7 @@ sokol_main(i32 argc, char **argv)
 			log_error("sokol", "Failed to allocate host arena");
 			return (sapp_desc){0};
 		}
-		marena_ini(&SOKOL_STATE.marena, mem, mem_size);
+		marena_ini(&SOKOL_STATE.marena, mem, mem_size, "sokol");
 		SOKOL_STATE.alloc = marena_allocator(&SOKOL_STATE.marena);
 	}
 

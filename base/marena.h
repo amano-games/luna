@@ -52,8 +52,6 @@ struct marena_table {
 extern struct marena_table MARENA_TABLE;
 
 #define MARENA_REPORT_NUM_VALUES 3
-#define MARENA_REPORT_NUM_TITLES 2
-#define MARENA_REPORT_NUM_HEADER (MARENA_REPORT_NUM_VALUES + 1)
 
 struct marena_report_entry {
 	struct marena *arena;
@@ -72,12 +70,7 @@ struct marena_report_entry {
 	};
 };
 
-// Title 0: arenas <count>/<cap>
-// Title 1: totals of the root arenas, children are counted inside their parents
-// Header is arena used peak size, entries are in tree order
 struct marena_report {
-	str8 titles[MARENA_REPORT_NUM_TITLES];
-	str8 headers[MARENA_REPORT_NUM_HEADER];
 	ssize total_used;
 	ssize total_peak;
 	ssize total_size;
@@ -94,13 +87,13 @@ struct marena_tmp {
 #define MARENA_FILE    (MARENA_TRACK ? __FILE__ : NULL)
 #define MARENA_SITE(s) MARENA_NAME(s), MARENA_FILE, __LINE__
 
-#define marena_stack(name, size) \
-	alignas(MEM_ALIGN_DEFAULT) u8 name##_mem[(size)] = {0}; \
-	struct marena name                               = {0}; \
-	marena_ini_internal(&name, name##_mem, (size), MARENA_FLAG_LOCAL, MARENA_SITE(#name))
+#define marena_stack(var, size) \
+	alignas(MEM_ALIGN_DEFAULT) u8 var##_mem[(size)] = {0}; \
+	struct marena var                               = {0}; \
+	marena_ini_internal(&var, var##_mem, (size), MARENA_FLAG_LOCAL, (str8){0}, MARENA_FILE, __LINE__)
 
-#define marena_ini(m, buf, size)       marena_ini_internal((m), (buf), (size), 0, MARENA_SITE(#m))
-#define marena_ini_local(m, buf, size) marena_ini_internal((m), (buf), (size), MARENA_FLAG_LOCAL, MARENA_SITE(#m))
+#define marena_ini(m, buf, size, name) marena_ini_internal((m), (buf), (size), 0, MARENA_SITE(name))
+#define marena_ini_local(m, buf, size) marena_ini_internal((m), (buf), (size), MARENA_FLAG_LOCAL, (str8){0}, MARENA_FILE, __LINE__)
 
 void marena_ini_internal(struct marena *m, void *buf, ssize bufsize, u32 flags, str8 name, const char *file, i32 line);
 void marena_unregister(struct marena *m);
