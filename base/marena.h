@@ -5,6 +5,7 @@
 #include "base/str.h"
 #include "base/types.h"
 #include "base/dbg.h"
+#include "sys/sys-printf.h"
 
 #if !defined(MARENA_TRACK)
 #define MARENA_TRACK BUILD_DEBUG
@@ -150,6 +151,56 @@ marena_alloc_func(void *ctx, ssize size, ssize align)
 
 error:
 	return NULL;
+}
+
+static inline ssize
+marena_bytes_div(ssize ref)
+{
+	i64 div = 1;
+	if(ref >= MKILOBYTE(1)) { div = MKILOBYTE(1); }
+	if(ref >= MMEGABYTE(1)) { div = MMEGABYTE(1); }
+	if(ref >= MGIGABYTE(1)) { div = MGIGABYTE(1); }
+	if(div > 1 && div < MGIGABYTE(1) && ((i64)ref * 10 + div / 2) / div >= 10240) { div *= 1024; }
+	return (ssize)div;
+}
+
+static inline char
+marena_bytes_unit(ssize div)
+{
+	if(div >= MGIGABYTE(1)) { return 'G'; }
+	if(div >= MMEGABYTE(1)) { return 'M'; }
+	if(div >= MKILOBYTE(1)) { return 'K'; }
+	return 'B';
+}
+
+static inline int
+marena_bytes_num(char *buf, int cap, ssize v, ssize div)
+{
+	if(div == 1) { return sys_snprintf(buf, cap, "%lld", (long long)v); }
+	i64 tenths = ((i64)v * 10 + div / 2) / div;
+	return sys_snprintf(buf, cap, "%lld.%lld", (long long)(tenths / 10), (long long)(tenths % 10));
+}
+
+// 512B, 1.5K, 2.4M
+static inline str8
+marena_bytes_short_buf(char *buf, usize cap, ssize bytes)
+{
+	ssize div = marena_bytes_div(bytes);
+	int n     = marena_bytes_num(buf, (int)cap, bytes, div);
+	n += sys_snprintf(buf + n, (int)cap - n, "%c", marena_bytes_unit(div));
+	return str8_cstr_capped(buf, buf + n);
+}
+
+// used/total in the unit of total: 13.8/18.2M
+static inline str8
+marena_bytes_ratio_buf(char *buf, usize cap, ssize used, ssize total)
+{
+	ssize div = marena_bytes_div(total);
+	int n     = marena_bytes_num(buf, (int)cap, used, div);
+	n += sys_snprintf(buf + n, (int)cap - n, "/");
+	n += marena_bytes_num(buf + n, (int)cap - n, total, div);
+	n += sys_snprintf(buf + n, (int)cap - n, "%c", marena_bytes_unit(div));
+	return str8_cstr_capped(buf, buf + n);
 }
 
 static inline struct alloc
