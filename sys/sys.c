@@ -456,7 +456,10 @@ sys_internal_close(void)
 {
 	if(SYS.initialized) {
 		if(SYS.app.is_valid) { SYS.app.close(); }
-		if(SYS.mem.app_mem.buffer) { sys_free(SYS.mem.app_mem.buffer); }
+		if(SYS.mem.app_mem.buffer) {
+			marena_unregister_in_memory(SYS.mem.app_mem.buffer, SYS.mem.app_mem.size);
+			sys_free(SYS.mem.app_mem.buffer);
+		}
 		SYS.mem.app_mem.buffer = NULL;
 	}
 	sys_steam_close();

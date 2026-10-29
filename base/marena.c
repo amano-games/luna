@@ -49,6 +49,17 @@ marena_unregister(struct marena *m)
 	}
 }
 
+void
+marena_unregister_in(void *buf, ssize size)
+{
+	u8 *lo = (u8 *)buf;
+	u8 *hi = lo + size;
+	for(ssize i = MARENA_TABLE.count - 1; i >= 0; --i) {
+		u8 *p = (u8 *)MARENA_TABLE.arenas[i]->buf;
+		if(p >= lo && p < hi) { marena_unregister(MARENA_TABLE.arenas[i]); }
+	}
+}
+
 void *
 marena_alloc(struct marena *m, ssize size, ssize align)
 {
