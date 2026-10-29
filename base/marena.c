@@ -2,6 +2,7 @@
 #include "marena.h"
 #include "lib/csv.h"
 #include "base/mem-prof.h"
+#include <stdlib.h>
 
 static void marena_table_register(struct marena *m);
 
@@ -216,7 +217,8 @@ marena_table_idx(struct marena *m)
 static void
 marena_report_entry_push(struct marena_report *report, struct marena *m, i32 depth)
 {
-	struct marena_report_entry *e = &report->entries[report->entry_count++];
+	struct marena_report_entry *e = &report->entries[report->entry_count];
+	e->order                      = report->entry_count++;
 	e->arena                      = m;
 	e->name                       = m->name;
 	e->parent_name                = m->parent ? m->parent->name : (str8){0};
@@ -290,6 +292,60 @@ marena_report_create(struct alloc alloc)
 	}
 
 	return res;
+}
+
+static int
+marena_report_perc_cmp(ssize a, ssize as, ssize b, ssize bs)
+{
+	i64 l = as > 0 ? (i64)a * (bs > 0 ? bs : 1) : 0;
+	i64 r = bs > 0 ? (i64)b * (as > 0 ? as : 1) : 0;
+	return (l > r) - (l < r);
+}
+
+static int
+marena_report_order_cmp(const struct marena_report_entry *a, const struct marena_report_entry *b)
+{
+	return (a->order > b->order) - (a->order < b->order);
+}
+
+static int
+marena_report_sort_used_perc(const void *pa, const void *pb)
+{
+	const struct marena_report_entry *a = pa;
+	const struct marena_report_entry *b = pb;
+	int res                             = marena_report_perc_cmp(b->used, b->size, a->used, a->size);
+	return res != 0 ? res : marena_report_order_cmp(a, b);
+}
+
+static int
+marena_report_sort_free_perc(const void *pa, const void *pb)
+{
+	const struct marena_report_entry *a = pa;
+	const struct marena_report_entry *b = pb;
+	int res                             = marena_report_perc_cmp(b->size - b->used, b->size, a->size - a->used, a->size);
+	return res != 0 ? res : marena_report_order_cmp(a, b);
+}
+
+static int
+marena_report_sort_size(const void *pa, const void *pb)
+{
+	const struct marena_report_entry *a = pa;
+	const struct marena_report_entry *b = pb;
+	int res                             = (b->size > a->size) - (b->size < a->size);
+	return res != 0 ? res : marena_report_order_cmp(a, b);
+}
+
+void
+marena_report_sort(struct marena_report *report, enum marena_sort sort)
+{
+	int (*cmp)(const void *, const void *) = NULL;
+	switch(sort) {
+	case MARENA_SORT_USED_PERC: cmp = marena_report_sort_used_perc; break;
+	case MARENA_SORT_FREE_PERC: cmp = marena_report_sort_free_perc; break;
+	case MARENA_SORT_SIZE: cmp = marena_report_sort_size; break;
+	default: break;
+	}
+	if(cmp) { qsort(report->entries, report->entry_count, sizeof(report->entries[0]), cmp); }
 }
 
 str8

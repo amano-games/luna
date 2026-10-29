@@ -54,6 +54,15 @@ extern struct marena_table MARENA_TABLE;
 
 #define MARENA_REPORT_NUM_VALUES 3
 
+enum marena_sort {
+	MARENA_SORT_DEPTH,
+	MARENA_SORT_USED_PERC,
+	MARENA_SORT_FREE_PERC,
+	MARENA_SORT_SIZE,
+
+	MARENA_SORT_NUM_COUNT,
+};
+
 struct marena_report_entry {
 	struct marena *arena;
 	str8 name;
@@ -61,6 +70,7 @@ struct marena_report_entry {
 	const char *file;
 	i32 line;
 	i32 depth;
+	u32 order;
 	union {
 		struct {
 			ssize used;
@@ -111,6 +121,7 @@ struct marena_tmp marena_tmp_start(struct marena *arena);
 void marena_tmp_end(struct marena_tmp tmp);
 
 struct marena_report *marena_report_create(struct alloc alloc);
+void marena_report_sort(struct marena_report *report, enum marena_sort sort);
 str8 marena_csv(struct alloc alloc);
 b32 marena_csv_save(struct alloc alloc, str8 app_name, str8 app_org);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/marena.h"
 #include "base/types.h"
 
 enum mem_prof_col {
@@ -29,4 +30,17 @@ static inline u32
 mem_prof_cols_get(void)
 {
 	return MEM_PROF.cols;
+}
+
+static inline void
+mem_prof_sort_set(enum marena_sort sort)
+{
+	dbg_assert(sort < MARENA_SORT_NUM_COUNT);
+	MEM_PROF.sort = (u8)sort;
+}
+
+static inline enum marena_sort
+mem_prof_sort_get(void)
+{
+	return (enum marena_sort)MEM_PROF.sort;
 }
