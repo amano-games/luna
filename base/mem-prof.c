@@ -135,11 +135,15 @@ mem_prof_report_entry_push(struct mem_prof_report *report, struct mem_prof_info 
 }
 
 struct mem_prof_report *
-mem_prof_report_create(struct alloc alloc, enum mem_prof_sort sort)
+mem_prof_report_create(struct alloc alloc, enum mem_prof_sort sort, u32 cols)
 {
+	dbg_assert(sort < MEM_PROF_SORT_NUM_COUNT);
 	struct mem_prof_report *res = alloc_struct_clr(alloc, res);
 
 	if(!res) { return NULL; }
+
+	res->sort = sort;
+	res->cols = (cols | MEM_PROF_COL_BIT(MEM_PROF_COL_NAME)) & MEM_PROF_COL_ALL;
 
 	ssize count                   = MEM_PROF_TABLE.count;
 	b8 pushed[MEM_PROF_TABLE_CAP] = {0};
@@ -252,7 +256,7 @@ mem_prof_report_sort(struct mem_prof_report *report, enum mem_prof_sort sort)
 }
 
 str8
-mem_prof_csv(struct alloc alloc)
+mem_prof_csv(struct alloc alloc, enum mem_prof_sort sort)
 {
 	str8 alloc_name = {0};
 
@@ -261,7 +265,7 @@ mem_prof_csv(struct alloc alloc)
 		if(info) { alloc_name = info->name; }
 	}
 
-	struct mem_prof_report *report = mem_prof_report_create(alloc, MEM_PROF_SORT_DEPTH);
+	struct mem_prof_report *report = mem_prof_report_create(alloc, sort, MEM_PROF_COL_ALL);
 
 	if(!report) { return (str8){0}; }
 
@@ -269,36 +273,33 @@ mem_prof_csv(struct alloc alloc)
 	str8_list_pushf(
 		alloc,
 		&list,
-		"# arenas=%u cap=%d mem_prof=%d alloc=%.*s used=%" PRIi64 " peak=%" PRIi64 " size=%" PRIi64 "\n",
+		"# arenas=%u cap=%d mem_prof=%d sort=%d alloc=%.*s used=%" PRIi64 " peak=%" PRIi64 " size=%" PRIi64 "\n",
 		report->entry_count,
 		(i32)MEM_PROF_TABLE_CAP,
 		(i32)MEM_PROF,
+		(i32)report->sort,
 		str8_spread(alloc_name),
 		(i64)report->total_used,
 		(i64)report->total_peak,
 		(i64)report->total_size);
 
-	str8_list_pushf(alloc, &list, "name,parent,depth,used,peak,size,used_pct,peak_pct,file,line\n");
+	str8_list_pushf(alloc, &list, "name,parent,depth,used,peak,size,file,line\n");
 
 	for(u32 i = 0; i < report->entry_count; ++i) {
 		struct mem_prof_report_entry *e = &report->entries[i];
 		str8 name                       = csv_quote_push(alloc, e->name);
 		str8 parent                     = csv_quote_push(alloc, e->parent_name);
 		str8 file                       = csv_quote_push(alloc, e->file ? str8_cstr((char *)e->file) : (str8){0});
-		str8 used_pct                   = csv_perc_push(alloc, e->used, e->size);
-		str8 peak_pct                   = csv_perc_push(alloc, e->peak, e->size);
 		str8_list_pushf(
 			alloc,
 			&list,
-			"%.*s,%.*s,%d,%" PRIi64 ",%" PRIi64 ",%" PRIi64 ",%.*s,%.*s,%.*s,%d\n",
+			"%.*s,%.*s,%d,%" PRIi64 ",%" PRIi64 ",%" PRIi64 ",%.*s,%d\n",
 			str8_spread(name),
 			str8_spread(parent),
 			e->depth,
 			(i64)e->used,
 			(i64)e->peak,
 			(i64)e->size,
-			str8_spread(used_pct),
-			str8_spread(peak_pct),
 			str8_spread(file),
 			e->line);
 	}
@@ -307,10 +308,10 @@ mem_prof_csv(struct alloc alloc)
 }
 
 b32
-mem_prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org)
+mem_prof_csv_save(struct alloc alloc, enum mem_prof_sort sort, str8 app_name, str8 app_org)
 {
 	if(!MEM_PROF) { return false; }
-	str8 csv  = mem_prof_csv(alloc);
+	str8 csv  = mem_prof_csv(alloc, sort);
 	str8 path = csv_save(alloc, csv, str8_lit("mem"), app_name, app_org);
 	if(path.size == 0) { return false; }
 	log_info("mem-prof", "mem csv saved: %.*s", str8_spread(path));

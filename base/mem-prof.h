@@ -46,6 +46,8 @@ void mem_prof_name_set(struct marena *m, str8 name);
 #define MEM_PROF_REPORT_NUM_VALUES 3
 
 enum mem_prof_sort {
+	MEM_PROF_SORT_NONE,
+
 	MEM_PROF_SORT_DEPTH,
 	MEM_PROF_SORT_USED_PERC,
 	MEM_PROF_SORT_FREE_PERC,
@@ -53,6 +55,22 @@ enum mem_prof_sort {
 
 	MEM_PROF_SORT_NUM_COUNT,
 };
+
+enum mem_prof_col {
+	MEM_PROF_COL_NONE,
+
+	MEM_PROF_COL_NAME,
+	MEM_PROF_COL_USED,
+	MEM_PROF_COL_PEAK,
+	MEM_PROF_COL_SIZE,
+	MEM_PROF_COL_PERC,
+	MEM_PROF_COL_BAR,
+
+	MEM_PROF_COL_NUM_COUNT,
+};
+
+#define MEM_PROF_COL_BIT(col) (1u << (col))
+#define MEM_PROF_COL_ALL      (MEM_PROF_COL_BIT(MEM_PROF_COL_NUM_COUNT) - 1)
 
 struct mem_prof_report_entry {
 	struct marena *arena;
@@ -73,6 +91,8 @@ struct mem_prof_report_entry {
 };
 
 struct mem_prof_report {
+	enum mem_prof_sort sort;
+	u32 cols;
 	ssize total_used;
 	ssize total_peak;
 	ssize total_size;
@@ -80,19 +100,9 @@ struct mem_prof_report {
 	struct mem_prof_report_entry entries[MEM_PROF_TABLE_CAP];
 };
 
-struct mem_prof_report *mem_prof_report_create(struct alloc alloc, enum mem_prof_sort sort);
-str8 mem_prof_csv(struct alloc alloc);
-b32 mem_prof_csv_save(struct alloc alloc, str8 app_name, str8 app_org);
-
-enum mem_prof_col {
-	MEM_PROF_COL_PERC = 1 << 0,
-	MEM_PROF_COL_BAR  = 1 << 1,
-	MEM_PROF_COL_USED = 1 << 2,
-	MEM_PROF_COL_PEAK = 1 << 3,
-	MEM_PROF_COL_SIZE = 1 << 4,
-
-	MEM_PROF_COL_ALL = MEM_PROF_COL_PERC | MEM_PROF_COL_BAR | MEM_PROF_COL_USED | MEM_PROF_COL_PEAK | MEM_PROF_COL_SIZE,
-};
+struct mem_prof_report *mem_prof_report_create(struct alloc alloc, enum mem_prof_sort sort, u32 cols);
+str8 mem_prof_csv(struct alloc alloc, enum mem_prof_sort sort);
+b32 mem_prof_csv_save(struct alloc alloc, enum mem_prof_sort sort, str8 app_name, str8 app_org);
 
 static inline ssize
 mem_prof_bytes_div(ssize ref)

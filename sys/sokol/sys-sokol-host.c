@@ -1231,7 +1231,7 @@ sokol_prof_csv_save(void)
 	struct alloc alloc = SOKOL_STATE.scratch;
 	prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 	marena_reset(&SOKOL_STATE.scratch_marena);
-	mem_prof_csv_save(alloc, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
+	mem_prof_csv_save(alloc, MEM_PROF_SORT_DEPTH, str8_lit(SYS_APP_NAME), str8_lit(SYS_ORG_NAME));
 }
 
 static void

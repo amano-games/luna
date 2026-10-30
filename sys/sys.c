@@ -395,6 +395,7 @@ sys_internal_update(void)
 				str8_lit(SYS_ORG_NAME));
 			mem_prof_csv_save(
 				sys->prof_state.scratch,
+				MEM_PROF_SORT_DEPTH,
 				str8_lit(SYS_APP_NAME),
 				str8_lit(SYS_ORG_NAME));
 			if(sys->prof_state.quit) { sys_quit(); }
