@@ -53,9 +53,12 @@
 
 #define PROF_CSV_ROW_CAP (512 + PROF_HISTORY_SIZE * 12) // 524 when history is off
 
-#define PROF_ANCHORS_SIZE         (PROF ? 96 : 1) // number of unique zones allowed in the entire application
-#define PROF_FRAMES_SIZE          (PROF ? 64 : 1) // number of call depth allowed
-#define PROF_INT_ZERO_THRESHHOLD  0.25f           // threshhold for a moving average of an integer to be at zero
+#if !defined(PROF_ANCHORS_MAX)
+#define PROF_ANCHORS_MAX 128
+#endif
+#define PROF_ANCHORS_SIZE         (PROF ? PROF_ANCHORS_MAX : 1) // number of unique zones allowed in the entire application
+#define PROF_FRAMES_SIZE          (PROF ? 64 : 1)               // number of call depth allowed
+#define PROF_INT_ZERO_THRESHHOLD  0.25f                         // threshhold for a moving average of an integer to be at zero
 #define PROF_CALIBRATE_LOOP_COUNT 1000
 #define PROF_DRW_ROW_PAD          1
 
