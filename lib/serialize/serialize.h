@@ -10,6 +10,10 @@ struct ser_reader {
 	int len;
 	int cur;
 	int depth;
+
+	str8 *strs;
+	i32 strs_cap;
+	i32 strs_count;
 };
 
 struct ser_writer {
@@ -27,6 +31,8 @@ enum ser_value_type {
 	SER_TYPE_BOOL,
 	SER_TYPE_STRING,
 	SER_TYPE_U32,
+	SER_TYPE_STR_DEF,
+	SER_TYPE_STR_REF,
 };
 
 struct ser_value {
@@ -217,13 +223,26 @@ ser_read(struct ser_reader *r)
 		ok &= ser_safe_read(r, &res.b32, 1);
 		break;
 	case SER_TYPE_STRING:
+	case SER_TYPE_STR_DEF:
 		ok &= ser_safe_read(r, &res.str.size, sizeof(res.str.size));
 		res.str.str = (u8 *)&r->data[r->cur];
 		ok &= ser_safe_read(r, NULL, res.str.size);
 		uint8_t null;
 		ok &= ser_safe_read(r, &null, 1);
 		ok &= (null == 0);
+		if(type == SER_TYPE_STR_DEF) {
+			ok &= r->strs_count < r->strs_cap;
+			if(ok) { r->strs[r->strs_count++] = res.str; }
+			res.type = SER_TYPE_STRING;
+		}
 		break;
+	case SER_TYPE_STR_REF: {
+		u32 idx = 0;
+		ok &= ser_safe_read(r, &idx, sizeof(idx));
+		ok &= idx < (u32)r->strs_count;
+		if(ok) { res.str = r->strs[idx]; }
+		res.type = SER_TYPE_STRING;
+	} break;
 	default: // bad type
 		ok &= false;
 	}
