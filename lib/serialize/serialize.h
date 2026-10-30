@@ -1,5 +1,6 @@
 #pragma once
 
+// https://rxi.github.io/a_simple_serialization_system.html
 #include "base/dbg.h"
 #include "base/str.h"
 #include "sys/sys-io.h"
