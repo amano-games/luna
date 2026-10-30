@@ -242,6 +242,24 @@ mem_prof_report_sort_size(const void *pa, const void *pb)
 	return res != 0 ? res : mem_prof_report_order_cmp(a, b);
 }
 
+static int
+mem_prof_report_sort_peak(const void *pa, const void *pb)
+{
+	const struct mem_prof_report_entry *a = pa;
+	const struct mem_prof_report_entry *b = pb;
+	int res                               = (b->peak > a->peak) - (b->peak < a->peak);
+	return res != 0 ? res : mem_prof_report_order_cmp(a, b);
+}
+
+static int
+mem_prof_report_sort_peak_perc(const void *pa, const void *pb)
+{
+	const struct mem_prof_report_entry *a = pa;
+	const struct mem_prof_report_entry *b = pb;
+	int res                               = mem_prof_report_perc_cmp(b->peak, b->size, a->peak, a->size);
+	return res != 0 ? res : mem_prof_report_order_cmp(a, b);
+}
+
 static void
 mem_prof_report_sort(struct mem_prof_report *report, enum mem_prof_sort sort)
 {
@@ -250,6 +268,8 @@ mem_prof_report_sort(struct mem_prof_report *report, enum mem_prof_sort sort)
 	case MEM_PROF_SORT_USED_PERC: cmp = mem_prof_report_sort_used_perc; break;
 	case MEM_PROF_SORT_FREE_PERC: cmp = mem_prof_report_sort_free_perc; break;
 	case MEM_PROF_SORT_SIZE: cmp = mem_prof_report_sort_size; break;
+	case MEM_PROF_SORT_PEAK: cmp = mem_prof_report_sort_peak; break;
+	case MEM_PROF_SORT_PEAK_PERC: cmp = mem_prof_report_sort_peak_perc; break;
 	default: break;
 	}
 	if(cmp) { qsort(report->entries, report->entry_count, sizeof(report->entries[0]), cmp); }
