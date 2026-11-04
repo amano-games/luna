@@ -19,9 +19,6 @@
 #include "sys/sys.h"
 #include "tools/asset/asset.h"
 
-// NOTE: This is forced for now ideally comes from tiled
-#define TSJ_TILE_TAGS (1u << 1)
-
 static b32 tsj_atlas_gen(str8 dest_root, str8 rel, struct tex_atlas atlas, v2_i32 tex_size, struct alloc scratch);
 static b32 tsj_ani_gen(str8 dest_root, str8 rel, struct animation_clip *clips, struct alloc scratch);
 
@@ -310,11 +307,32 @@ tsj_handle_json(
 	dbg_assert(root.type == JSMN_OBJECT);
 
 	struct path_db res = {0};
+	u32 tags           = 0;
 
 	for(usize i = 0; i < (usize)token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
-		if(json_eq(json, key, str8_lit("tilecount")) == 0) {
+		if(json_eq(json, key, str8_lit("properties")) == 0) {
+			dbg_assert(value->type == JSMN_ARRAY);
+			usize item_index = i + 2;
+
+			for(i32 j = 0; j < value->size; j++) {
+				jsmntok_t *item = &tokens[item_index];
+				dbg_assert(item->type == JSMN_OBJECT);
+				usize item_count = json_obj_count(json, item);
+				b32 is_tags      = false;
+				for(usize k = item_index + 1; k < item_index + item_count; k++) {
+					if(json_eq(json, &tokens[k], str8_lit("propertytype")) == 0) {
+						is_tags = json_eq(json, &tokens[k + 1], str8_lit("asset_tag")) == 0;
+					} else if(is_tags && json_eq(json, &tokens[k], str8_lit("value")) == 0) {
+						tags = (u32)json_parse_i32(json, &tokens[k + 1]);
+					}
+				}
+				item_index += item_count;
+			}
+
+			i = item_index - 1;
+		} else if(json_eq(json, key, str8_lit("tilecount")) == 0) {
 			// NOTE: we generate a tex, ani and atlas
 			usize count = json_parse_i32(json, value) * 3;
 			res.paths   = arr_new(alloc, res.paths, count);
@@ -342,18 +360,23 @@ tsj_handle_json(
 
 					// NOTE:  we need the absolute path when generating
 					// relative path when pushing to the db
-					tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(TEX_EXT)), TSJ_TILE_TAGS);
+					tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(TEX_EXT)), 0);
 					if(tsj_atlas_gen(dest_root, rel, tile_res.atlas, tile_res.tex_size, scratch)) {
-						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ATLAS_EXT)), TSJ_TILE_TAGS);
+						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ATLAS_EXT)), 0);
 					}
 					if(arr_len(tile_res.clips) > 0 && tsj_ani_gen(dest_root, rel, tile_res.clips, scratch)) {
-						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ANI_EXT)), TSJ_TILE_TAGS);
+						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ANI_EXT)), 0);
 					}
 				}
 
 				i += tile_res.token_count;
 			}
 		}
+	}
+
+	// NOTE: "properties" can come after "tiles"
+	for(ssize i = 0; i < arr_len(res.tags); ++i) {
+		res.tags[i] = tags;
 	}
 
 	return res;
