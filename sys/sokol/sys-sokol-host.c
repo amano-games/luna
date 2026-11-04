@@ -391,6 +391,7 @@ sokol_init(void)
 	});
 
 	sapp_show_mouse(true);
+	sapp_set_mouse_cursor(SAPP_MOUSECURSOR_ARROW);
 	{
 		b32 want_capture = SOKOL_STATE.opts.video.mouse_capture;
 		sapp_lock_mouse(want_capture);
