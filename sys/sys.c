@@ -14,6 +14,7 @@
 #include "sys/sys-mem.h"
 #include "sys/steam/sys-steam.h"
 #include "sys/sys-hot-reload.h"
+#include "sys/sys-msg.h"
 
 #if !defined(SYS_SHOW_FPS)
 #if BUILD_DEBUG
@@ -25,6 +26,8 @@
 
 #define SYS_MEM_POISON_PATTERN 0xCD
 #define SYS_LOG_LABEL          "sys"
+
+static void sys_msg_process(void);
 
 #if SYS_HOT_RELOAD
 struct sys_data SYS;
@@ -243,6 +246,8 @@ sys_internal_init(void)
 i32
 sys_internal_update(void)
 {
+	sys_msg_process();
+
 	struct sys_data *sys = &SYS;
 	u64 now              = sys_time_us();
 	u64 time_delta       = now - sys->last_time_us;
@@ -565,6 +570,62 @@ void
 sys_internal_stream_end(void)
 {
 	if(SYS.app.is_valid) { SYS.app.stream_end(); }
+}
+
+void
+sys_msg_push_internal(str8 msg)
+{
+	struct sys_msg_queue *q = &SYS.msgs;
+	msg                     = str8_skip_chop_whitespace(msg);
+
+	if(msg.size == 0) { return; }
+
+	if(msg.size > SYS_MSG_LEN_MAX) {
+		log_warn(SYS_LOG_LABEL, "msg dropped, longer than %d bytes: %.*s", SYS_MSG_LEN_MAX, str8_spread(msg));
+		return;
+	}
+
+	if(q->count >= SYS_MSG_QUEUE_LEN) {
+		log_warn(SYS_LOG_LABEL, "msg dropped, queue full: %.*s", str8_spread(msg));
+		return;
+	}
+
+	mcpy(q->items[q->count], msg.str, msg.size);
+	q->sizes[q->count] = (u16)msg.size;
+	q->count++;
+}
+
+b32
+sys_msg_cmd_is(str8 msg, str8 cmd, str8 *out_args)
+{
+	if(!str8_starts_with(msg, cmd, 0)) { return false; }
+
+	if(msg.size > cmd.size && msg.str[cmd.size] != ' ') { return false; }
+
+	if(out_args) {
+		*out_args = str8_skip_chop_whitespace(str8_skip(msg, cmd.size));
+	}
+
+	return true;
+}
+
+static void
+sys_msg_process(void)
+{
+	struct sys_msg_queue *q = &SYS.msgs;
+	for(i32 i = 0; i < q->count; ++i) {
+		str8 msg = {.str = q->items[i], .size = q->sizes[i]};
+
+		log_info(SYS_LOG_LABEL, "msg: %.*s", str8_spread(msg));
+
+		if(sys_msg_cmd_is(msg, str8_lit("quit"), NULL)) {
+			sys_quit();
+		} else {
+			log_info(SYS_LOG_LABEL, "msg not handled: %.*s", str8_spread(msg));
+		}
+	}
+
+	q->count = 0;
 }
 
 void

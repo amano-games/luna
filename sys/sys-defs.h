@@ -3,6 +3,7 @@
 #include "base/base-inc.h"
 #include "lib/fnt/fnt-defs.h"
 #include "sys/sys-app-proc.h"
+#include "sys/sys-msg.h"
 
 #define SYS_PD_DISPLAY_W 400
 #define SYS_PD_DISPLAY_H 240
@@ -134,6 +135,7 @@ struct sys_data {
 
 	struct sys_prof_state prof_state;
 	struct sys_mem mem;
+	struct sys_msg_queue msgs;
 };
 
 struct app_mem {
