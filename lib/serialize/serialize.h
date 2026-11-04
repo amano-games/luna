@@ -2,6 +2,9 @@
 
 // https://rxi.github.io/a_simple_serialization_system.html
 #include "base/dbg.h"
+#include "base/hash.h"
+#include "base/ht.h"
+#include "base/mem.h"
 #include "base/str.h"
 #include "sys/sys-io.h"
 #include "base/types.h"
@@ -17,8 +20,22 @@ struct ser_reader {
 	i32 strs_count;
 };
 
+struct ser_strs {
+	str8 *items;
+	i32 cap;
+	i32 count;
+};
+
+struct ser_intern {
+	struct alloc alloc;
+	struct ht_u32 ht;
+	struct ser_strs strs;
+	b32 is_full_warned;
+};
+
 struct ser_writer {
 	sys_file f;
+	struct ser_intern *intern;
 };
 
 enum ser_value_type {
@@ -50,8 +67,77 @@ struct ser_value {
 };
 
 static inline void
+ser_writer_intern_ini(struct ser_writer *w, struct alloc alloc, i32 cap)
+{
+	dbg_assert(cap > 0);
+	struct ser_intern *intern = alloc_struct_clr(alloc, intern);
+	intern->alloc             = alloc;
+	intern->strs.cap          = cap;
+	intern->strs.items        = alloc_arr(alloc, intern->strs.items, cap);
+	intern->ht                = ht_u32_new(ht_exp_from_count((usize)cap), alloc);
+	w->intern                 = intern;
+}
+
+// NOTE: Custom function that compares the keys
+static inline i32
+ser_intern_find(struct ser_intern *intern, str8 str, u64 hash)
+{
+	for(i32 i = (i32)hash;;) {
+		i                      = ht_lookup(hash, intern->ht.exp, i);
+		struct ht_entry_u32 *e = &intern->ht.ht[i];
+		if(e->value == 0) { return -1; }
+		if(e->key == hash && str8_match(intern->strs.items[e->value - 1], str, 0)) {
+			return (i32)e->value - 1;
+		}
+	}
+}
+
+static inline b32
+ser_intern_push(struct ser_intern *intern, str8 str, u64 hash)
+{
+	if(intern->strs.count >= intern->strs.cap) {
+		if(!intern->is_full_warned) {
+			intern->is_full_warned = true;
+			log_warn("ser", "str table full: %d", (int)intern->strs.cap);
+		}
+		return false;
+	}
+
+	struct ht_u32 *ht = &intern->ht;
+	i32 idx           = intern->strs.count;
+
+	// NOTE: Insert
+	for(i32 i = (i32)hash;;) {
+		i                      = ht_lookup(hash, ht->exp, i);
+		struct ht_entry_u32 *e = &ht->ht[i];
+		if(e->value == 0) {
+			e->key   = hash;
+			e->value = (u32)idx + 1;
+			ht->len++;
+			break;
+		}
+	}
+
+	intern->strs.items[intern->strs.count++] = str8_cpy_push(intern->alloc, str);
+	return true;
+}
+
+static inline void
 ser_write(struct ser_writer *w, struct ser_value val)
 {
+	u32 ref_idx = 0;
+
+	if(val.type == SER_TYPE_STRING && w->intern) {
+		u64 hash = hash_fnv1a_str8(val.str);
+		i32 idx  = ser_intern_find(w->intern, val.str, hash);
+		if(idx >= 0) {
+			val.type = SER_TYPE_STR_REF;
+			ref_idx  = (u32)idx;
+		} else if(ser_intern_push(w->intern, val.str, hash)) {
+			val.type = SER_TYPE_STR_DEF;
+		}
+	}
+
 	// write tag byte
 	sys_file_w(w->f, &val.type, 1);
 	enum ser_value_type type = (enum ser_value_type)val.type;
@@ -69,13 +155,17 @@ ser_write(struct ser_writer *w, struct ser_value val)
 	case SER_TYPE_F32: {
 		sys_file_w(w->f, &val.f32, sizeof(val.f32));
 	} break;
-	case SER_TYPE_STRING: {
+	case SER_TYPE_STRING:
+	case SER_TYPE_STR_DEF: {
 		sys_file_w(w->f, &val.str.size, sizeof(val.str.size)); // write length
 		if(val.str.size > 0) {
 			sys_file_w(w->f, val.str.str, val.str.size); // write string
 		}
 		u8 null = 0;
 		sys_file_w(w->f, &null, 1); // write null-terminator
+	} break;
+	case SER_TYPE_STR_REF: {
+		sys_file_w(w->f, &ref_idx, sizeof(ref_idx));
 	} break;
 	case SER_TYPE_BOOL: {
 		sys_file_w(w->f, &val.b32, 1);
