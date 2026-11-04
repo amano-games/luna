@@ -33,9 +33,16 @@ struct ser_intern {
 	b32 is_full_warned;
 };
 
+struct ser_buffer {
+	u8 *data;
+	u32 len;
+	u32 cap;
+};
+
 struct ser_writer {
 	sys_file f;
 	struct ser_intern *intern;
+	struct ser_buffer buffer;
 };
 
 enum ser_value_type {
@@ -76,6 +83,44 @@ ser_writer_intern_ini(struct ser_writer *w, struct alloc alloc, i32 cap)
 	intern->strs.items        = alloc_arr(alloc, intern->strs.items, cap);
 	intern->ht                = ht_u32_new(ht_exp_from_count((usize)cap), alloc);
 	w->intern                 = intern;
+}
+
+static inline void
+ser_writer_buffer_ini(struct ser_writer *w, struct alloc alloc, u32 cap)
+{
+	dbg_assert(cap > 0);
+	w->buffer.data = alloc_arr(alloc, w->buffer.data, cap);
+	w->buffer.len  = 0;
+	w->buffer.cap  = cap;
+}
+
+static inline void
+ser_writer_flush(struct ser_writer *w)
+{
+	if(w->buffer.len > 0) {
+		sys_file_w(w->f, w->buffer.data, w->buffer.len);
+		w->buffer.len = 0;
+	}
+}
+
+static inline void
+ser_w(struct ser_writer *w, const void *data, u32 size)
+{
+	if(!w->buffer.data) {
+		sys_file_w(w->f, data, size);
+		return;
+	}
+
+	if(w->buffer.len + size > w->buffer.cap) {
+		ser_writer_flush(w);
+		if(size > w->buffer.cap) {
+			sys_file_w(w->f, data, size);
+			return;
+		}
+	}
+
+	mcpy(w->buffer.data + w->buffer.len, data, size);
+	w->buffer.len += size;
 }
 
 // NOTE: Custom function that compares the keys
@@ -139,36 +184,36 @@ ser_write(struct ser_writer *w, struct ser_value val)
 	}
 
 	// write tag byte
-	sys_file_w(w->f, &val.type, 1);
+	ser_w(w, &val.type, 1);
 	enum ser_value_type type = (enum ser_value_type)val.type;
 	// write value
 	switch(type) {
 	case SER_TYPE_U8: {
-		sys_file_w(w->f, &val.u8, sizeof(val.u8));
+		ser_w(w, &val.u8, sizeof(val.u8));
 	} break;
 	case SER_TYPE_I32: {
-		sys_file_w(w->f, &val.i32, sizeof(val.i32));
+		ser_w(w, &val.i32, sizeof(val.i32));
 	} break;
 	case SER_TYPE_U32: {
-		sys_file_w(w->f, &val.u32, sizeof(val.u32));
+		ser_w(w, &val.u32, sizeof(val.u32));
 	} break;
 	case SER_TYPE_F32: {
-		sys_file_w(w->f, &val.f32, sizeof(val.f32));
+		ser_w(w, &val.f32, sizeof(val.f32));
 	} break;
 	case SER_TYPE_STRING:
 	case SER_TYPE_STR_DEF: {
-		sys_file_w(w->f, &val.str.size, sizeof(val.str.size)); // write length
+		ser_w(w, &val.str.size, sizeof(val.str.size)); // write length
 		if(val.str.size > 0) {
-			sys_file_w(w->f, val.str.str, val.str.size); // write string
+			ser_w(w, val.str.str, val.str.size); // write string
 		}
 		u8 null = 0;
-		sys_file_w(w->f, &null, 1); // write null-terminator
+		ser_w(w, &null, 1); // write null-terminator
 	} break;
 	case SER_TYPE_STR_REF: {
-		sys_file_w(w->f, &ref_idx, sizeof(ref_idx));
+		ser_w(w, &ref_idx, sizeof(ref_idx));
 	} break;
 	case SER_TYPE_BOOL: {
-		sys_file_w(w->f, &val.b32, 1);
+		ser_w(w, &val.b32, 1);
 	} break;
 	default: {
 	}
