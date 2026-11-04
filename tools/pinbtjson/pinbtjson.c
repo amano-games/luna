@@ -1483,16 +1483,21 @@ pinbtjson_handle(str8 in_path, str8 out_path)
 		return -1;
 	}
 
+	table.version       = PINB_VER_LATEST;
 	struct ser_writer w = {.f = out_file};
+	ser_writer_intern_ini(&w, scratch, PINB_STRS_MAX);
 	pinb_write(&w, &table);
 	sys_file_close(out_file);
 
 #if BUILD_DEBUG
 	{
 		struct sys_full_file_res io_res = sys_load_full_file(scratch, out_file_path);
+		str8 *strs                      = alloc_arr(scratch, strs, PINB_STRS_MAX);
 		struct ser_reader r             = {
-			.data = io_res.data,
-			.len  = io_res.size,
+			.data     = io_res.data,
+			.len      = io_res.size,
+			.strs     = strs,
+			.strs_cap = PINB_STRS_MAX,
 		};
 		struct ser_value obj = ser_read(&r);
 	}

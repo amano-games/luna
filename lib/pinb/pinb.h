@@ -3,6 +3,18 @@
 #include "base/types.h"
 #include "engine/physics/physics.h"
 
+enum pinb_ver {
+	PINB_VER_NONE,
+
+	PINB_VER_INITIAL,
+
+	PINB_VER_NUM_COUNT,
+};
+
+#define PINB_VER_LATEST (PINB_VER_NUM_COUNT - 1)
+
+#define PINB_STRS_MAX 1024
+
 enum pinb_prop_type {
 	PINB_PROP_TYPE_NONE,
 

@@ -26,7 +26,7 @@ pinb_read(
 		if(str8_match(key.str, str8_lit("version"), 0)) {
 			dbg_assert(ser_get_i32(value) > 0);
 			table->version = ser_get_i32(value);
-			dbg_assert(table->version == 1);
+			dbg_assert(table->version <= PINB_VER_LATEST);
 		} else if(str8_match(key.str, str8_lit("flags"), 0)) {
 			table->flags = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("props"), 0)) {
@@ -1185,7 +1185,7 @@ pinb_write(struct ser_writer *w, struct pinb_table *pinb)
 	i32 res = 0;
 	ser_write_object(w);
 
-	dbg_assert(pinb->version == 1);
+	dbg_assert(pinb->version > PINB_VER_NONE && pinb->version <= PINB_VER_LATEST);
 	dbg_assert(pinb->entities_count == arr_len(pinb->entities));
 	ser_write_string(w, str8_lit("version"));
 	ser_write_i32(w, pinb->version);
