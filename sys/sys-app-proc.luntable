@@ -11,6 +11,7 @@
     "PAUSE",
     "RESUME",
     "STREAM_START",
-    "STREAM_END"
+    "STREAM_END",
+    "MSG"
   ]
 }

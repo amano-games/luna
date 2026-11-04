@@ -42,6 +42,7 @@ sys_code_load_app_proc(sys_lib lib, enum app_proc proc)
 		[APP_PROC_RESUME]       = str8_lit_comp("app_resume"),
 		[APP_PROC_STREAM_START] = str8_lit_comp("app_stream_start"),
 		[APP_PROC_STREAM_END]   = str8_lit_comp("app_stream_end"),
+		[APP_PROC_MSG]          = str8_lit_comp("app_msg"),
 	};
 	str8 name = proc_names[proc];
 	if(name.size == 0) {

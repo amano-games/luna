@@ -16,6 +16,7 @@ enum app_proc {
 	APP_PROC_RESUME,
 	APP_PROC_STREAM_START,
 	APP_PROC_STREAM_END,
+	APP_PROC_MSG,
 
 	APP_PROC_NUM_COUNT,
 };
@@ -31,4 +32,5 @@ static const str8 APP_PROC_LABELS[APP_PROC_NUM_COUNT] = {
 	[APP_PROC_RESUME]       = str8_lit_comp("RESUME"),
 	[APP_PROC_STREAM_START] = str8_lit_comp("STREAM_START"),
 	[APP_PROC_STREAM_END]   = str8_lit_comp("STREAM_END"),
+	[APP_PROC_MSG]          = str8_lit_comp("MSG"),
 };

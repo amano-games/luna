@@ -23,6 +23,7 @@ APP_VOID(app_pause);
 APP_VOID(app_resume);
 APP_VOID(app_stream_start);
 APP_VOID(app_stream_end);
+APP_MSG(app_msg);
 
 struct app_mem sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear);
 

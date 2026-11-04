@@ -89,12 +89,14 @@ struct sys_timing {
 #define APP_DRAW(name)  void name(void)
 #define APP_AUDIO(name) void name(i16 *lbuf, i16 *rbuf, i32 len)
 #define APP_VOID(name)  void name(void)
+#define APP_MSG(name)   void name(str8 msg)
 
 typedef APP_INIT(app_init_fn);
 typedef APP_TICK(app_tick_fn);
 typedef APP_DRAW(app_draw_fn);
 typedef APP_AUDIO(app_audio_fn);
 typedef APP_VOID(app_void_fn);
+typedef APP_MSG(app_msg_fn);
 
 struct app_code {
 	b32 is_valid;
@@ -111,6 +113,7 @@ struct app_code {
 			app_void_fn *resume;
 			app_void_fn *stream_start;
 			app_void_fn *stream_end;
+			app_msg_fn *msg;
 		};
 	};
 };

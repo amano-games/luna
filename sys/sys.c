@@ -44,6 +44,7 @@ struct sys_data SYS = {
 		.resume       = app_resume,
 		.stream_start = app_stream_start,
 		.stream_end   = app_stream_end,
+		.msg          = app_msg,
 	},
 };
 #endif
@@ -620,8 +621,8 @@ sys_msg_process(void)
 
 		if(sys_msg_cmd_is(msg, str8_lit("quit"), NULL)) {
 			sys_quit();
-		} else {
-			log_info(SYS_LOG_LABEL, "msg not handled: %.*s", str8_spread(msg));
+		} else if(SYS.app.is_valid) {
+			SYS.app.msg(msg);
 		}
 	}
 
