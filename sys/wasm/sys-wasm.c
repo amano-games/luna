@@ -55,6 +55,11 @@ sys_get_current_path(struct alloc alloc)
 }
 
 void
+sys_msg_backend_ini(void)
+{
+}
+
+void
 sys_audio_lock(void)
 {
 }

@@ -237,6 +237,8 @@ sys_internal_init(void)
 	sys_timing_reset();
 	// Tick on the first callback
 	SYS.timing.acc_us = SYS.timing.dt_us;
+
+	sys_msg_backend_ini();
 }
 
 // there are some frame skips when using the exact delta time and evaluating

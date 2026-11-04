@@ -67,6 +67,11 @@ static str8 sys_os_home_dir(void);
 static str8 sys_os_xdg_root(struct alloc alloc, char *env_val, str8 home, char *fallback_rel);
 
 void
+sys_msg_backend_ini(void)
+{
+}
+
+void
 sys_audio_lock(void)
 {
 	pthread_mutex_lock(&OS_AUDIO_LOCK);

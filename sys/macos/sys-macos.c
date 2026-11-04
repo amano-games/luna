@@ -445,6 +445,11 @@ sys_lib_load_proc(sys_lib lib, str8 name)
 }
 
 void
+sys_msg_backend_ini(void)
+{
+}
+
+void
 sys_audio_lock(void)
 {
 	pthread_mutex_lock(&OS_AUDIO_LOCK);

@@ -76,7 +76,6 @@ int (*PD_PERSONAL_BEST_GET)(const char *board_id, PersonalBestCallback callback)
 int sys_pd_update(void *user);
 int sys_pd_audio(void *ctx, i16 *lbuf, i16 *rbuf, int len);
 static inline u32 sys_pd_sec_to_us(f32 sec);
-static void sys_pd_serial_msg(const char *data);
 
 #define PD_SEC_TO_US_MAX 4000u // 4000 * MILLION_U32 stays inside u32 (max ~4295)
 
@@ -141,7 +140,6 @@ eventHandler(PlaydateAPI *pd, PDSystemEvent event, u32 arg)
 		};
 
 		sys_internal_init();
-		PD->system->setSerialMessageCallback(sys_pd_serial_msg);
 		break;
 	case kEventTerminate:
 		PD->graphics->freeBitmap(PD_STATE.menu_bitmap);
@@ -801,44 +799,18 @@ sys_pd_sec_to_us(f32 sec)
 	return (u32)(sec * MILLION_F32 + 0.5f);
 }
 
-static b32
-sys_pd_serial_cmd_is(const char *data, const char *cmd)
-{
-	usize n = strlen(cmd);
-	if(strncmp(data, cmd, n) != 0) { return false; }
-	char c = data[n];
-	return c == 0 || c == '\r' || c == '\n' || c == ' ';
-}
-
-#define PD_PROF_CSV_MEM_SIZE MKILOBYTE(512)
 static void
-sys_pd_serial_msg(const char *data)
+sys_pd_msg_serial(const char *data)
 {
 	if(data == NULL) { return; }
 	log_info("pd", "serial message: %s", data);
+	sys_msg_push_internal(str8_cstr((char *)data));
+}
 
-	if(sys_pd_serial_cmd_is(data, "quit")) {
-		sys_quit();
-		return;
-	}
-
-	if(sys_pd_serial_cmd_is(data, "prof_save")) {
-		void *mem;
-		struct marena arena;
-		struct alloc alloc;
-
-		mem = sys_alloc_raw(PD_PROF_CSV_MEM_SIZE);
-		if(mem == NULL) {
-			log_error("prof", "csv save alloc failed");
-			return;
-		}
-		marena_ini_local(&arena, mem, PD_PROF_CSV_MEM_SIZE);
-		alloc = marena_allocator(&arena);
-		prof_csv_save(alloc, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
-		marena_reset(&arena);
-		mem_prof_csv_save(alloc, MEM_PROF_SORT_DEPTH, str8_lit("devils-on-the-moon-pinball"), str8_lit("amano"));
-		sys_free_raw(mem);
-	}
+void
+sys_msg_backend_ini(void)
+{
+	PD->system->setSerialMessageCallback(sys_pd_msg_serial);
 }
 
 void
