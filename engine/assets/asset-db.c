@@ -27,35 +27,35 @@ asset_db_ini(struct asset_db *db, struct asset_db_counts counts, struct alloc al
 		(uint)counts.snds,
 		(uint)counts.bets);
 
-	db->animations.ht   = ht_new_u32(ht_exp_from_count(counts.slices), alloc);
+	db->animations.ht   = ht_u32_new(ht_exp_from_count(counts.slices), alloc);
 	db->animations.data = arr_new(alloc, db->animations.data, counts.clips + 1);
 	db->animations.arr  = arr_new(alloc, db->animations.arr, counts.slices + 1);
 	arr_push(db->animations.arr, (struct animation_slice){0});
 
-	db->paths.ht   = ht_new_u32(ht_exp_from_count(counts.paths), alloc);
+	db->paths.ht   = ht_u32_new(ht_exp_from_count(counts.paths), alloc);
 	db->paths.arr  = arr_new(alloc, db->paths.arr, counts.paths + 1);
 	db->paths.tags = arr_new(alloc, db->paths.tags, counts.paths + 1);
 	db->paths.data = arr_new(alloc, db->paths.data, counts.path_bytes ? counts.path_bytes : 1);
 	arr_push(db->paths.arr, (str8){0});
 	arr_push(db->paths.tags, 0);
 
-	db->textures.ht  = ht_new_u32(ht_exp_from_count(counts.textures), alloc);
+	db->textures.ht  = ht_u32_new(ht_exp_from_count(counts.textures), alloc);
 	db->textures.arr = arr_new(alloc, db->textures.arr, counts.textures + 1);
 	arr_push(db->textures.arr, (struct asset_tex){0});
 
-	db->atlases.ht  = ht_new_u32(ht_exp_from_count((usize)counts.textures), alloc);
+	db->atlases.ht  = ht_u32_new(ht_exp_from_count((usize)counts.textures), alloc);
 	db->atlases.arr = arr_new(alloc, db->atlases.arr, counts.textures + 1);
 	arr_push(db->atlases.arr, (struct tex_atlas){0});
 
-	db->snds.ht  = ht_new_u32(ht_exp_from_count(counts.snds), alloc);
+	db->snds.ht  = ht_u32_new(ht_exp_from_count(counts.snds), alloc);
 	db->snds.arr = arr_new(alloc, db->snds.arr, counts.snds + 1);
 	arr_push(db->snds.arr, (struct asset_snd){0});
 
-	db->fonts.ht  = ht_new_u32(ht_exp_from_count(counts.fonts), alloc);
+	db->fonts.ht  = ht_u32_new(ht_exp_from_count(counts.fonts), alloc);
 	db->fonts.arr = arr_new(alloc, db->fonts.arr, counts.fonts + 1);
 	arr_push(db->fonts.arr, (struct asset_fnt){0});
 
-	db->bets.ht  = ht_new_u32(ht_exp_from_count(counts.bets), alloc);
+	db->bets.ht  = ht_u32_new(ht_exp_from_count(counts.bets), alloc);
 	db->bets.arr = arr_new(alloc, db->bets.arr, counts.bets + 1);
 	arr_push(db->bets.arr, (struct asset_bet){0});
 
@@ -69,7 +69,7 @@ asset_db_path_push(struct asset_db *db, str8 path, u32 tags)
 	struct path_table *table = &db->paths;
 
 	u64 key     = hash_fnv1a_str8(path);
-	u32 value   = ht_get_u32(&table->ht, key);
+	u32 value   = ht_u32_get(&table->ht, key);
 	b32 has_key = value != 0;
 
 	if(has_key) {
@@ -88,7 +88,7 @@ asset_db_path_push(struct asset_db *db, str8 path, u32 tags)
 	arr_push(table->data, '\0');
 
 	value = arr_len(table->arr);
-	ht_set_u32(&table->ht, key, value);
+	ht_u32_insert(&table->ht, key, value);
 	arr_push(table->arr, res);
 	arr_push(table->tags, tags);
 
@@ -103,7 +103,7 @@ asset_db_path_get(struct asset_db *db, struct asset_handle handle)
 {
 	str8 res                 = {0};
 	struct path_table *table = &db->paths;
-	u32 value                = ht_get_u32(&table->ht, handle.path_hash);
+	u32 value                = ht_u32_get(&table->ht, handle.path_hash);
 
 	dbg_check(value != 0, "AssetsDB", "missing path");
 	res = table->arr[value];
@@ -116,7 +116,7 @@ b32
 asset_db_is_path_tagged(struct asset_db *db, str8 path, u32 tag)
 {
 	b32 res = false;
-	u32 id  = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+	u32 id  = ht_u32_get(&db->paths.ht, hash_fnv1a_str8(path));
 
 	if(id != 0) {
 		res = (db->paths.tags[id] & tag) != 0;
@@ -128,7 +128,7 @@ asset_db_is_path_tagged(struct asset_db *db, str8 path, u32 tag)
 void
 asset_db_path_tag_set(struct asset_db *db, str8 path, u32 tag)
 {
-	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+	u32 id = ht_u32_get(&db->paths.ht, hash_fnv1a_str8(path));
 
 	dbg_check(id != 0, "AssetsDB", "missing path");
 	db->paths.tags[id] |= tag;
@@ -139,7 +139,7 @@ error:;
 void
 asset_db_path_tag_clear(struct asset_db *db, str8 path, u32 tag)
 {
-	u32 id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+	u32 id = ht_u32_get(&db->paths.ht, hash_fnv1a_str8(path));
 
 	dbg_check(id != 0, "AssetsDB", "missing path");
 	db->paths.tags[id] &= ~tag;
@@ -153,7 +153,7 @@ path_id_intern(struct asset_db *db, str8 path)
 	u32 id;
 
 	asset_db_path_push(db, path, 0);
-	id = ht_get_u32(&db->paths.ht, hash_fnv1a_str8(path));
+	id = ht_u32_get(&db->paths.ht, hash_fnv1a_str8(path));
 	dbg_assert(id != 0);
 	return id;
 }
@@ -188,7 +188,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 	// Can we add the string?
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push tex");
 	u64 key                    = hash_fnv1a_str8(path);
-	u32 value                  = ht_get_u32(&table->ht, key);
+	u32 value                  = ht_u32_get(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_tex asset_tex = {.path_id = path_id_intern(db, path), .tex = tex};
 
@@ -196,7 +196,7 @@ asset_db_tex_push(struct asset_db *db, str8 path, struct tex tex)
 		return value;
 	} else {
 		value = table_len;
-		ht_set_u32(&table->ht, key, value);
+		ht_u32_insert(&table->ht, key, value);
 		arr_push(table->arr, asset_tex);
 		return value;
 	}
@@ -210,7 +210,7 @@ asset_db_tex_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct asset_tex res    = {0};
 	struct tex_table *table = &db->textures;
-	u32 value               = ht_get_u32(&table->ht, handle.path_hash);
+	u32 value               = ht_u32_get(&table->ht, handle.path_hash);
 
 	dbg_check(value != 0, "AssetsDB", "missing tex");
 	res = table->arr[value];
@@ -233,7 +233,7 @@ i32
 asset_db_tex_get_id(struct asset_db *db, struct asset_handle handle)
 {
 	struct tex_table *table = &db->textures;
-	u32 res                 = ht_get_u32(&table->ht, handle.path_hash);
+	u32 res                 = ht_u32_get(&table->ht, handle.path_hash);
 	return res;
 }
 
@@ -254,7 +254,7 @@ asset_db_tex_atlas_push(struct asset_db *db, str8 path, struct tex_atlas atlas)
 	usize table_len               = arr_len(table->arr);
 	usize table_cap               = arr_cap(table->arr);
 	u64 key                       = hash_fnv1a_str8(path);
-	u32 value                     = ht_get_u32(&table->ht, key);
+	u32 value                     = ht_u32_get(&table->ht, key);
 	b32 has_key                   = value != 0;
 
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push atlas");
@@ -274,7 +274,7 @@ asset_db_tex_atlas_push(struct asset_db *db, str8 path, struct tex_atlas atlas)
 	}
 
 	value = table_len;
-	ht_set_u32(&table->ht, key, value);
+	ht_u32_insert(&table->ht, key, value);
 	arr_push(table->arr, atlas);
 	return value;
 
@@ -287,7 +287,7 @@ asset_db_tex_atlas_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct tex_atlas res          = {0};
 	struct tex_atlas_table *table = &db->atlases;
-	u32 value                     = ht_get_u32(&table->ht, handle.path_hash);
+	u32 value                     = ht_u32_get(&table->ht, handle.path_hash);
 
 	if(value != 0) {
 		res = table->arr[value];
@@ -342,14 +342,14 @@ asset_db_animation_slice_push(struct asset_db *db, str8 path, struct animation_s
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Cant push animation slice");
 
 	u64 key     = hash_fnv1a_str8(path);
-	u32 value   = ht_get_u32(&table->ht, key);
+	u32 value   = ht_u32_get(&table->ht, key);
 	b32 has_key = value != 0;
 
 	if(has_key) {
 		return value;
 	} else {
 		value = table_len;
-		ht_set_u32(&table->ht, key, value);
+		ht_u32_insert(&table->ht, key, value);
 		arr_push(table->arr, slice);
 		return value;
 	}
@@ -362,7 +362,7 @@ struct animation_slice
 asset_db_animation_slice_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct animation_slice res = {0};
-	u32 index                  = ht_get_u32(&db->animations.ht, handle.path_hash);
+	u32 index                  = ht_u32_get(&db->animations.ht, handle.path_hash);
 
 	if(index != 0) {
 		res = db->animations.arr[index];
@@ -383,7 +383,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add snd");
 
 	u64 key                    = hash_fnv1a_str8(path);
-	u32 value                  = ht_get_u32(&table->ht, key);
+	u32 value                  = ht_u32_get(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_snd asset_snd = {.path_id = path_id_intern(db, path), .snd = snd};
 
@@ -391,7 +391,7 @@ asset_db_snd_push(struct asset_db *db, str8 path, struct snd snd)
 		res = value;
 	} else {
 		value = table_len;
-		ht_set_u32(&table->ht, key, value);
+		ht_u32_insert(&table->ht, key, value);
 		arr_push(table->arr, asset_snd);
 		res = value;
 	}
@@ -404,7 +404,7 @@ struct asset_snd
 asset_db_snd_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct asset_snd res = {0};
-	u32 index            = ht_get_u32(&db->snds.ht, handle.path_hash);
+	u32 index            = ht_u32_get(&db->snds.ht, handle.path_hash);
 
 	dbg_check(index != 0, "AssetsDB", "missing snd");
 	res = db->snds.arr[index];
@@ -426,7 +426,7 @@ asset_db_snd_path_get(struct asset_db *db, u32 id)
 u32
 asset_db_snd_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	u32 res = ht_get_u32(&db->snds.ht, handle.path_hash);
+	u32 res = ht_u32_get(&db->snds.ht, handle.path_hash);
 	return res;
 }
 
@@ -451,7 +451,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't add fnt");
 
 	u64 key                    = hash_fnv1a_str8(path);
-	u32 value                  = ht_get_u32(&table->ht, key);
+	u32 value                  = ht_u32_get(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_fnt asset_fnt = {.path_id = path_id_intern(db, path), .fnt = fnt};
 
@@ -459,7 +459,7 @@ asset_db_fnt_push(struct asset_db *db, str8 path, struct fnt fnt)
 		res = value;
 	} else {
 		value = table_len;
-		ht_set_u32(&table->ht, key, value);
+		ht_u32_insert(&table->ht, key, value);
 		arr_push(table->arr, asset_fnt);
 		res = value;
 	}
@@ -472,7 +472,7 @@ struct asset_fnt
 asset_db_fnt_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct asset_fnt res = {0};
-	u32 index            = ht_get_u32(&db->fonts.ht, handle.path_hash);
+	u32 index            = ht_u32_get(&db->fonts.ht, handle.path_hash);
 
 	dbg_check(index != 0, "AssetsDB", "missing fnt");
 	res = db->fonts.arr[index];
@@ -484,7 +484,7 @@ error:
 u32
 asset_db_fnt_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	u32 res = ht_get_u32(&db->fonts.ht, handle.path_hash);
+	u32 res = ht_u32_get(&db->fonts.ht, handle.path_hash);
 	return res;
 }
 
@@ -511,7 +511,7 @@ asset_db_bet_push(
 	dbg_check(table_len + 1 <= table_cap, "AssetsDB", "Can't push bet");
 
 	u64 key                    = hash_fnv1a_str8(path);
-	u32 value                  = ht_get_u32(&table->ht, key);
+	u32 value                  = ht_u32_get(&table->ht, key);
 	b32 has_key                = value != 0;
 	struct asset_bet asset_bet = {.path_id = path_id_intern(db, path), .bet = bet};
 
@@ -519,7 +519,7 @@ asset_db_bet_push(
 		return value;
 	} else {
 		value = table_len;
-		ht_set_u32(&table->ht, key, value);
+		ht_u32_insert(&table->ht, key, value);
 		arr_push(table->arr, asset_bet);
 		return value;
 	}
@@ -531,7 +531,7 @@ error:
 struct asset_bet_handle
 asset_db_bet_handle_get(struct asset_db *db, struct asset_handle handle)
 {
-	u32 index                   = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 index                   = ht_u32_get(&db->bets.ht, handle.path_hash);
 	struct asset_bet_handle res = (struct asset_bet_handle){.id = index};
 	return res;
 }
@@ -540,7 +540,7 @@ struct asset_bet
 asset_db_bet_get(struct asset_db *db, struct asset_handle handle)
 {
 	struct asset_bet res = {0};
-	u32 index            = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 index            = ht_u32_get(&db->bets.ht, handle.path_hash);
 
 	dbg_check(index != 0, "AssetsDB", "missing bet");
 	res = db->bets.arr[index];
@@ -561,7 +561,7 @@ asset_db_bet_get_by_id(struct asset_db *db, u32 id)
 u32
 asset_db_bet_get_id(struct asset_db *db, struct asset_handle handle)
 {
-	u32 res = ht_get_u32(&db->bets.ht, handle.path_hash);
+	u32 res = ht_u32_get(&db->bets.ht, handle.path_hash);
 	return res;
 }
 

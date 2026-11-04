@@ -600,7 +600,7 @@ static sys_steam_board_handle
 sys_scores_board_id_cache_get(str8 board_id)
 {
 	u64 key = hash_fnv1a_str8(board_id);
-	return key != 0 ? ht_get_u64(&SCORES_LB_CACHE, key) : 0;
+	return key != 0 ? ht_u64_get(&SCORES_LB_CACHE, key) : 0;
 }
 
 static void
@@ -611,10 +611,10 @@ sys_scores_board_id_cache_put(str8 board_id, sys_steam_board_handle handle)
 	u64 key = hash_fnv1a_str8(board_id);
 
 	if(key == 0) { goto error; } // Zero is reserved for empty hash-table slots.
-	if(ht_get_u64(&SCORES_LB_CACHE, key) != 0) { goto error; }
+	if(ht_u64_get(&SCORES_LB_CACHE, key) != 0) { goto error; }
 
 	dbg_check_warn(SCORES_LB_CACHE.len < SYS_SCORES_LB_CACHE_CAP, "sys-scores", "leaderboard cache full");
-	ht_set_u64(&SCORES_LB_CACHE, key, handle);
+	ht_u64_insert(&SCORES_LB_CACHE, key, handle);
 
 error:;
 }

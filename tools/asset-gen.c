@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 	str8 palette_path      = cmd_line_str8(&cmd, str8_lit("palette"));
 	if(palette_path.size > 0) {
 		lut    = asset_gen_load_palette_map(palette_path);
-		lut.ht = ht_new_u32(ht_exp_from_count(250), scratch);
+		lut.ht = ht_u32_new(ht_exp_from_count(250), scratch);
 	}
 	log_info("asset-gen", "color palette: %ld", lut.out.len);
 

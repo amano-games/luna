@@ -1,6 +1,14 @@
 #pragma once
 
-// https://nullprogram.com/blog/2022/08/08/
+// MSI hash table: https://nullprogram.com/blog/2022/08/08/
+// Open addressing
+// ht_lookup double-hashing probe step
+//
+// TODO:
+// - https://nullprogram.com/blog/2023/06/26/
+// - https://nullprogram.com/blog/2023/09/30/
+// - https://nullprogram.com/blog/2025/01/19/
+// - https://nullprogram.com/blog/2026/05/06/
 
 #include "base/mem.h"
 #include "base/types.h"
@@ -52,7 +60,7 @@ hash_x_y(i32 x, i32 y, usize len)
 }
 
 static inline u32
-ht_get_u32(struct ht_u32 *t, u64 key)
+ht_u32_get(struct ht_u32 *t, u64 key)
 {
 	u32 res = 0;
 	for(int32_t i = key;;) {
@@ -70,7 +78,7 @@ cleanup:
 }
 
 static inline u32
-ht_set_u32(struct ht_u32 *t, u64 key, u32 value)
+ht_u32_insert(struct ht_u32 *t, u64 key, u32 value)
 {
 	u32 res = -1;
 	for(int32_t i = key;;) {
@@ -96,7 +104,7 @@ cleanup:
 }
 
 static inline struct ht_u32
-ht_new_u32(int exp, struct alloc alloc)
+ht_u32_new(int exp, struct alloc alloc)
 {
 	struct ht_u32 ht = {0, exp, 0};
 
@@ -111,7 +119,7 @@ ht_new_u32(int exp, struct alloc alloc)
 }
 
 static inline u64
-ht_get_u64(struct ht_u64 *t, u64 key)
+ht_u64_get(struct ht_u64 *t, u64 key)
 {
 	u64 res = 0;
 	for(int32_t i = key;;) {
@@ -129,7 +137,7 @@ cleanup:
 }
 
 static inline u64
-ht_set_u64(struct ht_u64 *t, u64 key, u64 value)
+ht_u64_insert(struct ht_u64 *t, u64 key, u64 value)
 {
 	u64 res = -1;
 	for(int32_t i = key;;) {
@@ -155,7 +163,7 @@ cleanup:
 }
 
 static inline struct ht_u64
-ht_new_u64(int exp, struct alloc alloc)
+ht_u64_new(int exp, struct alloc alloc)
 {
 	struct ht_u64 ht = {0, exp, 0};
 

@@ -216,7 +216,7 @@ pck_tags_set_from_adb(
 		if(prefix.size > 0) {
 			path = str8_fmt_push(scratch, "%.*s/%.*s", str8_spread(prefix), str8_spread(path));
 		}
-		u32 idx = ht_get_u32(entry_ht, hash_fnv1a_str8(path));
+		u32 idx = ht_u32_get(entry_ht, hash_fnv1a_str8(path));
 
 		if(idx == 0) {
 			log_warn(LOG_ID, "%.*s lists %.*s, which isn't packed", str8_spread(adb.path), str8_spread(path));
@@ -313,10 +313,10 @@ pck_pack(struct alloc alloc, str8 input_path, str8 prefix, str8 out_path)
 	qsort(entries, (size_t)paths.node_count, sizeof(*entries), pck_entry_cmp);
 
 	{
-		struct ht_u32 entry_ht = ht_new_u32(ht_exp_from_count(paths.node_count), alloc);
+		struct ht_u32 entry_ht = ht_u32_new(ht_exp_from_count(paths.node_count), alloc);
 		dbg_check(entry_ht.ht, LOG_ID, "failed alloc for path table");
 		for(i = 0; i < (ssize)paths.node_count; ++i) {
-			u32 idx = ht_set_u32(&entry_ht, hash_fnv1a_str8(entries[i].path), (u32)(i + 1));
+			u32 idx = ht_u32_insert(&entry_ht, hash_fnv1a_str8(entries[i].path), (u32)(i + 1));
 			dbg_check(idx == (u32)(i + 1), LOG_ID, "duplicate path hash %.*s", str8_spread(entries[i].path));
 		}
 

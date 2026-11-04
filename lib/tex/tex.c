@@ -459,7 +459,7 @@ tex_lut_out_idx(struct gfx_col_lut *lut, struct pixel_u8 pixel)
 
 	u32 color   = ((u32)pixel.r << 24) | ((u32)pixel.g << 16) | ((u32)pixel.b << 8) | (u32)pixel.a;
 	u64 key     = (u64)color + 1; // Reserve zero for empty keys and cache misses, including transparent black.
-	u32 out_idx = ht_get_u32(&lut->ht, key);
+	u32 out_idx = ht_u32_get(&lut->ht, key);
 
 	if(out_idx == 0) {
 		// TODO: convert all colors to oklab
@@ -470,7 +470,7 @@ tex_lut_out_idx(struct gfx_col_lut *lut, struct pixel_u8 pixel)
 			dbg_assert((ssize)in_idx < lut->map.len);
 			out_idx = lut->map.colors[in_idx];
 		}
-		ht_set_u32(&lut->ht, key, out_idx);
+		ht_u32_insert(&lut->ht, key, out_idx);
 	}
 	dbg_assert(out_idx > 0 && (ssize)out_idx < lut->out.len);
 	return out_idx;
