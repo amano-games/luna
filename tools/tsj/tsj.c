@@ -20,7 +20,7 @@
 #include "tools/asset/asset.h"
 
 // NOTE: This is forced for now ideally comes from tiled
-#define TSJ_TILE_TAGS 1u
+#define TSJ_TILE_TAGS (1u << 1)
 
 static b32 tsj_atlas_gen(str8 dest_root, str8 rel, struct tex_atlas atlas, v2_i32 tex_size, struct alloc scratch);
 static b32 tsj_ani_gen(str8 dest_root, str8 rel, struct animation_clip *clips, struct alloc scratch);
