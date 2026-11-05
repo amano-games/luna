@@ -170,15 +170,22 @@ tsj_handle_property(
 	jsmn_parser parser;
 	jsmn_init(&parser);
 	res.token_count = jsmn_parse(&parser, (const char *)json_root.str, json_root.size, NULL, 0);
+	b32 is_tags     = false;
 
 	for(usize i = index + 1; i < index + res.token_count; i++) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(json_eq(json, key, str8_lit("propertytype")) == 0) {
-			if(json_eq(json, value, str8_lit("animation")) != 0) {
+			if(json_eq(json, value, str8_lit("asset_tag")) == 0) {
+				is_tags = true;
+			} else if(json_eq(json, value, str8_lit("animation")) != 0) {
 				// property not supported
 				return res;
 			}
+		} else if(is_tags && json_eq(json, key, str8_lit("value")) == 0) {
+			// NOTE: overrides the tileset tags for this tile
+			res.tags = (u32)json_parse_i32(json, value);
+			return res;
 		} else if(json_eq(json, key, str8_lit("value")) == 0) {
 			dbg_assert(value->type == JSMN_OBJECT);
 			usize item_index                  = i + 1;
@@ -247,6 +254,9 @@ tsj_handle_tile(
 
 				if(item_res.clip.scale > 0) {
 					arr_push(res.clips, item_res.clip);
+				}
+				if(item_res.tags != 0) {
+					res.tags = item_res.tags;
 				}
 				i += item_res.token_count;
 			}
@@ -360,12 +370,12 @@ tsj_handle_json(
 
 					// NOTE:  we need the absolute path when generating
 					// relative path when pushing to the db
-					tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(TEX_EXT)), 0);
+					tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(TEX_EXT)), tile_res.tags);
 					if(tsj_atlas_gen(dest_root, rel, tile_res.atlas, tile_res.tex_size, scratch)) {
-						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ATLAS_EXT)), 0);
+						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ATLAS_EXT)), tile_res.tags);
 					}
 					if(arr_len(tile_res.clips) > 0 && tsj_ani_gen(dest_root, rel, tile_res.clips, scratch)) {
-						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ANI_EXT)), 0);
+						tsj_path_db_push(&res, path_make_file_name_with_ext(alloc, rel, str8_lit(ANI_EXT)), tile_res.tags);
 					}
 				}
 
@@ -374,9 +384,12 @@ tsj_handle_json(
 		}
 	}
 
-	// NOTE: "properties" can come after "tiles"
+	// NOTE: "properties" can come after "tiles", tiles without their own
+	// asset_tag property (0) use the tileset tags
 	for(ssize i = 0; i < arr_len(res.tags); ++i) {
-		res.tags[i] = tags;
+		if(res.tags[i] == 0) {
+			res.tags[i] = tags;
+		}
 	}
 
 	return res;

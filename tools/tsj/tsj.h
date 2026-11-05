@@ -9,11 +9,13 @@ struct tsj_tile_res {
 	struct tex_atlas atlas;
 	v2_i32 tex_size;
 	str8 src_path;
+	u32 tags;
 };
 
 struct tsj_property_res {
 	usize token_count;
 	struct animation_clip clip;
+	u32 tags;
 };
 
 struct tsj_animation_res {
