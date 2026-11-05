@@ -38,6 +38,16 @@ bswap_u64(u64 x)
 }
 #endif
 
+// non-overlapping copy, for small constant sizes.
+#if COMPILER_CLANG || COMPILER_GCC || COMPILER_TCC
+#define mcpy_fast(dst, src, size) __builtin_memcpy((dst), (src), (size))
+#elif COMPILER_MSVC
+#pragma intrinsic(memcpy)
+#define mcpy_fast(dst, src, size) memcpy((dst), (src), (size))
+#else
+#define mcpy_fast(dst, src, size) memcpy((dst), (src), (size))
+#endif
+
 // bit reverse
 #if COMPILER_CLANG
 #define brev_u32 __builtin_bitreverse32

@@ -1,4 +1,5 @@
 #include "sys/sys-lz4.h"
+#include "base/intrin.h"
 
 // Decode-only LZ4 block format, bounds checked like LZ4_decompress_safe.
 // https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md
@@ -34,9 +35,19 @@ sys_lz4_decompress(const void *src, void *dst, ssize src_size, ssize dst_cap)
 		if(lit == 15 && !sys_lz4_read_len(&ip, iend, &lit)) { return -1; }
 		if(lit > (usize)(iend - ip) || lit > (usize)(oend - op)) { return -1; }
 		if(lit <= 16 && iend - ip >= 16 && oend - op >= 16) {
-			mcpy(op, ip, 16);
+			mcpy_fast(op, ip, 16);
+		} else if(lit > 16 && (usize)(iend - ip) >= lit + 15 && (usize)(oend - op) >= lit + 15) {
+			// Wild copy: lit > 16 so the do-while's chunks end within lit + 15, still in bounds
+			u8 *d          = op;
+			const u8 *s    = ip;
+			u8 *const dend = op + lit;
+			do {
+				mcpy_fast(d, s, 16);
+				d += 16;
+				s += 16;
+			} while(d < dend);
 		} else {
-			mcpy(op, ip, lit);
+			for(usize i = 0; i < lit; ++i) { op[i] = ip[i]; }
 		}
 		op += lit;
 		ip += lit;
@@ -60,13 +71,13 @@ sys_lz4_decompress(const void *src, void *dst, ssize src_size, ssize dst_cap)
 		if(off >= 16 && (usize)(oend - op) >= len + 15) {
 			// Wild copy: may write up to 15 bytes past mend, still in bounds
 			do {
-				mcpy(op, m, 16);
+				mcpy_fast(op, m, 16);
 				op += 16;
 				m += 16;
 			} while(op < mend);
 		} else if(off >= 8 && (usize)(oend - op) >= len + 7) {
 			do {
-				mcpy(op, m, 8);
+				mcpy_fast(op, m, 8);
 				op += 8;
 				m += 8;
 			} while(op < mend);
@@ -77,7 +88,7 @@ sys_lz4_decompress(const void *src, void *dst, ssize src_size, ssize dst_cap)
 			usize d = off * ((8 + off - 1) / off);
 			op += 8;
 			while(op < mend) {
-				mcpy(op, op - d, 8);
+				mcpy_fast(op, op - d, 8);
 				op += 8;
 			}
 		} else {
