@@ -512,6 +512,8 @@ sys_file_rename(str8 from, str8 to)
 b32
 sys_file_replace(str8 from, str8 to)
 {
+	// NOTE: rename fails if the target exists (uC-FS error 0704)
+	PD->file->unlink((char *)to.str, 0);
 	return sys_file_rename(from, to);
 }
 
