@@ -159,6 +159,7 @@ sys_scores_queue_push(
 		dbg_check(value != 0, "sys-scores", "Submited value of 0");
 	}
 
+	log_info("sys-scores", "Queue push type:%d board:%.*s busy:%d start:%d end:%d", (int)type, str8_spread(board_id), (int)state->busy, (int)state->start, (int)state->end);
 	u8 next = (u8)((state->end + 1) % ARRLEN(state->reqs));
 	dbg_check(next != state->start, "sys-scores", "Score queue full");
 	dbg_assert(state->start < ARRLEN(state->reqs));
@@ -213,25 +214,32 @@ pd_scores_start_next(struct pd_scores_state *state)
 	dbg_assert(PD_PERSONAL_BEST_GET);
 
 	if(state->start == state->end) {
+		log_info("sys-scores", "Queue empty, idle");
 		state->busy = false;
 		return;
 	}
 
 	struct pd_scores_req *req = state->reqs + state->start;
 	state->busy               = true;
+	int ret                   = 0;
 
 	switch(req->type) {
 	case PD_SCORES_REQ_TYPE_GET: {
-		PD_SCORES_GET((const char *)req->board_id.str, pd_get_scores_callback);
+		log_info("sys-scores", "getScores start id:%" PRIu32 " board:%.*s", req->id, str8_spread(req->board_id));
+		ret = PD_SCORES_GET((const char *)req->board_id.str, pd_get_scores_callback);
+		log_info("sys-scores", "getScores returned %d id:%" PRIu32, ret, req->id);
 	} break;
 
 	case PD_SCORES_REQ_TYPE_ADD: {
 		log_info("sys-scores", "Adding score for %.*s: %" PRIu32 "", str8_spread(req->board_id), req->add.value);
-		PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
+		ret = PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
+		log_info("sys-scores", "addScore returned %d id:%" PRIu32, ret, req->id);
 	} break;
 
 	case PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET: {
-		PD_PERSONAL_BEST_GET((const char *)req->board_id.str, pd_personal_best_get_callback);
+		log_info("sys-scores", "getPersonalBest start id:%" PRIu32 " board:%.*s", req->id, str8_spread(req->board_id));
+		ret = PD_PERSONAL_BEST_GET((const char *)req->board_id.str, pd_personal_best_get_callback);
+		log_info("sys-scores", "getPersonalBest returned %d id:%" PRIu32, ret, req->id);
 	} break;
 
 	default: {
@@ -247,10 +255,14 @@ void
 pd_add_score_callback(PDScore *score, const char *error_message)
 {
 	dbg_assert(PD_SCORE_FREE);
+	log_info("sys-scores", "addScore callback score:%p err:%s", (void *)score, error_message ? error_message : "(null)");
 	struct pd_scores_state *state = &SCORES_MUTATIONS_STATE;
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
+	if(state->start == state->end) {
+		log_warn("sys-scores", "Callback with empty queue");
+		return;
+	}
 
 	struct pd_scores_req *req = state->reqs + state->start;
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_ADD);
@@ -260,7 +272,8 @@ pd_add_score_callback(PDScore *score, const char *error_message)
 		log_error("sys-scores", "Failed to submit score to board %.*s: %s", str8_spread(req->board_id), error_message);
 		if(req->add.attemps < PD_SCORES_ADD_MAX_RETRY) {
 			req->add.attemps++;
-			PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
+			int ret = PD_SCORE_ADD((const char *)req->board_id.str, req->add.value, pd_add_score_callback);
+			log_info("sys-scores", "addScore retry returned %d", ret);
 			log_info("sys-scores", "Attempt: %d, to submit score to board: %.*s", (int)req->add.attemps, str8_spread(req->board_id));
 			return;
 		}
@@ -293,11 +306,15 @@ void
 pd_get_scores_callback(PDScoresList *scores, const char *error_message)
 {
 	dbg_assert(PD_SCORES_LIST_FREE);
+	log_info("sys-scores", "getScores callback scores:%p err:%s", (void *)scores, error_message ? error_message : "(null)");
 	struct pd_scores_state *state = &SCORES_QUERIES_STATE;
 	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
+	if(state->start == state->end) {
+		log_warn("sys-scores", "Callback with empty queue");
+		return;
+	}
 
 	struct pd_scores_req *req = state->reqs + state->start;
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_GET);
@@ -369,11 +386,15 @@ void
 pd_personal_best_get_callback(PDScore *score, const char *error_message)
 {
 	dbg_assert(PD_SCORE_FREE);
+	log_info("sys-scores", "getPersonalBest callback score:%p err:%s", (void *)score, error_message ? error_message : "(null)");
 	struct pd_scores_state *state = &SCORES_QUERIES_STATE;
 	struct sys_scores_res res     = {.type = SYS_SCORE_RES_SCORES_PERSONAL_BEST_GET};
 	dbg_assert(state->start < ARRLEN(state->reqs));
 	dbg_assert(state->end < ARRLEN(state->reqs));
-	if(state->start == state->end) return; // nothing in queue
+	if(state->start == state->end) {
+		log_warn("sys-scores", "Callback with empty queue");
+		return;
+	}
 
 	struct pd_scores_req *req = state->reqs + state->start;
 	dbg_assert(req->type == PD_SCORES_REQ_TYPE_PERSONAL_BEST_GET);
