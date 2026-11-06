@@ -91,7 +91,11 @@ sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 		str8_spread(str8_from_bytes(bytes_alloc, (u64)mem_max)),
 		str8_spread(str8_from_bytes(bytes_alloc, (u64)(app_mem - mem_max))));
 
+#if BUILD_DEBUG
 	ssize debug_size = MAX(0, mem_max - permanent_aligned - transient_aligned);
+#else
+	ssize debug_size = 0;
+#endif
 	ssize mem_total  = permanent_aligned + transient_aligned + debug_size;
 
 	log_info(SYS_LOG_LABEL, "Permanent: %.*s aligned:%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent)), str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent_aligned)));
