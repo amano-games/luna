@@ -37,6 +37,7 @@ ARG XTOOLS_URL=https://github.com/tttapa/docker-arm-cross-toolchain/releases/dow
 RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 		ca-certificates \
+		clang \
 		curl \
 		gcc \
 		libc6-dev \
