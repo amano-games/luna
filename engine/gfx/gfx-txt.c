@@ -27,8 +27,9 @@ fnt_draw_str(
 
 		if(!is_newline) {
 			dbg_assert(ci > 31);
-			t.r.x = ((ci - 32) % fnt.grid_w) * fnt.cell_w;
-			t.r.y = ((ci - 32) / fnt.grid_w) * fnt.cell_h;
+			i32 glyph = fnt_glyph_cell(fnt, ci);
+			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
+			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 			gfx_spr(ctx, t, p.x, p.y, 0, mode);
 			i32 move_x = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 			p.x += move_x;
@@ -59,7 +60,7 @@ fnt_mono_draw_str(
 		py             = py + (is_newline * (fnt.cell_h + leading));
 		if(!is_newline) {
 			dbg_assert(ci > 31);
-			i32 glyph = ci - 32;
+			i32 glyph = fnt_glyph_cell(fnt, ci);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 			gfx_spr(ctx, t, px, py, 0, mode);
@@ -86,7 +87,7 @@ fnt_mono_draw_str_sl(
 		i32 ci = str.str[n];
 		dbg_assert(ci != '\n');
 		dbg_assert(ci > 31);
-		i32 glyph = ci - 32;
+		i32 glyph = fnt_glyph_cell(fnt, ci);
 		t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 		t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 		gfx_spr(ctx, t, px, y, 0, mode);

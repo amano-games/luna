@@ -12,6 +12,7 @@ i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 {
 	if(a < 32) return 0;
+	a = fnt_glyph_cell(fnt, a) + 32;
 
 	i32 x            = 0;
 	i32 is_last_char = (b == '\n') || (b == -1);

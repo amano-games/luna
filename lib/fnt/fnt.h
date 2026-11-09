@@ -3,6 +3,14 @@
 #include "lib/fnt/fnt-defs.h"
 #include "lib/serialize/serialize.h"
 
+static inline i32
+fnt_glyph_cell(struct fnt fnt, i32 c)
+{
+	i32 cell = c - 32;
+	if(cell < 0 || cell >= fnt.grid_w * fnt.grid_h) { cell = '?' - 32; }
+	return cell;
+}
+
 i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking);
 v2_i32 fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading);
 i32 fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking);
