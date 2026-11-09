@@ -1180,6 +1180,7 @@ struct drm_host {
 	struct sys_pause_state pause;
 	i32 menu_scaling_id;
 	i32 menu_filter_id;
+	i32 menu_resolution_id;
 	i32 menu_palette_id;
 	i32 menu_volume_id;
 	b32 paused;
@@ -1470,6 +1471,17 @@ drm_host_menu_video_apply(void *args)
 	drm_host_menu_trace("video callback end");
 }
 
+// Saved on resume; frame buffers are sized at startup, so it applies after a restart.
+static void
+drm_host_menu_resolution(void *args)
+{
+	i32 value                      = sys_menu_get_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_SYS], DRM_HOST.menu_resolution_id);
+	DRM_HOST.opts.video.resolution = value == 1
+		? (v2_i32){SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H * 3}
+		: (v2_i32){SYS_PD_DISPLAY_W, SYS_PD_DISPLAY_H};
+	log_info("drm-menu", "resolution callback %dx%d (next start)", DRM_HOST.opts.video.resolution.x, DRM_HOST.opts.video.resolution.y);
+}
+
 static void
 drm_host_menu_volume(void *args)
 {
@@ -1695,6 +1707,13 @@ main(int argc, char **argv)
 		}
 		DRM_HOST.menu_scaling_id = sys_menu_add_options(menu, "Scaling", scaling, ARRLEN(scaling), drm_host_menu_video_apply, NULL);
 		if(DRM_HOST.menu_scaling_id) menu->items[menu->len - 1].value = DRM_HOST.opts.video.scaling - 1;
+
+		static const char *resolutions[] = {"Normal", "Tate"};
+		DRM_HOST.menu_resolution_id      = sys_menu_add_options(menu, "Resolution", resolutions, ARRLEN(resolutions), drm_host_menu_resolution, NULL);
+		if(DRM_HOST.menu_resolution_id) {
+			v2_i32 resolution                = DRM_HOST.opts.video.resolution;
+			menu->items[menu->len - 1].value = resolution.x == SYS_PD_DISPLAY_W && resolution.y == SYS_PD_DISPLAY_H * 3;
+		}
 
 		static const char *palettes[] = {
 			"Default",
