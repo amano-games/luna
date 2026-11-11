@@ -597,6 +597,35 @@ str8_to_i64(str8 str, u32 radix)
 	return neg ? (i64)(0 - mag) : (i64)mag;
 }
 
+b32
+str8_is_integer(str8 str, u32 radix)
+{
+	b32 res = false;
+	if(str.size > 0 && 1 < radix && radix <= 16) {
+		res = true;
+		for(u64 i = 0; i < str.size; i += 1) {
+			u8 c = str.str[i];
+			if(!(c < 0x80) || INTEGER_SYMBOL_REVERSE[c] >= radix) {
+				res = false;
+				break;
+			}
+		}
+	}
+	return res;
+}
+
+b32
+str8_is_integer_signed(str8 str, u32 radix)
+{
+	b32 res = false;
+	if(str8_match(str8_prefix(str, 1), str8_lit("-"), 0)) {
+		res = str8_is_integer(str8_skip(str, 1), radix);
+	} else {
+		res = str8_is_integer(str, radix);
+	}
+	return res;
+}
+
 str8
 str8_to_upper(struct alloc alloc, str8 str)
 {

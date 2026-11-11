@@ -137,6 +137,8 @@ f32 str8_to_f32(str8 str);
 b32 str8_to_bool32(str8 str);
 u64 str8_to_u64(str8 str, u32 radix);
 i64 str8_to_i64(str8 str, u32 radix);
+b32 str8_is_integer(str8 str, u32 radix);
+b32 str8_is_integer_signed(str8 str, u32 radix);
 
 // String Stylization
 str8 str8_to_upper(struct alloc alloc, str8 str);
