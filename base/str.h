@@ -29,6 +29,11 @@ struct str_join {
 	str8 post;
 };
 
+struct unicode_decode {
+	u32 inc;
+	u32 codepoint;
+};
+
 typedef u32 str_match_flags;
 enum {
 	str_match_flag_case_insensitive  = (1 << 0),
@@ -71,9 +76,6 @@ str8 str8_zero(void);
 str8 str8_cstr(char *c);
 str8 str8_cstr_capped(void *cstr, void *cap);
 str16 str16_cstr(u16 *c);
-
-str8 str8_from_16(struct alloc alloc, str16 in);
-str16 str16_from_8(struct alloc alloc, str8 in);
 
 b32 str8_ends_with(str8 str, str8 end, str_match_flags flags);
 b32 str8_starts_with(str8 str, str8 start, str_match_flags flags);
@@ -118,6 +120,18 @@ str8 str8_skip_last_slash(str8 str);
 str8 str8_chop_last_dot(str8 str);
 str8 str8_skip_last_dot(str8 str);
 
+// UTF-8 & UTF-16 Decoding/Encoding
+struct unicode_decode utf8_decode(u8 *str, u64 max);
+struct unicode_decode utf16_decode(u16 *str, u64 max);
+u32 utf8_encode(u8 *str, u32 codepoint);
+u32 utf16_encode(u16 *str, u32 codepoint);
+
+// Unicode str conversion
+str8 str8_from_16(struct alloc alloc, str16 in);
+str16 str16_from_8(struct alloc alloc, str8 in);
+str8 str8_from_32(struct alloc alloc, str32 in);
+str32 str32_from_8(struct alloc alloc, str8 in);
+
 i32 str8_to_i32(str8 str);
 f32 str8_to_f32(str8 str);
 b32 str8_to_bool32(str8 str);
@@ -125,13 +139,11 @@ u64 str8_to_u64(str8 str, u32 radix);
 i64 str8_to_i64(str8 str, u32 radix);
 
 // String Stylization
-
 str8 str8_to_upper(struct alloc alloc, str8 str);
 str8 str8_to_lower(struct alloc alloc, str8 str);
 str8 str8_to_backslashed(struct alloc alloc, str8 str);
 
 // String List Construction Functions
-
 struct str8_node *str8_list_push_node(struct str8_list *list, struct str8_node *node);
 struct str8_node *str8_list_push(struct alloc alloc, struct str8_list *list, str8 str);
 

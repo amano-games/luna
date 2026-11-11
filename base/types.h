@@ -181,6 +181,11 @@ typedef struct str16 {
 	u64 size;
 } str16;
 
+typedef struct str32 {
+	u32 *str;
+	u64 size;
+} str32;
+
 union rng_u64 {
 	struct {
 		u64 min;
@@ -188,11 +193,3 @@ union rng_u64 {
 	};
 	u64 v[2];
 };
-
-static inline i32
-i16_sat(i32 x)
-{
-	if(x < I16_MIN) return I16_MIN;
-	if(x > I16_MAX) return I16_MAX;
-	return x;
-}

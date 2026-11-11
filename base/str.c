@@ -12,6 +12,8 @@ u8 INTEGER_SYMBOLS[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
 
 u8 INTEGER_SYMBOL_REVERSE[128] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
+static u8 UTF8_CLASS[32] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 5};
+
 inline b32
 char_is_space(u8 c)
 {
@@ -693,6 +695,119 @@ str8_skip_last_dot(str8 str)
 	return (result);
 }
 
+struct unicode_decode
+utf8_decode(u8 *str, u64 max)
+{
+	struct unicode_decode res = {1, U32_MAX};
+	u8 byte                   = str[0];
+	u8 byte_class             = UTF8_CLASS[byte >> 3];
+
+	switch(byte_class) {
+	case 1: {
+		res.codepoint = byte;
+	} break;
+
+	case 2: {
+		if(1 < max) {
+			u8 cont_byte = str[1];
+			if(UTF8_CLASS[cont_byte >> 3] == 0) {
+				res.codepoint = (byte & BITMASK_5) << 6;
+				res.codepoint |= (cont_byte & BITMASK_6);
+				res.inc = 2;
+			}
+		}
+	} break;
+
+	case 3: {
+		if(2 < max) {
+			u8 cont_byte[2] = {str[1], str[2]};
+			if(UTF8_CLASS[cont_byte[0] >> 3] == 0 &&
+				UTF8_CLASS[cont_byte[1] >> 3] == 0) {
+				res.codepoint = (byte & BITMASK_4) << 12;
+				res.codepoint |= ((cont_byte[0] & BITMASK_6) << 6);
+				res.codepoint |= (cont_byte[1] & BITMASK_6);
+				res.inc = 3;
+			}
+		}
+	} break;
+	case 4: {
+		if(3 < max) {
+			u8 cont_byte[3] = {str[1], str[2], str[3]};
+			if(UTF8_CLASS[cont_byte[0] >> 3] == 0 &&
+				UTF8_CLASS[cont_byte[1] >> 3] == 0 &&
+				UTF8_CLASS[cont_byte[2] >> 3] == 0) {
+				res.codepoint = (byte & BITMASK_3) << 18;
+				res.codepoint |= ((cont_byte[0] & BITMASK_6) << 12);
+				res.codepoint |= ((cont_byte[1] & BITMASK_6) << 6);
+				res.codepoint |= (cont_byte[2] & BITMASK_6);
+				res.inc = 4;
+			}
+		}
+	}
+	}
+	return res;
+}
+
+// UTF-8 & UTF-16 Decoding/Encoding
+struct unicode_decode
+utf16_decode(u16 *str, u64 max)
+{
+	struct unicode_decode res = {1, U32_MAX};
+	res.codepoint             = str[0];
+	res.inc                   = 1;
+	if(max > 1 && 0xD800 <= str[0] && str[0] < 0xDC00 && 0xDC00 <= str[1] && str[1] < 0xE000) {
+		res.codepoint = ((str[0] - 0xD800) << 10) | ((str[1] - 0xDC00) + 0x10000);
+		res.inc       = 2;
+	}
+	return res;
+}
+
+u32
+utf8_encode(u8 *str, u32 codepoint)
+{
+	u32 inc = 0;
+	if(codepoint <= 0x7F) {
+		str[0] = (u8)codepoint;
+		inc    = 1;
+	} else if(codepoint <= 0x7FF) {
+		str[0] = (BITMASK_2 << 6) | ((codepoint >> 6) & BITMASK_5);
+		str[1] = BIT_8 | (codepoint & BITMASK_6);
+		inc    = 2;
+	} else if(codepoint <= 0xFFFF) {
+		str[0] = (BITMASK_3 << 5) | ((codepoint >> 12) & BITMASK_4);
+		str[1] = BIT_8 | ((codepoint >> 6) & BITMASK_6);
+		str[2] = BIT_8 | (codepoint & BITMASK_6);
+		inc    = 3;
+	} else if(codepoint <= 0x10FFFF) {
+		str[0] = (BITMASK_4 << 4) | ((codepoint >> 18) & BITMASK_3);
+		str[1] = BIT_8 | ((codepoint >> 12) & BITMASK_6);
+		str[2] = BIT_8 | ((codepoint >> 6) & BITMASK_6);
+		str[3] = BIT_8 | (codepoint & BITMASK_6);
+		inc    = 4;
+	} else {
+		str[0] = '?';
+		inc    = 1;
+	}
+	return inc;
+}
+
+u32
+utf16_encode(u16 *str, u32 codepoint)
+{
+	u32 inc = 1;
+	if(codepoint == U32_MAX) {
+		str[0] = (u16)'?';
+	} else if(codepoint < 0x10000) {
+		str[0] = (u16)codepoint;
+	} else {
+		u32 v  = codepoint - 0x10000;
+		str[0] = u16_cast_safe(0xD800 + (v >> 10));
+		str[1] = u16_cast_safe(0xDC00 + (v & BITMASK_10));
+		inc    = 2;
+	}
+	return inc;
+}
+
 NO_ASAN_UB
 struct str8_node *
 str8_list_push_node_set_string(struct str8_list *list, struct str8_node *node, str8 str)
@@ -1082,33 +1197,36 @@ str_utf8_next(str8 in, u64 *offset)
 str16
 str16_from_8(struct alloc alloc, str8 in)
 {
-	str16 result = {0};
-	if(!in.size || !in.str || in.size > (u64)PTRDIFF_MAX / sizeof(u16) - 1) { return result; }
-	result.str = alloc_arr(alloc, result.str, in.size + 1);
-	if(!result.str) { return result; }
+	str16 res = {0};
+
+	if(!in.size || !in.str || in.size > (u64)PTRDIFF_MAX / sizeof(u16) - 1) { return res; }
+
+	res.str = alloc_arr(alloc, res.str, in.size + 1);
+	if(!res.str) { return res; }
 	for(u64 at = 0; at < in.size;) {
 		u32 cp = str_utf8_next(in, &at);
 		if(cp < 0x10000) {
-			result.str[result.size++] = (u16)cp;
+			res.str[res.size++] = (u16)cp;
 		} else {
 			cp -= 0x10000;
-			result.str[result.size++] = (u16)(0xd800 + (cp >> 10));
-			result.str[result.size++] = (u16)(0xdc00 + (cp & 0x3ff));
+			res.str[res.size++] = (u16)(0xd800 + (cp >> 10));
+			res.str[res.size++] = (u16)(0xdc00 + (cp & 0x3ff));
 		}
 	}
-	result.str[result.size] = 0;
-	return result;
+	res.str[res.size] = 0;
+	return res;
 }
 
 str8
 str8_from_16(struct alloc alloc, str16 in)
 {
-	str8 result = {0};
-	if(!in.size || !in.str || in.size > ((u64)PTRDIFF_MAX - 1) / 3) { return result; }
+	str8 res = {0};
 
-	result.str = alloc_arr(alloc, result.str, in.size * 3 + 1);
+	if(!in.size || !in.str || in.size > ((u64)PTRDIFF_MAX - 1) / 3) { return res; }
 
-	if(!result.str) { return result; }
+	res.str = alloc_arr(alloc, res.str, in.size * 3 + 1);
+
+	if(!res.str) { return res; }
 
 	for(u64 at = 0; at < in.size; ++at) {
 		u32 cp = in.str[at];
@@ -1119,18 +1237,73 @@ str8_from_16(struct alloc alloc, str16 in)
 			cp = '?';
 		}
 		if(cp < 0x80) {
-			result.str[result.size++] = (u8)cp;
+			res.str[res.size++] = (u8)cp;
 		} else {
-			u32 count                 = cp < 0x800 ? 2 : cp < 0x10000 ? 3
-																	  : 4;
-			result.str[result.size++] = (u8)((0xff << (8 - count)) | (cp >> (6 * (count - 1))));
+			u32 count           = cp < 0x800 ? 2 : cp < 0x10000 ? 3
+																: 4;
+			res.str[res.size++] = (u8)((0xff << (8 - count)) | (cp >> (6 * (count - 1))));
 			for(u32 i = count - 1; i > 0; --i) {
-				result.str[result.size++] = (u8)(0x80 | ((cp >> (6 * (i - 1))) & 0x3f));
+				res.str[res.size++] = (u8)(0x80 | ((cp >> (6 * (i - 1))) & 0x3f));
 			}
 		}
 	}
 
-	result.str[result.size] = 0;
+	res.str[res.size] = 0;
 
+	return res;
+}
+
+str8
+str8_from_32(struct alloc alloc, str32 in)
+{
+	str8 res = {0};
+
+	if(!in.size || !in.str) { return res; }
+
+	u8 tmp[4];
+	u64 size = 0;
+
+	for(u64 at = 0; at < in.size; ++at) {
+		size += utf8_encode(tmp, in.str[at]);
+	}
+
+	res.str = alloc_arr(alloc, res.str, size + 1);
+
+	if(!res.str) { return res; }
+
+	for(u64 at = 0; at < in.size; ++at) {
+		res.size += utf8_encode(res.str + res.size, in.str[at]);
+	}
+
+	res.str[res.size] = 0;
+
+	return res;
+}
+
+str32
+str32_from_8(struct alloc alloc, str8 in)
+{
+	str32 result = {0};
+
+	if(in.size) {
+		u64 cap  = in.size;
+		u32 *str = alloc_arr(alloc, str, cap + 1);
+
+		if(!str) { return result; }
+
+		u8 *ptr  = in.str;
+		u8 *opl  = ptr + in.size;
+		u64 size = 0;
+		struct unicode_decode consume;
+
+		for(; ptr < opl; ptr += consume.inc) {
+			consume   = utf8_decode(ptr, opl - ptr);
+			str[size] = consume.codepoint;
+			size += 1;
+		}
+
+		str[size] = 0;
+		result    = (str32){.str = str, .size = size};
+	}
 	return result;
 }
