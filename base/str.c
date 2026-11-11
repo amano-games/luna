@@ -525,6 +525,8 @@ str8_find_needle_reverse(
 	return result;
 }
 
+// TODO: remove sys_parse string from this
+// s32_from_str8 from radd
 i32
 str8_to_i32(str8 str)
 {

@@ -110,7 +110,7 @@ asset_gen_recursive(
 			} else if(str8_match(extension, str8_lit(AI_EXT), 0)) {
 				i32 res = handle_btree(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(FNT_EXT), 0)) {
-				i32 res = handle_fnt_pd(in_path, out_path, alloc);
+				i32 res = fnt_pd_handle(in_path, out_path, alloc);
 			} else if(str8_match(extension, str8_lit(ASSETS_DB_EXT), 0)) {
 				i32 res = handle_tsj(in_path, out_path, src_root, dest_root, alloc);
 			} else if(str8_match(extension, str8_lit(PINBALL_TABLE_EXT), 0)) {

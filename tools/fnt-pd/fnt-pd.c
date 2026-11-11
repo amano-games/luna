@@ -11,72 +11,163 @@
 #include "base/utils.h"
 #include "sys/sys.h"
 #include "base/str.h"
+
 #include <jsmn.h>
 #include <tinydir.h>
 
-b32
-fnt_pd_load(const str8 path, struct alloc alloc, str8 *out)
+struct fnt_metrics fnt_pd_handle_metrics(str8 json, struct alloc scratch);
+void fnt_pd_handle_line(str8 line, struct fnt *fnt);
+b32 pd_fnt_handle_key_value(str8 line, str8 key, str8 *value);
+void pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt);
+
+v2 fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch);
+
+int
+fnt_pd_handle(str8 in_path, str8 out_path, struct alloc scratch)
 {
-	sys_file f = sys_file_open_r(path);
-	if(!sys_file_is_valid(f)) {
-		log_warn("fnt-pd", "Can't open %.*s", str8_spread(path));
-		return 0;
+	usize mem_size = MKILOBYTE(100);
+	u8 *mem        = mem_alloc_size(scratch, mem_size);
+	if(mem == NULL) {
+		log_error("fnt-gen", "no memory for %.*s", str8_spread(in_path));
+		return -1;
 	}
-	sys_file_seek_end(f, 0);
-	ssize f_size = sys_file_tell(f);
-	sys_file_seek_set(f, 0);
-	u8 *buf = alloc_arr(alloc, buf, f_size + 1);
-	if(!buf) {
-		sys_file_close(f);
-		log_error("fnt-pd", "loading %.*s", str8_spread(path));
-		return 0;
+
+	struct marena marena = {0};
+	marena_ini_local(&marena, mem, mem_size);
+
+	struct alloc alloc              = marena_allocator(&marena);
+	struct fnt fnt                  = {0};
+	fnt.widths                      = arr_new_clr(alloc, fnt.widths, FNT_CHAR_MAX);
+	fnt.kern_pairs                  = arr_new_clr(alloc, fnt.kern_pairs, FNT_KERN_PAIRS_MAX);
+	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
+	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);
+
+	struct marena_tmp tmp = marena_tmp_start(&marena);
+	v2 cell_size          = fnt_pd_cell_size_from_tex(in_path, alloc);
+	fnt.cell_w            = cell_size.x;
+	fnt.cell_h            = cell_size.y;
+	marena_tmp_end(tmp);
+
+	struct sys_full_file_res res = sys_load_full_file(scratch, in_path);
+	pd_fnt_handle_file(scratch, res, &fnt);
+
+	sys_file out_file  = sys_file_zero();
+	str8 out_file_path = out_path;
+	out_file           = sys_file_open_w(out_file_path);
+
+	if(!sys_file_is_valid(out_file)) {
+		log_error("fnt-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
+		return -1;
 	}
-	sys_file_r(f, buf, (u32)f_size);
-	sys_file_close(f);
-	buf[f_size] = '\0';
-	out->str    = buf;
-	out->size   = f_size;
+
+	struct ser_writer w = {.f = out_file};
+
+	fnt_write(fnt, &w);
+	sys_file_close(out_file);
+
+	log_info("fnt-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
+
 	return 1;
 }
 
+void
+pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt)
+{
+	str8 bom = str8_lit("\xEF\xBB\xBF");
+	str8 str = {.str = data.data, .size = data.size};
+
+	if(str8_starts_with(str, bom, 0)) { str = str8_skip(str, bom.size); }
+
+	str8 metrics_key = str8_lit("--metrics=");
+	str8 comment_key = str8_lit("--");
+	str8 value       = {0};
+
+	struct str8_list list = str8_split_by_string_chars(scratch, str, str8_lit("\n"), 0);
+
+	for(struct str8_node *n = list.first; n != 0; n = n->next) {
+		str8 line = str8_skip_chop_whitespace(n->str);
+
+		if(line.size == 0) { continue; }
+
+		if(str8_starts_with(line, metrics_key, 0)) {
+			fnt->metrics = fnt_pd_handle_metrics(str8_skip(line, metrics_key.size), scratch);
+		} else if(str8_starts_with(line, comment_key, 0)) {
+			str8 rest          = str8_skip(line, comment_key.size);
+			str8 kern          = str8_skip_chop_whitespace(rest);
+			b32 is_white_space = rest.size > 0 && char_is_space(rest.str[0]);
+
+			// It's not a comment its a kerning value
+			if(is_white_space && str8_is_integer_signed(kern, 10)) {
+				fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i32(kern);
+			}
+		} else if(pd_fnt_handle_key_value(line, str8_lit("tracking"), &value)) {
+			fnt->tracking = str8_to_i32(value);
+		} else if(pd_fnt_handle_key_value(line, str8_lit("width"), &value)) {
+			if(fnt->cell_w == 0) {
+				fnt->cell_w = str8_to_i32(value);
+			}
+		} else if(pd_fnt_handle_key_value(line, str8_lit("height"), &value)) {
+			if(fnt->cell_h == 0) {
+				fnt->cell_h = str8_to_i32(value);
+			}
+		} else if(pd_fnt_handle_key_value(line, str8_lit("data"), &value)) {
+			log_warn("fnt-pd", "Standalone fonts with embedded data are not supported yet");
+		} else if(pd_fnt_handle_key_value(line, str8_lit("datalen"), &value)) {
+		} else {
+			fnt_pd_handle_line(line, fnt);
+		}
+	}
+}
+
 struct fnt_metrics
-handle_metrics(str8 json, struct alloc scratch)
+fnt_pd_handle_metrics(str8 json, struct alloc scratch)
 {
 	jsmn_parser parser;
 	jsmn_init(&parser);
-	i32 token_count = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
+	struct fnt_metrics res = {0};
+	i32 token_count        = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
+
+	if(token_count <= 0) {
+		log_warn("fnt-pd", "Invalid metrics: %.*s", str8_spread(json));
+		return res;
+	}
+
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-	dbg_assert(json_res == token_count);
 
-	struct fnt_metrics res = {0};
-	for(i32 i = 1; i < token_count; i++) {
+	if(json_res != token_count || tokens[0].type != JSMN_OBJECT) {
+		log_warn("fnt-pd", "Invalid metrics: %.*s", str8_spread(json));
+		return res;
+	}
+
+	ssize i = 1;
+	for(i32 p = 0; p < tokens[0].size && i + 1 < token_count; ++p) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
-		if(json_eq(json, key, str8_lit("baseline")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
-			res.baseline = json_parse_i32(json, value);
-		} else if(json_eq(json, key, str8_lit("xHeight")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
-			res.x_height = json_parse_i32(json, value);
-		} else if(json_eq(json, key, str8_lit("capHeight")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
-			res.cap_height = json_parse_i32(json, value);
-		} else if(json_eq(json, key, str8_lit("descent")) == 0) {
-			dbg_assert(value->type == JSMN_PRIMITIVE);
-			res.descent = json_parse_i32(json, value);
+		if(value->type == JSMN_PRIMITIVE) {
+			if(json_eq(json, key, str8_lit("baseline")) == 0) {
+				res.baseline = json_parse_i32(json, value);
+			} else if(json_eq(json, key, str8_lit("xHeight")) == 0) {
+				res.x_height = json_parse_i32(json, value);
+			} else if(json_eq(json, key, str8_lit("capHeight")) == 0) {
+				res.cap_height = json_parse_i32(json, value);
+			} else if(json_eq(json, key, str8_lit("descent")) == 0) {
+				res.descent = json_parse_i32(json, value);
+			}
 		}
+		i += 1 + json_skip(tokens, i + 1);
 	}
 	return res;
 }
 
 void
-handle_line(str8 line, struct fnt *fnt)
+fnt_pd_handle_line(str8 line, struct fnt *fnt)
 {
-	str8 space_id = str8_lit("space");
-	if(str8_starts_with(line, space_id, 0)) {
-		str8 value           = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = space_id.size, .max = line.size}));
+	str8 space_key = str8_lit("space");
+
+	if(str8_starts_with(line, space_key, 0)) {
+		str8 value           = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = space_key.size, .max = line.size}));
 		fnt->widths[(u8)' '] = str8_to_i32(value);
 	} else {
 		if(char_is_ascii(line.str[0]) && char_is_space(line.str[1])) {
@@ -93,18 +184,8 @@ handle_line(str8 line, struct fnt *fnt)
 	}
 }
 
-void
-handle_lines(str8 str, struct fnt *fnt, struct alloc scratch)
-{
-	struct str8_list list = str8_split_by_string_chars(scratch, str, str8_lit("\n"), 0);
-
-	for(struct str8_node *n = list.first; n != 0; n = n->next) {
-		handle_line(n->str, fnt);
-	}
-}
-
 v2
-get_fnt_size(str8 in_path, struct alloc scratch)
+fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch)
 {
 	str8 fnt_file_name = str8_cpy_push(scratch, str8_skip_last_slash(str8_chop_last_dot(in_path)));
 	str8 dir_path      = str8_cpy_push(scratch, str8_chop_last_slash(in_path));
@@ -144,79 +225,16 @@ get_fnt_size(str8 in_path, struct alloc scratch)
 	return res;
 }
 
-int
-handle_fnt_pd(str8 in_path, str8 out_path, struct alloc scratch)
+b32
+pd_fnt_handle_key_value(str8 line, str8 key, str8 *value)
 {
-	usize mem_size         = MKILOBYTE(100);
-	struct alloc alloc_sys = sys_allocator();
-	u8 *mem_buffer         = mem_alloc_size(alloc_sys, mem_size);
-	dbg_assert(mem_buffer != NULL);
-	struct marena marena = {0};
-	marena_ini_local(&marena, mem_buffer, mem_size);
-	struct alloc alloc = marena_allocator(&marena);
+	if(!str8_starts_with(line, key, 0)) { return false; }
 
-	str8 data = {0};
-	fnt_pd_load(in_path, scratch, &data);
+	str8 rest = str8_skip_chop_whitespace(str8_skip(line, key.size));
 
-	struct fnt fnt = {0};
+	if(rest.size == 0 || rest.str[0] != '=') { return false; }
 
-	// TODO: Reset scratch
-	v2 cell_size = get_fnt_size(in_path, scratch);
-	fnt.cell_w   = cell_size.x;
-	fnt.cell_h   = cell_size.y;
+	*value = str8_skip_chop_whitespace(str8_skip(rest, 1));
 
-	fnt.widths                      = arr_new(alloc, fnt.widths, FNT_CHAR_MAX);
-	fnt.kern_pairs                  = arr_new(alloc, fnt.kern_pairs, FNT_KERN_PAIRS_MAX);
-	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
-	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);
-	mclr(fnt.widths, sizeof(*fnt.widths) * arr_len(fnt.widths));
-	mclr(fnt.kern_pairs, sizeof(*fnt.kern_pairs) * arr_len(fnt.kern_pairs));
-
-	str8 metrics_id  = str8_lit("--metrics=");
-	str8 tracking_id = str8_lit("tracking=");
-	usize metrics_i  = str8_find_needle(data, 0, metrics_id, 0);
-	dbg_assert((char)*(data.str + metrics_i + metrics_id.size) == '{');
-	usize metrics_f  = str8_find_needle(data, metrics_i, str8_lit("}"), 0);
-	usize tracking_i = str8_find_needle(data, 0, tracking_id, 0);
-	usize tracking_f = str8_find_needle(data, tracking_i, str8_lit("\n"), 0);
-
-	str8 metrics_str  = {.str = data.str + metrics_i, .size = metrics_f - metrics_i};
-	str8 tracking_str = {.str = data.str + tracking_i, .size = tracking_f - tracking_i};
-
-	str8 metrics_val  = str8_postfix(metrics_str, metrics_str.size - metrics_id.size);
-	str8 tracking_val = str8_postfix(tracking_str, tracking_str.size - tracking_id.size);
-
-	// The value is not null terminated, therefore we need to increase the size
-	metrics_val.size++;
-	tracking_val.size++;
-
-	fnt.metrics  = handle_metrics(metrics_val, scratch);
-	fnt.tracking = str8_to_i32(tracking_val);
-
-	str8 rest = str8_skip_chop_whitespace((str8){
-		.str  = data.str + tracking_f,
-		.size = data.size - tracking_f,
-	});
-
-	handle_lines(rest, &fnt, scratch);
-
-	sys_file out_file  = sys_file_zero();
-	str8 out_file_path = out_path;
-	out_file           = sys_file_open_w(out_file_path);
-	if(!sys_file_is_valid(out_file)) {
-		log_error("ai-gen", "can't open file %.*s for writing!", str8_spread(out_file_path));
-		return -1;
-	}
-	// TODO: Serialize font
-	struct ser_writer w = {
-		.f = out_file,
-	};
-
-	fnt_write(fnt, &w);
-	sys_file_close(out_file);
-
-	sys_free(mem_buffer);
-	log_info("fnt-gen", "%.*s -> %.*s", str8_spread(in_path), str8_spread(out_file_path));
-
-	return 1;
+	return true;
 }
