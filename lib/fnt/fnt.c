@@ -12,15 +12,12 @@ i32
 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 {
 	if(a < 32) return 0;
-	a = fnt_glyph_cell(fnt, a) + 32;
 
-	i32 x            = 0;
 	i32 is_last_char = (b == '\n') || (b == -1);
-	i32 w            = (fnt.ascii && a < FNT_ASCII_MAX) ? fnt.ascii->widths[a] : 0;
-	x                = x + (w ? w : fnt.cell_w);
-	if(fnt.ascii && fnt.ascii->kern && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX) {
-		x += fnt.ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)];
-	}
+	i32 x            = fnt_glyph(fnt, a).w;
+
+	if(b > 0) { x += fnt_kern(fnt, a, b); }
+
 	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
 	return x;
@@ -121,13 +118,16 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 		// and the value is the kerning value
 		ser_write_string(w, str8_lit("kern_pairs"));
 		ser_write_array(w);
-		for(ssize i = 0; fnt.ascii->kern && i < FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX; ++i) {
-			if(fnt.ascii->kern[i] != 0) {
-				ser_write_object(w);
-				char pair[3] = {FNT_ASCII_KERN_MIN + i / FNT_ASCII_KERN_MAX, FNT_ASCII_KERN_MIN + i % FNT_ASCII_KERN_MAX, '\0'};
-				ser_write_string(w, str8_cstr(pair));
-				ser_write_i32(w, fnt.ascii->kern[i]);
-				ser_write_end(w);
+		for(u32 a = FNT_ASCII_KERN_MIN; fnt.ascii->kern && a < FNT_ASCII_MAX; ++a) {
+			for(u32 b = FNT_ASCII_KERN_MIN; b < FNT_ASCII_MAX; ++b) {
+				i8 kern = fnt.ascii->kern[fnt_ascii_kern_idx(a, b)];
+				if(kern != 0) {
+					ser_write_object(w);
+					char pair[3] = {a, b, '\0'};
+					ser_write_string(w, str8_cstr(pair));
+					ser_write_i32(w, kern);
+					ser_write_end(w);
+				}
 			}
 		}
 		ser_write_end(w);
@@ -175,10 +175,8 @@ fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt)
 			ssize i = 0;
 			while(ser_iter_array(r, value, &item_val)) {
 				u8 width = ser_get_u8(item_val);
-				if(i < FNT_ASCII_MAX && width > 0) {
-					fnt->ascii->widths[i] = width;
-					fnt->ascii->mask[i / 64] |= 1ull << (i % 64);
-				}
+				if(i < FNT_ASCII_MAX) { fnt->ascii->widths[i] = width; }
+				if(i >= FNT_ASCII_KERN_MIN && i < FNT_ASCII_MAX - 1) { fnt->ascii->mask[i / 64] |= 1ull << (i % 64); }
 				i++;
 			}
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
@@ -197,7 +195,7 @@ fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt)
 					u8 a = ker_key.str.str[0];
 					u8 b = ker_key.str.str[1];
 					dbg_assert(a >= FNT_ASCII_KERN_MIN && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX);
-					fnt->ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)] = ser_get_i32(ker_value);
+					fnt->ascii->kern[fnt_ascii_kern_idx(a, b)] = ser_get_i32(ker_value);
 				}
 			}
 		}

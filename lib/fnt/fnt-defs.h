@@ -3,9 +3,15 @@
 #include "base/types.h"
 #include "lib/tex/tex.h"
 
-#define FNT_ASCII_MAX      128
-#define FNT_ASCII_KERN_MIN 32 // Skip non visual chars
-#define FNT_ASCII_KERN_MAX (FNT_ASCII_MAX - FNT_ASCII_KERN_MIN)
+#define FNT_ASCII_MAX          128
+#define FNT_ASCII_KERN_MIN     32 // Skip non visual chars
+#define FNT_ASCII_KERN_MAX     (FNT_ASCII_MAX - FNT_ASCII_KERN_MIN)
+#define FNT_CODE_POINT_MISSING 0xFFFD
+
+struct fnt_glyph {
+	i32 cell; // -1 when the font has no glyph to draw
+	i32 w;
+};
 
 struct fnt_metrics {
 	i8 baseline;

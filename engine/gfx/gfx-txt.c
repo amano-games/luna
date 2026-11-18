@@ -30,7 +30,7 @@ fnt_draw_str(
 			i32 glyph = fnt_glyph_cell(fnt, ci);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
-			gfx_spr(ctx, t, p.x, p.y, 0, mode);
+			if(glyph >= 0) { gfx_spr(ctx, t, p.x, p.y, 0, mode); }
 			i32 move_x = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 			p.x += move_x;
 		}
@@ -63,7 +63,7 @@ fnt_mono_draw_str(
 			i32 glyph = fnt_glyph_cell(fnt, ci);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
-			gfx_spr(ctx, t, px, py, 0, mode);
+			if(glyph >= 0) { gfx_spr(ctx, t, px, py, 0, mode); }
 			px += fnt.cell_w + tracking;
 		}
 	}
@@ -90,7 +90,7 @@ fnt_mono_draw_str_sl(
 		i32 glyph = fnt_glyph_cell(fnt, ci);
 		t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 		t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
-		gfx_spr(ctx, t, px, y, 0, mode);
+		if(glyph >= 0) { gfx_spr(ctx, t, px, y, 0, mode); }
 		px += fnt.cell_w + tracking;
 	}
 }

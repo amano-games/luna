@@ -231,5 +231,5 @@ void
 fnt_pd_kern_set(struct fnt *fnt, u32 a, u32 b, i32 value)
 {
 	if(a < FNT_ASCII_KERN_MIN || a >= FNT_ASCII_MAX || b < FNT_ASCII_KERN_MIN || b >= FNT_ASCII_MAX) { return; }
-	fnt->ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)] = value;
+	fnt->ascii->kern[fnt_ascii_kern_idx(a, b)] = value;
 }

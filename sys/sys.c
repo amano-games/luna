@@ -57,6 +57,8 @@ struct prof PROFILER;
 struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
 u32 PROF_ZONE_EXCL[PROF_ZONE_HIST_SIZE][PROF_ANCHORS_SIZE];
 
+static struct fnt_ascii SYS_FNT_MONO_ASCII;
+
 void
 sys_fnt_mono_set(struct fnt fnt)
 {
@@ -96,7 +98,7 @@ sys_init_mem(ssize permanent, ssize transient, ssize align, b32 clear)
 #else
 	ssize debug_size = 0;
 #endif
-	ssize mem_total  = permanent_aligned + transient_aligned + debug_size;
+	ssize mem_total = permanent_aligned + transient_aligned + debug_size;
 
 	log_info(SYS_LOG_LABEL, "Permanent: %.*s aligned:%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent)), str8_spread(str8_from_bytes(bytes_alloc, (u64)permanent_aligned)));
 	log_info(SYS_LOG_LABEL, "Transient: %.*s aligned:%.*s", str8_spread(str8_from_bytes(bytes_alloc, (u64)transient)), str8_spread(str8_from_bytes(bytes_alloc, (u64)transient_aligned)));
@@ -206,6 +208,10 @@ void
 sys_internal_init(void)
 {
 	SYS.initialized = false;
+	for(u32 c = FNT_ASCII_KERN_MIN; c < FNT_ASCII_MAX - 1; ++c) {
+		SYS_FNT_MONO_ASCII.cells[c] = c - FNT_ASCII_KERN_MIN;
+		SYS_FNT_MONO_ASCII.mask[c / 64] |= 1ull << (c % 64);
+	}
 	sys_fnt_mono_set((struct fnt){
 		.cell_h             = 9,
 		.cell_w             = 6,
@@ -220,6 +226,7 @@ sys_internal_init(void)
 		.t.w                = 60,
 		.t.h                = 108,
 		.t.px1b             = (u32 *)SYS_MONO_FONT,
+		.ascii              = &SYS_FNT_MONO_ASCII,
 	});
 
 	sys_ups_target_set(SYS_DEFAULT_UPS);
