@@ -24,7 +24,6 @@ struct fnt_pd_line {
 struct fnt_metrics fnt_pd_handle_metrics(str8 json, struct alloc scratch);
 void fnt_pd_handle_line(str8 line, struct fnt *fnt);
 struct fnt_pd_line fnt_pd_line_parse(str8 line);
-b32 pd_fnt_handle_key_value(str8 line, str8 key, str8 *value);
 void pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt);
 
 v2 fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch);
@@ -80,14 +79,10 @@ fnt_pd_handle(str8 in_path, str8 out_path, struct alloc scratch)
 void
 pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt)
 {
-	str8 bom = str8_lit("\xEF\xBB\xBF");
-	str8 str = {.str = data.data, .size = data.size};
-
-	if(str8_starts_with(str, bom, 0)) { str = str8_skip(str, bom.size); }
-
-	str8 metrics_key = str8_lit("--metrics=");
-	str8 comment_key = str8_lit("--");
-	str8 value       = {0};
+	str8 str          = {.str = data.data, .size = data.size};
+	str8 metrics_key  = str8_lit("--metrics=");
+	str8 comment_key  = str8_lit("--");
+	str8 tracking_key = str8_lit("tracking=");
 
 	struct str8_list list = str8_split_by_string_chars(scratch, str, str8_lit("\n"), 0);
 
@@ -99,27 +94,11 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 		if(str8_starts_with(line, metrics_key, 0)) {
 			fnt->metrics = fnt_pd_handle_metrics(str8_skip(line, metrics_key.size), scratch);
 		} else if(str8_starts_with(line, comment_key, 0)) {
-			str8 rest          = str8_skip(line, comment_key.size);
-			str8 kern          = str8_skip_chop_whitespace(rest);
-			b32 is_white_space = rest.size > 0 && char_is_space(rest.str[0]);
-
 			// NOTE: It's not a comment its a kerning value
-			if(is_white_space && str8_is_integer_signed(kern, 10)) {
-				fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i32(kern);
-			}
-		} else if(pd_fnt_handle_key_value(line, str8_lit("tracking"), &value)) {
-			fnt->tracking = str8_to_i32(value);
-		} else if(pd_fnt_handle_key_value(line, str8_lit("width"), &value)) {
-			if(fnt->cell_w == 0) {
-				fnt->cell_w = str8_to_i32(value);
-			}
-		} else if(pd_fnt_handle_key_value(line, str8_lit("height"), &value)) {
-			if(fnt->cell_h == 0) {
-				fnt->cell_h = str8_to_i32(value);
-			}
-		} else if(pd_fnt_handle_key_value(line, str8_lit("data"), &value)) {
-			log_warn("fnt-pd", "Standalone fonts with embedded data are not supported yet");
-		} else if(pd_fnt_handle_key_value(line, str8_lit("datalen"), &value)) {
+			str8 kern                              = str8_skip_chop_whitespace(str8_skip(line, comment_key.size));
+			fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i64(kern, 10);
+		} else if(str8_starts_with(line, tracking_key, 0)) {
+			fnt->tracking = str8_to_i64(str8_skip(line, tracking_key.size), 10);
 		} else {
 			fnt_pd_handle_line(line, fnt);
 		}
@@ -133,23 +112,13 @@ fnt_pd_handle_metrics(str8 json, struct alloc scratch)
 	jsmn_init(&parser);
 	struct fnt_metrics res = {0};
 	i32 token_count        = jsmn_parse(&parser, (char *)json.str, json.size, NULL, 0);
-
-	if(token_count <= 0) {
-		log_warn("fnt-pd", "Invalid metrics: %.*s", str8_spread(json));
-		return res;
-	}
-
 	jsmn_init(&parser);
 	jsmntok_t *tokens = arr_new(scratch, tokens, token_count);
 	i32 json_res      = jsmn_parse(&parser, (char *)json.str, json.size, tokens, token_count);
-
-	if(json_res != token_count || tokens[0].type != JSMN_OBJECT) {
-		log_warn("fnt-pd", "Invalid metrics: %.*s", str8_spread(json));
-		return res;
-	}
+	dbg_assert(json_res == token_count && tokens[0].type == JSMN_OBJECT);
 
 	ssize i = 1;
-	for(i32 p = 0; p < tokens[0].size && i + 1 < token_count; ++p) {
+	for(i32 p = 0; p < tokens[0].size; ++p) {
 		jsmntok_t *key   = &tokens[i];
 		jsmntok_t *value = &tokens[i + 1];
 		if(value->type == JSMN_PRIMITIVE) {
@@ -189,20 +158,13 @@ fnt_pd_line_parse(str8 line)
 {
 	struct fnt_pd_line res = {0};
 
-	usize name_size = 0;
-	for(; name_size < line.size && !char_is_space(line.str[name_size]); ++name_size) {}
-
-	str8 name = str8_prefix(line, name_size);
-	str8 rest = str8_skip_chop_whitespace(str8_skip(line, name_size));
-
-	usize value_size = 0;
-	for(; value_size < rest.size && !char_is_space(rest.str[value_size]); ++value_size) {}
-
-	str8 value = str8_prefix(rest, value_size);
+	usize name_size = str8_find_needle(line, 0, str8_lit("\t"), 0);
+	str8 name       = str8_prefix(line, name_size);
+	str8 value      = str8_skip_chop_whitespace(str8_skip(line, name_size));
 
 	if(!str8_is_integer_signed(value, 10)) { return res; }
 
-	res.value = (i32)str8_to_i64(value, 10);
+	res.value = str8_to_i64(value, 10);
 
 	if(str8_match(name, str8_lit("space"), 0)) {
 		res.code_points[res.count++] = ' ';
@@ -210,34 +172,13 @@ fnt_pd_line_parse(str8 line)
 	}
 
 	for(usize i = 0; i < name.size;) {
-		u32 code_point = U32_MAX;
+		struct unicode_decode decode = utf8_decode(name.str + i, name.size - i);
+		i += decode.inc;
 
-		// U+xxxx
-		if(name.str[i] == 'U' && i + 2 < name.size && name.str[i + 1] == '+' && char_is_digit(name.str[i + 2], 16)) {
-			usize hex     = i + 2;
-			usize hex_end = hex;
-			for(; hex_end < name.size && hex_end - hex < 6 && char_is_digit(name.str[hex_end], 16); ++hex_end) {}
-			code_point = str8_to_u64(str8_substr(name, (union rng_u64){.min = hex, .max = hex_end}), 16);
-			i          = hex_end;
-		} else {
-			struct unicode_decode decode = utf8_decode(name.str + i, name.size - i);
-			code_point                   = decode.codepoint;
-			i += decode.inc;
-		}
+		if((decode.codepoint == 0xFE0E || decode.codepoint == 0xFE0F) && res.count > 0) { continue; }
 
-		if(code_point == U32_MAX) {
-			res.count = 0;
-			return res;
-		}
-
-		if((code_point == 0xFE0E || code_point == 0xFE0F) && res.count > 0) { continue; }
-
-		if(res.count == (i32)ARRLEN(res.code_points)) {
-			res.count = 0;
-			return res;
-		}
-
-		res.code_points[res.count++] = code_point;
+		dbg_assert(res.count < (i32)ARRLEN(res.code_points));
+		res.code_points[res.count++] = decode.codepoint;
 	}
 
 	return res;
@@ -282,18 +223,4 @@ fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch)
 	tinydir_close(dir);
 
 	return res;
-}
-
-b32
-pd_fnt_handle_key_value(str8 line, str8 key, str8 *value)
-{
-	if(!str8_starts_with(line, key, 0)) { return false; }
-
-	str8 rest = str8_skip_chop_whitespace(str8_skip(line, key.size));
-
-	if(rest.size == 0 || rest.str[0] != '=') { return false; }
-
-	*value = str8_skip_chop_whitespace(str8_skip(rest, 1));
-
-	return true;
 }
