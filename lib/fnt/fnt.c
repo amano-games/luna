@@ -16,10 +16,11 @@ fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
 
 	i32 x            = 0;
 	i32 is_last_char = (b == '\n') || (b == -1);
-	x += (fnt.widths && fnt.widths[a]) ? fnt.widths[a] : fnt.cell_w;
-	u16 kern_i         = ((u16)a << 8) | b;
-	i32 has_kern_pairs = (fnt.kern_pairs != NULL) && (b > 0);
-	if(has_kern_pairs && kern_i > 0) { x += fnt.kern_pairs[kern_i]; }
+	i32 w            = (fnt.ascii && a < FNT_ASCII_MAX) ? fnt.ascii->widths[a] : 0;
+	x                = x + (w ? w : fnt.cell_w);
+	if(fnt.ascii && fnt.ascii->kern && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX) {
+		x += fnt.ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)];
+	}
 	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
 	return x;
@@ -53,6 +54,30 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 	return res;
 }
 
+struct fnt_ascii *
+fnt_ascii_ini(struct alloc alloc, struct fnt *fnt)
+{
+	if(fnt->ascii) { return fnt->ascii; }
+
+	fnt->ascii = alloc_struct_clr(alloc, fnt->ascii);
+	if(fnt->ascii == NULL) { return NULL; }
+
+	for(i32 c = FNT_ASCII_KERN_MIN; c < FNT_ASCII_MAX; ++c) {
+		fnt->ascii->cells[c] = c - FNT_ASCII_KERN_MIN;
+	}
+	return fnt->ascii;
+}
+
+b32
+fnt_ascii_has_glyphs(struct fnt fnt)
+{
+	if(fnt.ascii == NULL) { return false; }
+	for(usize i = 0; i < ARRLEN(fnt.ascii->mask); ++i) {
+		if(fnt.ascii->mask[i]) { return true; }
+	}
+	return false;
+}
+
 void
 fnt_write(struct fnt fnt, struct ser_writer *w)
 {
@@ -82,38 +107,37 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 
 	ser_write_end(w);
 
-	ser_write_string(w, str8_lit("widths"));
-	ser_write_array(w);
-	// TODO: Store same as pairs, only the characters that have the width
-	for(ssize i = 0; i < arr_len(fnt.widths); ++i) {
-		ser_write_u8(w, fnt.widths[i]);
-	}
-	ser_write_end(w);
-
-	// Kern pairs are stored as an array of objects where the
-	// key is the pair characters
-	// and the value is the kerning value
-	ser_write_string(w, str8_lit("kern_pairs"));
-	ser_write_array(w);
-	for(ssize i = 0; i < arr_len(fnt.kern_pairs); ++i) {
-		if(fnt.kern_pairs[i] != 0) {
-			ser_write_object(w);
-			u16 index    = i;
-			u8 a         = (index >> 8) & 0xFF;
-			u8 b         = index & 0xFF;
-			char pair[3] = {a, b, '\0'};
-			ser_write_string(w, str8_cstr(pair));
-			ser_write_i32(w, fnt.kern_pairs[i]);
-			ser_write_end(w);
+	if(fnt_ascii_has_glyphs(fnt)) {
+		ser_write_string(w, str8_lit("widths"));
+		ser_write_array(w);
+		// TODO: Store same as pairs, only the characters that have the width
+		for(ssize i = 0; i < FNT_ASCII_MAX; ++i) {
+			ser_write_u8(w, fnt.ascii->widths[i]);
 		}
+		ser_write_end(w);
+
+		// Kern pairs are stored as an array of objects where the
+		// key is the pair characters
+		// and the value is the kerning value
+		ser_write_string(w, str8_lit("kern_pairs"));
+		ser_write_array(w);
+		for(ssize i = 0; fnt.ascii->kern && i < FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX; ++i) {
+			if(fnt.ascii->kern[i] != 0) {
+				ser_write_object(w);
+				char pair[3] = {FNT_ASCII_KERN_MIN + i / FNT_ASCII_KERN_MAX, FNT_ASCII_KERN_MIN + i % FNT_ASCII_KERN_MAX, '\0'};
+				ser_write_string(w, str8_cstr(pair));
+				ser_write_i32(w, fnt.ascii->kern[i]);
+				ser_write_end(w);
+			}
+		}
+		ser_write_end(w);
 	}
-	ser_write_end(w);
 
 	ser_write_end(w);
 }
 
 i32
-fnt_read(struct ser_reader *r, struct fnt *fnt)
+fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt)
 {
 	struct ser_value obj = ser_read(r);
 	struct ser_value key, value;
@@ -146,26 +170,35 @@ fnt_read(struct ser_reader *r, struct fnt *fnt)
 				}
 			}
 		} else if(str8_match(key.str, str8_lit("widths"), 0)) {
+			dbg_check(fnt_ascii_ini(alloc, fnt), "fnt", "Failed to alloc ascii glyphs");
 			struct ser_value item_val;
 			ssize i = 0;
-			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->widths)) {
-				fnt->widths[i++] = ser_get_u8(item_val);
+			while(ser_iter_array(r, value, &item_val)) {
+				u8 width = ser_get_u8(item_val);
+				if(i < FNT_ASCII_MAX && width > 0) {
+					fnt->ascii->widths[i] = width;
+					fnt->ascii->mask[i / 64] |= 1ull << (i % 64);
+				}
+				i++;
 			}
 		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
+			dbg_check(fnt_ascii_ini(alloc, fnt), "fnt", "Failed to alloc ascii glyphs");
 			struct ser_value item_val;
-			ssize i = 0;
-			while(ser_iter_array(r, value, &item_val) && i < arr_cap(fnt->kern_pairs)) {
+			while(ser_iter_array(r, value, &item_val)) {
 				dbg_assert(item_val.type == SER_TYPE_OBJECT);
+				if(fnt->ascii->kern == NULL) {
+					fnt->ascii->kern = alloc_arr_clr(alloc, fnt->ascii->kern, FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX);
+					dbg_check(fnt->ascii->kern, "fnt", "Failed to alloc ascii kern");
+				}
 				struct ser_value ker_key, ker_value;
 				while(ser_iter_object(r, item_val, &ker_key, &ker_value)) {
 					dbg_assert(ker_key.type == SER_TYPE_STRING);
 					dbg_assert(ker_value.type == SER_TYPE_I32);
-					u8 a                   = ker_key.str.str[0];
-					u8 b                   = ker_key.str.str[1];
-					u16 index              = ((u16)a << 8) | b;
-					fnt->kern_pairs[index] = ser_get_i32(ker_value);
+					u8 a = ker_key.str.str[0];
+					u8 b = ker_key.str.str[1];
+					dbg_assert(a >= FNT_ASCII_KERN_MIN && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX);
+					fnt->ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)] = ser_get_i32(ker_value);
 				}
-				i++;
 			}
 		}
 	}
@@ -179,25 +212,7 @@ error:
 struct fnt
 fnt_load_from_mem(struct alloc alloc, void *data, usize size)
 {
-	struct fnt res        = {0};
-	ssize widths_size     = FNT_CHAR_MAX;
-	ssize kern_pairs_size = FNT_KERN_PAIRS_MAX;
-	res.widths            = arr_new(alloc, res.widths, widths_size);
-	res.kern_pairs        = arr_new(alloc, res.kern_pairs, kern_pairs_size);
-
-	if(res.widths == NULL) {
-		log_error("fnt", "Failed to alloc widths array ");
-		return res;
-	}
-	if(res.kern_pairs == NULL) {
-		log_error("fnt", "Failed to alloc kern pairs array ");
-		return res;
-	}
-
-	arr_header(res.widths)->len     = arr_cap(res.widths);
-	arr_header(res.kern_pairs)->len = arr_cap(res.kern_pairs);
-	mclr(res.widths, sizeof(*res.widths) * widths_size);
-	mclr(res.kern_pairs, sizeof(*res.kern_pairs) * kern_pairs_size);
+	struct fnt res = {0};
 
 	if(data == NULL || size == 0) {
 		log_error("fnt", "Failed loading info from mem");
@@ -208,7 +223,10 @@ fnt_load_from_mem(struct alloc alloc, void *data, usize size)
 		.data = data,
 		.len  = size,
 	};
-	fnt_read(&r, &res);
+	if(fnt_read(alloc, &r, &res) < 0) {
+		log_error("fnt", "Failed reading fnt data");
+		return (struct fnt){0};
+	}
 
 	return res;
 }
@@ -227,7 +245,7 @@ fnt_load(str8 path, struct alloc alloc, struct alloc scratch)
 	}
 
 	res = fnt_load_from_mem(alloc, file_res.data, file_res.size);
-	if(res.widths == NULL) {
+	if(res.cell_h == 0) {
 		return res;
 	}
 

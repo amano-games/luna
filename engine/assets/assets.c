@@ -413,7 +413,7 @@ asset_fnt_load(struct alloc scratch, str8 path, struct fnt *fnt)
 	struct asset_blob blob = asset_blob_read(scratch, path);
 	struct fnt f           = fnt_load_from_mem(ASSETS.alloc, blob.data, blob.size);
 
-	dbg_check(f.widths, "assets", "failed to load fnt: %.*s", str8_spread(path));
+	dbg_check(f.cell_h > 0, "assets", "failed to load fnt: %.*s", str8_spread(path));
 
 	// Companion atlas lives next to the .fnt member in the pack.
 	str8 base_name = str8_chop_last_dot(path);

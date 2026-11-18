@@ -23,6 +23,7 @@ struct fnt_pd_line {
 
 struct fnt_metrics fnt_pd_handle_metrics(str8 json, struct alloc scratch);
 void fnt_pd_handle_line(str8 line, struct fnt *fnt);
+void fnt_pd_kern_set(struct fnt *fnt, u32 a, u32 b, i32 value);
 struct fnt_pd_line fnt_pd_line_parse(str8 line);
 void pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt);
 
@@ -41,12 +42,10 @@ fnt_pd_handle(str8 in_path, str8 out_path, struct alloc scratch)
 	struct marena marena = {0};
 	marena_ini_local(&marena, mem, mem_size);
 
-	struct alloc alloc              = marena_allocator(&marena);
-	struct fnt fnt                  = {0};
-	fnt.widths                      = arr_new_clr(alloc, fnt.widths, FNT_CHAR_MAX);
-	fnt.kern_pairs                  = arr_new_clr(alloc, fnt.kern_pairs, FNT_KERN_PAIRS_MAX);
-	arr_header(fnt.widths)->len     = arr_cap(fnt.widths);
-	arr_header(fnt.kern_pairs)->len = arr_cap(fnt.kern_pairs);
+	struct alloc alloc = marena_allocator(&marena);
+	struct fnt fnt     = {0};
+	fnt.ascii          = alloc_struct_clr(alloc, fnt.ascii);
+	fnt.ascii->kern    = alloc_arr_clr(alloc, fnt.ascii->kern, FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX);
 
 	struct marena_tmp tmp = marena_tmp_start(&marena);
 	v2 cell_size          = fnt_pd_cell_size_from_tex(in_path, alloc);
@@ -96,7 +95,7 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 		} else if(str8_starts_with(line, comment_key, 0)) {
 			// NOTE: It's not a comment its a kerning value
 			str8 kern = str8_skip_chop_whitespace(str8_skip(line, comment_key.size));
-			if(str8_is_integer_signed(kern, 10)) { fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i64(kern, 10); }
+			if(str8_is_integer_signed(kern, 10)) { fnt_pd_kern_set(fnt, '-', '-', str8_to_i64(kern, 10)); }
 		} else if(str8_starts_with(line, tracking_key, 0)) {
 			fnt->tracking = str8_to_i64(str8_skip(line, tracking_key.size), 10);
 		} else {
@@ -149,8 +148,11 @@ fnt_pd_handle_line(str8 line, struct fnt *fnt)
 
 	u32 a = parsed.code_points[0];
 	u32 b = parsed.code_points[1];
-	if(parsed.count == 1 && a < 128) { fnt->widths[a] = parsed.value; }
-	if(parsed.count == 2 && a < 128 && b < 128) { fnt->kern_pairs[(a << 8) | b] = parsed.value; }
+	if(parsed.count == 1 && a < FNT_ASCII_MAX) {
+		fnt->ascii->widths[a] = parsed.value;
+		fnt->ascii->mask[a / 64] |= 1ull << (a % 64);
+	}
+	if(parsed.count == 2) { fnt_pd_kern_set(fnt, a, b, parsed.value); }
 }
 
 struct fnt_pd_line
@@ -223,4 +225,11 @@ fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch)
 	tinydir_close(dir);
 
 	return res;
+}
+
+void
+fnt_pd_kern_set(struct fnt *fnt, u32 a, u32 b, i32 value)
+{
+	if(a < FNT_ASCII_KERN_MIN || a >= FNT_ASCII_MAX || b < FNT_ASCII_KERN_MIN || b >= FNT_ASCII_MAX) { return; }
+	fnt->ascii->kern[(a - FNT_ASCII_KERN_MIN) * FNT_ASCII_KERN_MAX + (b - FNT_ASCII_KERN_MIN)] = value;
 }
