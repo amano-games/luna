@@ -440,14 +440,17 @@ sokol_event(const sapp_event *ev)
 			struct alloc scratch = SOKOL_STATE.scratch;
 			str8 path            = str8_fmt_push(
 				scratch,
-				"%.*s/%s-%s.mp4",
+				"%.*s/%s-%s.%.*s",
 				(int)SOKOL_STATE.opts.recording.save_path.size,
 				SOKOL_STATE.opts.recording.save_path.str,
 				SYS_APP_NAME,
-				sys_path_timestamp(scratch).str);
+				sys_path_timestamp(scratch).str,
+				str8_spread(SYS_RECORDING_FORMAT_LABELS[SOKOL_STATE.opts.recording.format]));
 			sys_recording_write(
 				scratch,
 				&SYS_RECORDING_STATE.gfx,
+				SOKOL_STATE.opts.recording.format,
+				SOKOL_STATE.opts.recording.compression,
 				SOKOL_STATE.opts.recording.scale,
 				SOKOL_STATE.opts.recording.colors,
 				path);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/mem.h"
+#include "base/str.h"
 #include "engine/gfx/gfx-defs.h"
 #include <jsmn.h>
 
@@ -18,7 +19,27 @@ struct sys_screenshot_opts {
 	struct gfx_col_palette colors;
 };
 
+enum sys_recording_format {
+	SYS_RECORDING_FORMAT_NONE,
+
+	SYS_RECORDING_FORMAT_MP4,
+	SYS_RECORDING_FORMAT_GIF,
+
+	SYS_RECORDING_FORMAT_NUM_COUNT,
+};
+
+enum sys_recording_compression {
+	SYS_RECORDING_COMPRESSION_NONE,
+
+	SYS_RECORDING_COMPRESSION_LOSSY,
+	SYS_RECORDING_COMPRESSION_LOSSLESS,
+
+	SYS_RECORDING_COMPRESSION_NUM_COUNT,
+};
+
 struct sys_recording_opts {
+	enum sys_recording_format format;
+	enum sys_recording_compression compression;
 	i32 scale;
 	str8 save_path;
 	i32 seconds_count;
@@ -60,6 +81,18 @@ struct sys_video_opts {
 	enum sys_video_filter filter;
 	enum sys_video_display display;
 	b32 mouse_capture;
+};
+
+static const str8 SYS_RECORDING_FORMAT_LABELS[SYS_RECORDING_FORMAT_NUM_COUNT] = {
+	[SYS_RECORDING_FORMAT_NONE] = str8_lit_comp("none"),
+	[SYS_RECORDING_FORMAT_MP4]  = str8_lit_comp("mp4"),
+	[SYS_RECORDING_FORMAT_GIF]  = str8_lit_comp("gif"),
+};
+
+static const str8 SYS_RECORDING_COMPRESSION_LABELS[SYS_RECORDING_COMPRESSION_NUM_COUNT] = {
+	[SYS_RECORDING_COMPRESSION_NONE]     = str8_lit_comp("none"),
+	[SYS_RECORDING_COMPRESSION_LOSSY]    = str8_lit_comp("lossy"),
+	[SYS_RECORDING_COMPRESSION_LOSSLESS] = str8_lit_comp("lossless"),
 };
 
 #define SYS_OPTS_DEFAULT_FILENAME "settings-luna.json"

@@ -18,6 +18,8 @@
 #define SYS_OPTS_VIDEO_MOUSE_CAPTURE_KEY "mouse-capture"
 
 #define SYS_OPTS_RECORDING_KEY               "recording"
+#define SYS_OPTS_RECORDING_FORMAT_KEY        "format"
+#define SYS_OPTS_RECORDING_COMPRESSION_KEY   "compression"
 #define SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "seconds"
 #define SYS_OPTS_RECORDING_SCALE_KEY         "scale"
 #define SYS_OPTS_RECORDING_SAVE_PATH_KEY     "save-path"
@@ -92,6 +94,8 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str
 		},
 
 		.recording = {
+			.format        = SYS_RECORDING_FORMAT_MP4,
+			.compression   = SYS_RECORDING_COMPRESSION_LOSSLESS,
 			.save_path     = default_save_path,
 			.scale         = SYS_RECORDING_SCALE_DEFAULT,
 			.seconds_count = SYS_RECORDING_SECONDS_DEFAULT,
@@ -174,11 +178,15 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str
 	log_info(
 		"sys-opts",
 		"loaded recording:\n"
+		" format: %.*s\n"
+		" compression: %.*s\n"
 		" scale: %d\n"
 		" seconds: %d\n"
 		" colors: %.*s,%.*s,%.*s\n"
 		" save path:%.*s",
 
+		str8_spread(SYS_RECORDING_FORMAT_LABELS[res.recording.format]),
+		str8_spread(SYS_RECORDING_COMPRESSION_LABELS[res.recording.compression]),
 		(int)res.recording.scale,
 		(int)res.recording.seconds_count,
 
@@ -243,6 +251,14 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 path, str
 		"sys-opts",
 		"invalid display mode");
 
+	dbg_check_warn(opts->recording.format > SYS_RECORDING_FORMAT_NONE && opts->recording.format < SYS_RECORDING_FORMAT_NUM_COUNT,
+		"sys-opts",
+		"invalid recording format");
+
+	dbg_check_warn(opts->recording.compression > SYS_RECORDING_COMPRESSION_NONE && opts->recording.compression < SYS_RECORDING_COMPRESSION_NUM_COUNT,
+		"sys-opts",
+		"invalid recording compression");
+
 	str8 recording_path  = json_scape_raw_str8(scratch, opts->recording.save_path);
 	str8 screenshot_path = json_scape_raw_str8(scratch, opts->screentshot.save_path);
 
@@ -264,6 +280,8 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 path, str
 		"  },\n"
 		"  \"" SYS_OPTS_COLOR_PALLETE_KEY "\": %.*s,\n"
 		"  \"" SYS_OPTS_RECORDING_KEY "\": {\n"
+		"    \"" SYS_OPTS_RECORDING_FORMAT_KEY "\": \"%.*s\",\n"
+		"    \"" SYS_OPTS_RECORDING_COMPRESSION_KEY "\": \"%.*s\",\n"
 		"    \"" SYS_OPTS_RECORDING_SCALE_KEY "\": %d,\n"
 		"    \"" SYS_OPTS_RECORDING_SECONDS_COUNT_KEY "\": %d,\n"
 		"    \"" SYS_OPTS_RECORDING_SAVE_PATH_KEY "\": \"%.*s\",\n"
@@ -282,6 +300,8 @@ sys_opts_write(struct alloc scratch, const struct sys_opts *opts, str8 path, str
 		str8_spread(SYS_VIDEO_DISPLAY_LABELS[opts->video.display]),
 		opts->video.mouse_capture ? "true" : "false",
 		str8_spread(colors),
+		str8_spread(SYS_RECORDING_FORMAT_LABELS[opts->recording.format]),
+		str8_spread(SYS_RECORDING_COMPRESSION_LABELS[opts->recording.compression]),
 		opts->recording.scale,
 		opts->recording.seconds_count,
 		str8_spread(recording_path),
@@ -375,7 +395,19 @@ recording_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, v
 	struct sys_opts *data      = ctx->data;
 	struct alloc alloc         = ctx->alloc;
 
-	if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_SCALE_KEY)) == 0) {
+	if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_FORMAT_KEY)) == 0) {
+		if(json_eq(json, value, str8_lit("mp4")) == 0) {
+			data->recording.format = SYS_RECORDING_FORMAT_MP4;
+		} else if(json_eq(json, value, str8_lit("gif")) == 0) {
+			data->recording.format = SYS_RECORDING_FORMAT_GIF;
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_COMPRESSION_KEY)) == 0) {
+		if(json_eq(json, value, str8_lit("lossy")) == 0) {
+			data->recording.compression = SYS_RECORDING_COMPRESSION_LOSSY;
+		} else if(json_eq(json, value, str8_lit("lossless")) == 0) {
+			data->recording.compression = SYS_RECORDING_COMPRESSION_LOSSLESS;
+		}
+	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_SCALE_KEY)) == 0) {
 		data->recording.scale = clamp_i32(json_parse_i32(json, value), 1, 4);
 	} else if(json_eq(json, key, str8_lit(SYS_OPTS_RECORDING_SECONDS_COUNT_KEY)) == 0) {
 		data->recording.seconds_count = json_parse_i32(json, value);

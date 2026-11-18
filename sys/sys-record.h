@@ -5,6 +5,7 @@
 #include "base/mem.h"
 #include "base/types.h"
 #include "sys/sys.h"
+#include "sys/sys-opts.h"
 
 struct recording_1b {
 	ssize idx;
@@ -78,6 +79,8 @@ void
 sys_recording_write(
 	struct alloc scratch,
 	struct recording_1b *recording,
+	enum sys_recording_format format,
+	enum sys_recording_compression compression,
 	i32 scale,
 	struct gfx_col_palette colors,
 	str8 path)
@@ -105,11 +108,41 @@ sys_recording_write(
 	str8_list_pushf(scratch, &cmd_list, "-r %d", fps);
 	str8_list_pushf(scratch, &cmd_list, "-i -");
 
-	str8_list_pushf(scratch, &cmd_list, "-s %dx%d", w * scale, h * scale);
-	str8_list_pushf(scratch, &cmd_list, "-sws_flags neighbor");
-	str8_list_pushf(scratch, &cmd_list, "-c:v libx264");
-	str8_list_pushf(scratch, &cmd_list, "-pix_fmt yuv420p");
-	str8_list_pushf(scratch, &cmd_list, "-vb 2500k");
+	if(format == SYS_RECORDING_FORMAT_GIF) {
+		u32 col_black = colors.colors[GFX_COL_BLACK] >> 8;
+		u32 col_white = colors.colors[GFX_COL_WHITE] >> 8;
+		str8_list_pushf(scratch,
+			&cmd_list,
+			"-filter_complex \""
+			"color=c=0x%06x:s=1x1:d=1,format=rgb24[c0];"
+			"color=c=0x%06x:s=1x1:d=1,format=rgb24[c1];"
+			"[c0][c1]hstack,palettegen=max_colors=2:reserve_transparent=0:stats_mode=full[p];"
+			"[0:v]%sscale=iw*%d:ih*%d:flags=neighbor[v];"
+			"[v][p]paletteuse=dither=none\"",
+			col_black,
+			col_white,
+			fps > 50 ? "fps=50," : "",
+			scale,
+			scale);
+		str8_list_pushf(scratch, &cmd_list, "-loop 0");
+	} else if(compression == SYS_RECORDING_COMPRESSION_LOSSLESS) {
+		str8_list_pushf(scratch, &cmd_list, "-s %dx%d", w * scale, h * scale);
+		str8_list_pushf(scratch, &cmd_list, "-sws_flags neighbor");
+		str8_list_pushf(scratch, &cmd_list, "-c:v libx264rgb");
+		str8_list_pushf(scratch, &cmd_list, "-preset slow");
+		str8_list_pushf(scratch, &cmd_list, "-qp 0");
+		str8_list_pushf(scratch, &cmd_list, "-pix_fmt rgb24");
+		str8_list_pushf(scratch, &cmd_list, "-movflags +faststart");
+	} else {
+		str8_list_pushf(scratch, &cmd_list, "-s %dx%d", w * scale, h * scale);
+		str8_list_pushf(scratch, &cmd_list, "-sws_flags neighbor");
+		str8_list_pushf(scratch, &cmd_list, "-c:v libx264");
+		str8_list_pushf(scratch, &cmd_list, "-preset slow");
+		str8_list_pushf(scratch, &cmd_list, "-tune animation");
+		str8_list_pushf(scratch, &cmd_list, "-crf 12");
+		str8_list_pushf(scratch, &cmd_list, "-pix_fmt yuv420p");
+		str8_list_pushf(scratch, &cmd_list, "-movflags +faststart");
+	}
 
 	str8_list_pushf(scratch, &cmd_list, "\"%s\"", path.str);
 
