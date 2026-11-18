@@ -95,7 +95,7 @@ fnt_glyph_cell(struct fnt fnt, u32 code_point)
 	return fnt_glyph(fnt, code_point).cell;
 }
 
-i32 fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking);
+i32 fnt_char_size_x_px(struct fnt fnt, u32 a, u32 b, i32 tracking);
 v2_i32 fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading);
 i32 fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking);
 

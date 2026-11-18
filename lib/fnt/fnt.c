@@ -9,14 +9,14 @@
 #include "sys/sys-io.h"
 
 i32
-fnt_char_size_x_px(struct fnt fnt, i32 a, i32 b, i32 tracking)
+fnt_char_size_x_px(struct fnt fnt, u32 a, u32 b, i32 tracking)
 {
 	if(a < 32) return 0;
 
-	i32 is_last_char = (b == '\n') || (b == -1);
+	i32 is_last_char = (b == '\n') || (b == U32_MAX);
 	i32 x            = fnt_glyph(fnt, a).w;
 
-	if(b > 0) { x += fnt_kern(fnt, a, b); }
+	if(b != U32_MAX) { x += fnt_kern(fnt, a, b); }
 
 	x += (1 - is_last_char) * (tracking + fnt.tracking);
 
@@ -40,7 +40,7 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 	i32 y      = fnt.cell_h + leading;
 	for(usize i = 0; i < str.size; i++) {
 		i32 ci         = str.str[i];
-		i32 cbi        = (i < str.size - 1) ? str.str[i + 1] : -1;
+		u32 cbi        = (i < str.size - 1) ? str.str[i + 1] : U32_MAX;
 		i32 is_newline = (ci == '\n');
 		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi, tracking);
 		x              = (1 - is_newline) * (x + move_x);
@@ -361,7 +361,7 @@ fnt_wrap_lines_from_str(
 
 	for(usize i = 0; i <= str.size; i++) {
 		u8 c           = (i < str.size) ? str.str[i] : 0;
-		i32 next       = (i + 1 < str.size) ? str.str[i + 1] : -1;
+		u32 next       = (i + 1 < str.size) ? str.str[i + 1] : U32_MAX;
 		i32 is_newline = (c == '\n');
 		i32 is_end     = (i == str.size);
 

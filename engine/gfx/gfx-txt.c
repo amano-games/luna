@@ -20,7 +20,7 @@ fnt_draw_str(
 	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
 	for(usize n = 0; n < str.size; n++) {
 		i32 ci         = str.str[n];
-		i32 cbi        = (n < str.size - 1) ? str.str[n + 1] : -1;
+		u32 cbi        = (n < str.size - 1) ? str.str[n + 1] : U32_MAX;
 		i32 is_newline = (ci == '\n');
 		p.x            = is_newline ? x : p.x;
 		p.y += is_newline * (fnt.cell_h + leading);
