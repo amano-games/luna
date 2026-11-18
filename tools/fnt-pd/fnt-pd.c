@@ -22,7 +22,8 @@ struct fnt_pd_line {
 };
 
 struct fnt_metrics fnt_pd_handle_metrics(str8 json, struct alloc scratch);
-void fnt_pd_handle_line(str8 line, struct fnt *fnt);
+void fnt_pd_handle_line(str8 line, struct fnt *fnt, i32 *cell);
+void fnt_pd_utf8_push(struct fnt_utf8 *utf8, u32 code_point, i32 cell, i32 width);
 void fnt_pd_kern_set(struct fnt *fnt, u32 a, u32 b, i32 value);
 struct fnt_pd_line fnt_pd_line_parse(str8 line);
 void pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt);
@@ -85,6 +86,12 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 
 	struct str8_list list = str8_split_by_string_chars(scratch, str, str8_lit("\n"), 0);
 
+	struct fnt_utf8 *utf8 = fnt_utf8_ini(scratch, fnt);
+	utf8->code_points     = alloc_arr(scratch, utf8->code_points, list.node_count);
+	utf8->cells           = alloc_arr(scratch, utf8->cells, list.node_count);
+	utf8->widths          = alloc_arr(scratch, utf8->widths, list.node_count);
+	i32 cell              = 0;
+
 	for(struct str8_node *n = list.first; n != 0; n = n->next) {
 		str8 line = str8_skip_chop_whitespace(n->str);
 
@@ -99,7 +106,7 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 		} else if(str8_starts_with(line, tracking_key, 0)) {
 			fnt->tracking = str8_to_i64(str8_skip(line, tracking_key.size), 10);
 		} else {
-			fnt_pd_handle_line(line, fnt);
+			fnt_pd_handle_line(line, fnt, &cell);
 		}
 	}
 }
@@ -137,7 +144,7 @@ fnt_pd_handle_metrics(str8 json, struct alloc scratch)
 }
 
 void
-fnt_pd_handle_line(str8 line, struct fnt *fnt)
+fnt_pd_handle_line(str8 line, struct fnt *fnt, i32 *cell)
 {
 	struct fnt_pd_line parsed = fnt_pd_line_parse(line);
 
@@ -149,10 +156,27 @@ fnt_pd_handle_line(str8 line, struct fnt *fnt)
 	u32 a = parsed.code_points[0];
 	u32 b = parsed.code_points[1];
 	if(parsed.count == 1 && a < FNT_ASCII_MAX) {
+		fnt->ascii->cells[a]  = (*cell)++;
 		fnt->ascii->widths[a] = parsed.value;
 		fnt->ascii->mask[a / 64] |= 1ull << (a % 64);
+	} else if(parsed.count == 1) {
+		fnt_pd_utf8_push(fnt->utf8, a, (*cell)++, parsed.value);
 	}
 	if(parsed.count == 2) { fnt_pd_kern_set(fnt, a, b, parsed.value); }
+}
+
+void
+fnt_pd_utf8_push(struct fnt_utf8 *utf8, u32 code_point, i32 cell, i32 width)
+{
+	u32 i = utf8->count++;
+	for(; i > 0 && utf8->code_points[i - 1] > code_point; --i) {
+		utf8->code_points[i] = utf8->code_points[i - 1];
+		utf8->cells[i]       = utf8->cells[i - 1];
+		utf8->widths[i]      = utf8->widths[i - 1];
+	}
+	utf8->code_points[i] = code_point;
+	utf8->cells[i]       = cell;
+	utf8->widths[i]      = width;
 }
 
 struct fnt_pd_line
