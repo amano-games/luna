@@ -363,9 +363,11 @@ fnt_wrap_lines_from_str(
 	i32 last_break         = -1;
 	i32 last_break_w       = 0;
 
-	for(usize i = 0; i <= str.size; i++) {
-		u8 c           = (i < str.size) ? str.str[i] : 0;
-		u32 next       = (i + 1 < str.size) ? str.str[i + 1] : U32_MAX;
+	for(usize i = 0; i <= str.size;) {
+		usize after    = i;
+		u32 c          = (i < str.size) ? fnt_code_point_next(str, &after) : 0;
+		usize peek     = after;
+		u32 next       = fnt_code_point_next(str, &peek);
 		i32 is_newline = (c == '\n');
 		i32 is_end     = (i == str.size);
 
@@ -378,18 +380,20 @@ fnt_wrap_lines_from_str(
 			line_w       = 0;
 			last_break   = -1;
 			last_break_w = 0;
+			i            = i + 1;
 			continue;
 		}
 
 		i32 cw = fnt_char_size_x_px(fnt, c, next, tracking);
 		line_w += cw;
 
-		if(char_is_space(c)) {
+		if(c < FNT_ASCII_MAX && char_is_space(c)) {
 			last_break   = (i32)i;
 			last_break_w = line_w;
 		}
 
-		if(line_w > max_width && last_break >= 0) {
+		i32 line_end_w = line_w - cw + fnt_char_size_x_px(fnt, c, U32_MAX, tracking);
+		if(line_end_w > max_width && last_break >= 0) {
 			// wrap at last break
 			union rng_u64 rng = rng_u64(line_rng.min, (u64)last_break);
 			str8 line         = str8_substr(str, rng);
@@ -397,11 +401,12 @@ fnt_wrap_lines_from_str(
 
 			// reset to after last break
 			line_rng     = rng_u64((u64)last_break + 1, (u64)last_break + 1);
-			i            = (usize)last_break;
 			line_w       = line_w - last_break_w;
 			last_break   = -1;
 			last_break_w = 0;
 		}
+
+		i = after;
 	}
 
 	// Handle trailing text
