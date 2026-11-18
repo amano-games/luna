@@ -90,6 +90,8 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 	utf8->code_points     = alloc_arr(scratch, utf8->code_points, list.node_count);
 	utf8->cells           = alloc_arr(scratch, utf8->cells, list.node_count);
 	utf8->widths          = alloc_arr(scratch, utf8->widths, list.node_count);
+	utf8->kern_keys       = alloc_arr(scratch, utf8->kern_keys, list.node_count);
+	utf8->kern_vals       = alloc_arr(scratch, utf8->kern_vals, list.node_count);
 	i32 cell              = 0;
 
 	for(struct str8_node *n = list.first; n != 0; n = n->next) {
@@ -254,6 +256,29 @@ fnt_pd_cell_size_from_tex(str8 in_path, struct alloc scratch)
 void
 fnt_pd_kern_set(struct fnt *fnt, u32 a, u32 b, i32 value)
 {
-	if(a < FNT_ASCII_KERN_MIN || a >= FNT_ASCII_MAX || b < FNT_ASCII_KERN_MIN || b >= FNT_ASCII_MAX) { return; }
-	fnt->ascii->kern[fnt_ascii_kern_idx(a, b)] = value;
+	if(a >= FNT_ASCII_KERN_MIN && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX) {
+		fnt->ascii->kern[fnt_ascii_kern_idx(a, b)] = value;
+		return;
+	}
+
+	if(value == 0) { return; }
+
+	struct fnt_utf8 *utf8 = fnt->utf8;
+	u64 key               = ((u64)a << 32) | b;
+	u32 i                 = utf8->kern_count;
+
+	for(; i > 0 && utf8->kern_keys[i - 1] >= key; --i) {}
+
+	if(i < utf8->kern_count && utf8->kern_keys[i] == key) {
+		utf8->kern_vals[i] = value;
+		return;
+	}
+
+	for(u32 j = utf8->kern_count++; j > i; --j) {
+		utf8->kern_keys[j] = utf8->kern_keys[j - 1];
+		utf8->kern_vals[j] = utf8->kern_vals[j - 1];
+	}
+
+	utf8->kern_keys[i] = key;
+	utf8->kern_vals[i] = value;
 }
