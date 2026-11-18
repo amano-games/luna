@@ -15,8 +15,15 @@
 #include <jsmn.h>
 #include <tinydir.h>
 
+struct fnt_pd_line {
+	u32 code_points[2];
+	i32 count;
+	i32 value;
+};
+
 struct fnt_metrics fnt_pd_handle_metrics(str8 json, struct alloc scratch);
 void fnt_pd_handle_line(str8 line, struct fnt *fnt);
+struct fnt_pd_line fnt_pd_line_parse(str8 line);
 b32 pd_fnt_handle_key_value(str8 line, str8 key, str8 *value);
 void pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct fnt *fnt);
 
@@ -96,7 +103,7 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 			str8 kern          = str8_skip_chop_whitespace(rest);
 			b32 is_white_space = rest.size > 0 && char_is_space(rest.str[0]);
 
-			// It's not a comment its a kerning value
+			// NOTE: It's not a comment its a kerning value
 			if(is_white_space && str8_is_integer_signed(kern, 10)) {
 				fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i32(kern);
 			}
@@ -164,24 +171,76 @@ fnt_pd_handle_metrics(str8 json, struct alloc scratch)
 void
 fnt_pd_handle_line(str8 line, struct fnt *fnt)
 {
-	str8 space_key = str8_lit("space");
+	struct fnt_pd_line parsed = fnt_pd_line_parse(line);
 
-	if(str8_starts_with(line, space_key, 0)) {
-		str8 value           = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = space_key.size, .max = line.size}));
-		fnt->widths[(u8)' '] = str8_to_i32(value);
-	} else {
-		if(char_is_ascii(line.str[0]) && char_is_space(line.str[1])) {
-			str8 value     = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = 1, .max = line.size}));
-			u16 i          = line.str[0];
-			fnt->widths[i] = str8_to_i32(value);
-		} else if(char_is_ascii(line.str[0]) && char_is_ascii(line.str[1])) {
-			str8 value         = str8_skip_chop_whitespace(str8_substr(line, (union rng_u64){.min = 2, .max = line.size}));
-			u8 a               = line.str[0];
-			u8 b               = line.str[1];
-			u16 i              = ((u16)a << 8) | b;
-			fnt->kern_pairs[i] = str8_to_i32(value);
-		}
+	if(parsed.count == 0) {
+		log_warn("fnt-pd", "Skipping line: %.*s", str8_spread(line));
+		return;
 	}
+
+	u32 a = parsed.code_points[0];
+	u32 b = parsed.code_points[1];
+	if(parsed.count == 1 && a < 128) { fnt->widths[a] = parsed.value; }
+	if(parsed.count == 2 && a < 128 && b < 128) { fnt->kern_pairs[(a << 8) | b] = parsed.value; }
+}
+
+struct fnt_pd_line
+fnt_pd_line_parse(str8 line)
+{
+	struct fnt_pd_line res = {0};
+
+	usize name_size = 0;
+	for(; name_size < line.size && !char_is_space(line.str[name_size]); ++name_size) {}
+
+	str8 name = str8_prefix(line, name_size);
+	str8 rest = str8_skip_chop_whitespace(str8_skip(line, name_size));
+
+	usize value_size = 0;
+	for(; value_size < rest.size && !char_is_space(rest.str[value_size]); ++value_size) {}
+
+	str8 value = str8_prefix(rest, value_size);
+
+	if(!str8_is_integer_signed(value, 10)) { return res; }
+
+	res.value = (i32)str8_to_i64(value, 10);
+
+	if(str8_match(name, str8_lit("space"), 0)) {
+		res.code_points[res.count++] = ' ';
+		return res;
+	}
+
+	for(usize i = 0; i < name.size;) {
+		u32 code_point = U32_MAX;
+
+		// U+xxxx
+		if(name.str[i] == 'U' && i + 2 < name.size && name.str[i + 1] == '+' && char_is_digit(name.str[i + 2], 16)) {
+			usize hex     = i + 2;
+			usize hex_end = hex;
+			for(; hex_end < name.size && hex_end - hex < 6 && char_is_digit(name.str[hex_end], 16); ++hex_end) {}
+			code_point = str8_to_u64(str8_substr(name, (union rng_u64){.min = hex, .max = hex_end}), 16);
+			i          = hex_end;
+		} else {
+			struct unicode_decode decode = utf8_decode(name.str + i, name.size - i);
+			code_point                   = decode.codepoint;
+			i += decode.inc;
+		}
+
+		if(code_point == U32_MAX) {
+			res.count = 0;
+			return res;
+		}
+
+		if((code_point == 0xFE0E || code_point == 0xFE0F) && res.count > 0) { continue; }
+
+		if(res.count == (i32)ARRLEN(res.code_points)) {
+			res.count = 0;
+			return res;
+		}
+
+		res.code_points[res.count++] = code_point;
+	}
+
+	return res;
 }
 
 v2
