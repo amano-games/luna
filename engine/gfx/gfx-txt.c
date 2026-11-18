@@ -26,8 +26,7 @@ fnt_draw_str(
 		p.x            = is_newline ? x : p.x;
 		p.y += is_newline * (fnt.cell_h + leading);
 
-		if(!is_newline) {
-			dbg_assert(c > 31);
+		if(!is_newline && c >= 32) {
 			i32 glyph = fnt_glyph_cell(fnt, c);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
@@ -60,8 +59,7 @@ fnt_mono_draw_str(
 		i32 is_newline = (c == '\n');
 		px             = is_newline ? x : px;
 		py             = py + (is_newline * (fnt.cell_h + leading));
-		if(!is_newline) {
-			dbg_assert(c > 31);
+		if(!is_newline && c >= 32) {
 			i32 glyph = fnt_glyph_cell(fnt, c);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
@@ -88,7 +86,7 @@ fnt_mono_draw_str_sl(
 	for(usize n = 0; n < str.size;) {
 		u32 c = fnt_code_point_next(str, &n);
 		dbg_assert(c != '\n');
-		dbg_assert(c > 31);
+		if(c < 32) { continue; }
 		i32 glyph = fnt_glyph_cell(fnt, c);
 		t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 		t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
@@ -190,10 +188,13 @@ fnt_draw_str_block(
 		max_x = max_i32(max_x, line_x + line_width);
 
 		if(remaining_chars > 0) {
-			str8 visible = line;
-			visible.size = min_i32(remaining_chars, line.size);
-			fnt_draw_str(ctx, fnt, visible, line_x, line_y, tracking, leading, mode);
-			remaining_chars -= min_i32(remaining_chars, line.size);
+			usize visible_size = 0;
+			i32 visible_count  = 0;
+			for(; visible_size < line.size && visible_count < remaining_chars; ++visible_count) {
+				fnt_code_point_next(line, &visible_size);
+			}
+			fnt_draw_str(ctx, fnt, str8_prefix(line, visible_size), line_x, line_y, tracking, leading, mode);
+			remaining_chars -= visible_count;
 		}
 		line_y += fnt.cell_h + leading;
 	}

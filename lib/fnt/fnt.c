@@ -27,7 +27,10 @@ i32
 fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking)
 {
 	i32 count = 0;
-	for(usize i = 0; fnt_code_point_next(str, &i) != U32_MAX;) { count++; }
+	for(usize i = 0; i < str.size;) {
+		u32 c = fnt_code_point_next(str, &i);
+		if(c >= 32 || c == '\n') { count++; }
+	}
 	if(count == 0) return 0;
 
 	return count * fnt.cell_w + (count - 1) * tracking;
