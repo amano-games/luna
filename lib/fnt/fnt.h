@@ -1,8 +1,35 @@
 #pragma once
 
+#include "base/str.h"
 #include "base/utils.h"
 #include "lib/fnt/fnt-defs.h"
 #include "lib/serialize/serialize.h"
+
+static inline b32
+fnt_code_point_is_variation_selector(u32 code_point)
+{
+	return code_point == 0xFE0E || code_point == 0xFE0F;
+}
+
+// Returns the code point at *i and moves *i past it and any variation selectors after it.
+// U32_MAX at the end of str, FNT_CODE_POINT_MISSING for a malformed byte.
+static inline u32
+fnt_code_point_next(str8 str, usize *i)
+{
+	if(*i >= str.size) { return U32_MAX; }
+
+	struct unicode_decode decode = utf8_decode(str.str + *i, str.size - *i);
+	u32 res                      = decode.codepoint == U32_MAX ? FNT_CODE_POINT_MISSING : decode.codepoint;
+	*i += decode.inc;
+
+	while(*i < str.size) {
+		struct unicode_decode selector = utf8_decode(str.str + *i, str.size - *i);
+		if(!fnt_code_point_is_variation_selector(selector.codepoint)) { break; }
+		*i += selector.inc;
+	}
+
+	return res;
+}
 
 static inline b32
 fnt_ascii_has(struct fnt fnt, u32 code_point)

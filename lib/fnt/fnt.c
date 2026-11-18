@@ -26,9 +26,11 @@ fnt_char_size_x_px(struct fnt fnt, u32 a, u32 b, i32 tracking)
 i32
 fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking)
 {
-	if(str.size == 0) return 0;
+	i32 count = 0;
+	for(usize i = 0; fnt_code_point_next(str, &i) != U32_MAX;) { count++; }
+	if(count == 0) return 0;
 
-	return str.size * fnt.cell_w + (str.size - 1) * tracking;
+	return count * fnt.cell_w + (count - 1) * tracking;
 }
 
 v2_i32
@@ -38,14 +40,16 @@ fnt_size_px(struct fnt fnt, const str8 str, i32 tracking, i32 leading)
 	i32 x      = 0;
 	i32 maxx   = 0;
 	i32 y      = fnt.cell_h + leading;
-	for(usize i = 0; i < str.size; i++) {
-		i32 ci         = str.str[i];
-		u32 cbi        = (i < str.size - 1) ? str.str[i + 1] : U32_MAX;
-		i32 is_newline = (ci == '\n');
-		i32 move_x     = fnt_char_size_x_px(fnt, ci, cbi, tracking);
+	usize i    = 0;
+	u32 c      = fnt_code_point_next(str, &i);
+	while(c != U32_MAX) {
+		u32 next       = fnt_code_point_next(str, &i);
+		i32 is_newline = (c == '\n');
+		i32 move_x     = fnt_char_size_x_px(fnt, c, next, tracking);
 		x              = (1 - is_newline) * (x + move_x);
 		maxx           = max_i32(maxx, x);
 		y += is_newline * (fnt.cell_h + leading);
+		c = next;
 	}
 	res = (v2_i32){maxx, y};
 	return res;

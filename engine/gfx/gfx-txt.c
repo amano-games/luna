@@ -18,22 +18,24 @@ fnt_draw_str(
 	dbg_assert(fnt.cell_w > 0);
 	v2_i32 p         = {x, y};
 	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
-	for(usize n = 0; n < str.size; n++) {
-		i32 ci         = str.str[n];
-		u32 cbi        = (n < str.size - 1) ? str.str[n + 1] : U32_MAX;
-		i32 is_newline = (ci == '\n');
+	usize n          = 0;
+	u32 c            = fnt_code_point_next(str, &n);
+	while(c != U32_MAX) {
+		u32 next       = fnt_code_point_next(str, &n);
+		i32 is_newline = (c == '\n');
 		p.x            = is_newline ? x : p.x;
 		p.y += is_newline * (fnt.cell_h + leading);
 
 		if(!is_newline) {
-			dbg_assert(ci > 31);
-			i32 glyph = fnt_glyph_cell(fnt, ci);
+			dbg_assert(c > 31);
+			i32 glyph = fnt_glyph_cell(fnt, c);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 			if(glyph >= 0) { gfx_spr(ctx, t, p.x, p.y, 0, mode); }
-			i32 move_x = fnt_char_size_x_px(fnt, ci, cbi, tracking);
+			i32 move_x = fnt_char_size_x_px(fnt, c, next, tracking);
 			p.x += move_x;
 		}
+		c = next;
 	}
 }
 
@@ -53,14 +55,14 @@ fnt_mono_draw_str(
 	i32 px           = x;
 	i32 py           = y;
 	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
-	for(usize n = 0; n < str.size; n++) {
-		i32 ci         = str.str[n];
-		i32 is_newline = (ci == '\n');
+	for(usize n = 0; n < str.size;) {
+		u32 c          = fnt_code_point_next(str, &n);
+		i32 is_newline = (c == '\n');
 		px             = is_newline ? x : px;
 		py             = py + (is_newline * (fnt.cell_h + leading));
 		if(!is_newline) {
-			dbg_assert(ci > 31);
-			i32 glyph = fnt_glyph_cell(fnt, ci);
+			dbg_assert(c > 31);
+			i32 glyph = fnt_glyph_cell(fnt, c);
 			t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 			t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 			if(glyph >= 0) { gfx_spr(ctx, t, px, py, 0, mode); }
@@ -83,11 +85,11 @@ fnt_mono_draw_str_sl(
 	dbg_assert(fnt.cell_w > 0);
 	i32 px           = x;
 	struct tex_rec t = {.t = fnt.t, .r = {.w = fnt.cell_w, fnt.cell_h}};
-	for(usize n = 0; n < str.size; n++) {
-		i32 ci = str.str[n];
-		dbg_assert(ci != '\n');
-		dbg_assert(ci > 31);
-		i32 glyph = fnt_glyph_cell(fnt, ci);
+	for(usize n = 0; n < str.size;) {
+		u32 c = fnt_code_point_next(str, &n);
+		dbg_assert(c != '\n');
+		dbg_assert(c > 31);
+		i32 glyph = fnt_glyph_cell(fnt, c);
 		t.r.x     = (glyph % fnt.grid_w) * fnt.cell_w;
 		t.r.y     = (glyph / fnt.grid_w) * fnt.cell_h;
 		if(glyph >= 0) { gfx_spr(ctx, t, px, y, 0, mode); }
