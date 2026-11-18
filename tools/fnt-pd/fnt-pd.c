@@ -95,8 +95,8 @@ pd_fnt_handle_file(struct alloc scratch, struct sys_full_file_res data, struct f
 			fnt->metrics = fnt_pd_handle_metrics(str8_skip(line, metrics_key.size), scratch);
 		} else if(str8_starts_with(line, comment_key, 0)) {
 			// NOTE: It's not a comment its a kerning value
-			str8 kern                              = str8_skip_chop_whitespace(str8_skip(line, comment_key.size));
-			fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i64(kern, 10);
+			str8 kern = str8_skip_chop_whitespace(str8_skip(line, comment_key.size));
+			if(str8_is_integer_signed(kern, 10)) { fnt->kern_pairs[((u16)'-' << 8) | '-'] = str8_to_i64(kern, 10); }
 		} else if(str8_starts_with(line, tracking_key, 0)) {
 			fnt->tracking = str8_to_i64(str8_skip(line, tracking_key.size), 10);
 		} else {
