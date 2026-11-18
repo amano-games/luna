@@ -75,11 +75,39 @@ fnt_ascii_has_glyphs(struct fnt fnt)
 	return false;
 }
 
+static void
+fnt_write_triple(struct ser_writer *w, i32 a, i32 b, i32 c)
+{
+	ser_write_array(w);
+	ser_write_i32(w, a);
+	ser_write_i32(w, b);
+	ser_write_i32(w, c);
+	ser_write_end(w);
+}
+
+static void
+fnt_read_triple(struct ser_reader *r, struct ser_value arr, i32 *out)
+{
+	struct ser_value item;
+	for(i32 i = 0; i < 3 && ser_iter_array(r, arr, &item); ++i) {
+		out[i] = ser_get_i32(item);
+	}
+}
+
+struct fnt_utf8 *
+fnt_utf8_ini(struct alloc alloc, struct fnt *fnt)
+{
+	if(fnt->utf8 == NULL) { fnt->utf8 = alloc_struct_clr(alloc, fnt->utf8); }
+	return fnt->utf8;
+}
+
 void
 fnt_write(struct fnt fnt, struct ser_writer *w)
 {
 	ser_write_object(w);
 
+	ser_write_string(w, str8_lit("version"));
+	ser_write_i32(w, FNT_FILE_VERSION);
 	ser_write_string(w, str8_lit("tracking"));
 	ser_write_i32(w, fnt.tracking);
 	ser_write_string(w, str8_lit("grid_w"));
@@ -101,34 +129,50 @@ fnt_write(struct fnt fnt, struct ser_writer *w)
 	ser_write_i32(w, fnt.metrics.cap_height);
 	ser_write_string(w, str8_lit("descent"));
 	ser_write_i32(w, fnt.metrics.descent);
-
 	ser_write_end(w);
 
 	if(fnt_ascii_has_glyphs(fnt)) {
-		ser_write_string(w, str8_lit("widths"));
+		// [code point, cell, width]
+		ser_write_string(w, str8_lit("ascii_glyphs"));
 		ser_write_array(w);
-		// TODO: Store same as pairs, only the characters that have the width
-		for(ssize i = 0; i < FNT_ASCII_MAX; ++i) {
-			ser_write_u8(w, fnt.ascii->widths[i]);
+		for(u32 c = 0; c < FNT_ASCII_MAX; ++c) {
+			if(fnt_ascii_has(fnt, c)) { fnt_write_triple(w, c, fnt.ascii->cells[c], fnt.ascii->widths[c]); }
 		}
 		ser_write_end(w);
 
-		// Kern pairs are stored as an array of objects where the
-		// key is the pair characters
-		// and the value is the kerning value
-		ser_write_string(w, str8_lit("kern_pairs"));
+		// [a, b, kerning]
+		ser_write_string(w, str8_lit("ascii_kern"));
 		ser_write_array(w);
 		for(u32 a = FNT_ASCII_KERN_MIN; fnt.ascii->kern && a < FNT_ASCII_MAX; ++a) {
 			for(u32 b = FNT_ASCII_KERN_MIN; b < FNT_ASCII_MAX; ++b) {
 				i8 kern = fnt.ascii->kern[fnt_ascii_kern_idx(a, b)];
-				if(kern != 0) {
-					ser_write_object(w);
-					char pair[3] = {a, b, '\0'};
-					ser_write_string(w, str8_cstr(pair));
-					ser_write_i32(w, kern);
-					ser_write_end(w);
-				}
+				if(kern != 0) { fnt_write_triple(w, a, b, kern); }
 			}
+		}
+		ser_write_end(w);
+	}
+
+	if(fnt.utf8 && fnt.utf8->count > 0) {
+		ser_write_string(w, str8_lit("utf8_glyph_count"));
+		ser_write_i32(w, fnt.utf8->count);
+		// [code point, cell, width], sorted by code point
+		ser_write_string(w, str8_lit("utf8_glyphs"));
+		ser_write_array(w);
+		for(u32 i = 0; i < fnt.utf8->count; ++i) {
+			fnt_write_triple(w, fnt.utf8->code_points[i], fnt.utf8->cells[i], fnt.utf8->widths[i]);
+		}
+		ser_write_end(w);
+	}
+
+	if(fnt.utf8 && fnt.utf8->kern_count > 0) {
+		ser_write_string(w, str8_lit("utf8_kern_count"));
+		ser_write_i32(w, fnt.utf8->kern_count);
+		// [a, b, kerning], sorted by a then b
+		ser_write_string(w, str8_lit("utf8_kern"));
+		ser_write_array(w);
+		for(u32 i = 0; i < fnt.utf8->kern_count; ++i) {
+			u64 key = fnt.utf8->kern_keys[i];
+			fnt_write_triple(w, (u32)(key >> 32), (u32)key, fnt.utf8->kern_vals[i]);
 		}
 		ser_write_end(w);
 	}
@@ -141,10 +185,14 @@ fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt)
 {
 	struct ser_value obj = ser_read(r);
 	struct ser_value key, value;
+	i32 version = 0;
 
 	while(ser_iter_object(r, obj, &key, &value)) {
 		dbg_check(key.type == SER_TYPE_STRING, "fnt", "Corrupt fnt data");
-		if(str8_match(key.str, str8_lit("tracking"), 0)) {
+		if(str8_match(key.str, str8_lit("version"), 0)) {
+			version = ser_get_i32(value);
+			dbg_check(version == FNT_FILE_VERSION, "fnt", "Unsupported fnt version %d, expected %d", (int)version, FNT_FILE_VERSION);
+		} else if(str8_match(key.str, str8_lit("tracking"), 0)) {
 			fnt->tracking = ser_get_i32(value);
 		} else if(str8_match(key.str, str8_lit("grid_w"), 0)) {
 			fnt->grid_w = ser_get_i32(value);
@@ -169,37 +217,68 @@ fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt)
 					fnt->metrics.descent = ser_get_i32(item_value);
 				}
 			}
-		} else if(str8_match(key.str, str8_lit("widths"), 0)) {
+		} else if(str8_match(key.str, str8_lit("ascii_glyphs"), 0)) {
 			dbg_check(fnt_ascii_ini(alloc, fnt), "fnt", "Failed to alloc ascii glyphs");
-			struct ser_value item_val;
-			ssize i = 0;
-			while(ser_iter_array(r, value, &item_val)) {
-				u8 width = ser_get_u8(item_val);
-				if(i < FNT_ASCII_MAX) { fnt->ascii->widths[i] = width; }
-				if(i >= FNT_ASCII_KERN_MIN && i < FNT_ASCII_MAX - 1) { fnt->ascii->mask[i / 64] |= 1ull << (i % 64); }
-				i++;
+			struct ser_value item;
+			while(ser_iter_array(r, value, &item)) {
+				i32 t[3] = {0};
+				fnt_read_triple(r, item, t);
+				dbg_assert(t[0] >= 0 && t[0] < FNT_ASCII_MAX);
+				fnt->ascii->cells[t[0]]  = t[1];
+				fnt->ascii->widths[t[0]] = t[2];
+				fnt->ascii->mask[t[0] / 64] |= 1ull << (t[0] % 64);
 			}
-		} else if(str8_match(key.str, str8_lit("kern_pairs"), 0)) {
+		} else if(str8_match(key.str, str8_lit("ascii_kern"), 0)) {
 			dbg_check(fnt_ascii_ini(alloc, fnt), "fnt", "Failed to alloc ascii glyphs");
-			struct ser_value item_val;
-			while(ser_iter_array(r, value, &item_val)) {
-				dbg_assert(item_val.type == SER_TYPE_OBJECT);
+			struct ser_value item;
+			while(ser_iter_array(r, value, &item)) {
 				if(fnt->ascii->kern == NULL) {
 					fnt->ascii->kern = alloc_arr_clr(alloc, fnt->ascii->kern, FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX);
 					dbg_check(fnt->ascii->kern, "fnt", "Failed to alloc ascii kern");
 				}
-				struct ser_value ker_key, ker_value;
-				while(ser_iter_object(r, item_val, &ker_key, &ker_value)) {
-					dbg_assert(ker_key.type == SER_TYPE_STRING);
-					dbg_assert(ker_value.type == SER_TYPE_I32);
-					u8 a = ker_key.str.str[0];
-					u8 b = ker_key.str.str[1];
-					dbg_assert(a >= FNT_ASCII_KERN_MIN && a < FNT_ASCII_MAX && b >= FNT_ASCII_KERN_MIN && b < FNT_ASCII_MAX);
-					fnt->ascii->kern[fnt_ascii_kern_idx(a, b)] = ser_get_i32(ker_value);
-				}
+				i32 t[3] = {0};
+				fnt_read_triple(r, item, t);
+				dbg_assert(t[0] >= FNT_ASCII_KERN_MIN && t[0] < FNT_ASCII_MAX && t[1] >= FNT_ASCII_KERN_MIN && t[1] < FNT_ASCII_MAX);
+				fnt->ascii->kern[fnt_ascii_kern_idx(t[0], t[1])] = t[2];
+			}
+		} else if(str8_match(key.str, str8_lit("utf8_glyph_count"), 0)) {
+			i32 count = ser_get_i32(value);
+			dbg_check(fnt_utf8_ini(alloc, fnt), "fnt", "Failed to alloc utf8 glyphs");
+			fnt->utf8->code_points = alloc_arr(alloc, fnt->utf8->code_points, count);
+			fnt->utf8->cells       = alloc_arr(alloc, fnt->utf8->cells, count);
+			fnt->utf8->widths      = alloc_arr(alloc, fnt->utf8->widths, count);
+			dbg_check(fnt->utf8->code_points && fnt->utf8->cells && fnt->utf8->widths, "fnt", "Failed to alloc %d utf8 glyphs", (int)count);
+			fnt->utf8->count = count;
+		} else if(str8_match(key.str, str8_lit("utf8_glyphs"), 0)) {
+			dbg_check(fnt->utf8, "fnt", "utf8_glyphs before utf8_glyph_count");
+			struct ser_value item;
+			for(u32 i = 0; i < fnt->utf8->count && ser_iter_array(r, value, &item); ++i) {
+				i32 t[3] = {0};
+				fnt_read_triple(r, item, t);
+				fnt->utf8->code_points[i] = t[0];
+				fnt->utf8->cells[i]       = t[1];
+				fnt->utf8->widths[i]      = t[2];
+			}
+		} else if(str8_match(key.str, str8_lit("utf8_kern_count"), 0)) {
+			i32 count = ser_get_i32(value);
+			dbg_check(fnt_utf8_ini(alloc, fnt), "fnt", "Failed to alloc utf8 glyphs");
+			fnt->utf8->kern_keys = alloc_arr(alloc, fnt->utf8->kern_keys, count);
+			fnt->utf8->kern_vals = alloc_arr(alloc, fnt->utf8->kern_vals, count);
+			dbg_check(fnt->utf8->kern_keys && fnt->utf8->kern_vals, "fnt", "Failed to alloc %d utf8 kern pairs", (int)count);
+			fnt->utf8->kern_count = count;
+		} else if(str8_match(key.str, str8_lit("utf8_kern"), 0)) {
+			dbg_check(fnt->utf8, "fnt", "utf8_kern before utf8_kern_count");
+			struct ser_value item;
+			for(u32 i = 0; i < fnt->utf8->kern_count && ser_iter_array(r, value, &item); ++i) {
+				i32 t[3] = {0};
+				fnt_read_triple(r, item, t);
+				fnt->utf8->kern_keys[i] = ((u64)(u32)t[0] << 32) | (u32)t[1];
+				fnt->utf8->kern_vals[i] = t[2];
 			}
 		}
 	}
+
+	dbg_check(version == FNT_FILE_VERSION, "fnt", "Missing fnt version");
 
 	return 1;
 

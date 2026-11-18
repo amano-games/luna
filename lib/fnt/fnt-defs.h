@@ -7,6 +7,7 @@
 #define FNT_ASCII_KERN_MIN     32 // Skip non visual chars
 #define FNT_ASCII_KERN_MAX     (FNT_ASCII_MAX - FNT_ASCII_KERN_MIN)
 #define FNT_CODE_POINT_MISSING 0xFFFD
+#define FNT_FILE_VERSION       1
 
 struct fnt_glyph {
 	i32 cell; // -1 when the font has no glyph to draw

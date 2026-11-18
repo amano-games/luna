@@ -101,6 +101,7 @@ i32 fnt_mono_size_x_px(struct fnt fnt, str8 str, i32 tracking);
 
 struct fnt_ascii *fnt_ascii_ini(struct alloc alloc, struct fnt *fnt);
 b32 fnt_ascii_has_glyphs(struct fnt fnt);
+struct fnt_utf8 *fnt_utf8_ini(struct alloc alloc, struct fnt *fnt);
 void fnt_write(struct fnt fnt, struct ser_writer *w);
 i32 fnt_read(struct alloc alloc, struct ser_reader *r, struct fnt *fnt);
 struct fnt fnt_load_from_mem(struct alloc alloc, void *data, usize size);

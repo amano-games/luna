@@ -44,8 +44,8 @@ fnt_pd_handle(str8 in_path, str8 out_path, struct alloc scratch)
 
 	struct alloc alloc = marena_allocator(&marena);
 	struct fnt fnt     = {0};
-	fnt.ascii          = alloc_struct_clr(alloc, fnt.ascii);
-	fnt.ascii->kern    = alloc_arr_clr(alloc, fnt.ascii->kern, FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX);
+	fnt_ascii_ini(alloc, &fnt);
+	fnt.ascii->kern = alloc_arr_clr(alloc, fnt.ascii->kern, FNT_ASCII_KERN_MAX * FNT_ASCII_KERN_MAX);
 
 	struct marena_tmp tmp = marena_tmp_start(&marena);
 	v2 cell_size          = fnt_pd_cell_size_from_tex(in_path, alloc);
