@@ -15,11 +15,11 @@ PROJECT_NAME=pinball-raspi
 cd "$ROOT_DIR"
 ROOT_DIR="$PWD"
 
-podman build -t "$PROJECT_NAME" -f "$DOCKERFILE" .
+podman build --platform linux/amd64 -t "$PROJECT_NAME" -f "$DOCKERFILE" .
 
 mkdir -p "$ROOT_DIR/build"
 
-podman run --rm \
+podman run --rm --platform linux/amd64 \
   -v "$ROOT_DIR/build:/app/build" \
   "$PROJECT_NAME" \
   "$@"
