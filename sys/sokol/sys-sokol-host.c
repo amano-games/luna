@@ -1270,6 +1270,24 @@ sokol_opts_save(void)
 	marena_tmp_end(tmp);
 }
 
+struct sys_opts *
+sys_opts_get(void)
+{
+	return &SOKOL_STATE.opts;
+}
+
+void
+sys_opts_save(void)
+{
+	sokol_opts_save();
+}
+
+str8
+sys_opts_path_get(struct alloc alloc)
+{
+	return sys_path_to_config_path(alloc, str8_lit(SYS_OPTS_DEFAULT_FILENAME), str8_lit(SYS_ORG_NAME), str8_lit(SYS_APP_NAME));
+}
+
 static void
 sokol_menu_filter(void *args)
 {

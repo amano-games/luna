@@ -9,6 +9,7 @@
 #include "engine/gfx/gfx-defs.h"
 #include "lib/tex/tex.h"
 #include "sys/sys.h"
+#include "sys/sys-opts.h"
 #include "engine/dbg-drw/dbg-drw.h"
 #include "base/types.h"
 #include "sys/sys-log.h"
@@ -756,6 +757,24 @@ sys_quit(void)
 void
 sys_restart_request(void)
 {
+}
+
+struct sys_opts *
+sys_opts_get(void)
+{
+	static struct sys_opts opts;
+	return &opts;
+}
+
+void
+sys_opts_save(void)
+{
+}
+
+str8
+sys_opts_path_get(struct alloc alloc)
+{
+	return str8_zero();
 }
 
 struct sys_process_info *

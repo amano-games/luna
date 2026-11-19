@@ -5,6 +5,17 @@
 #include "engine/gfx/gfx-colors.h"
 #include "lib/color.h"
 #include "lib/json.h"
+#include <jsmn.h>
+
+struct opts_parse_ctx {
+	struct alloc alloc;
+	str8 json;
+	struct sys_opts *data;
+	const jsmntok_t *tokens;
+	ssize token_count;
+};
+
+b32 sys_opts_read(struct alloc alloc, jsmn_parser *r, struct sys_opts *data, str8 json, jsmntok_t *tokens, ssize token_count);
 
 #define SYS_RECORDING_SECONDS_DEFAULT 120
 #define SYS_RECORDING_SCALE_DEFAULT   1

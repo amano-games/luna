@@ -91,7 +91,12 @@ b32 sys_fullscreen_get(void);
 void sys_quit(void);
 void sys_restart_request(void);
 
-// Playdate-only (not part of portable contract; Phase 4 may fold present into sys_*)
+// @per_os_impl Options
+struct sys_opts;
+struct sys_opts *sys_opts_get(void);
+void sys_opts_save(void);
+str8 sys_opts_path_get(struct alloc alloc);
+
 #if OS_PLAYDATE
 b32 sys_pd_reduce_flicker(void);
 f32 sys_pd_crank_deg(void);

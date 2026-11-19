@@ -1393,6 +1393,24 @@ drm_host_opts_save(void)
 	marena_tmp_end(tmp);
 }
 
+struct sys_opts *
+sys_opts_get(void)
+{
+	return &DRM_HOST.opts;
+}
+
+void
+sys_opts_save(void)
+{
+	drm_host_opts_save();
+}
+
+str8
+sys_opts_path_get(struct alloc alloc)
+{
+	return sys_path_to_config_path(alloc, str8_lit(SYS_OPTS_DEFAULT_FILENAME), str8_lit(DRM_HOST_ORG), str8_lit(DRM_HOST_NAME));
+}
+
 static void
 drm_host_resume(void)
 {
