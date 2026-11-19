@@ -1733,25 +1733,7 @@ main(int argc, char **argv)
 			menu->items[menu->len - 1].value = resolution.x == SYS_PD_DISPLAY_W && resolution.y == SYS_PD_DISPLAY_H * 3;
 		}
 
-		static const char *palettes[] = {
-			"Default",
-			"Black & White",
-			"Game Boy",
-			"Sunset",
-			"Purple Night",
-			"Parchment",
-			"TMNT",
-			"Aqua",
-			"VB",
-			"Low Contrast",
-			"MBorg",
-			"Aurus",
-			"Pinky",
-			"Orengi",
-			"Merv",
-			"Tensie",
-		};
-		DRM_HOST.menu_palette_id = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), drm_host_menu_palette, NULL);
+		DRM_HOST.menu_palette_id = sys_menu_add_options(menu, "Palette", GFX_1B_PALETTE_LABELS, ARRLEN(GFX_1B_PALETTE_LABELS), drm_host_menu_palette, NULL);
 		if(DRM_HOST.menu_palette_id) {
 			for(i32 i = 0; i < (i32)ARRLEN(GFX_1B_PALETTES); ++i) {
 				if(DRM_HOST.opts.colors.colors[GFX_COL_BLACK] == GFX_1B_PALETTES[i][GFX_COL_BLACK] &&

@@ -69,6 +69,32 @@ static void sys_opts_cb(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize v
 static void sys_opts_parse_color_palette(jsmntok_t *key, ssize key_idx, jsmntok_t *value, ssize value_idx, void *user);
 static b32 sys_opts_parse_color_palette_key(str8 json, jsmntok_t *key, enum gfx_col *out);
 
+struct sys_recording_opts
+sys_recording_opts_default(void)
+{
+	return (struct sys_recording_opts){
+		.format        = SYS_RECORDING_FORMAT_MP4,
+		.compression   = SYS_RECORDING_COMPRESSION_LOSSLESS,
+		.scale         = SYS_RECORDING_SCALE_DEFAULT,
+		.seconds_count = SYS_RECORDING_SECONDS_DEFAULT,
+		.colors.colors = {
+			[GFX_COL_BLACK] = COL_U32_BLACK,
+			[GFX_COL_WHITE] = COL_U32_WHITE,
+		},
+	};
+}
+
+struct sys_screenshot_opts
+sys_screenshot_opts_default(void)
+{
+	return (struct sys_screenshot_opts){
+		.colors.colors = {
+			[GFX_COL_BLACK] = COL_U32_BLACK,
+			[GFX_COL_WHITE] = COL_U32_WHITE,
+		},
+	};
+}
+
 struct sys_opts
 sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str8 name)
 {
@@ -104,26 +130,11 @@ sys_opts_load(struct alloc alloc, struct alloc scratch, str8 path, str8 org, str
 			0x1e00ff80,
 		},
 
-		.recording = {
-			.format        = SYS_RECORDING_FORMAT_MP4,
-			.compression   = SYS_RECORDING_COMPRESSION_LOSSLESS,
-			.save_path     = default_save_path,
-			.scale         = SYS_RECORDING_SCALE_DEFAULT,
-			.seconds_count = SYS_RECORDING_SECONDS_DEFAULT,
-			.colors.colors = {
-				[GFX_COL_BLACK] = COL_U32_BLACK,
-				[GFX_COL_WHITE] = COL_U32_WHITE,
-			},
-		},
-
-		.screentshot = {
-			.save_path     = default_save_path,
-			.colors.colors = {
-				[GFX_COL_BLACK] = COL_U32_BLACK,
-				[GFX_COL_WHITE] = COL_U32_WHITE,
-			},
-		},
+		.recording   = sys_recording_opts_default(),
+		.screentshot = sys_screenshot_opts_default(),
 	};
+	res.recording.save_path   = default_save_path;
+	res.screentshot.save_path = default_save_path;
 
 	str8 json = {0};
 	json_load(full_path, scratch, &json);

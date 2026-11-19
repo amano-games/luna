@@ -1356,26 +1356,8 @@ sokol_menu_ini(void)
 	};
 
 	static const char *resolutions[] = {"Normal", "Tate"};
-	static const char *palettes[]    = {
-		"Default",
-		"Black & White",
-		"Game Boy",
-		"Sunset",
-		"Purple Night",
-		"Parchment",
-		"TMNT",
-		"Aqua",
-		"VB",
-		"Low Contrast",
-		"MBorg",
-		"Aurus",
-		"Pinky",
-		"Orengi",
-		"Merv",
-		"Tensie",
-	};
-	struct sys_menu *menu      = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
-	SOKOL_STATE.menu_filter_id = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
+	struct sys_menu *menu            = &SOKOL_STATE.pause.menus[SYS_PAUSE_MENU_TYPE_SYS];
+	SOKOL_STATE.menu_filter_id       = sys_menu_add_options(menu, "Filter", filters, ARRLEN(filters), sokol_menu_filter, NULL);
 
 	if(SOKOL_STATE.menu_filter_id) menu->items[menu->len - 1].value = SOKOL_STATE.opts.video.filter - 1;
 
@@ -1391,7 +1373,7 @@ sokol_menu_ini(void)
 		menu->items[menu->len - 1].value = resolution.x == SYS_PD_DISPLAY_W && resolution.y == SYS_PD_DISPLAY_H * 3;
 	}
 
-	SOKOL_STATE.menu_palette_id = sys_menu_add_options(menu, "Palette", palettes, ARRLEN(palettes), sokol_menu_palette, NULL);
+	SOKOL_STATE.menu_palette_id = sys_menu_add_options(menu, "Palette", GFX_1B_PALETTE_LABELS, ARRLEN(GFX_1B_PALETTE_LABELS), sokol_menu_palette, NULL);
 	if(SOKOL_STATE.menu_palette_id) {
 		menu->items[menu->len - 1].value = 1;
 		for(i32 i = 0; i < (i32)ARRLEN(GFX_1B_PALETTES); ++i) {

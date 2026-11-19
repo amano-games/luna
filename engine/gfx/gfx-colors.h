@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/types.h"
+#include "base/utils.h"
 #include "engine/gfx/gfx-defs.h"
 
 #define APP_DEFAULT_WHITE 0xA5A5A2FFu
@@ -24,6 +25,25 @@ static const u32 GFX_1B_PALETTES[][GFX_COL_NUM_COUNT] = {
 	{[GFX_COL_BLACK] = 0x000000FF, [GFX_COL_WHITE] = 0x72dec2FF},               // Merv
 	{[GFX_COL_BLACK] = 0x290973FF, [GFX_COL_WHITE] = 0x00FFBDFF},               // Tensie
 
+};
+
+static const char *GFX_1B_PALETTE_LABELS[ARRLEN(GFX_1B_PALETTES)] = {
+	"Default",
+	"Black & White",
+	"Game Boy",
+	"Sunset",
+	"Purple Night",
+	"Parchment",
+	"TMNT",
+	"Aqua",
+	"VB",
+	"Low Contrast",
+	"MBorg",
+	"Aurus",
+	"Pinky",
+	"Orengi",
+	"Merv",
+	"Tensie",
 };
 
 static const u32 COL_U32_WHITE    = 0xffffffff;
