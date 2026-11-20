@@ -125,6 +125,11 @@ struct sys_prof_state {
 	struct alloc scratch;
 };
 
+struct sys_msg {
+	str8 str;
+	struct tick_ms timestamp;
+};
+
 struct sys_data {
 	b32 initialized;
 	struct app_code app;
@@ -134,6 +139,7 @@ struct sys_data {
 	u32 tick;
 	u64 last_time_us;
 
+	struct sys_msg msg;
 	struct sys_timing timing;
 
 	struct sys_prof_state prof_state;

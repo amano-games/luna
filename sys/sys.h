@@ -51,6 +51,7 @@ void sys_internal_code_poll(void);
 b32 sys_internal_code_building(void);
 #endif
 
+void sys_msg_set(str8 str);
 void sys_internal_pause(void);
 void sys_internal_resume(void);
 void sys_internal_stream_start(void);

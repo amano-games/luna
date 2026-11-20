@@ -188,6 +188,13 @@ sys_dt_cap_us_get(void)
 	return SYS.timing.dt_cap_us;
 }
 
+void
+sys_msg_set(str8 str)
+{
+	SYS.msg.str       = str;
+	SYS.msg.timestamp = tick_ms_from_us(sys_time_us());
+}
+
 // Drop the wall-clock gap that accumulated while the update callback was not running
 // (system menu, sleep, or a long app_init) instead of letting it become catch-up ticks.
 //
