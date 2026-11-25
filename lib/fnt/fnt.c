@@ -390,7 +390,12 @@ fnt_wrap_lines_from_str(
 			continue;
 		}
 
-		if(i > line_rng.min && fnt_code_point_is_cjk(prev) && fnt_code_point_is_cjk(c)) {
+		if(
+			i > line_rng.min &&
+			fnt_code_point_breaks_as_cjk(prev) &&
+			fnt_code_point_breaks_as_cjk(c) &&
+			!fnt_code_point_no_line_end(prev) &&
+			!fnt_code_point_no_line_start(c)) {
 			last_break      = (i32)i;
 			last_break_next = i;
 			last_break_w    = line_w;
@@ -399,7 +404,11 @@ fnt_wrap_lines_from_str(
 		i32 cw = fnt_char_size_x_px(fnt, c, next, tracking);
 		line_w += cw;
 
-		if(c < FNT_ASCII_MAX && char_is_space(c)) {
+		if(
+			c < FNT_ASCII_MAX &&
+			char_is_space(c) &&
+			!fnt_code_point_no_line_end(prev) &&
+			!fnt_code_point_no_line_start(next)) {
 			last_break      = (i32)i;
 			last_break_next = after;
 			last_break_w    = line_w;

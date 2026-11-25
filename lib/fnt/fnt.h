@@ -26,6 +26,96 @@ fnt_code_point_is_cjk(u32 cp)
 		(cp >= 0x20000 && cp <= 0x3FFFF);     // ext B and up
 }
 
+static inline b32
+fnt_code_point_breaks_as_cjk(u32 cp)
+{
+	switch(cp) {
+	case 0x00B7: // ·
+	case 0x2014: // —
+	case 0x2018: // ‘
+	case 0x2019: // ’
+	case 0x201C: // “
+	case 0x201D: // ”
+	case 0x2025: // ‥
+	case 0x2026: // …
+		return true;
+	default:
+		return fnt_code_point_is_cjk(cp);
+	}
+}
+
+static inline b32
+fnt_code_point_no_line_start(u32 cp)
+{
+	switch(cp) {
+	case 0x3001: // 、
+	case 0x3002: // 。
+	case 0xFF0C: // ，
+	case 0xFF0E: // ．
+	case 0xFF1A: // ：
+	case 0xFF1B: // ；
+	case 0xFF1F: // ？
+	case 0xFF01: // ！
+	case 0xFF09: // ）
+	case 0xFF3D: // ］
+	case 0xFF5D: // ｝
+	case 0xFF05: // ％
+	case 0xFF5E: // ～
+	case 0x3009: // 〉
+	case 0x300B: // 》
+	case 0x300D: // 」
+	case 0x300F: // 』
+	case 0x3011: // 】
+	case 0x3015: // 〕
+	case 0x3017: // 〗
+	case 0x3019: // 〙
+	case 0x301B: // 〛
+	case 0x301E: // 〞
+	case 0x301F: // 〟
+	case 0x3005: // 々
+	case 0x309D: // ゝ
+	case 0x309E: // ゞ
+	case 0x30FB: // ・
+	case 0x30FC: // ー
+	case 0x2019: // ’
+	case 0x201D: // ”
+	case 0x2026: // …
+	case 0x2025: // ‥
+	case 0x2014: // —
+	case 0x00B7: // ·
+		return true;
+	default:
+		return false;
+	}
+}
+
+static inline b32
+fnt_code_point_no_line_end(u32 cp)
+{
+	switch(cp) {
+	case 0xFF08: // （
+	case 0xFF3B: // ［
+	case 0xFF5B: // ｛
+	case 0x3008: // 〈
+	case 0x300A: // 《
+	case 0x300C: // 「
+	case 0x300E: // 『
+	case 0x3010: // 【
+	case 0x3014: // 〔
+	case 0x3016: // 〖
+	case 0x3018: // 〘
+	case 0x301A: // 〚
+	case 0x301D: // 〝
+	case 0x2018: // ‘
+	case 0x201C: // “
+	case 0xFF04: // ＄
+	case 0xFFE5: // ￥
+		return true;
+	default:
+		return false;
+	}
+}
+
 // Returns the code point at *i and moves *i past it and any variation selectors after it.
 // U32_MAX at the end of str, FNT_CODE_POINT_MISSING for a malformed byte.
 static inline u32
