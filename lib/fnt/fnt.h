@@ -11,6 +11,21 @@ fnt_code_point_is_variation_selector(u32 code_point)
 	return code_point == 0xFE0E || code_point == 0xFE0F;
 }
 
+static inline b32
+fnt_code_point_is_cjk(u32 cp)
+{
+	return (cp >= 0x2E80 && cp <= 0x2FDF) ||  // radicals
+		(cp >= 0x3000 && cp <= 0x30FF) ||     // CJK symbols and punctuation, kana
+		(cp >= 0x3100 && cp <= 0x312F) ||     // bopomofo
+		(cp >= 0x31F0 && cp <= 0x31FF) ||     // katakana extensions
+		(cp >= 0x3400 && cp <= 0x4DBF) ||     // ext A
+		(cp >= 0x4E00 && cp <= 0x9FFF) ||     // unified ideographs
+		(cp >= 0xF900 && cp <= 0xFAFF) ||     // compatibility ideographs
+		(cp >= 0xFE30 && cp <= 0xFE4F) ||     // compatibility forms
+		(cp >= 0xFF00 && cp <= 0xFF60) ||     // fullwidth forms
+		(cp >= 0x20000 && cp <= 0x3FFFF);     // ext B and up
+}
+
 // Returns the code point at *i and moves *i past it and any variation selectors after it.
 // U32_MAX at the end of str, FNT_CODE_POINT_MISSING for a malformed byte.
 static inline u32

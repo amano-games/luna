@@ -364,7 +364,9 @@ fnt_wrap_lines_from_str(
 	union rng_u64 line_rng = rng_u64(0, 0);
 	i32 line_w             = 0;
 	i32 last_break         = -1;
+	u64 last_break_next    = 0;
 	i32 last_break_w       = 0;
+	u32 prev               = U32_MAX;
 
 	for(usize i = 0; i <= str.size;) {
 		usize after    = i;
@@ -383,16 +385,24 @@ fnt_wrap_lines_from_str(
 			line_w       = 0;
 			last_break   = -1;
 			last_break_w = 0;
+			prev         = U32_MAX;
 			i            = i + 1;
 			continue;
+		}
+
+		if(i > line_rng.min && fnt_code_point_is_cjk(prev) && fnt_code_point_is_cjk(c)) {
+			last_break      = (i32)i;
+			last_break_next = i;
+			last_break_w    = line_w;
 		}
 
 		i32 cw = fnt_char_size_x_px(fnt, c, next, tracking);
 		line_w += cw;
 
 		if(c < FNT_ASCII_MAX && char_is_space(c)) {
-			last_break   = (i32)i;
-			last_break_w = line_w;
+			last_break      = (i32)i;
+			last_break_next = after;
+			last_break_w    = line_w;
 		}
 
 		i32 end_adjust = fnt_char_size_x_px(fnt, c, U32_MAX, tracking) - cw;
@@ -403,7 +413,7 @@ fnt_wrap_lines_from_str(
 			str8_list_push(alloc, &list, line);
 
 			// reset to after last break
-			line_rng     = rng_u64((u64)last_break + 1, (u64)last_break + 1);
+			line_rng     = rng_u64(last_break_next, last_break_next);
 			line_w       = line_w - last_break_w;
 			last_break   = -1;
 			last_break_w = 0;
@@ -419,7 +429,8 @@ fnt_wrap_lines_from_str(
 			line_w   = cw;
 		}
 
-		i = after;
+		prev = c;
+		i    = after;
 	}
 
 	// Handle trailing text
