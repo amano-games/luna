@@ -142,6 +142,7 @@ b32 str8_is_integer_signed(str8 str, u32 radix);
 
 // String Stylization
 str8 str8_to_upper(struct alloc alloc, str8 str);
+str8 str8_to_upper_utf8(struct alloc alloc, str8 str);
 str8 str8_to_lower(struct alloc alloc, str8 str);
 str8 str8_to_backslashed(struct alloc alloc, str8 str);
 

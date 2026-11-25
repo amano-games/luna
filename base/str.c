@@ -638,6 +638,35 @@ str8_to_upper(struct alloc alloc, str8 str)
 	return str;
 }
 
+static u32
+code_point_to_upper(u32 code_point)
+{
+	if(code_point < 0x80) { return char_to_upper((u8)code_point); }
+	if(code_point >= 0xE0 && code_point <= 0xFE && code_point != 0xF7) { return code_point - 0x20; }
+	if(code_point == 0xFF) { return 0x178; }
+	return code_point;
+}
+
+str8
+str8_to_upper_utf8(struct alloc alloc, str8 str)
+{
+	str = str8_cpy_push(alloc, str);
+	for(u64 idx = 0; idx < str.size;) {
+		struct unicode_decode decode = utf8_decode(str.str + idx, str.size - idx);
+		if(decode.codepoint != U32_MAX) {
+			u32 upper = code_point_to_upper(decode.codepoint);
+			if(upper != decode.codepoint) {
+				u8 tmp[4];
+				u32 size = utf8_encode(tmp, upper);
+				dbg_assert(size == decode.inc);
+				mcpy(str.str + idx, tmp, size);
+			}
+		}
+		idx += decode.inc;
+	}
+	return str;
+}
+
 str8
 str8_to_lower(struct alloc alloc, str8 str)
 {
