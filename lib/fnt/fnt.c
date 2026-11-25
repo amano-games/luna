@@ -395,8 +395,8 @@ fnt_wrap_lines_from_str(
 			last_break_w = line_w;
 		}
 
-		i32 line_end_w = line_w - cw + fnt_char_size_x_px(fnt, c, U32_MAX, tracking);
-		if(line_end_w > max_width && last_break >= 0) {
+		i32 end_adjust = fnt_char_size_x_px(fnt, c, U32_MAX, tracking) - cw;
+		if(line_w + end_adjust > max_width && last_break >= 0) {
 			// wrap at last break
 			union rng_u64 rng = rng_u64(line_rng.min, (u64)last_break);
 			str8 line         = str8_substr(str, rng);
@@ -407,6 +407,16 @@ fnt_wrap_lines_from_str(
 			line_w       = line_w - last_break_w;
 			last_break   = -1;
 			last_break_w = 0;
+		}
+
+		if(line_w + end_adjust > max_width && i > line_rng.min) {
+			// word wider than the line: split before this char
+			union rng_u64 rng = rng_u64(line_rng.min, i);
+			str8 line         = str8_substr(str, rng);
+			str8_list_push(alloc, &list, line);
+
+			line_rng = rng_u64(i, i);
+			line_w   = cw;
 		}
 
 		i = after;
