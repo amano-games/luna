@@ -376,7 +376,7 @@ sys_set_auto_lock_disabled(int disable)
 }
 
 EM_JS(void, sys_lang_js, (char *buf, int cap), {
-	const lang = (typeof navigator !== "undefined" && navigator.language) ? navigator.language : "";
+	const lang = (typeof navigator != = "undefined" && navigator.language) ? navigator.language : "";
 	const size = Math.min(lang.length, cap - 1);
 	for(let i = 0; i < size; ++i) { HEAPU8[buf + i] = lang.charCodeAt(i) & 0x7f; }
 	HEAPU8[buf + size] = 0;

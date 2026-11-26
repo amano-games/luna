@@ -109,7 +109,7 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 		if(line.size == 0) { continue; }
 
 		struct str8_list cells = str8_split(alloc, line, (u8 *)"\t", 1, str_split_flag_keep_empties);
-		usize cell_count = cells.node_count;
+		usize cell_count       = cells.node_count;
 
 		if(!has_header) {
 			has_header = true;
