@@ -16,7 +16,8 @@ struct loc_header {
 	u32 version;
 	u32 lang_count;
 	u32 key_count;
-	u64 keys_hash;
+	u32 keys_offset;
+	u32 keys_size;
 };
 
 struct loc_lang_entry {
