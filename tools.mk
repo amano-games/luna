@@ -19,6 +19,10 @@ INC_FLAGS      := $(addprefix -I,$(INC_DIRS)) $(EXTERNAL_FLAGS)
 LDLIBS  := -lm
 LDFLAGS :=
 
+ifeq ($(DETECTED_OS), Darwin)
+LDLIBS += -framework CoreFoundation
+endif
+
 # Tools debug is opt-in. Game BUILD_DEBUG / CDEFS must not leak here.
 BUILD_DEBUG_TOOLS ?= 0
 CDEFS_DEBUG_TOOLS ?= -DSYS_LOG_LEVEL=SYS_LOG_LEVEL_INFO
