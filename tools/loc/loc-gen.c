@@ -164,6 +164,21 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 			vals[0].total_size += key.size;
 			log_warn("loc-gen", "%.*s:%zu %.*s has no %.*s text, using the key", str8_spread(in_path), line_no, str8_spread(key), str8_spread(langs[0]));
 		}
+
+		u32 def_mask = 0;
+		b32 def_ok   = loc_fmt_args_mask(vals[0].last->str, &def_mask);
+		for(usize l = 0; l < lang_count; ++l) {
+			str8 val = vals[l].last->str;
+			if(val.size == 0) { continue; }
+			u32 mask = 0;
+			if(!loc_fmt_args_mask(val, &mask)) {
+				log_error("loc-gen", "%.*s:%zu %.*s %.*s placeholder index over 31", str8_spread(in_path), line_no, str8_spread(key), str8_spread(langs[l]));
+				errors++;
+			} else if(def_ok && mask != def_mask) {
+				log_error("loc-gen", "%.*s:%zu %.*s %.*s placeholders don't match %.*s", str8_spread(in_path), line_no, str8_spread(key), str8_spread(langs[l]), str8_spread(langs[0]));
+				errors++;
+			}
+		}
 	}
 
 	if(!has_header) {

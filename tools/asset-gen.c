@@ -52,6 +52,7 @@
 #include "tools/fnt-pd/fnt-pd.h"
 #include "tools/pinbtjson/pinbtjson.h"
 #include "tools/pinbtjson/pinbtjson.c"
+#include "lib/loc/loc.c"
 #include "tools/loc/loc-gen.h"
 #include "tools/loc/loc-gen.c"
 

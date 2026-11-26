@@ -5,6 +5,8 @@
 
 static str8 loc_pool_get(struct loc_pool pool, u32 idx);
 static b32 loc_section_copy(struct alloc alloc, void *data, usize size, u32 offset, u32 section_size, u32 count, struct loc_pool *out);
+static b32 loc_fmt_arg_parse(str8 fmt, usize i, u32 *arg, usize *len);
+static usize loc_fmt_w(u8 *dst, str8 fmt, str8 *args, usize count);
 
 b32
 loc_load_from_mem(struct loc *loc, struct alloc alloc, void *data, usize size)
@@ -101,6 +103,37 @@ loc_get(struct loc *loc, str8 key)
 	return loc_pool_get(loc->strs, value - 1);
 }
 
+str8
+loc_fmt(struct alloc alloc, str8 fmt, str8 *args, usize count)
+{
+	usize size = loc_fmt_w(NULL, fmt, args, count);
+	u8 *str    = alloc_arr(alloc, str, size + 1);
+	if(str == NULL) { return str8_zero(); }
+	loc_fmt_w(str, fmt, args, count);
+	str[size] = 0;
+	return (str8){str, size};
+}
+
+b32
+loc_fmt_args_mask(str8 fmt, u32 *mask)
+{
+	*mask = 0;
+	for(usize i = 0; i < fmt.size; ++i) {
+		if(fmt.str[i] != '{') { continue; }
+		if(i + 1 < fmt.size && fmt.str[i + 1] == '{') {
+			i++;
+			continue;
+		}
+		u32 arg   = 0;
+		usize len = 0;
+		if(!loc_fmt_arg_parse(fmt, i, &arg, &len)) { continue; }
+		if(arg >= 32) { return false; }
+		*mask |= 1u << arg;
+		i += len - 1;
+	}
+	return true;
+}
+
 static str8
 loc_pool_get(struct loc_pool pool, u32 idx)
 {
@@ -127,4 +160,47 @@ loc_section_copy(struct alloc alloc, void *data, usize size, u32 offset, u32 sec
 
 	*out = pool;
 	return true;
+}
+
+static b32
+loc_fmt_arg_parse(str8 fmt, usize i, u32 *arg, usize *len)
+{
+	usize j = i + 1;
+	u32 n   = 0;
+	while(j < fmt.size && j - i <= 3 && char_is_digit(fmt.str[j], 10)) {
+		n = n * 10 + (u32)(fmt.str[j] - '0');
+		j++;
+	}
+	if(j == i + 1 || j >= fmt.size || fmt.str[j] != '}') { return false; }
+	*arg = n;
+	*len = j - i + 1;
+	return true;
+}
+
+static usize
+loc_fmt_w(u8 *dst, str8 fmt, str8 *args, usize count)
+{
+	usize len = 0;
+	for(usize i = 0; i < fmt.size;) {
+		u8 c      = fmt.str[i];
+		u32 arg   = 0;
+		usize arg_len = 0;
+		if((c == '{' || c == '}') && i + 1 < fmt.size && fmt.str[i + 1] == c) {
+			if(dst) { dst[len] = c; }
+			len++;
+			i += 2;
+			continue;
+		}
+		if(c == '{' && loc_fmt_arg_parse(fmt, i, &arg, &arg_len) && arg < count) {
+			str8 value = args[arg];
+			if(dst && value.size > 0) { mcpy(dst + len, value.str, value.size); }
+			len += value.size;
+			i += arg_len;
+			continue;
+		}
+		if(dst) { dst[len] = c; }
+		len++;
+		i++;
+	}
+	return len;
 }
