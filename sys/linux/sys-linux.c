@@ -467,6 +467,19 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+str8
+sys_lang_id(struct alloc alloc)
+{
+	const char *vars[] = {"LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"};
+	for(usize i = 0; i < ARRLEN(vars); ++i) {
+		char *value = getenv(vars[i]);
+		if(value == NULL || value[0] == 0) { continue; }
+		str8 res = sys_lang_id_from_locale(alloc, str8_cstr(value));
+		if(res.size > 0) { return res; }
+	}
+	return str8_zero();
+}
+
 sys_lib
 sys_lib_open(str8 path)
 {

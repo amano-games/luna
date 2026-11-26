@@ -430,6 +430,23 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+str8
+sys_lang_id(struct alloc alloc)
+{
+	WCHAR wbuf[LOCALE_NAME_MAX_LENGTH * 4] = {0};
+	ULONG count                            = 0;
+	ULONG size                             = ARRLEN(wbuf);
+	if(!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &count, wbuf, &size) || count == 0) {
+		if(GetUserDefaultLocaleName(wbuf, LOCALE_NAME_MAX_LENGTH) == 0) { return str8_zero(); }
+	}
+
+	char buf[ARRLEN(wbuf)] = {0};
+	for(usize i = 0; i < ARRLEN(wbuf) - 1 && wbuf[i] != 0; ++i) {
+		buf[i] = wbuf[i] < 128 ? (char)wbuf[i] : '?';
+	}
+	return sys_lang_id_from_locale(alloc, str8_cstr(buf));
+}
+
 sys_lib
 sys_lib_open(str8 path)
 {

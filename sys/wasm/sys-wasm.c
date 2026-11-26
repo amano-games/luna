@@ -375,6 +375,21 @@ sys_set_auto_lock_disabled(int disable)
 {
 }
 
+EM_JS(void, sys_lang_js, (char *buf, int cap), {
+	const lang = (typeof navigator !== "undefined" && navigator.language) ? navigator.language : "";
+	const size = Math.min(lang.length, cap - 1);
+	for(let i = 0; i < size; ++i) { HEAPU8[buf + i] = lang.charCodeAt(i) & 0x7f; }
+	HEAPU8[buf + size] = 0;
+})
+
+str8
+sys_lang_id(struct alloc alloc)
+{
+	char buf[64] = {0};
+	sys_lang_js(buf, (int)sizeof(buf));
+	return sys_lang_id_from_locale(alloc, str8_cstr(buf));
+}
+
 sys_lib
 sys_lib_open(str8 path)
 {

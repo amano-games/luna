@@ -573,6 +573,13 @@ sys_set_auto_lock_disabled(int disable)
 	PD_SYS_SET_AUTO_LOCK_DISABLED(disable);
 }
 
+str8
+sys_lang_id(struct alloc alloc)
+{
+	PDLanguage lang = PD->system->getLanguage();
+	return sys_lang_id_from_locale(alloc, lang == kPDLanguageJapanese ? str8_lit("ja") : str8_lit("en"));
+}
+
 sys_lib
 sys_lib_open(str8 path)
 {

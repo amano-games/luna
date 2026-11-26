@@ -16,6 +16,7 @@
 #include "sys/sys-keyboard.h"
 #endif
 
+#include <CoreFoundation/CoreFoundation.h>
 #include <copyfile.h>
 #include <errno.h>
 #include <dlfcn.h>
@@ -417,6 +418,23 @@ sys_file_copy(str8 from, str8 to)
 void
 sys_set_auto_lock_disabled(int disable)
 {
+}
+
+str8
+sys_lang_id(struct alloc alloc)
+{
+	str8 res         = str8_zero();
+	CFArrayRef langs = CFLocaleCopyPreferredLanguages();
+	if(langs == NULL) { return res; }
+	if(CFArrayGetCount(langs) > 0) {
+		CFStringRef lang = CFArrayGetValueAtIndex(langs, 0);
+		char buf[64]     = {0};
+		if(CFStringGetCString(lang, buf, sizeof(buf), kCFStringEncodingUTF8)) {
+			res = sys_lang_id_from_locale(alloc, str8_cstr(buf));
+		}
+	}
+	CFRelease(langs);
+	return res;
 }
 
 sys_lib
