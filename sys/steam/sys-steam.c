@@ -51,6 +51,20 @@ sys_steam_close(void)
 	}
 }
 
+str8
+sys_steam_game_lang(void)
+{
+	str8 res = str8_zero();
+	if(G_SYS_STEAM_OK) {
+		ISteamApps *apps = SteamAPI_SteamApps_v009();
+		if(apps) {
+			const char *lang = SteamAPI_ISteamApps_GetCurrentGameLanguage(apps);
+			if(lang) { res = str8_cstr((char *)lang); }
+		}
+	}
+	return res;
+}
+
 static ISteamUserStats *
 sys_steam_user_stats(void)
 {

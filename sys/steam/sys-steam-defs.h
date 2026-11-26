@@ -49,6 +49,7 @@ typedef struct ISteamUserStats ISteamUserStats;
 typedef struct ISteamUtils ISteamUtils;
 typedef struct ISteamFriends ISteamFriends;
 typedef struct ISteamUser ISteamUser;
+typedef struct ISteamApps ISteamApps;
 
 typedef u64 sys_steam_api_call;
 typedef u64 sys_steam_board_handle;
@@ -119,6 +120,9 @@ b32 SYS_STEAM_CALL SteamAPI_ISteamUserStats_ResetAllStats(ISteamUserStats *self,
 ISteamUtils *SYS_STEAM_CALL SteamAPI_SteamUtils_v011(void);
 ISteamFriends *SYS_STEAM_CALL SteamAPI_SteamFriends_v018(void);
 ISteamUser *SYS_STEAM_CALL SteamAPI_SteamUser_v023(void);
+ISteamApps *SYS_STEAM_CALL SteamAPI_SteamApps_v009(void);
+
+const char *SYS_STEAM_CALL SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *self);
 
 sys_steam_id SYS_STEAM_CALL SteamAPI_ISteamUser_GetSteamID(ISteamUser *self);
 const char *SYS_STEAM_CALL SteamAPI_ISteamFriends_GetFriendPersonaName(ISteamFriends *self, sys_steam_id steam_id);

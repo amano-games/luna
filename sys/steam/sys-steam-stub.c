@@ -22,6 +22,12 @@ sys_steam_ok(void)
 	return false;
 }
 
+str8
+sys_steam_game_lang(void)
+{
+	return str8_zero();
+}
+
 void
 sys_steam_achievement_unlock(str8 api_name)
 {

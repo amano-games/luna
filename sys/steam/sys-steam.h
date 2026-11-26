@@ -9,6 +9,7 @@ void sys_steam_scores_tick(void);
 #endif
 void sys_steam_close(void);
 b32 sys_steam_ok(void);
+str8 sys_steam_game_lang(void);
 
 void sys_steam_achievement_unlock(str8 api_name);
 void sys_steam_stat_set(str8 api_name, i32 value);
