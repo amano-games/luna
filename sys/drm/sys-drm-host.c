@@ -1931,6 +1931,12 @@ sys_menu_value(int id)
 }
 
 void
+sys_menu_value_set(int id, int value)
+{
+	sys_menu_set_value(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], id, value);
+}
+
+void
 sys_menu_item_remove(int id)
 {
 	sys_menu_remove(&DRM_HOST.pause.menus[SYS_PAUSE_MENU_TYPE_APP], id);

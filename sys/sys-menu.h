@@ -260,6 +260,17 @@ sys_menu_get_value(struct sys_menu *menu, i32 id)
 }
 
 static void
+sys_menu_set_value(struct sys_menu *menu, i32 id, i32 value)
+{
+	for(i32 i = 0; i < menu->len; ++i) {
+		if(menu->items[i].id == id) {
+			menu->items[i].value = value;
+			return;
+		}
+	}
+}
+
+static void
 sys_menu_remove(struct sys_menu *menu, i32 id)
 {
 	for(i32 i = 0; i < menu->len; ++i) {

@@ -652,6 +652,19 @@ sys_menu_value(int id)
 }
 
 void
+sys_menu_value_set(int id, int value)
+{
+	struct pd_menu_item *items = PD_STATE.menu.items;
+	ssize len                  = PD_STATE.menu.len;
+	for(ssize i = 0; i < len; i++) {
+		if(items[i].id == id) {
+			PD->system->setMenuItemValue(items[i].data, value);
+			return;
+		}
+	}
+}
+
+void
 sys_menu_item_remove(int id)
 {
 	struct pd_menu_item *items = PD_STATE.menu.items;
