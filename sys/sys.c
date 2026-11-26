@@ -58,6 +58,12 @@ struct prof_hist_slot PROF_FRAME_HIST[PROF_FRAME_HIST_SIZE];
 u32 PROF_ZONE_EXCL[PROF_ZONE_HIST_SIZE][PROF_ANCHORS_SIZE];
 
 static struct fnt_ascii SYS_FNT_MONO_ASCII;
+static struct fnt_utf8 SYS_FNT_MONO_UTF8 = {
+	.count       = SYS_MONO_FONT_UTF8_COUNT,
+	.code_points = SYS_MONO_FONT_UTF8_CODE_POINTS,
+	.cells       = SYS_MONO_FONT_UTF8_CELLS,
+	.widths      = SYS_MONO_FONT_UTF8_WIDTHS,
+};
 
 void
 sys_fnt_mono_set(struct fnt fnt)
@@ -220,20 +226,21 @@ sys_internal_init(void)
 		SYS_FNT_MONO_ASCII.mask[c / 64] |= 1ull << (c % 64);
 	}
 	sys_fnt_mono_set((struct fnt){
-		.cell_h             = 9,
-		.cell_w             = 6,
-		.grid_h             = 12,
-		.grid_w             = 10,
-		.metrics.baseline   = 8,
-		.metrics.x_height   = -1,
-		.metrics.cap_height = -1,
-		.metrics.descent    = -1,
-		.t.wword            = 4,
+		.cell_h             = SYS_MONO_FONT_CELL_H,
+		.cell_w             = SYS_MONO_FONT_CELL_W,
+		.grid_h             = SYS_MONO_FONT_GRID_H,
+		.grid_w             = SYS_MONO_FONT_GRID_W,
+		.metrics.baseline   = SYS_MONO_FONT_BASELINE,
+		.metrics.x_height   = SYS_MONO_FONT_X_HEIGHT,
+		.metrics.cap_height = SYS_MONO_FONT_CAP_HEIGHT,
+		.metrics.descent    = SYS_MONO_FONT_DESCENT,
+		.t.wword            = SYS_MONO_FONT_TEX_WWORD,
 		.t.fmt              = TEX_FMT_1B_MASK,
-		.t.w                = 60,
-		.t.h                = 108,
+		.t.w                = SYS_MONO_FONT_TEX_W,
+		.t.h                = SYS_MONO_FONT_TEX_H,
 		.t.px1b             = (u32 *)SYS_MONO_FONT,
 		.ascii              = &SYS_FNT_MONO_ASCII,
+		.utf8               = &SYS_FNT_MONO_UTF8,
 	});
 
 	sys_ups_target_set(SYS_DEFAULT_UPS);
