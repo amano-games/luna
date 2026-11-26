@@ -36,6 +36,7 @@
 #include "lib/bet/bet-ser.c"
 #include "lib/bet/bet.c"
 #include "lib/fnt/fnt.c"
+#include "lib/loc/loc.c"
 #include "lib/pd-utils.c"
 #include "lib/pinb/pinb-ser.c"
 #include "lib/rndm.c"

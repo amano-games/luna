@@ -6,8 +6,7 @@
 #include "sys/sys-log.h"
 #include "sys/sys.h"
 
-#define LOC_GEN_LANGS_MAX 8
-#define LOC_GEN_COLS_MAX  (LOC_GEN_LANGS_MAX + 1)
+#define LOC_GEN_COLS_MAX  (LOC_LANGS_MAX + 1)
 
 // NOTE: Store count + 1 offsets so that the last string also has an end
 // and every length is offsets[i + 1] - offsets[i] - 1
@@ -93,8 +92,8 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 	}
 
 	struct str8_list keys                    = {0};
-	struct str8_list vals[LOC_GEN_LANGS_MAX] = {0};
-	str8 langs[LOC_GEN_LANGS_MAX]            = {0};
+	struct str8_list vals[LOC_LANGS_MAX] = {0};
+	str8 langs[LOC_LANGS_MAX]            = {0};
 	usize lang_count                         = 0;
 	usize errors                             = 0;
 	b32 has_header                           = false;
@@ -204,8 +203,8 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 		.key_count  = (u32)key_count,
 	};
 
-	struct loc_lang_entry entries[LOC_GEN_LANGS_MAX] = {0};
-	u32 *offsets[LOC_GEN_LANGS_MAX]                  = {0};
+	struct loc_lang_entry entries[LOC_LANGS_MAX] = {0};
+	u32 *offsets[LOC_LANGS_MAX]                  = {0};
 	u32 *key_offsets                                 = loc_gen_offsets(alloc, &keys, key_count);
 	header.keys_offset                               = (u32)(sizeof(header) + sizeof(struct loc_lang_entry) * lang_count);
 	header.keys_size                                 = loc_gen_section_size(key_offsets, key_count);
