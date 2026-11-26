@@ -109,10 +109,6 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 		if(line.size == 0) { continue; }
 
 		struct str8_list cells = str8_split(alloc, line, (u8 *)"\t", 1, str_split_flag_keep_empties);
-		// NOTE: sometimes empty language keys can cause the \t
-		// to be at the end of the line, push an empty cell in that case
-		if(line.str[line.size - 1] == '\t') { str8_list_push(alloc, &cells, str8_lit("")); }
-
 		usize cell_count = cells.node_count;
 
 		if(!has_header) {
@@ -138,11 +134,14 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 			continue;
 		}
 
-		if(cell_count != lang_count + 1) {
+		if(cell_count > lang_count + 1) {
 			log_error("loc-gen", "%.*s:%zu has %zu cells, expected %zu", str8_spread(in_path), line_no, cell_count, lang_count + 1);
 			errors++;
 			continue;
 		}
+		// NOTE: missing trailing cells are empty, so a row can end early
+		// or lose its trailing tabs to an editor
+		while(cells.node_count < lang_count + 1) { str8_list_push(alloc, &cells, str8_lit("")); }
 
 		str8 key = cells.first->str;
 		str8_list_push(alloc, &keys, key);
