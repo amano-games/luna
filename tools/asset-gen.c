@@ -52,6 +52,8 @@
 #include "tools/fnt-pd/fnt-pd.h"
 #include "tools/pinbtjson/pinbtjson.h"
 #include "tools/pinbtjson/pinbtjson.c"
+#include "tools/loc/loc-gen.h"
+#include "tools/loc/loc-gen.c"
 
 #include "engine/collisions/collisions.c"
 #include "engine/collisions/collisions-ser.c"
@@ -97,7 +99,9 @@ asset_gen_recursive(
 		} else {
 			void *reset_p  = arena->p;
 			str8 extension = str8_cstr(file.extension);
-			if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
+			if(str8_ends_with(file_name, str8_lit(LOC_TSV_EXT), 0)) {
+				i32 res = loc_gen_handle(in_path, out_path, alloc);
+			} else if(str8_match(extension, str8_lit(IMG_EXT), 0)) {
 				struct asset_blob blob = {0};
 				png_to_tex_blob(in_path, alloc, sys_allocator(), &blob, lut, flag);
 				str8 out_file_path = path_make_file_name_with_ext(alloc, out_path, str8_lit(TEX_EXT));
