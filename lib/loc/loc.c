@@ -182,8 +182,8 @@ loc_fmt_w(u8 *dst, str8 fmt, str8 *args, usize count)
 {
 	usize len = 0;
 	for(usize i = 0; i < fmt.size;) {
-		u8 c      = fmt.str[i];
-		u32 arg   = 0;
+		u8 c          = fmt.str[i];
+		u32 arg       = 0;
 		usize arg_len = 0;
 		if((c == '{' || c == '}') && i + 1 < fmt.size && fmt.str[i + 1] == c) {
 			if(dst) { dst[len] = c; }
