@@ -48,5 +48,7 @@ b32 loc_lang_set_from_mem(struct loc *loc, struct alloc alloc, void *data, usize
 i32 loc_lang_idx(struct loc *loc, str8 id);
 str8 loc_lang_id(struct loc *loc, i32 lang);
 str8 loc_get(struct loc *loc, str8 key);
+str8 loc_key_get(struct loc *loc, u32 idx);
+str8 loc_str_get(struct loc *loc, u32 idx);
 str8 loc_fmt(struct alloc alloc, str8 fmt, str8 *args, usize count);
 b32 loc_fmt_args_mask(str8 fmt, u32 *mask);

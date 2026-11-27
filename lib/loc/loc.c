@@ -100,7 +100,23 @@ loc_get(struct loc *loc, str8 key)
 	if(loc->strs.offsets == NULL) { return key; }
 	u32 value = ht_u32_get(&loc->ht, hash_fnv1a_str8(key));
 	if(value == 0) { return key; }
-	return loc_pool_get(loc->strs, value - 1);
+	str8 res = loc_pool_get(loc->strs, value - 1);
+	if(res.size == 0) { return key; }
+	return res;
+}
+
+str8
+loc_key_get(struct loc *loc, u32 idx)
+{
+	if(loc->keys.offsets == NULL || idx >= loc->key_count) { return str8_zero(); }
+	return loc_pool_get(loc->keys, idx);
+}
+
+str8
+loc_str_get(struct loc *loc, u32 idx)
+{
+	if(loc->strs.offsets == NULL || idx >= loc->key_count) { return str8_zero(); }
+	return loc_pool_get(loc->strs, idx);
 }
 
 str8

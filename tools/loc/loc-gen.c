@@ -195,15 +195,10 @@ loc_gen_handle(str8 in_path, str8 out_path, struct alloc scratch)
 	for(usize l = 1; l < lang_count; ++l) {
 		usize missing         = 0;
 		struct str8_node *key = keys.first;
-		struct str8_node *def = vals[0].first;
 
-		for(struct str8_node *val = vals[l].first; val; val = val->next, def = def->next, key = key->next) {
-
+		for(struct str8_node *val = vals[l].first; val; val = val->next, key = key->next) {
 			if(val->str.size > 0) { continue; }
-
-			val->str = def->str;
-			vals[l].total_size += def->str.size;
-			log_warn("loc-gen", "%.*s missing %.*s, using %.*s", str8_spread(langs[l]), str8_spread(key->str), str8_spread(langs[0]));
+			log_warn("loc-gen", "%.*s missing %.*s, using key", str8_spread(langs[l]), str8_spread(key->str));
 			missing++;
 		}
 
